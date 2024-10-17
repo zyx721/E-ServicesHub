@@ -1,0 +1,48 @@
+lib/
+├── models/
+│   ├── user.dart
+│   └── product.dart
+├── screens/
+│   ├── home_screen.dart
+│   ├── login_screen.dart
+│   └── settings_screen.dart
+├── widgets/
+│   ├── custom_button.dart
+│   └── card_widget.dart
+├── services/
+│   ├── api_service.dart
+│   └── auth_service.dart
+├── utils/
+│   ├── constants.dart
+│   └── helpers.dart
+├── providers/
+│   ├── user_provider.dart
+│   └── product_provider.dart
+└── main.dart
+
+-------------------------------------------------
+------------------EXPLAINING---------------------
+-------------------------------------------------
+
+ 1 - models folder => is to declared our class or objects(cliest, employee)
+ 2 - screens folder => is to declared our screens (home_page, login_page) 
+ 3 - widgets folder => is to declared the screens that we need to use it a lot(buttons, service_card)
+ 4 - services folder => to link front-end with back-end
+ 5 - utils folder => to element fix we need to use it more the mone time(color, fix margin) => constant.dart
+ 6 - providers folder => state manegment(the idea is not clear but it's important)
+ 7 - main.dart file => principal page, first page when you open the application
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
