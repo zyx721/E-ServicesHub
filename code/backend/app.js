@@ -11,7 +11,7 @@ app.get('/api/data', (req, res)=>{
         success: true,
         message: 'connected to Node.js from flutter'
     });
-    // res.send('hello world')
+    // res.send('hello world');
 })
 
 // test to connect to the port 
