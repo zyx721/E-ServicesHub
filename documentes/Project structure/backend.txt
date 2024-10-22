@@ -1,0 +1,55 @@
+backend/
+│
+├── config/
+│   └── db.js                    # إعداد الاتصال بقاعدة البيانات
+│
+├── controllers/                 # المتحكمات التي تحتوي على منطق الأعمال
+│   └── authController.js        # مصادقة المستخدم (تسجيل الدخول/الخروج)
+│   └── serviceController.js     # إدارة الخدمات (إضافة/عرض/حذف)
+│
+├── middlewares/                 # الوسطاء (مثل المصادقة والتحقق)
+│   └── authMiddleware.js        # مصادقة JWT (للتحقق من هوية المستخدم)
+│   └── errorMiddleware.js       # التعامل مع الأخطاء العامة
+│
+├── models/                      # نماذج قاعدة البيانات
+│   └── userModel.js             # نموذج المستخدم
+│   └── serviceModel.js          # نموذج الخدمات
+│
+├── routes/                      # تعريف مسارات API
+│   └── authRoutes.js            # مسارات المصادقة
+│   └── serviceRoutes.js         # مسارات إدارة الخدمات
+│
+├── .env                         # متغيرات البيئة (مثل مفاتيح التوكن والاتصال بقاعدة البيانات)
+├── app.js                       # نقطة دخول التطبيق
+├── package.json                 # إدارة الحزم
+└── README.md                    # وثائق المشروع
+
+
+-------------------------------------------------
+------------------EXPLAINING---------------------
+-------------------------------------------------
+
+ 1 - config/ db.js => to connect with database (MongoDB => using mongoose libeary)
+ 2 - controllers folder => to write your code or to programe the backend in general
+        like authontication(log-in, sign-in)
+ 3 - middlewares => search about (JWT)
+ 4 - models folder => database models(user, services, ...)
+ 5 - routes folder => each models have routes, defined in thes folder
+
+config/: إعدادات الاتصال بقاعدة البيانات.
+controllers/: منطق الأعمال (مثل المصادقة وإدارة الخدمات).
+middlewares/: JWT الوسطاء مثل المصادقة باستخدام.
+models/: نماذج قاعدة البيانات مثل المستخدمين والخدمات.
+routes/: تعريف مسارات API للوصول إلى المصادقة والخدمات.
+app.js: نقطة دخول التطبيق حيث يتم إعداد الخادم واستخدام الوسطاء.
+
+
+-------------------------------------------------
+-------------------REMARQUE----------------------
+-------------------------------------------------
+ => this structur is not fix, you can make it brtter or changed 
+ => search about (JWT)
+
+
+
+
