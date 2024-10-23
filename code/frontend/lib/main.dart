@@ -24,7 +24,7 @@ class MyApp extends StatelessWidget {
           child: ElevatedButton(
             onPressed: () async {
               final response = await http
-                  .get(Uri.parse('http://192.168.201.70:3000/api/data'));
+                  .get(Uri.parse('http://192.168.52.235:3000/api/data'));
               print('Response: ${response.body}');
             },
             child: const Text('connected to node.js'),
