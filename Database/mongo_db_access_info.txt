@@ -1,0 +1,14 @@
+Hi Team,
+
+I hope this message finds you well.
+For those needing access to our MongoDB Atlas database, you can connect using your Google account.
+Below are the login credentials:
+
+        Email: hanini.mongodb.atlas@gmail.com
+        Password: aazbh2024
+
+Please ensure to keep this information confidential and do not share it outside our team. If you encounter any issues while logging in or have questions, feel free to reach out.
+Thank you!
+
+Best regards,
+[Raouf Zobir]
