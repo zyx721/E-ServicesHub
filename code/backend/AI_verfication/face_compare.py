@@ -1,8 +1,9 @@
 import face_recognition
+from lxml.html.diff import token
 
 # Load the images
-known_image = face_recognition.load_image_file('PXL_20241012_182854648.jpg')  # Known photo
-extracted_face_image = face_recognition.load_image_file('extracted_largest_face_ziad.jpg')  # Extracted face from card
+known_image = face_recognition.load_image_file("testing_images/token_image/PXL_20241012_182857885.jpg")  # Known photo
+extracted_face_image = face_recognition.load_image_file('extracted_largest_facet_fares.jpg')  # Extracted face from card
 
 # Encode the face in each image
 known_encoding = face_recognition.face_encodings(known_image)[0]
