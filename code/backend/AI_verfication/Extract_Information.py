@@ -1,29 +1,40 @@
 # extract_info.py
+import os
+
+os.environ["KMP_DUPLICATE_LIB_OK"] = "TRUE"
 import easyocr
 import cv2
+reader = easyocr.Reader(['ar', 'en'])
 
-def extract_id_info(image_path):
-    # Initialize EasyOCR reader with Arabic and French
-    reader = easyocr.Reader(['ar', 'fr', 'en'])  # Arabic, French, and English
+def extract_information(image):
+    result = reader.readtext(image)
 
-    # Load the image
-    image = cv2.imread(image_path)
+    id_number = None
+    surname = None
+    first_name = None
 
-    # Perform OCR
-    results = reader.readtext(image)
+    # Iterate through the OCR results
+    for (bbox, text, prob) in result:
+        print(f'Text: {text} (Probability: {prob})')
 
-    # Extract and print the information
-    extracted_info = {}
-    for (bbox, text, prob) in results:
-        # You can refine this logic based on your specific needs
-        if "اسم" in text:  # "اسم" means "Name" in Arabic
-            extracted_info['Name'] = text.split(":")[-1].strip()  # Adjust parsing as needed
-        elif "رقم" in text:  # "رقم" means "Number" in Arabic
-            extracted_info['ID Number'] = text.split(":")[-1].strip()  # Adjust parsing as needed
+        # Check for the ID number
+        if "رقم التعريف" in text:
+            # Look for a number before or after the token
+            for (bbox2, text2, prob2) in result:
+                if (text2.isdigit() and len(text2) == 18):  # Adjust length as per your ID number format
+                    id_number = text2
+                    break
 
-    return extracted_info
+        # Extract surname and first name
+        if "اللقب :" in text:
+            surname = text.split(":")[-1].strip()
+        elif "الإسم :" in text:
+            first_name = text.split(":")[-1].strip()
+
+    return id_number, surname, first_name
+
 
 if __name__ == "__main__":
     image_path = 'testing_images/PXL_20241012_182045207.jpg'
-    info = extract_id_info(image_path)
+    info = extract_information(image_path)
     print("Extracted Information:", info)
