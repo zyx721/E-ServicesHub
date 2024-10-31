@@ -1,19 +1,15 @@
+// app.js
 const express = require('express');
-const cors = require('cors');  // Import CORS
+const cors = require('cors');
+const connectDB = require('./config/db');
+const authRoutes = require('./routes/auth');
+require('dotenv').config();
 
 const app = express();
-const port = 3000;
+app.use(cors()); // Enable CORS
+app.use(express.json());
+connectDB();
 
-// Use CORS middleware
-app.use(cors());
+app.use('/api/auth', authRoutes);
 
-app.get('/api/data', (req, res) => {
-    res.json({
-        success: true,
-        message: 'Connected to Node.js from Flutter Web'
-    });
-});
-
-app.listen(port, () => {
-    console.log(`Server running on port ${port}`);
-});
+module.exports = app;
