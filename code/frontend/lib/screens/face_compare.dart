@@ -24,8 +24,9 @@ class _FaceCompareScreenState extends State<FaceCompareScreen> {
   Future<void> _initializeCamera() async {
     cameras = await availableCameras();
     _cameraController = CameraController(
-      cameras.firstWhere((camera) => camera.lensDirection == CameraLensDirection.front),
-      ResolutionPreset.medium,
+      cameras.firstWhere(
+          (camera) => camera.lensDirection == CameraLensDirection.front),
+      ResolutionPreset.high, // Set to high resolution for better quality
     );
 
     await _cameraController?.initialize();
@@ -45,10 +46,15 @@ class _FaceCompareScreenState extends State<FaceCompareScreen> {
       final response = await _submitFaceImage(image.path);
 
       if (response != null) {
+        print("Response Message: ${response['message']}"); // Debug print
         setState(() {
           _comparisonResult = response['message'];
-          // Set result color based on the response message
-          _resultColor = response['message'] == "Face matches." ? Colors.green : Colors.red;
+          // Ensure the response message matches exactly with the expected text
+          if (_comparisonResult.trim() == "Faces match!") {
+            _resultColor = Colors.green; // Match
+          } else {
+            _resultColor = Colors.red; // No match
+          }
         });
       }
     } catch (e) {
@@ -101,9 +107,37 @@ class _FaceCompareScreenState extends State<FaceCompareScreen> {
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             if (_cameraController?.value.isInitialized == true)
-              AspectRatio(
-                aspectRatio: _cameraController!.value.aspectRatio,
-                child: CameraPreview(_cameraController!),
+              Container(
+                width: MediaQuery.of(context).size.width *
+                    0.9, // Make camera preview wider
+                height: MediaQuery.of(context).size.height *
+                    0.5, // Set height for the camera preview
+                child: Stack(
+                  alignment: Alignment.center,
+                  children: [
+                    CameraPreview(_cameraController!),
+                    // Human-like head-shaped placeholder
+                    ClipPath(
+                      clipper: HeadShapeClipper(),
+                      child: Container(
+                        width: 200,
+                        height: 200,
+                        decoration: BoxDecoration(
+                          color: Colors.transparent,
+                          border:
+                              Border.all(color: Colors.blueAccent, width: 4),
+                        ),
+                        child: Center(
+                          child: Icon(
+                            Icons.face,
+                            size: 60,
+                            color: Colors.blue.withOpacity(0.5),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
               ),
             SizedBox(height: 20),
             ElevatedButton(
@@ -124,5 +158,26 @@ class _FaceCompareScreenState extends State<FaceCompareScreen> {
         ),
       ),
     );
+  }
+}
+
+// Custom clipper to create a head-like shape
+class HeadShapeClipper extends CustomClipper<Path> {
+  @override
+  Path getClip(Size size) {
+    Path path = Path();
+    // Define the head shape
+    path.moveTo(size.width / 2, size.height * 0.2); // Start at the top center
+    path.quadraticBezierTo(size.width, size.height * 0.4, size.width / 2,
+        size.height); // Right side
+    path.quadraticBezierTo(
+        0, size.height * 0.4, size.width / 2, size.height * 0.2); // Left side
+    path.close();
+    return path;
+  }
+
+  @override
+  bool shouldReclip(CustomClipper<Path> oldClipper) {
+    return false;
   }
 }

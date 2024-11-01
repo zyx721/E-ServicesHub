@@ -187,7 +187,7 @@ class _RealTimeDetectionState extends State<RealTimeDetection> {
                     height: 200, // Adjusted height for a larger rectangle
                     decoration: BoxDecoration(
                       border: Border.all(
-                          color: Colors.red,
+                          color: const Color.fromARGB(255, 143, 244, 54),
                           width: 4), // Optional: make the border thicker
                     ),
                   ),
