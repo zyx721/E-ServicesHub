@@ -3,7 +3,7 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 
 class ApiService {
-  final String baseUrl = 'http://192.168.1.8:5000/api/auth'; // Replace with your backend URL
+  final String baseUrl = 'http://192.168.153.163:5000/api/auth'; // Replace with your backend URL
 
   // Sign-Up Function
   Future<Map<String, dynamic>> signUp(String email, String password) async {

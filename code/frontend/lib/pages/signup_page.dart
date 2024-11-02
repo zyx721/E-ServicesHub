@@ -36,7 +36,14 @@ class _SignUpPageState extends State<SignUpPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text('Sign Up')),
+      appBar: AppBar(
+        backgroundColor: Colors.teal,
+        title: Text('Sign Up',
+        style: TextStyle(
+          color: Colors.amber
+        ),
+        )),
+      
       body: Padding(
         padding: EdgeInsets.all(16.0),
         child: Form(
@@ -72,15 +79,25 @@ class _SignUpPageState extends State<SignUpPage> {
               ),
               SizedBox(height: 16),
               ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.teal,
+                ),
                 onPressed: () => _signUp(context),
-                child: Text('Sign Up'),
+                child: Text('Sign Up',
+                style: TextStyle(color: Colors.amber
+                 ),
+                ),
               ),
               TextButton(
                 onPressed: () {
                   // Navigate to the Login page
                   Navigator.pop(context);
                 },
-                child: Text('Already have an account? Login'),
+                child: Text('Already have an account? Login',
+                style: TextStyle(color: Colors.amber
+                 ),
+                
+                ),
               ),
             ],
           ),

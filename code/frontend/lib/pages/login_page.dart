@@ -39,7 +39,14 @@ class _LoginPageState extends State<LoginPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text('Login')),
+      appBar: AppBar(
+        backgroundColor:  Colors.teal,
+         title: Text('Login',
+         style: TextStyle(
+          color: Colors.amber
+         ),
+       ),
+      ),
       body: Padding(
         padding: EdgeInsets.all(16.0),
         child: Form(
@@ -73,8 +80,14 @@ class _LoginPageState extends State<LoginPage> {
               ),
               SizedBox(height: 16),
               ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.teal,
+                ),
                 onPressed: () => _login(context),
-                child: Text('Login'),
+                child: Text('Login',
+                style: TextStyle(color: Colors.amber
+                 ),
+                ),
               ),
               TextButton(
                 onPressed: () {
@@ -84,7 +97,7 @@ class _LoginPageState extends State<LoginPage> {
                     MaterialPageRoute(builder: (context) => SignUpPage()),
                   );
                 },
-                child: Text('Don’t have an account? Sign up'),
+                child: Text('Don’t have an account? Sign up',style: TextStyle(color: Colors.amber),),
               ),
             ],
           ),
