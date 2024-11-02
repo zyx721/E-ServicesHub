@@ -3,63 +3,8 @@ import 'package:camera/camera.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'dart:io';
-import 'face_compare.dart'; // Replace with your actual face comparison screen import
 import 'package:permission_handler/permission_handler.dart';
-
-void main() async {
-  WidgetsFlutterBinding.ensureInitialized();
-  final cameras = await availableCameras();
-  runApp(MyApp(cameras: cameras));
-}
-
-class MyApp extends StatelessWidget {
-  final List<CameraDescription> cameras;
-
-  MyApp({required this.cameras});
-
-  @override
-  Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'Real-Time Detection',
-      theme: ThemeData(primarySwatch: Colors.blue),
-      home: HomeScreen(cameras: cameras),
-    );
-  }
-}
-
-class HomeScreen extends StatelessWidget {
-  final List<CameraDescription> cameras;
-
-  HomeScreen({required this.cameras});
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: Text('Home')),
-      body: Center(
-        child: ElevatedButton(
-          onPressed: () async {
-            // Check and request camera permission
-            if (await Permission.camera.request().isGranted) {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => RealTimeDetection(cameras: cameras),
-                ),
-              );
-            } else {
-              // Show a message or handle permission denied
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(content: Text('Camera permission is required')),
-              );
-            }
-          },
-          child: Text('Start Detection'),
-        ),
-      ),
-    );
-  }
-}
+import 'id_verification_screen.dart'; // Replace with your actual face comparison screen import
 
 class RealTimeDetection extends StatefulWidget {
   final List<CameraDescription> cameras;
@@ -130,7 +75,7 @@ class _RealTimeDetectionState extends State<RealTimeDetection> {
   Future<void> _uploadImage(File image) async {
     final request = http.MultipartRequest(
       'POST',
-      Uri.parse('http://192.168.138.136:8000/upload-image/'), // Replace with your server's IP address
+      Uri.parse('http://192.168.172.216:8000/upload-image/'), // Replace with your server's IP address
     );
 
     request.files.add(await http.MultipartFile.fromPath('file', image.path));
@@ -140,15 +85,19 @@ class _RealTimeDetectionState extends State<RealTimeDetection> {
       final responseData = await http.Response.fromStream(response);
 
       if (response.statusCode == 200) {
-        final message = jsonDecode(responseData.body)["message"];
+        final responseBody = jsonDecode(responseData.body);
+        final message = responseBody["message"];
+        final stopCapture = responseBody["stop_capture"]; // Extract the stop_capture flag
         print("Response: $message");
 
-        if (message == "ID valid. Face extracted.") {
+        if (stopCapture) {
+          _stopDetection(); // Call _stopDetection to stop frame capture
           Navigator.push(
             context,
-            MaterialPageRoute(builder: (context) => FaceCompareScreen()), // Replace with your actual FaceCompareScreen
+            MaterialPageRoute(
+              builder: (context) => FaceCompareScreen(), // Replace with your actual FaceCompareScreen
+            ),
           );
-          _stopDetection();
         } else {
           setState(() {
             _errorMessage = "Invalid ID: $message";
@@ -176,7 +125,11 @@ class _RealTimeDetectionState extends State<RealTimeDetection> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text('Real-Time Detection')),
+      appBar: AppBar(
+        title: Text('Real-Time Detection'),
+        centerTitle: true,
+        backgroundColor: Colors.greenAccent, // Modern color for AppBar
+      ),
       body: _cameraController.value.isInitialized
           ? Stack(
               children: [
@@ -186,17 +139,42 @@ class _RealTimeDetectionState extends State<RealTimeDetection> {
                     width: 300, // Adjusted width for a larger rectangle
                     height: 200, // Adjusted height for a larger rectangle
                     decoration: BoxDecoration(
-                      border: Border.all(
-                          color: const Color.fromARGB(255, 143, 244, 54),
-                          width: 4), // Optional: make the border thicker
+                      border: Border.all(color: Color.fromARGB(255, 143, 244, 54), width: 4),
+                      borderRadius: BorderRadius.circular(15), // Rounded corners
+                    ),
+                    child: Center(
+                      child: Text(
+                        'Align ID Card Here', // Instructional text
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                          shadows: [
+                            Shadow(
+                              blurRadius: 10.0,
+                              color: Colors.black,
+                              offset: Offset(2.0, 2.0),
+                            ),
+                          ],
+                        ),
+                      ),
                     ),
                   ),
                 ),
                 Positioned(
-                  bottom: 20,
+                  bottom: 30,
                   left: 20,
+                  right: 20,
                   child: ElevatedButton(
                     onPressed: _isDetecting ? _stopDetection : _startDetection,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.green, // Button color
+                      padding: EdgeInsets.symmetric(vertical: 15),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(30),
+                      ),
+                      textStyle: TextStyle(fontSize: 18), // Button text size
+                    ),
                     child: Text(
                       _isDetecting ? 'Stop Detection' : 'Start Detection',
                     ),
@@ -206,9 +184,11 @@ class _RealTimeDetectionState extends State<RealTimeDetection> {
                   Positioned(
                     bottom: 80,
                     left: 20,
+                    right: 20,
                     child: Text(
                       _errorMessage!,
-                      style: TextStyle(color: Colors.red, fontSize: 16),
+                      style: TextStyle(color: Colors.red, fontSize: 16, fontWeight: FontWeight.bold),
+                      textAlign: TextAlign.center,
                     ),
                   ),
               ],

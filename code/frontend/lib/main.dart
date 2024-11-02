@@ -1,42 +1,36 @@
 import 'package:flutter/material.dart';
-// to connect with backend
-import 'package:http/http.dart' as http;
-// firts page
-import './screens//terms_page.dart';
+import 'package:camera/camera.dart'; // Ensure you have this package
+import 'screens/onboarding/onboarding_screen.dart';
+import 'screens/auth/login_screen.dart';
+import 'screens/auth/signup_screen.dart';
+import 'screens/home/home_screen.dart';
+import 'screens/profile/profile_screen.dart';
+import 'screens/verification/face_verification_screen.dart';
 
-void main() {
-  runApp(const MyApp());
+Future<void> main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  // Initialize the camera
+  final cameras = await availableCameras(); // Get the available cameras
+  runApp(MyApp(cameras: cameras));
 }
 
 class MyApp extends StatelessWidget {
-  const MyApp({super.key});
+  final List<CameraDescription> cameras;
 
-  // This widget is the root of your application.
+  MyApp({required this.cameras});
+
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      debugShowCheckedModeBanner: false,
-      home: Scaffold(
-        appBar: AppBar(
-          title: const Text(' TESTING '),
-        ),
-        body: Center(
-          child: ElevatedButton(
-            onPressed: () async {
-              final response = await http
-                  .get(Uri.parse('http://192.168.52.235:3000/api/data'));
-              print('Response: ${response.body}');
-            },
-            child: const Text('connected to node.js'),
-          ),
-        ),
-      ),
-
-      // title: 'Your App Title',
-      // initialRoute: '/terms', // Set the initial route to the terms page
-      // routes: {
-      //   '/terms': (context) => const TermsPage(), // Route to the TermsPage
-      // },
+      initialRoute: '/',
+      routes: {
+        '/': (context) => OnboardingScreen(),
+        '/login': (context) => LoginScreen(),
+        '/signup': (context) => SignupScreen(),
+        '/home': (context) => HomeScreen(),
+        '/profile': (context) => ProfileScreen(cameras: cameras), // Pass the cameras here
+        '/verification': (context) => RealTimeDetection(cameras: cameras), // Pass the cameras here if needed
+      },
     );
   }
 }
