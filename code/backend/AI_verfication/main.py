@@ -5,9 +5,11 @@ from fastapi import FastAPI, UploadFile, File
 from fastapi.responses import JSONResponse
 from ultralytics import YOLO
 import face_recognition
-
+import easyocr
+from PIL import Image
+import re
 # Load your trained YOLO model
-model = YOLO(r"C:\Users\HF\Desktop\L3\IHM\yolov8\project1\runs\detect\train15\weights\best.pt")
+model = YOLO("best.pt")
 
 app = FastAPI()
 
@@ -17,6 +19,40 @@ face_cascade = cv2.CascadeClassifier('haarcascade_frontalface_default.xml')
 # Path to store extracted face images
 extracted_face_path = 'extracted_largest_face.jpg'
 
+
+def preprocess_image(image_path):
+    img = cv2.imread(image_path, cv2.IMREAD_GRAYSCALE)
+    img = cv2.resize(img, (1280, 1280))  # Ensure consistent size
+    img = cv2.GaussianBlur(img, (5, 5), 0)  # Reduce noise
+    img = cv2.adaptiveThreshold(img, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C,
+                                cv2.THRESH_BINARY, 11, 2)  # Adaptive thresholding
+    return img
+
+def extract_id_number(image_path):
+    reader = easyocr.Reader(['en'])
+    preprocessed_img = preprocess_image(image_path)
+    results = reader.readtext(preprocessed_img)
+
+    # Compile a regex pattern to match exactly 18 digits
+    digit_pattern = re.compile(r'\b(\d{18})\b')
+
+    # Collect all detected texts
+    detected_texts = [text for (bbox, text, prob) in results]
+
+    # Join detected texts into a single string
+    combined_text = ' '.join(detected_texts)
+    print(f"Combined detected text: {combined_text}")  # For debugging
+
+    # Search for an exact match for 18 consecutive digits
+    match = digit_pattern.search(combined_text)
+
+    if match:
+        id_number = match.group(1)  # Extract the 18-digit number
+        print(f"ID number found: {id_number}")
+        return id_number
+
+    print("No valid ID number found.")
+    return None
 def check_logos(image_path):
     results = model.predict(source=image_path, save=False, imgsz=1280, device=0)
     logos_found = {0: False, 1: False}  # Assuming classes 0 and 1 correspond to the logos
@@ -30,6 +66,7 @@ def check_logos(image_path):
                     logos_found[class_id] = True
 
     return logos_found  # Return a dictionary indicating which logos were found
+
 
 def extract_face(image_path):
     image = cv2.imread(image_path)
@@ -52,6 +89,7 @@ def extract_face(image_path):
         print(f"Largest face saved to {extracted_face_path}")
         return extracted_face_path
 
+
 @app.post("/upload-image/")
 async def upload_image(file: UploadFile = File(...)):
     upload_dir = "uploaded_images"
@@ -69,18 +107,40 @@ async def upload_image(file: UploadFile = File(...)):
         print(f"Invalid ID: Detected logos: {detected_logos}")
         return JSONResponse(content={
             "message": "Invalid ID: Please retake the picture.",
-            "detected_logos": detected_logos
+            "detected_logos": detected_logos,
+            "stop_capture": False  # Indicate not to stop capturing
         })
 
+    print(f"File saved at: {file_location}")
+    print("File exists:", os.path.exists(file_location))
+
     print("Valid ID")
+
+    # Proceed with ID extraction only if valid ID
+    id_number = extract_id_number(file_location)
+    if not id_number:
+        print("No valid ID number found in the image.")
+        return JSONResponse(content={"message": "ID is valid but no ID number found.", "stop_capture": False})
+
+    print(f"ID number found: {id_number}")
 
     # Proceed with face extraction if both logos are valid
     face_image_path = extract_face(file_location)
 
     if face_image_path:
-        return JSONResponse(content={"message": "ID valid. Face extracted.", "face_image_path": face_image_path})
+        return JSONResponse(content={
+            "message": "Face extracted.",
+            "face_image_path": face_image_path,
+            "id_number": id_number,
+            "stop_capture": True  # Indicate to stop capturing
+        })
     else:
-        return JSONResponse(content={"message": "ID valid but no face detected."})
+        return JSONResponse(content={
+            "message": "ID valid but no face detected.",
+            "id_number": id_number,
+            "stop_capture": True  # Indicate to stop capturing
+        })
+
 
 def compare_faces(face_image_path):
     # Load the two images for comparison
@@ -88,6 +148,7 @@ def compare_faces(face_image_path):
     submitted_face = cv2.imread(face_image_path)
 
     if extracted_face is None or submitted_face is None:
+        print("Error: One or both images could not be loaded.")
         return False
 
     # Convert images to RGB (face_recognition uses RGB, while OpenCV uses BGR)
@@ -108,6 +169,11 @@ def compare_faces(face_image_path):
 
     # Compare the first encoding (assuming one face per image)
     results = face_recognition.compare_faces([extracted_face_encodings[0]], submitted_face_encodings[0])
+
+    if results[0]:
+        print("Faces match.")
+    else:
+        print("Faces do not match.")
 
     return results[0]  # Return the result of the comparison
 
