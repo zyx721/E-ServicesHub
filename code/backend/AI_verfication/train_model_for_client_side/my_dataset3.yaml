@@ -1,0 +1,5 @@
+train: C:\Users\HF\Desktop\L3\IHM\yolov8\project1\FINAL_data\train\images
+val: C:\Users\HF\Desktop\L3\IHM\yolov8\project1\FINAL_data\val\images
+
+nc: 3
+names: ['logo','logo2','id']  

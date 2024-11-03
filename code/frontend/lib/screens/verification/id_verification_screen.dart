@@ -108,7 +108,7 @@ class _FaceCompareScreenState extends State<FaceCompareScreen> {
         backgroundColor: Colors.greenAccent, // Modern color for AppBar
       ),
       body: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 24.0),
+        padding: const EdgeInsets.symmetric(horizontal: 63.0, vertical: 10.0),
         child: Center(
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
@@ -132,7 +132,8 @@ class _FaceCompareScreenState extends State<FaceCompareScreen> {
                     child: Stack(
                       alignment: Alignment.center,
                       children: [
-                        Transform.scale( // Invert left and right
+                        Transform.scale(
+                          // Invert left and right
                           scaleX: -1.0,
                           child: CameraPreview(_cameraController!),
                         ),
@@ -143,7 +144,8 @@ class _FaceCompareScreenState extends State<FaceCompareScreen> {
                             height: 200,
                             decoration: BoxDecoration(
                               color: Colors.transparent,
-                              border: Border.all(color: Colors.blueAccent, width: 4),
+                              border: Border.all(
+                                  color: Colors.blueAccent, width: 4),
                             ),
                             child: Center(
                               child: Icon(
@@ -172,7 +174,8 @@ class _FaceCompareScreenState extends State<FaceCompareScreen> {
                     ? CircularProgressIndicator(
                         valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
                       )
-                    : Text('Start Face Detection', style: TextStyle(fontSize: 16)),
+                    : Text('Start Face Detection',
+                        style: TextStyle(fontSize: 16)),
               ),
               SizedBox(height: 20),
               // Display the comparison result with color
