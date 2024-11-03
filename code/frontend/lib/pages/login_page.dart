@@ -40,23 +40,34 @@ class _LoginPageState extends State<LoginPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        backgroundColor:  Colors.teal,
-         title: Text('Login',
-         style: TextStyle(
-          color: Colors.amber
-         ),
-       ),
+        backgroundColor: Colors.teal,
+        title: Text(
+          'Login',
+          style: TextStyle(
+            color: Colors.amber,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        centerTitle: true,
+        elevation: 4,
       ),
       body: Padding(
-        padding: EdgeInsets.all(16.0),
+        padding: const EdgeInsets.all(24.0),
         child: Form(
           key: _formKey,
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               TextFormField(
                 controller: emailController,
-                decoration: InputDecoration(labelText: 'Email'),
+                decoration: InputDecoration(
+                  labelText: 'Email',
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  prefixIcon: Icon(Icons.email, color: Colors.teal),
+                ),
                 validator: (value) {
                   if (value == null || value.isEmpty) {
                     return 'Please enter your email';
@@ -66,11 +77,17 @@ class _LoginPageState extends State<LoginPage> {
                   return null;
                 },
               ),
-              SizedBox(height: 16),
+              SizedBox(height: 20),
               TextFormField(
                 controller: passwordController,
                 obscureText: true,
-                decoration: InputDecoration(labelText: 'Password'),
+                decoration: InputDecoration(
+                  labelText: 'Password',
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  prefixIcon: Icon(Icons.lock, color: Colors.teal),
+                ),
                 validator: (value) {
                   if (value == null || value.isEmpty) {
                     return 'Please enter your password';
@@ -78,17 +95,26 @@ class _LoginPageState extends State<LoginPage> {
                   return null;
                 },
               ),
-              SizedBox(height: 16),
+              SizedBox(height: 24),
               ElevatedButton(
                 style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.teal,
+                  padding: EdgeInsets.symmetric(vertical: 14),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(30),
+                  ),
+                  backgroundColor: Colors.teal,
                 ),
                 onPressed: () => _login(context),
-                child: Text('Login',
-                style: TextStyle(color: Colors.amber
-                 ),
+                child: Text(
+                  'Login',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
               ),
+              SizedBox(height: 16),
               TextButton(
                 onPressed: () {
                   // Navigate to the Sign-Up page
@@ -97,7 +123,14 @@ class _LoginPageState extends State<LoginPage> {
                     MaterialPageRoute(builder: (context) => SignUpPage()),
                   );
                 },
-                child: Text('Don’t have an account? Sign up',style: TextStyle(color: Colors.amber),),
+                child: Text(
+                  'Don’t have an account? Sign up',
+                  style: TextStyle(
+                    color: Colors.teal,
+                    fontWeight: FontWeight.w600,
+                    decoration: TextDecoration.underline,
+                  ),
+                ),
               ),
             ],
           ),
