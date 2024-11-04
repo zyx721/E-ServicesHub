@@ -1,4 +1,4 @@
-# frontend
+# hanini_frontend
 
 A new Flutter project.
 
