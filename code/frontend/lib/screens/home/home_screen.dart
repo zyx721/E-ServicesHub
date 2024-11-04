@@ -102,6 +102,7 @@ class HomeScreen extends StatelessWidget {
               // Navigate to settings screen
               Navigator.pop(context); // Close the drawer
               Navigator.pushNamed(context, '/settings');
+              
             },
           ),
           ListTile(

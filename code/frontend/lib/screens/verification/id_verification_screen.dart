@@ -25,8 +25,7 @@ class _FaceCompareScreenState extends State<FaceCompareScreen> {
     try {
       cameras = await availableCameras();
       _cameraController = CameraController(
-        cameras.firstWhere(
-            (camera) => camera.lensDirection == CameraLensDirection.front),
+        cameras.firstWhere((camera) => camera.lensDirection == CameraLensDirection.front),
         ResolutionPreset.high,
       );
 
@@ -52,9 +51,7 @@ class _FaceCompareScreenState extends State<FaceCompareScreen> {
       if (response != null) {
         setState(() {
           _comparisonResult = response['message'];
-          _resultColor = (_comparisonResult.trim() == "Faces match!")
-              ? Colors.green
-              : Colors.red;
+          _resultColor = (_comparisonResult.trim() == "Faces match!") ? Colors.green : Colors.red;
         });
       } else {
         setState(() {
@@ -104,8 +101,7 @@ class _FaceCompareScreenState extends State<FaceCompareScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Face Comparison',
-            style: TextStyle(fontWeight: FontWeight.bold)),
+        title: Text('Face Comparison', style: TextStyle(fontWeight: FontWeight.bold)),
         centerTitle: true,
         backgroundColor: Colors.greenAccent,
       ),
@@ -116,81 +112,78 @@ class _FaceCompareScreenState extends State<FaceCompareScreen> {
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               if (_cameraController?.value.isInitialized == true)
-                Container(
-                  width: double.infinity,
-                  height: MediaQuery.of(context).size.height * 0.5,
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(15),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black26,
-                        blurRadius: 5,
-                        offset: Offset(0, 2),
-                      ),
-                    ],
-                  ),
-                  child: ClipRRect(
-                    borderRadius: BorderRadius.circular(15),
-                    child: Stack(
-                      alignment: Alignment.center,
-                      children: [
-                        Transform.scale(
-                          scaleX: -1.0,
-                          child: CameraPreview(_cameraController!),
-                        ),
-                        ClipPath(
-                          clipper: HeadShapeClipper(),
-                          child: Container(
-                            width: 200,
-                            height: 200,
-                            decoration: BoxDecoration(
-                              color: Colors.transparent,
-                              border: Border.all(
-                                  color: Colors.blueAccent, width: 4),
-                            ),
-                            child: Center(
-                              child: Icon(
-                                Icons.face,
-                                size: 60,
-                                color: Colors.blue.withOpacity(0.5),
-                              ),
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
+                _buildCameraPreview(),
               SizedBox(height: 20),
-              ElevatedButton(
-                onPressed: _isLoading ? null : _takeAndSendPicture,
-                style: ElevatedButton.styleFrom(
-                  padding: EdgeInsets.symmetric(horizontal: 32, vertical: 16),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(30),
-                  ),
-                  backgroundColor: Colors.green,
-                ),
-                child: _isLoading
-                    ? CircularProgressIndicator(
-                        valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                      )
-                    : Text('Take and Send Picture',
-                        style: TextStyle(fontSize: 16)),
-              ),
+              _buildTakePictureButton(),
               SizedBox(height: 20),
-              Text(
-                _comparisonResult,
-                style: TextStyle(
-                    color: _resultColor,
-                    fontSize: 24,
-                    fontWeight: FontWeight.bold),
-                textAlign: TextAlign.center,
-              ),
+              _buildComparisonResultText(),
             ],
           ),
         ),
       ),
+    );
+  }
+
+  Widget _buildCameraPreview() {
+    return Container(
+      width: double.infinity,
+      height: MediaQuery.of(context).size.height * 0.5,
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(15),
+        boxShadow: [BoxShadow(color: Colors.black26, blurRadius: 5, offset: Offset(0, 2))],
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(15),
+        child: Stack(
+          alignment: Alignment.center,
+          children: [
+            Transform.scale(
+              scaleX: -1.0,
+              child: CameraPreview(_cameraController!),
+            ),
+            ClipPath(
+              clipper: HeadShapeClipper(),
+              child: Container(
+                width: 200,
+                height: 200,
+                decoration: BoxDecoration(
+                  color: Colors.transparent,
+                  border: Border.all(color: Colors.blueAccent, width: 4),
+                ),
+                child: Center(
+                  child: Icon(
+                    Icons.face,
+                    size: 60,
+                    color: Colors.blue.withOpacity(0.5),
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildTakePictureButton() {
+    return ElevatedButton(
+      onPressed: _isLoading ? null : _takeAndSendPicture,
+      style: ElevatedButton.styleFrom(
+        padding: EdgeInsets.symmetric(horizontal: 32, vertical: 16),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
+        backgroundColor: Colors.green,
+      ),
+      child: _isLoading
+          ? CircularProgressIndicator(valueColor: AlwaysStoppedAnimation<Color>(Colors.white))
+          : Text('Take and Send Picture', style: TextStyle(fontSize: 16)),
+    );
+  }
+
+  Widget _buildComparisonResultText() {
+    return Text(
+      _comparisonResult,
+      style: TextStyle(color: _resultColor, fontSize: 24, fontWeight: FontWeight.bold),
+      textAlign: TextAlign.center,
     );
   }
 }
@@ -200,16 +193,12 @@ class HeadShapeClipper extends CustomClipper<Path> {
   Path getClip(Size size) {
     Path path = Path();
     path.moveTo(size.width / 2, size.height * 0.2);
-    path.quadraticBezierTo(size.width, size.height * 0.4, size.width / 2,
-        size.height);
-    path.quadraticBezierTo(
-        0, size.height * 0.4, size.width / 2, size.height * 0.2);
+    path.quadraticBezierTo(size.width, size.height * 0.4, size.width / 2, size.height);
+    path.quadraticBezierTo(0, size.height * 0.4, size.width / 2, size.height * 0.2);
     path.close();
     return path;
   }
 
   @override
-  bool shouldReclip(CustomClipper<Path> oldClipper) {
-    return false;
-  }
+  bool shouldReclip(CustomClipper<Path> oldClipper) => false;
 }

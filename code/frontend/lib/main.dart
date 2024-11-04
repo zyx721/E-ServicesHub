@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:camera/camera.dart'; // Ensure you have this package
+import 'package:hanini_frontend/screens/SettingsScreen/SettingsScreen.dart';
 import 'screens/onboarding/onboarding_screen.dart';
 import 'screens/auth/login_screen.dart';
 import 'screens/auth/signup_screen.dart';
@@ -48,6 +49,7 @@ class MyApp extends StatelessWidget {
         '/home': (context) => HomeScreen(),
         '/profile': (context) => ProfileScreen(cameras: cameras, userRole: userRole),
         '/verification': (context) => RealTimeDetection(cameras: cameras),
+        '/settings': (context) => SettingsScreen(), // Ensure this is correct
       },
     );
   }

@@ -139,8 +139,6 @@ class _RealTimeDetectionState extends State<RealTimeDetection> {
     return Scaffold(
       appBar: AppBar(
         title: Text('Real-Time Detection'),
-        centerTitle: true,
-        backgroundColor: Colors.greenAccent, // Modern color for AppBar
       ),
       body: _cameraController.value.isInitialized
           ? Stack(
@@ -179,8 +177,12 @@ class _RealTimeDetectionState extends State<RealTimeDetection> {
                   bottom: 30,
                   left: 20,
                   right: 20,
-                  child: ElevatedButton(
+                  child: ElevatedButton.icon(
                     onPressed: _isDetecting ? _stopDetection : _startDetection,
+                    icon: Icon(_isDetecting ? Icons.stop : Icons.play_arrow),
+                    label: Text(
+                      _isDetecting ? 'Stop Detection' : 'Start Detection',
+                    ),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Colors.green, // Button color
                       padding: EdgeInsets.symmetric(vertical: 15),
@@ -188,9 +190,6 @@ class _RealTimeDetectionState extends State<RealTimeDetection> {
                         borderRadius: BorderRadius.circular(30),
                       ),
                       textStyle: TextStyle(fontSize: 18), // Button text size
-                    ),
-                    child: Text(
-                      _isDetecting ? 'Stop Detection' : 'Start Detection',
                     ),
                   ),
                 ),
