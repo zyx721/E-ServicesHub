@@ -1,8 +1,34 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
-class LoginScreen extends StatelessWidget {
+class LoginScreen extends StatefulWidget {
   const LoginScreen({Key? key}) : super(key: key);
+
+  @override
+  State<LoginScreen> createState() => _LoginScreenState();
+}
+
+class _LoginScreenState extends State<LoginScreen>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _controller;
+  late Animation<double> _animation;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      duration: const Duration(seconds: 2),
+      vsync: this,
+    )..forward();
+
+    _animation = CurvedAnimation(parent: _controller, curve: Curves.easeOut);
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -15,7 +41,14 @@ class LoginScreen extends StatelessWidget {
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                _buildLogoWithAnimation(),
+                ScaleTransition(
+                  scale: _animation,
+                  child: Image.asset(
+                    'assets/images/onboarding3.png',
+                    height: 150,  // Adjusted size for larger display
+                    width: 150,
+                  ),
+                ),
                 SizedBox(height: 30),
                 _buildWelcomeText(),
                 SizedBox(height: 20),
@@ -36,25 +69,16 @@ class LoginScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildLogoWithAnimation() {
-    return AnimatedOpacity(
-      opacity: 1.0,
-      duration: Duration(seconds: 2),
-      child: Image.asset(
-        'assets/images/onboarding3.png',
-        height: 100,
-        width: 100,
-      ),
-    );
-  }
-
   Widget _buildWelcomeText() {
-    return Text(
-      'Welcome Back!',
-      style: GoogleFonts.poppins(
-        fontSize: 32,
-        fontWeight: FontWeight.bold,
-        color: Colors.teal,
+    return FadeTransition(
+      opacity: _animation,
+      child: Text(
+        'Welcome Back!',
+        style: GoogleFonts.poppins(
+          fontSize: 32,
+          fontWeight: FontWeight.bold,
+          color: Colors.teal,
+        ),
       ),
     );
   }
