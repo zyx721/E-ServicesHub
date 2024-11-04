@@ -3,7 +3,6 @@ import 'package:camera/camera.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'dart:io';
-import 'package:permission_handler/permission_handler.dart';
 import 'id_verification_screen.dart'; // Replace with your actual face comparison screen import
 
 class RealTimeDetection extends StatefulWidget {
@@ -38,35 +37,43 @@ class _RealTimeDetectionState extends State<RealTimeDetection> {
       setState(() {});
     } catch (e) {
       print("Error initializing camera: $e");
-      setState(() {
-        _errorMessage = "Camera error: $e";
-      });
+      if (mounted) {
+        setState(() {
+          _errorMessage = "Camera error: $e";
+        });
+      }
     }
   }
 
   void _startDetection() {
     if (_cameraController.value.isInitialized) {
-      _isDetecting = true;
+      setState(() {
+        _isDetecting = true;
+      });
       _captureFrames();
     }
   }
 
   void _stopDetection() {
-    setState(() {
-      _isDetecting = false;
-    });
+    if (mounted) {
+      setState(() {
+        _isDetecting = false;
+      });
+    }
   }
 
   Future<void> _captureFrames() async {
-    while (_isDetecting) {
+    while (_isDetecting && mounted) {
       try {
         final XFile image = await _cameraController.takePicture();
         await _uploadImage(File(image.path));
       } catch (e) {
         print("Error capturing frame: $e");
-        setState(() {
-          _errorMessage = "Capture error: $e";
-        });
+        if (mounted) {
+          setState(() {
+            _errorMessage = "Capture error: $e";
+          });
+        }
         break;
       }
     }
@@ -75,7 +82,7 @@ class _RealTimeDetectionState extends State<RealTimeDetection> {
   Future<void> _uploadImage(File image) async {
     final request = http.MultipartRequest(
       'POST',
-      Uri.parse('http://192.168.172.216:8000/upload-image/'), // Replace with your server's IP address
+      Uri.parse('http://192.168.113.34:8000/upload-image/'), // Replace with your server's IP address
     );
 
     request.files.add(await http.MultipartFile.fromPath('file', image.path));
@@ -84,14 +91,16 @@ class _RealTimeDetectionState extends State<RealTimeDetection> {
       final response = await request.send();
       final responseData = await http.Response.fromStream(response);
 
+      if (!mounted) return; // Return if the widget is no longer mounted
+
       if (response.statusCode == 200) {
         final responseBody = jsonDecode(responseData.body);
         final message = responseBody["message"];
-        final stopCapture = responseBody["stop_capture"]; // Extract the stop_capture flag
+        final stopCapture = responseBody["stop_capture"];
         print("Response: $message");
 
         if (stopCapture) {
-          _stopDetection(); // Call _stopDetection to stop frame capture
+          _stopDetection();
           Navigator.push(
             context,
             MaterialPageRoute(
@@ -110,14 +119,17 @@ class _RealTimeDetectionState extends State<RealTimeDetection> {
       }
     } catch (e) {
       print("Error uploading image: $e");
-      setState(() {
-        _errorMessage = "An error occurred during upload.";
-      });
+      if (mounted) {
+        setState(() {
+          _errorMessage = "An error occurred during upload.";
+        });
+      }
     }
   }
 
   @override
   void dispose() {
+    _isDetecting = false; // Stop detection when disposing
     _cameraController.dispose();
     super.dispose();
   }
@@ -139,8 +151,10 @@ class _RealTimeDetectionState extends State<RealTimeDetection> {
                     width: 300, // Adjusted width for a larger rectangle
                     height: 200, // Adjusted height for a larger rectangle
                     decoration: BoxDecoration(
-                      border: Border.all(color: Color.fromARGB(255, 143, 244, 54), width: 4),
-                      borderRadius: BorderRadius.circular(15), // Rounded corners
+                      border: Border.all(
+                          color: Color.fromARGB(255, 143, 244, 54), width: 4),
+                      borderRadius:
+                          BorderRadius.circular(15), // Rounded corners
                     ),
                     child: Center(
                       child: Text(
@@ -187,7 +201,10 @@ class _RealTimeDetectionState extends State<RealTimeDetection> {
                     right: 20,
                     child: Text(
                       _errorMessage!,
-                      style: TextStyle(color: Colors.red, fontSize: 16, fontWeight: FontWeight.bold),
+                      style: TextStyle(
+                          color: Colors.red,
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold),
                       textAlign: TextAlign.center,
                     ),
                   ),

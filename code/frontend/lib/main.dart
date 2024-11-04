@@ -22,14 +22,99 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+      
       initialRoute: '/',
       routes: {
         '/': (context) => OnboardingScreen(),
         '/login': (context) => LoginScreen(),
         '/signup': (context) => SignupScreen(),
         '/home': (context) => HomeScreen(),
-        '/profile': (context) => ProfileScreen(cameras: cameras), // Pass the cameras here
-        '/verification': (context) => RealTimeDetection(cameras: cameras), // Pass the cameras here if needed
+        '/profile': (context) =>
+            ProfileScreen(cameras: cameras), // Pass the cameras here
+        '/verification': (context) => RealTimeDetection(
+            cameras: cameras), // Pass the cameras here if needed
       },
     );
   }

@@ -11,9 +11,9 @@ class FaceCompareScreen extends StatefulWidget {
 class _FaceCompareScreenState extends State<FaceCompareScreen> {
   CameraController? _cameraController;
   List<CameraDescription> cameras = [];
-  bool _isLoading = false; // Track loading state
-  String _comparisonResult = ""; // Track comparison result message
-  Color _resultColor = Colors.black; // Track result message color
+  bool _isLoading = false;
+  String _comparisonResult = "";
+  Color _resultColor = Colors.black;
 
   @override
   void initState() {
@@ -27,7 +27,7 @@ class _FaceCompareScreenState extends State<FaceCompareScreen> {
       _cameraController = CameraController(
         cameras.firstWhere(
             (camera) => camera.lensDirection == CameraLensDirection.front),
-        ResolutionPreset.high, // Set to high resolution for better quality
+        ResolutionPreset.high,
       );
 
       await _cameraController?.initialize();
@@ -37,33 +37,36 @@ class _FaceCompareScreenState extends State<FaceCompareScreen> {
     }
   }
 
-  Future<void> _startFaceDetection() async {
-    if (_isLoading) return; // Prevent multiple clicks
+  Future<void> _takeAndSendPicture() async {
+    if (_isLoading) return;
 
     setState(() {
-      _isLoading = true; // Start loading
-      _comparisonResult = ""; // Clear previous result
+      _isLoading = true;
+      _comparisonResult = "";
     });
 
     try {
-      // Capture image from the camera
       final image = await _cameraController!.takePicture();
       final response = await _submitFaceImage(image.path);
 
       if (response != null) {
         setState(() {
           _comparisonResult = response['message'];
-          // Update the result color based on the comparison
           _resultColor = (_comparisonResult.trim() == "Faces match!")
               ? Colors.green
               : Colors.red;
+        });
+      } else {
+        setState(() {
+          _comparisonResult = "Failed to compare faces.";
+          _resultColor = Colors.red;
         });
       }
     } catch (e) {
       print("Error capturing image: $e");
     } finally {
       setState(() {
-        _isLoading = false; // End loading
+        _isLoading = false;
       });
     }
   }
@@ -71,12 +74,11 @@ class _FaceCompareScreenState extends State<FaceCompareScreen> {
   Future<Map<String, dynamic>?> _submitFaceImage(String imagePath) async {
     final request = http.MultipartRequest(
       'POST',
-      Uri.parse('http://192.168.172.216:8000/compare-face/'),
+      Uri.parse('http://192.168.113.34:8000/compare-face/'),
     );
 
-    request.files.add(await http.MultipartFile.fromPath('file', imagePath));
-
     try {
+      request.files.add(await http.MultipartFile.fromPath('file', imagePath));
       final response = await request.send();
       final responseData = await http.Response.fromStream(response);
 
@@ -84,12 +86,12 @@ class _FaceCompareScreenState extends State<FaceCompareScreen> {
         return json.decode(responseData.body);
       } else {
         print("Failed to submit face image: ${response.statusCode}");
+        return null;
       }
     } catch (e) {
       print("Error submitting face image: $e");
+      return null;
     }
-
-    return null; // Return null in case of error
   }
 
   @override
@@ -102,10 +104,10 @@ class _FaceCompareScreenState extends State<FaceCompareScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Real-Time Face Detection',
+        title: Text('Face Comparison',
             style: TextStyle(fontWeight: FontWeight.bold)),
         centerTitle: true,
-        backgroundColor: Colors.greenAccent, // Modern color for AppBar
+        backgroundColor: Colors.greenAccent,
       ),
       body: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 63.0, vertical: 10.0),
@@ -122,8 +124,8 @@ class _FaceCompareScreenState extends State<FaceCompareScreen> {
                     boxShadow: [
                       BoxShadow(
                         color: Colors.black26,
-                        blurRadius: 5, // Decreased blur radius
-                        offset: Offset(0, 2), // Adjusted vertical offset
+                        blurRadius: 5,
+                        offset: Offset(0, 2),
                       ),
                     ],
                   ),
@@ -133,7 +135,6 @@ class _FaceCompareScreenState extends State<FaceCompareScreen> {
                       alignment: Alignment.center,
                       children: [
                         Transform.scale(
-                          // Invert left and right
                           scaleX: -1.0,
                           child: CameraPreview(_cameraController!),
                         ),
@@ -162,23 +163,22 @@ class _FaceCompareScreenState extends State<FaceCompareScreen> {
                 ),
               SizedBox(height: 20),
               ElevatedButton(
-                onPressed: _isLoading ? null : _startFaceDetection,
+                onPressed: _isLoading ? null : _takeAndSendPicture,
                 style: ElevatedButton.styleFrom(
                   padding: EdgeInsets.symmetric(horizontal: 32, vertical: 16),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(30),
                   ),
-                  backgroundColor: Colors.green, // Button color
+                  backgroundColor: Colors.green,
                 ),
                 child: _isLoading
                     ? CircularProgressIndicator(
                         valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
                       )
-                    : Text('Start Face Detection',
+                    : Text('Take and Send Picture',
                         style: TextStyle(fontSize: 16)),
               ),
               SizedBox(height: 20),
-              // Display the comparison result with color
               Text(
                 _comparisonResult,
                 style: TextStyle(
@@ -195,16 +195,15 @@ class _FaceCompareScreenState extends State<FaceCompareScreen> {
   }
 }
 
-// Custom clipper to create a head-like shape
 class HeadShapeClipper extends CustomClipper<Path> {
   @override
   Path getClip(Size size) {
     Path path = Path();
-    path.moveTo(size.width / 2, size.height * 0.2); // Start at the top center
+    path.moveTo(size.width / 2, size.height * 0.2);
     path.quadraticBezierTo(size.width, size.height * 0.4, size.width / 2,
-        size.height); // Right side
+        size.height);
     path.quadraticBezierTo(
-        0, size.height * 0.4, size.width / 2, size.height * 0.2); // Left side
+        0, size.height * 0.4, size.width / 2, size.height * 0.2);
     path.close();
     return path;
   }
