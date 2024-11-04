@@ -8,21 +8,19 @@ import 'screens/auth/signup_screen.dart';
 import 'screens/home/home_screen.dart';
 import 'screens/profile/profile_screen.dart';
 import 'screens/verification/face_verification_screen.dart';
+import 'screens/services/ServiceDetailScreen.dart'; // Import your ServiceDetailScreen
 import 'user_role.dart'; // Import your UserRole enum
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   final cameras = await availableCameras(); // Get the available cameras
 
-  // Retrieve the initial user role; this could be set dynamically based on user authentication
-  UserRole userRole = await _retrieveUserRole(); // Implement this function to retrieve the user role
+  UserRole userRole = await _retrieveUserRole(); // Retrieve the initial user role
   runApp(MyApp(cameras: cameras, userRole: userRole));
 }
 
 // Function to simulate retrieving a user role (replace this with actual implementation)
 Future<UserRole> _retrieveUserRole() async {
-  // Logic to determine user role (e.g., from shared preferences or a server)
-  // For demonstration, we'll return a service provider role
   return UserRole.serviceProvider; // Replace with dynamic retrieval of user role
 }
 
@@ -56,7 +54,9 @@ class MyApp extends StatelessWidget {
       '/profile': (context) => ProfileScreen(cameras: cameras, userRole: userRole),
       '/verification': (context) => RealTimeDetection(cameras: cameras),
       '/settings': (context) => SettingsScreen(),
-      '/forgot_password': (context) => ForgotPasswordScreen(), // Corrected line
+      '/forgot_password': (context) => ForgotPasswordScreen(),
+      // Add more routes as needed, for example:
+      // '/service_detail': (context) => ServiceDetailScreen(...), // You can also dynamically pass the parameters here if needed
     };
   }
 }
