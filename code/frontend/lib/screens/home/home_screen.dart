@@ -29,12 +29,22 @@ class HomeScreen extends StatelessWidget {
               'Available Services',
               style: GoogleFonts.poppins(fontSize: 24, fontWeight: FontWeight.bold),
             ),
-            // Add your service list or grid here
+            SizedBox(height: 10),
             Expanded(
-              child: ListView.builder(
-                itemCount: 10, // Replace with your service count
+              child: GridView.builder(
+                itemCount: 6, // Number of available services
+                gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                  crossAxisCount: 2, // Two services per row
+                  mainAxisSpacing: 20,
+                  crossAxisSpacing: 20,
+                  childAspectRatio: 0.8, // Adjusts image-to-text ratio
+                ),
                 itemBuilder: (context, index) {
-                  return _buildServiceItem('Service ${index + 1}');
+                  return _buildServiceItem(
+                    context,
+                    'Service ${index + 1}',
+                    'assets/images/service${index + 1}.png',
+                  );
                 },
               ),
             ),
@@ -57,17 +67,59 @@ class HomeScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildServiceItem(String serviceName) {
-    return Card(
-      elevation: 3,
-      margin: EdgeInsets.symmetric(vertical: 10),
-      child: ListTile(
-        title: Text(serviceName, style: GoogleFonts.poppins(fontSize: 18)),
-        subtitle: Text('Description of $serviceName', style: GoogleFonts.poppins(fontSize: 14)),
-        trailing: Icon(Icons.arrow_forward_ios),
-        onTap: () {
-          // Navigate to service details or booking page
-        },
+  Widget _buildServiceItem(BuildContext context, String serviceName, String imagePath) {
+    return GestureDetector(
+      onTap: () {
+        // Navigate to Service Detail screen
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => ServiceDetailScreen(
+              serviceName: serviceName,
+              imagePath: imagePath,
+            ),
+          ),
+        );
+      },
+      child: Card(
+        elevation: 5,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            ClipRRect(
+              borderRadius: BorderRadius.vertical(top: Radius.circular(15)),
+              child: Image.asset(
+                imagePath,
+                height: 100,
+                width: double.infinity,
+                fit: BoxFit.cover,
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.all(10.0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    serviceName,
+                    style: GoogleFonts.poppins(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  SizedBox(height: 5),
+                  Text(
+                    'Brief description of the service, highlighting its features.',
+                    style: GoogleFonts.poppins(fontSize: 12, color: Colors.grey[600]),
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -78,9 +130,7 @@ class HomeScreen extends StatelessWidget {
         padding: EdgeInsets.zero,
         children: [
           DrawerHeader(
-            decoration: BoxDecoration(
-              color: Colors.blue,
-            ),
+            decoration: BoxDecoration(color: Colors.blue),
             child: Text(
               'Menu',
               style: GoogleFonts.poppins(fontSize: 24, color: Colors.white),
@@ -90,8 +140,7 @@ class HomeScreen extends StatelessWidget {
             leading: Icon(Icons.person),
             title: Text('Profile', style: GoogleFonts.poppins()),
             onTap: () {
-              // Navigate to profile screen
-              Navigator.pop(context); // Close the drawer
+              Navigator.pop(context);
               Navigator.pushNamed(context, '/profile');
             },
           ),
@@ -99,19 +148,16 @@ class HomeScreen extends StatelessWidget {
             leading: Icon(Icons.settings),
             title: Text('Settings', style: GoogleFonts.poppins()),
             onTap: () {
-              // Navigate to settings screen
-              Navigator.pop(context); // Close the drawer
+              Navigator.pop(context);
               Navigator.pushNamed(context, '/settings');
-              
             },
           ),
           ListTile(
             leading: Icon(Icons.language),
             title: Text('Language', style: GoogleFonts.poppins()),
             onTap: () {
-              // Show language selection dialog or navigate to language settings
-              Navigator.pop(context); // Close the drawer
-              // TODO: Implement language selection
+              Navigator.pop(context);
+              // Implement language selection here
             },
           ),
           Divider(),
@@ -119,11 +165,66 @@ class HomeScreen extends StatelessWidget {
             leading: Icon(Icons.logout),
             title: Text('Logout', style: GoogleFonts.poppins()),
             onTap: () {
-              // Handle logout logic
-              Navigator.pop(context); // Close the drawer
+              Navigator.pop(context);
+              // Implement logout functionality
             },
           ),
         ],
+      ),
+    );
+  }
+}
+
+class ServiceDetailScreen extends StatelessWidget {
+  final String serviceName;
+  final String imagePath;
+
+  const ServiceDetailScreen({
+    Key? key,
+    required this.serviceName,
+    required this.imagePath,
+  }) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: Text(serviceName, style: GoogleFonts.poppins(fontSize: 20)),
+        backgroundColor: Colors.blue,
+      ),
+      body: Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Image.asset(imagePath, height: 150, fit: BoxFit.cover),
+            SizedBox(height: 20),
+            Text(
+              serviceName,
+              style: GoogleFonts.poppins(fontSize: 24, fontWeight: FontWeight.bold),
+            ),
+            Padding(
+              padding: const EdgeInsets.all(20.0),
+              child: Text(
+                'Detailed description of the service. This could include features, benefits, availability, pricing, and other details that help the user understand what this service offers.',
+                style: GoogleFonts.poppins(fontSize: 16, color: Colors.grey[700]),
+                textAlign: TextAlign.center,
+              ),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                // Implement booking functionality here
+              },
+              child: Text('Book Now', style: GoogleFonts.poppins(fontSize: 18)),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.blue,
+                padding: EdgeInsets.symmetric(horizontal: 40, vertical: 15),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(10),
+                ),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
