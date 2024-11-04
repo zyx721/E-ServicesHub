@@ -5,79 +5,112 @@ class LoginScreen extends StatefulWidget {
   const LoginScreen({Key? key}) : super(key: key);
 
   @override
-  State<LoginScreen> createState() => _LoginScreenState();
+  _LoginScreenState createState() => _LoginScreenState();
 }
 
 class _LoginScreenState extends State<LoginScreen>
     with SingleTickerProviderStateMixin {
-  late AnimationController _controller;
-  late Animation<double> _animation;
+  late AnimationController _animationController;
+  late Animation<double> _fadeAnimation;
+  late Animation<double> _scaleAnimation;
 
   @override
   void initState() {
     super.initState();
-    _controller = AnimationController(
-      duration: const Duration(seconds: 2),
-      vsync: this,
-    )..forward();
 
-    _animation = CurvedAnimation(parent: _controller, curve: Curves.easeOut);
+    _animationController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 600),
+    );
+
+    _fadeAnimation = Tween<double>(begin: 0, end: 1).animate(
+      CurvedAnimation(
+        parent: _animationController,
+        curve: Curves.easeInOut,
+      ),
+    );
+
+    _scaleAnimation = Tween<double>(begin: 0.8, end: 1.0).animate(
+      CurvedAnimation(
+        parent: _animationController,
+        curve: Curves.easeOut,
+      ),
+    );
+
+    _animationController.forward();
   }
 
   @override
   void dispose() {
-    _controller.dispose();
+    _animationController.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
-      body: Center(
-        child: Padding(
-          padding: const EdgeInsets.all(20.0),
-          child: SingleChildScrollView(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                ScaleTransition(
-                  scale: _animation,
-                  child: Image.asset(
-                    'assets/images/onboarding3.png',
-                    height: 150,  // Adjusted size for larger display
-                    width: 150,
-                  ),
-                ),
-                SizedBox(height: 30),
-                _buildWelcomeText(),
-                SizedBox(height: 20),
-                _buildTextField('Email', false),
-                SizedBox(height: 10),
-                _buildTextField('Password', true),
-                SizedBox(height: 20),
-                _buildLoginButton(context),
-                SizedBox(height: 10),
-                _buildSignUpButton(context),
-                SizedBox(height: 10),
-                _buildForgotPasswordButton(context),
-              ],
-            ),
+      body: Container(
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [
+              Color(0xFF1A237E), // Deep indigo
+              Color(0xFF42A5F5), // Lighter blue
+            ],
           ),
         ),
-      ),
-    );
-  }
-
-  Widget _buildWelcomeText() {
-    return FadeTransition(
-      opacity: _animation,
-      child: Text(
-        'Welcome Back!',
-        style: GoogleFonts.poppins(
-          fontSize: 32,
-          fontWeight: FontWeight.bold,
-          color: Colors.teal,
+        child: Center(
+          child: SingleChildScrollView(
+            child: Padding(
+              padding: const EdgeInsets.all(20.0),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  FadeTransition(
+                    opacity: _fadeAnimation,
+                    child: ScaleTransition(
+                      scale: _scaleAnimation,
+                      child: Container(
+                        decoration: BoxDecoration(
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withOpacity(0.3),
+                              offset: const Offset(0, 8),
+                              blurRadius: 200,
+                              spreadRadius: 2,
+                            ),
+                          ],
+                        ),
+                        child: Image.asset(
+                          'assets/images/onboarding3_b.png', // Replace with your logo path
+                          height: 220, // Increased height
+                          width: 220, // Increased width
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+                  Text(
+                    'Welcome Back',
+                    style: GoogleFonts.poppins(
+                      fontSize: 32,
+                      fontWeight: FontWeight.w600,
+                      color: Colors.white,
+                    ),
+                  ),
+                  const SizedBox(height: 40),
+                  _buildTextField('Email', false),
+                  const SizedBox(height: 15),
+                  _buildTextField('Password', true),
+                  const SizedBox(height: 30),
+                  _buildLoginButton(context),
+                  _buildForgotPasswordButton(context),
+                  _buildSignupPrompt(context),
+                ],
+              ),
+            ),
+          ),
         ),
       ),
     );
@@ -88,19 +121,20 @@ class _LoginScreenState extends State<LoginScreen>
       obscureText: obscureText,
       decoration: InputDecoration(
         labelText: label,
-        labelStyle: GoogleFonts.poppins(color: Colors.grey),
+        labelStyle: GoogleFonts.poppins(color: Colors.white),
         border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(10),
-          borderSide: BorderSide(color: Colors.teal),
+          borderRadius: BorderRadius.circular(12),
+          borderSide: const BorderSide(color: Colors.white),
         ),
         focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(10),
-          borderSide: BorderSide(color: Colors.teal, width: 2),
+          borderRadius: BorderRadius.circular(12),
+          borderSide: const BorderSide(color: Colors.white, width: 2),
         ),
         filled: true,
-        fillColor: Colors.grey[200],
-        contentPadding: EdgeInsets.symmetric(vertical: 15, horizontal: 10),
+        fillColor: Colors.white.withOpacity(0.1),
+        contentPadding: const EdgeInsets.symmetric(vertical: 18, horizontal: 12),
       ),
+      style: GoogleFonts.poppins(color: Colors.white),
     );
   }
 
@@ -110,32 +144,18 @@ class _LoginScreenState extends State<LoginScreen>
         Navigator.pushNamed(context, '/home');
       },
       style: ElevatedButton.styleFrom(
-        backgroundColor: Colors.teal,
+        backgroundColor: const Color(0xFFFFFFFF),
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(30.0),
         ),
-        padding: EdgeInsets.symmetric(horizontal: 40, vertical: 15),
+        padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 15),
+        elevation: 6,
       ),
       child: Text(
         'Login',
         style: GoogleFonts.poppins(
           fontSize: 18,
-          color: Colors.white,
-        ),
-      ),
-    );
-  }
-
-  Widget _buildSignUpButton(BuildContext context) {
-    return TextButton(
-      onPressed: () {
-        Navigator.pushNamed(context, '/signup');
-      },
-      child: Text(
-        'Don’t have an account? Sign up',
-        style: GoogleFonts.poppins(
-          fontSize: 16,
-          color: Colors.teal,
+          color: const Color(0xFF1A237E),
         ),
       ),
     );
@@ -150,7 +170,22 @@ class _LoginScreenState extends State<LoginScreen>
         'Forgot Password?',
         style: GoogleFonts.poppins(
           fontSize: 16,
-          color: Colors.teal,
+          color: Colors.white70,
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSignupPrompt(BuildContext context) {
+    return TextButton(
+      onPressed: () {
+        Navigator.pushNamed(context, '/signup');
+      },
+      child: Text(
+        "Don't have an account? Sign up",
+        style: GoogleFonts.poppins(
+          fontSize: 16,
+          color: Colors.white70,
         ),
       ),
     );

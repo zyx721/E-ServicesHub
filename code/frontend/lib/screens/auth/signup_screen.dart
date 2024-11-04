@@ -9,78 +9,103 @@ class SignupScreen extends StatefulWidget {
   _SignupScreenState createState() => _SignupScreenState();
 }
 
-class _SignupScreenState extends State<SignupScreen> {
+class _SignupScreenState extends State<SignupScreen>
+    with SingleTickerProviderStateMixin {
   bool _isChecked = false;
   final TextEditingController _phoneController = TextEditingController();
+  late AnimationController _animationController;
+  late Animation<double> _fadeAnimation;
+  late Animation<Offset> _slideAnimation;
+
+  @override
+  void initState() {
+    super.initState();
+
+    _animationController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 800),
+    );
+
+    _fadeAnimation = Tween<double>(begin: 0, end: 1).animate(
+      CurvedAnimation(
+        parent: _animationController,
+        curve: Curves.easeIn,
+      ),
+    );
+
+    _slideAnimation =
+        Tween<Offset>(begin: const Offset(0, 1), end: Offset(0, 0)).animate(
+      CurvedAnimation(
+        parent: _animationController,
+        curve: Curves.easeInOut,
+      ),
+    );
+
+    _animationController.forward();
+  }
+
+  @override
+  void dispose() {
+    _animationController.dispose();
+    _phoneController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
-      body: Center(
-        child: Padding(
-          padding: const EdgeInsets.all(20.0),
-          child: SingleChildScrollView( // Allow scrolling on small screens
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Text(
-                  'Create Account',
-                  style: GoogleFonts.poppins(
-                    fontSize: 32,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.teal,
-                  ),
-                ),
-                SizedBox(height: 20),
-                _buildTextField('Name', false),
-                SizedBox(height: 10),
-                _buildTextField('Email', false),
-                SizedBox(height: 10),
-                _buildTextField('Password', true),
-                SizedBox(height: 10),
-                _buildPhoneField(),
-                SizedBox(height: 20),
-                _buildTermsCheckbox(),
-                SizedBox(height: 20),
-                ElevatedButton(
-                  onPressed: _isChecked
-                      ? () {
-                          // You can handle the signup logic here
-                          String phoneNumber = '+213' + _phoneController.text;
-                          print('Phone Number: $phoneNumber');
-                          Navigator.pushNamed(context, '/home');
-                        }
-                      : null, // Disable if terms are not accepted
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.teal,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(30.0),
-                    ),
-                    padding: EdgeInsets.symmetric(horizontal: 40, vertical: 15),
-                  ),
-                  child: Text(
-                    'Sign Up',
-                    style: GoogleFonts.poppins(
-                      fontSize: 18,
-                      color: Colors.white,
+      backgroundColor: Colors.transparent,
+      body: Container(
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            colors: [Colors.blueAccent, Colors.teal],
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+          ),
+        ),
+        child: Center(
+          child: SingleChildScrollView(
+            child: Padding(
+              padding: const EdgeInsets.all(20.0),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  FadeTransition(
+                    opacity: _fadeAnimation,
+                    child: Image.asset(
+                      'assets/images/onboarding3_b.png',
+                      height: 150,
+                      width: 150,
                     ),
                   ),
-                ),
-                SizedBox(height: 10),
-                TextButton(
-                  onPressed: () {
-                    Navigator.pushNamed(context, '/login');
-                  },
-                  child: Text(
-                    'Already have an account? Login',
-                    style: GoogleFonts.poppins(
-                      fontSize: 16,
-                      color: Colors.teal,
+                  const SizedBox(height: 20),
+                  SlideTransition(
+                    position: _slideAnimation,
+                    child: Text(
+                      'Create Account',
+                      style: GoogleFonts.poppins(
+                        fontSize: 36,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white,
+                      ),
                     ),
                   ),
-                ),
-              ],
+                  const SizedBox(height: 30),
+                  _buildTextField('Name', false),
+                  const SizedBox(height: 10),
+                  _buildTextField('Email', false),
+                  const SizedBox(height: 10),
+                  _buildTextField('Password', true),
+                  const SizedBox(height: 10),
+                  _buildPhoneField(),
+                  const SizedBox(height: 20),
+                  _buildTermsCheckbox(),
+                  const SizedBox(height: 20),
+                  _buildSignUpButton(context),
+                  const SizedBox(height: 10),
+                  _buildLoginButton(context),
+                ],
+              ),
             ),
           ),
         ),
@@ -89,47 +114,55 @@ class _SignupScreenState extends State<SignupScreen> {
   }
 
   Widget _buildTextField(String label, bool obscureText) {
-    return TextField(
-      obscureText: obscureText,
-      decoration: InputDecoration(
-        labelText: label,
-        labelStyle: GoogleFonts.poppins(color: Colors.grey),
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(10),
-          borderSide: BorderSide(color: Colors.teal),
+    return SlideTransition(
+      position: _slideAnimation,
+      child: TextField(
+        obscureText: obscureText,
+        decoration: InputDecoration(
+          labelText: label,
+          labelStyle: GoogleFonts.poppins(color: Colors.grey[700]),
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(10),
+            borderSide: const BorderSide(color: Colors.white),
+          ),
+          focusedBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(10),
+            borderSide: const BorderSide(color: Colors.white, width: 2),
+          ),
+          filled: true,
+          fillColor: Colors.white.withOpacity(0.8),
+          contentPadding:
+              const EdgeInsets.symmetric(vertical: 15, horizontal: 10),
         ),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(10),
-          borderSide: BorderSide(color: Colors.teal, width: 2),
-        ),
-        filled: true,
-        fillColor: Colors.grey[200],
-        contentPadding: EdgeInsets.symmetric(vertical: 15, horizontal: 10),
       ),
     );
   }
 
   Widget _buildPhoneField() {
-    return TextField(
-      controller: _phoneController,
-      keyboardType: TextInputType.phone,
-      decoration: InputDecoration(
-        labelText: 'Phone Number',
-        labelStyle: GoogleFonts.poppins(color: Colors.grey),
-        prefixText: '+213 ',
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(10),
-          borderSide: BorderSide(color: Colors.teal),
+    return SlideTransition(
+      position: _slideAnimation,
+      child: TextField(
+        controller: _phoneController,
+        keyboardType: TextInputType.phone,
+        decoration: InputDecoration(
+          labelText: 'Phone Number',
+          labelStyle: GoogleFonts.poppins(color: Colors.grey[700]),
+          prefixText: '+213 ',
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(10),
+            borderSide: const BorderSide(color: Colors.white),
+          ),
+          focusedBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(10),
+            borderSide: const BorderSide(color: Colors.white, width: 2),
+          ),
+          filled: true,
+          fillColor: Colors.white.withOpacity(0.8),
+          contentPadding:
+              const EdgeInsets.symmetric(vertical: 15, horizontal: 10),
         ),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(10),
-          borderSide: BorderSide(color: Colors.teal, width: 2),
-        ),
-        filled: true,
-        fillColor: Colors.grey[200],
-        contentPadding: EdgeInsets.symmetric(vertical: 15, horizontal: 10),
+        maxLength: 9,
       ),
-      maxLength: 9, // Limit to 9 digits after +213
     );
   }
 
@@ -138,7 +171,8 @@ class _SignupScreenState extends State<SignupScreen> {
       children: [
         Checkbox(
           value: _isChecked,
-          activeColor: Colors.teal,
+          activeColor: Colors.white,
+          checkColor: Colors.teal,
           onChanged: (value) {
             setState(() {
               _isChecked = value!;
@@ -149,20 +183,61 @@ class _SignupScreenState extends State<SignupScreen> {
           onTap: () {
             Navigator.push(
               context,
-              MaterialPageRoute(
-                  builder: (context) => TermsAndConditionsPage()),
+              MaterialPageRoute(builder: (context) => TermsAndConditionsPage()),
             );
           },
           child: Text(
             'I accept the Terms and Conditions',
             style: GoogleFonts.poppins(
               fontSize: 16,
-              color: Colors.teal,
+              color: Colors.white,
               decoration: TextDecoration.underline,
             ),
           ),
         ),
       ],
+    );
+  }
+
+  Widget _buildSignUpButton(BuildContext context) {
+    return ElevatedButton(
+      onPressed: _isChecked
+          ? () {
+              String phoneNumber = '+213' + _phoneController.text;
+              print('Phone Number: $phoneNumber');
+              Navigator.pushNamed(context, '/home');
+            }
+          : null,
+      style: ElevatedButton.styleFrom(
+        backgroundColor: Colors.white,
+        foregroundColor: Colors.teal,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(30.0),
+        ),
+        padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 15),
+      ),
+      child: Text(
+        'Sign Up',
+        style: GoogleFonts.poppins(
+          fontSize: 18,
+          color: Colors.teal,
+        ),
+      ),
+    );
+  }
+
+  Widget _buildLoginButton(BuildContext context) {
+    return TextButton(
+      onPressed: () {
+        Navigator.pushNamed(context, '/login');
+      },
+      child: Text(
+        'Already have an account? Login',
+        style: GoogleFonts.poppins(
+          fontSize: 16,
+          color: Colors.white,
+        ),
+      ),
     );
   }
 }
