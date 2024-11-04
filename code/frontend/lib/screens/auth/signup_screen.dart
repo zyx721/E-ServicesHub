@@ -1,8 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'terms_and_conditions_page.dart'; // Import the Terms and Conditions page
 
-class SignupScreen extends StatelessWidget {
+class SignupScreen extends StatefulWidget {
   const SignupScreen({Key? key}) : super(key: key);
+
+  @override
+  _SignupScreenState createState() => _SignupScreenState();
+}
+
+class _SignupScreenState extends State<SignupScreen> {
+  bool _isChecked = false;
+  final TextEditingController _phoneController = TextEditingController();
 
   @override
   Widget build(BuildContext context) {
@@ -49,14 +58,65 @@ class SignupScreen extends StatelessWidget {
                   ),
                 ),
               ),
+              SizedBox(height: 10),
+              TextField(
+                controller: _phoneController,
+                keyboardType: TextInputType.phone,
+                decoration: InputDecoration(
+                  labelText: 'Phone Number',
+                  prefixText: '+213 ',
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                ),
+                maxLength: 9, // Limit to 9 digits after +213
+                // You can add additional validation logic here if necessary
+              ),
+              SizedBox(height: 20),
+              Row(
+                children: [
+                  Checkbox(
+                    value: _isChecked,
+                    activeColor: Colors.teal,
+                    onChanged: (value) {
+                      setState(() {
+                        _isChecked = value!;
+                      });
+                    },
+                  ),
+                  GestureDetector(
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                            builder: (context) => TermsAndConditionsPage()),
+                      );
+                    },
+                    child: Text(
+                      'I accept the Terms and Conditions',
+                      style: GoogleFonts.poppins(
+                        fontSize: 16,
+                        color: Colors.teal,
+                        decoration: TextDecoration.underline,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
               SizedBox(height: 20),
               ElevatedButton(
-                onPressed: () {
-                  // After signup, navigate to home page
-                  Navigator.pushNamed(context, '/home');
-                },
+                onPressed: _isChecked
+                    ? () {
+                        // You can handle the signup logic here
+                        String phoneNumber = '+213' + _phoneController.text;
+                        // Example: Print the phone number to the console
+                        print('Phone Number: $phoneNumber');
+                        // Navigate to the home page
+                        Navigator.pushNamed(context, '/home');
+                      }
+                    : null, // Disable if terms are not accepted
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.teal, // Background color
+                  backgroundColor: Colors.teal,
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(30.0),
                   ),
