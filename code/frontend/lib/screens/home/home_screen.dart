@@ -185,7 +185,7 @@ Widget _buildStarRating(double rating) {
             onTap: () {
               Navigator.pop(context);
               // Implement language selection here
-            },
+            },  
           ),
           Divider(),
           ListTile(
