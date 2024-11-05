@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:hanini_frontend/localization/app_localization.dart';
+import 'package:google_sign_in/google_sign_in.dart'; // Import Google Sign-In
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({Key? key}) : super(key: key);
@@ -14,6 +15,7 @@ class _LoginScreenState extends State<LoginScreen>
   late AnimationController _animationController;
   late Animation<double> _fadeAnimation;
   late Animation<double> _scaleAnimation;
+  final GoogleSignIn _googleSignIn = GoogleSignIn(); // Initialize GoogleSignIn
 
   @override
   void initState() {
@@ -45,6 +47,17 @@ class _LoginScreenState extends State<LoginScreen>
   void dispose() {
     _animationController.dispose();
     super.dispose();
+  }
+
+  Future<void> _handleGoogleSignIn() async {
+    try {
+      await _googleSignIn.signIn();
+      // Navigate to home or handle the signed-in user
+      Navigator.pushNamed(context, '/home');
+    } catch (error) {
+      print("Google Sign-In Error: $error");
+      // Handle error (show a message, etc.)
+    }
   }
 
   @override
@@ -108,6 +121,8 @@ class _LoginScreenState extends State<LoginScreen>
                   _buildTextField(localizations.password, true), // Localized password label
                   const SizedBox(height: 30),
                   _buildLoginButton(context, localizations.loginButton), // Localized login button text
+                  const SizedBox(height: 20),
+                  _buildGoogleSignInButton(), // Add Google Sign-In Button
                   _buildForgotPasswordButton(context, localizations.forgotPassword), // Localized forgot password text
                   _buildSignupPrompt(context, localizations.createAccount), // Localized sign-up prompt
                 ],
@@ -144,6 +159,7 @@ class _LoginScreenState extends State<LoginScreen>
   Widget _buildLoginButton(BuildContext context, String buttonText) {
     return ElevatedButton(
       onPressed: () {
+        // Add your login logic here
         Navigator.pushNamed(context, '/home');
       },
       style: ElevatedButton.styleFrom(
@@ -156,6 +172,32 @@ class _LoginScreenState extends State<LoginScreen>
       ),
       child: Text(
         buttonText,
+        style: GoogleFonts.poppins(
+          fontSize: 18,
+          color: const Color(0xFF1A237E),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildGoogleSignInButton() {
+    return ElevatedButton.icon(
+      onPressed: _handleGoogleSignIn,
+      style: ElevatedButton.styleFrom(
+        backgroundColor: Colors.white,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(30.0),
+        ),
+        padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 15),
+        elevation: 6,
+      ),
+      icon: Image.asset(
+        'assets/images/google_logo.png', // Add your Google logo path
+        height: 24,
+        width: 24,
+      ),
+      label: Text(
+        'Sign in with Google',
         style: GoogleFonts.poppins(
           fontSize: 18,
           color: const Color(0xFF1A237E),

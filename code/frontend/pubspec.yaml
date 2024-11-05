@@ -10,6 +10,7 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
+  google_sign_in: ^5.4.2 
   provider: ^6.0.5
   animated_text_kit: ^4.2.2
   google_fonts: ^6.2.1
@@ -42,3 +43,4 @@ flutter:
     - assets/images/service5.png
     - assets/images/service6.png
     - assets/images/onboarding3_b.png
+    - assets/images/google_logo.png
