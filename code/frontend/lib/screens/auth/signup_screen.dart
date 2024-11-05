@@ -379,7 +379,7 @@ class _SignupScreenState extends State<SignupScreen>
       child: ElevatedButton(
         onPressed: _isFormValid()
             ? () {
-                // Sign up logic here
+                Navigator.pushNamed(context, '/home');
               }
             : null,
         style: ElevatedButton.styleFrom(
