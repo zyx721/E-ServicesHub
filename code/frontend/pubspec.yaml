@@ -1,25 +1,25 @@
 name: hanini_frontend
 description: "A new Flutter project."
-publish_to: 'none' # Remove this line if you wish to publish to pub.dev
+publish_to: 'none'
 
 version: 1.0.0+1
 
 environment:
-  sdk: ^3.5.3
+  sdk: ">=3.5.0 <4.0.0"
 
 dependencies:
   flutter:
     sdk: flutter
+  provider: ^6.0.5
   animated_text_kit: ^4.2.2
   google_fonts: ^6.2.1
   http: ^1.2.2
   path_provider: ^2.1.5
   camera: ^0.11.0+2
   permission_handler: ^11.3.1
-  flutter_localizations:
+  flutter_localizations: # Required for localization support
     sdk: flutter
-  # Add other dependencies as needed
-
+  intl: ^0.19.0 # Correctly aligned
 
 dev_dependencies:
   flutter_test:
@@ -28,7 +28,9 @@ dev_dependencies:
 
 flutter:
   uses-material-design: true
+  generate: true  # This line enables localization code generation
   assets:
+    - l10n/
     - assets/images/onboarding1.png
     - assets/images/onboarding2.png
     - assets/images/onboarding3.png
@@ -40,4 +42,3 @@ flutter:
     - assets/images/service5.png
     - assets/images/service6.png
     - assets/images/onboarding3_b.png
-    

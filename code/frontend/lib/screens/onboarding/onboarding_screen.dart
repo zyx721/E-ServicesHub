@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:hanini_frontend/localization/app_localization.dart';
 
 class OnboardingScreen extends StatefulWidget {
   @override
@@ -18,43 +19,63 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final localizations = AppLocalizations.of(context);
+    if (localizations == null) {
+      return Center(child: CircularProgressIndicator());
+    }
+
+    // Define pages dynamically based on localization strings
+    final pages = [
+      {
+        "imagePath": 'assets/images/onboarding1.png',
+        "title": localizations.onboardingTitle1,
+        "description": localizations.onboardingDescription1,
+      },
+      {
+        "imagePath": 'assets/images/onboarding2.png',
+        "title": localizations.onboardingTitle2,
+        "description": localizations.onboardingDescription2,
+      },
+      {
+        "imagePath": 'assets/images/onboarding3.png',
+        "title": localizations.onboardingTitle3,
+        "description": localizations.onboardingDescription3,
+      },
+    ];
+
     return Scaffold(
       backgroundColor: Colors.white,
       body: Column(
         children: [
           Expanded(
-            child: PageView(
+            child: PageView.builder(
               controller: _pageController,
               onPageChanged: _onPageChanged,
-              children: [
-                _buildPage(
-                  imagePath: 'assets/images/onboarding1.png',
-                  title: 'Find Handyman Services',
-                  description: 'Discover reliable handyman services at your fingertips.',
-                ),
-                _buildPage(
-                  imagePath: 'assets/images/onboarding2.png',
-                  title: 'Book with Ease',
-                  description: 'Simple booking process to schedule services at your convenience.',
-                ),
-                _buildPage(
-                  imagePath: 'assets/images/onboarding3.png',
-                  title: 'Rate & Review',
-                  description: 'Share your experience and help others find the best services.',
-                ),
-              ],
+              itemCount: pages.length,
+              itemBuilder: (context, index) {
+                final page = pages[index];
+                return _buildPage(
+                  imagePath: page["imagePath"]!,
+                  title: page["title"]!,
+                  description: page["description"]!,
+                );
+              },
             ),
           ),
-          _buildIndicators(),
+          _buildIndicators(pages.length),
           SizedBox(height: 20),
-          _buildNextButton(context),
+          _buildNextButton(context, localizations),
           SizedBox(height: 30),
         ],
       ),
     );
   }
 
-  Widget _buildPage({required String imagePath, required String title, required String description}) {
+  Widget _buildPage({
+    required String imagePath,
+    required String title,
+    required String description,
+  }) {
     return Container(
       padding: EdgeInsets.all(20.0),
       child: Column(
@@ -64,30 +85,24 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
           SizedBox(height: 20),
           Text(
             title,
-            style: GoogleFonts.poppins(
-              fontSize: 24,
-              fontWeight: FontWeight.bold,
-            ),
+            style: GoogleFonts.poppins(fontSize: 24, fontWeight: FontWeight.bold),
+            textAlign: TextAlign.center,
           ),
           SizedBox(height: 10),
-          AnimatedOpacity(
-            opacity: 1.0, // Keep it fully visible
-            duration: Duration(seconds: 1), // Duration of the fade-in effect
-            child: Text(
-              description,
-              style: GoogleFonts.poppins(fontSize: 16),
-              textAlign: TextAlign.center,
-            ),
+          Text(
+            description,
+            style: GoogleFonts.poppins(fontSize: 16),
+            textAlign: TextAlign.center,
           ),
         ],
       ),
     );
   }
 
-  Widget _buildIndicators() {
+  Widget _buildIndicators(int pageCount) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.center,
-      children: List.generate(3, (index) {
+      children: List.generate(pageCount, (index) {
         return AnimatedContainer(
           duration: Duration(milliseconds: 300),
           margin: EdgeInsets.symmetric(horizontal: 5.0),
@@ -102,13 +117,16 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     );
   }
 
-  Widget _buildNextButton(BuildContext context) {
+  Widget _buildNextButton(BuildContext context, AppLocalizations localizations) {
     return ElevatedButton(
       onPressed: () {
         if (_currentPage == 2) {
           Navigator.pushReplacementNamed(context, '/login');
         } else {
-          _pageController.nextPage(duration: Duration(milliseconds: 300), curve: Curves.easeIn);
+          _pageController.nextPage(
+            duration: Duration(milliseconds: 300),
+            curve: Curves.easeIn,
+          );
         }
       },
       style: ElevatedButton.styleFrom(
@@ -117,7 +135,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
       ),
       child: Text(
-        _currentPage == 2 ? 'Get Started' : 'Next',
+        _currentPage == 2 ? localizations.getStarted : localizations.next,
         style: GoogleFonts.poppins(fontSize: 16, color: Colors.white),
       ),
     );

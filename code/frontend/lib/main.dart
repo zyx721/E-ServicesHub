@@ -1,34 +1,36 @@
+import 'package:camera/camera.dart';
 import 'package:flutter/material.dart';
-import 'package:camera/camera.dart'; // Ensure you have this package
+import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:hanini_frontend/screens/SettingsScreen/SettingsScreen.dart';
 import 'package:hanini_frontend/screens/auth/forgot_password_screen.dart';
-import 'screens/onboarding/onboarding_screen.dart';
-import 'screens/auth/login_screen.dart';
-import 'screens/auth/signup_screen.dart';
-import 'screens/home/home_screen.dart';
-import 'screens/profile/profile_screen.dart';
-import 'screens/verification/face_verification_screen.dart';
-import 'screens/services/ServiceDetailScreen.dart'; // Import your ServiceDetailScreen
-import 'user_role.dart'; // Import your UserRole enum
+import 'package:hanini_frontend/screens/auth/login_screen.dart';
+import 'package:hanini_frontend/screens/auth/signup_screen.dart';
+import 'package:hanini_frontend/screens/home/home_screen.dart';
+import 'package:hanini_frontend/screens/onboarding/onboarding_screen.dart';
+import 'package:hanini_frontend/screens/profile/profile_screen.dart';
+import 'package:hanini_frontend/screens/verification/face_verification_screen.dart';
+import 'localization/app_localization.dart'; // Update this path as needed
+import 'user_role.dart'; // Your UserRole enum and other imports...
 
-Future<void> main() async {
+void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  final cameras = await availableCameras(); // Get the available cameras
+  final cameras = await availableCameras();
 
-  UserRole userRole = await _retrieveUserRole(); // Retrieve the initial user role
+  UserRole userRole = await _retrieveUserRole();
   runApp(MyApp(cameras: cameras, userRole: userRole));
 }
 
-// Function to simulate retrieving a user role (replace this with actual implementation)
 Future<UserRole> _retrieveUserRole() async {
-  return UserRole.serviceProvider; // Replace with dynamic retrieval of user role
+  // Here you can implement dynamic retrieval of the user role
+  return UserRole.serviceProvider; // Replace with your actual logic
 }
 
 class MyApp extends StatelessWidget {
   final List<CameraDescription> cameras;
   final UserRole userRole;
 
-  const MyApp({Key? key, required this.cameras, required this.userRole}) : super(key: key);
+  const MyApp({Key? key, required this.cameras, required this.userRole})
+      : super(key: key);
 
   @override
   Widget build(BuildContext context) {
@@ -37,9 +39,20 @@ class MyApp extends StatelessWidget {
       theme: ThemeData(
         primarySwatch: Colors.blue,
         textTheme: Theme.of(context).textTheme.apply(
-              fontFamily: 'Poppins', // Set global font family
+              fontFamily: 'Poppins',
             ),
       ),
+      localizationsDelegates: const [
+        GlobalMaterialLocalizations.delegate,
+        GlobalWidgetsLocalizations.delegate,
+        GlobalCupertinoLocalizations.delegate,
+        AppLocalizationsDelegate(), // Ensure this is included
+      ],
+      supportedLocales: const [
+        Locale('en', ''), // English
+        Locale('ar', ''), // Arabic
+      ],
+      locale: const Locale('en'), // Set default locale to English
       initialRoute: '/',
       routes: _buildRoutes(),
     );
@@ -55,8 +68,6 @@ class MyApp extends StatelessWidget {
       '/verification': (context) => RealTimeDetection(cameras: cameras),
       '/settings': (context) => SettingsScreen(),
       '/forgot_password': (context) => ForgotPasswordScreen(),
-      // Add more routes as needed, for example:
-      // '/service_detail': (context) => ServiceDetailScreen(...), // You can also dynamically pass the parameters here if needed
     };
   }
 }

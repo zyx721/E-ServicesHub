@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:hanini_frontend/localization/app_localization.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({Key? key}) : super(key: key);
@@ -48,6 +49,8 @@ class _LoginScreenState extends State<LoginScreen>
 
   @override
   Widget build(BuildContext context) {
+    final localizations = AppLocalizations.of(context)!; // Access localized strings
+
     return Scaffold(
       body: Container(
         decoration: const BoxDecoration(
@@ -84,15 +87,15 @@ class _LoginScreenState extends State<LoginScreen>
                         ),
                         child: Image.asset(
                           'assets/images/onboarding3_b.png', // Replace with your logo path
-                          height: 220, // Increased height
-                          width: 220, // Increased width
+                          height: 220,
+                          width: 220,
                         ),
                       ),
                     ),
                   ),
                   const SizedBox(height: 20),
                   Text(
-                    'Welcome Back',
+                    localizations.loginTitle, // Localized title
                     style: GoogleFonts.poppins(
                       fontSize: 32,
                       fontWeight: FontWeight.w600,
@@ -100,13 +103,13 @@ class _LoginScreenState extends State<LoginScreen>
                     ),
                   ),
                   const SizedBox(height: 40),
-                  _buildTextField('Email', false),
+                  _buildTextField(localizations.email, false), // Localized email label
                   const SizedBox(height: 15),
-                  _buildTextField('Password', true),
+                  _buildTextField(localizations.password, true), // Localized password label
                   const SizedBox(height: 30),
-                  _buildLoginButton(context),
-                  _buildForgotPasswordButton(context),
-                  _buildSignupPrompt(context),
+                  _buildLoginButton(context, localizations.loginButton), // Localized login button text
+                  _buildForgotPasswordButton(context, localizations.forgotPassword), // Localized forgot password text
+                  _buildSignupPrompt(context, localizations.createAccount), // Localized sign-up prompt
                 ],
               ),
             ),
@@ -138,7 +141,7 @@ class _LoginScreenState extends State<LoginScreen>
     );
   }
 
-  Widget _buildLoginButton(BuildContext context) {
+  Widget _buildLoginButton(BuildContext context, String buttonText) {
     return ElevatedButton(
       onPressed: () {
         Navigator.pushNamed(context, '/home');
@@ -152,7 +155,7 @@ class _LoginScreenState extends State<LoginScreen>
         elevation: 6,
       ),
       child: Text(
-        'Login',
+        buttonText,
         style: GoogleFonts.poppins(
           fontSize: 18,
           color: const Color(0xFF1A237E),
@@ -161,13 +164,13 @@ class _LoginScreenState extends State<LoginScreen>
     );
   }
 
-  Widget _buildForgotPasswordButton(BuildContext context) {
+  Widget _buildForgotPasswordButton(BuildContext context, String forgotPasswordText) {
     return TextButton(
       onPressed: () {
         Navigator.pushNamed(context, '/forgot_password');
       },
       child: Text(
-        'Forgot Password?',
+        forgotPasswordText,
         style: GoogleFonts.poppins(
           fontSize: 16,
           color: Colors.white70,
@@ -176,13 +179,13 @@ class _LoginScreenState extends State<LoginScreen>
     );
   }
 
-  Widget _buildSignupPrompt(BuildContext context) {
+  Widget _buildSignupPrompt(BuildContext context, String signupPromptText) {
     return TextButton(
       onPressed: () {
         Navigator.pushNamed(context, '/signup');
       },
       child: Text(
-        "Don't have an account? Sign up",
+        signupPromptText,
         style: GoogleFonts.poppins(
           fontSize: 16,
           color: Colors.white70,
