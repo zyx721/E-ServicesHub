@@ -22,6 +22,7 @@ class _SignupScreenState extends State<SignupScreen>
   late Animation<double> _fadeAnimation;
   late Animation<Offset> _slideAnimation;
   final GoogleSignIn _googleSignIn = GoogleSignIn();
+  final TextEditingController _nameController = TextEditingController();
 
   @override
   void initState() {
@@ -117,7 +118,8 @@ class _SignupScreenState extends State<SignupScreen>
                       ),
                     ),
                     const SizedBox(height: 30),
-                    _buildTextField('Name', false, _emailController), // Corrected here
+                    _buildTextField(
+                        'Name', false, _nameController, _slideAnimation),
                     const SizedBox(height: 10),
                     _buildEmailField(),
                     const SizedBox(height: 10),
@@ -142,37 +144,42 @@ class _SignupScreenState extends State<SignupScreen>
     );
   }
 
-  Widget _buildTextField(String label, bool obscureText, TextEditingController controller) {
-    return TextFormField(
-      controller: controller,
-      obscureText: obscureText,
-      decoration: InputDecoration(
-        labelText: label,
-        labelStyle: GoogleFonts.poppins(color: Colors.white),
-        floatingLabelStyle: GoogleFonts.poppins(color: Colors.blue),
-        floatingLabelBehavior: FloatingLabelBehavior.auto,
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: Colors.white),
+  Widget _buildTextField(String label, bool obscureText,
+      TextEditingController controller, Animation<Offset> slideAnimation) {
+    return SlideTransition(
+      position: slideAnimation,
+      child: TextFormField(
+        controller: controller,
+        obscureText: obscureText,
+        decoration: InputDecoration(
+          labelText: label,
+          labelStyle: GoogleFonts.poppins(color: Colors.white),
+          floatingLabelStyle: GoogleFonts.poppins(color: Colors.blue),
+          floatingLabelBehavior: FloatingLabelBehavior.auto,
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12),
+            borderSide: const BorderSide(color: Colors.white),
+          ),
+          focusedBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12),
+            borderSide: const BorderSide(color: Colors.white, width: 2),
+          ),
+          filled: true,
+          fillColor: Colors.white.withOpacity(0.1),
+          contentPadding:
+              const EdgeInsets.symmetric(vertical: 18, horizontal: 12),
         ),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: Colors.white, width: 2),
-        ),
-        filled: true,
-        fillColor: Colors.white.withOpacity(0.1),
-        contentPadding: const EdgeInsets.symmetric(vertical: 18, horizontal: 12),
+        style: GoogleFonts.poppins(color: Colors.white),
+        onChanged: (value) {
+          setState(() {}); // Trigger rebuild for real-time validation if needed
+        },
+        validator: (value) {
+          if (value == null || value.isEmpty) {
+            return 'Please enter your $label';
+          }
+          return null;
+        },
       ),
-      style: GoogleFonts.poppins(color: Colors.white),
-      onChanged: (value) {
-        setState(() {}); // Trigger rebuild for real-time validation if needed
-      },
-      validator: (value) {
-        if (value == null || value.isEmpty) {
-          return 'Please enter your $label';
-        }
-        return null;
-      },
     );
   }
 
@@ -184,27 +191,33 @@ class _SignupScreenState extends State<SignupScreen>
         keyboardType: TextInputType.emailAddress,
         decoration: InputDecoration(
           labelText: 'Email',
-          labelStyle: GoogleFonts.poppins(color: Colors.grey[700]),
-          floatingLabelStyle: GoogleFonts.poppins(color: Colors.blue),
+          labelStyle: GoogleFonts.poppins(color: Colors.white),
+          floatingLabelStyle: GoogleFonts.poppins(
+              color: const Color.fromARGB(255, 255, 255, 255)),
           floatingLabelBehavior: FloatingLabelBehavior.auto,
           border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(10),
+            borderRadius: BorderRadius.circular(12),
             borderSide: const BorderSide(color: Colors.white),
           ),
           focusedBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(10),
+            borderRadius: BorderRadius.circular(12),
             borderSide: const BorderSide(color: Colors.white, width: 2),
           ),
-          contentPadding: const EdgeInsets.symmetric(vertical: 15, horizontal: 10),
+          filled: true,
+          fillColor: Colors.white.withOpacity(0.1),
+          contentPadding:
+              const EdgeInsets.symmetric(vertical: 18, horizontal: 12),
         ),
+        style: GoogleFonts.poppins(color: Colors.white),
         onChanged: (value) {
-          setState(() {}); // Trigger rebuild for real-time validation
+          setState(() {}); // Trigger rebuild for real-time validation if needed
         },
         validator: (value) {
           if (value == null || value.isEmpty) {
             return 'Please enter your email';
           }
-          final emailRegex = RegExp(r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$');
+          final emailRegex =
+              RegExp(r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$');
           if (!emailRegex.hasMatch(value)) {
             return 'Please enter a valid email';
           }
@@ -222,21 +235,26 @@ class _SignupScreenState extends State<SignupScreen>
         obscureText: true,
         decoration: InputDecoration(
           labelText: 'Password',
-          labelStyle: GoogleFonts.poppins(color: Colors.grey[700]),
-          floatingLabelStyle: GoogleFonts.poppins(color: Colors.blue),
+          labelStyle: GoogleFonts.poppins(color: Colors.white),
+          floatingLabelStyle: GoogleFonts.poppins(
+              color: const Color.fromARGB(255, 255, 255, 255)),
           floatingLabelBehavior: FloatingLabelBehavior.auto,
           border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(10),
+            borderRadius: BorderRadius.circular(12),
             borderSide: const BorderSide(color: Colors.white),
           ),
           focusedBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(10),
+            borderRadius: BorderRadius.circular(12),
             borderSide: const BorderSide(color: Colors.white, width: 2),
           ),
-          contentPadding: const EdgeInsets.symmetric(vertical: 15, horizontal: 10),
+          filled: true,
+          fillColor: Colors.white.withOpacity(0.1),
+          contentPadding:
+              const EdgeInsets.symmetric(vertical: 18, horizontal: 12),
         ),
+        style: GoogleFonts.poppins(color: Colors.white),
         onChanged: (value) {
-          setState(() {}); // Trigger rebuild for real-time validation
+          setState(() {}); // Trigger rebuild for real-time validation if needed
         },
         validator: (value) {
           if (value == null || value.isEmpty) {
@@ -258,24 +276,29 @@ class _SignupScreenState extends State<SignupScreen>
         keyboardType: TextInputType.phone,
         decoration: InputDecoration(
           labelText: 'Phone Number',
-          labelStyle: GoogleFonts.poppins(color: Colors.grey[700]),
-          floatingLabelStyle: GoogleFonts.poppins(color: Colors.blue),
+          labelStyle: GoogleFonts.poppins(color: Colors.white),
+          floatingLabelStyle: GoogleFonts.poppins(
+              color: const Color.fromARGB(255, 255, 255, 255)),
           floatingLabelBehavior: FloatingLabelBehavior.auto,
           prefixText: '+213 ',
           border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(10),
+            borderRadius: BorderRadius.circular(12),
             borderSide: const BorderSide(color: Colors.white),
           ),
           focusedBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(10),
+            borderRadius: BorderRadius.circular(12),
             borderSide: const BorderSide(color: Colors.white, width: 2),
           ),
-          contentPadding: const EdgeInsets.symmetric(vertical: 15, horizontal: 10),
+          filled: true,
+          fillColor: Colors.white.withOpacity(0.1),
+          contentPadding:
+              const EdgeInsets.symmetric(vertical: 18, horizontal: 12),
         ),
-        maxLength: 9,
+        style: GoogleFonts.poppins(color: Colors.white),
         onChanged: (value) {
-          setState(() {}); // Trigger rebuild for real-time validation
+          setState(() {}); // Trigger rebuild for real-time validation if needed
         },
+        maxLength: 9,
         validator: (value) {
           if (value == null || value.isEmpty) {
             return 'Please enter your phone number';
@@ -307,13 +330,16 @@ class _SignupScreenState extends State<SignupScreen>
                 const TextSpan(text: 'I agree to the '),
                 TextSpan(
                   text: 'Terms and Conditions',
-                  style: const TextStyle(color: Colors.blue),
-                  recognizer: TapGestureRecognizer()..onTap = () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(builder: (context) => TermsAndConditionsPage()),
-                    );
-                  },
+                  style: const TextStyle(
+                      color: Color.fromARGB(255, 183, 173, 173)),
+                  recognizer: TapGestureRecognizer()
+                    ..onTap = () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                            builder: (context) => TermsAndConditionsPage()),
+                      );
+                    },
                 ),
               ],
             ),
@@ -329,7 +355,8 @@ class _SignupScreenState extends State<SignupScreen>
       child: ElevatedButton(
         onPressed: _handleGoogleSignIn,
         style: ElevatedButton.styleFrom(
-          foregroundColor: Colors.black, backgroundColor: Colors.white,
+          foregroundColor: Colors.black,
+          backgroundColor: Colors.white,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(10),
           ),
