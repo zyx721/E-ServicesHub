@@ -311,8 +311,11 @@ class _SignupScreenState extends State<SignupScreen>
     );
   }
 
-  Widget _buildTermsCheckbox() {
-    return Row(
+
+Widget _buildTermsCheckbox() {
+  return SlideTransition(
+    position: _slideAnimation,
+    child: Row(
       mainAxisAlignment: MainAxisAlignment.start,
       children: [
         Checkbox(
@@ -330,14 +333,12 @@ class _SignupScreenState extends State<SignupScreen>
                 const TextSpan(text: 'I agree to the '),
                 TextSpan(
                   text: 'Terms and Conditions',
-                  style: const TextStyle(
-                      color: Color.fromARGB(255, 183, 173, 173)),
+                  style: const TextStyle(color: Color.fromARGB(255, 183, 173, 173)),
                   recognizer: TapGestureRecognizer()
                     ..onTap = () {
                       Navigator.push(
                         context,
-                        MaterialPageRoute(
-                            builder: (context) => TermsAndConditionsPage()),
+                        MaterialPageRoute(builder: (context) => TermsAndConditionsPage()),
                       );
                     },
                 ),
@@ -346,8 +347,9 @@ class _SignupScreenState extends State<SignupScreen>
           ),
         ),
       ],
-    );
-  }
+    ),
+  );
+}
 
   Widget _buildGoogleSignInButton() {
     return SlideTransition(
