@@ -77,26 +77,27 @@ class _TermsAndConditionsPageState extends State<TermsAndConditionsPage> {
             SizedBox(height: 20),
             Center(
               child: ElevatedButton(
-                onPressed: _isChecked
-                    ? () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(builder: (context) => LoginPage()),
-                        );
-                      }
-                    : null,
-                style: ElevatedButton.styleFrom(
-                  padding: EdgeInsets.symmetric(horizontal: 32, vertical: 12),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(30),
-                  ),
-                  backgroundColor: _isChecked ? Colors.teal : Colors.grey,
-                ),
-                child: Text(
-                  'Continue',
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold,color: Colors.amber),
-                ),
-              ),
+  onPressed: _isChecked
+      ? () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (context) => LoginPage()),
+          );
+        }
+      : null,
+  style: ElevatedButton.styleFrom(
+    padding: EdgeInsets.symmetric(horizontal: 32, vertical: 12),
+    shape: RoundedRectangleBorder(
+      borderRadius: BorderRadius.circular(30),
+    ),
+    backgroundColor: _isChecked ? Colors.teal : Colors.grey,
+  ),
+  child: Text(
+    'Continue',
+    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.amber),
+  ),
+),
+
             ),
           ],
         ),

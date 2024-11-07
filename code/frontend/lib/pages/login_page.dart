@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:frontend/pages/signup_page.dart';
-import '../services/api_service.dart';
 
 class LoginPage extends StatefulWidget {
   @override
@@ -8,31 +8,31 @@ class LoginPage extends StatefulWidget {
 }
 
 class _LoginPageState extends State<LoginPage> {
-  final _formKey = GlobalKey<FormState>();
-  final TextEditingController emailController = TextEditingController();
-  final TextEditingController passwordController = TextEditingController();
-  final ApiService apiService = ApiService();
+  final _emailController = TextEditingController();
+  final _passwordController = TextEditingController();
+  final _auth = FirebaseAuth.instance;
+  String? _errorMessage;
 
-  void _login(BuildContext context) async {
-    if (_formKey.currentState?.validate() ?? false) {
-      final email = emailController.text;
-      final password = passwordController.text;
+  void _login() async {
+    setState(() {
+      _errorMessage = null; // Clear any previous error message
+    });
 
-      final response = await apiService.login(email, password);
-      if (response['success']) {
-        // Navigate to the next screen or save the token as needed
-        print('Login successful: ${response['token']}');
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Login successful!')),
-        );
-        // Navigate to the home page or dashboard
-        // Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => HomePage()));
-      } else {
-        // Show error message
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(response['message'])),
-        );
-      }
+    String email = _emailController.text.trim();
+    String password = _passwordController.text.trim();
+
+    try {
+      UserCredential userCredential = await _auth.signInWithEmailAndPassword(
+        email: email,
+        password: password,
+      );
+      // Navigate to the main app screen upon successful login
+      print("Logged in successfully: ${userCredential.user?.uid}");
+      // You can replace this with navigation to the home screen
+    } catch (e) {
+      setState(() {
+        _errorMessage = "Login failed: ${e.toString()}"; // Display error message
+      });
     }
   }
 
@@ -40,100 +40,51 @@ class _LoginPageState extends State<LoginPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
+        title: Text('Login'),
         backgroundColor: Colors.teal,
-        title: Text(
-          'Login',
-          style: TextStyle(
-            color: Colors.amber,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-        centerTitle: true,
-        elevation: 4,
       ),
       body: Padding(
-        padding: const EdgeInsets.all(24.0),
-        child: Form(
-          key: _formKey,
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              TextFormField(
-                controller: emailController,
-                decoration: InputDecoration(
-                  labelText: 'Email',
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  prefixIcon: Icon(Icons.email, color: Colors.teal),
-                ),
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Please enter your email';
-                  } else if (!RegExp(r'^[^@]+@[^@]+\.[^@]+').hasMatch(value)) {
-                    return 'Please enter a valid email';
-                  }
-                  return null;
-                },
-              ),
-              SizedBox(height: 20),
-              TextFormField(
-                controller: passwordController,
-                obscureText: true,
-                decoration: InputDecoration(
-                  labelText: 'Password',
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  prefixIcon: Icon(Icons.lock, color: Colors.teal),
-                ),
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Please enter your password';
-                  }
-                  return null;
-                },
-              ),
-              SizedBox(height: 24),
-              ElevatedButton(
-                style: ElevatedButton.styleFrom(
-                  padding: EdgeInsets.symmetric(vertical: 14),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(30),
-                  ),
-                  backgroundColor: Colors.teal,
-                ),
-                onPressed: () => _login(context),
+        padding: EdgeInsets.all(16.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            if (_errorMessage != null)
+              Padding(
+                padding: const EdgeInsets.only(bottom: 10),
                 child: Text(
-                  'Login',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                  ),
+                  _errorMessage!,
+                  style: TextStyle(color: Colors.red, fontSize: 14),
+                  textAlign: TextAlign.center,
                 ),
               ),
-              SizedBox(height: 16),
-              TextButton(
-                onPressed: () {
-                  // Navigate to the Sign-Up page
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (context) => SignUpPage()),
-                  );
-                },
-                child: Text(
-                  'Don’t have an account? Sign up',
-                  style: TextStyle(
-                    color: Colors.teal,
-                    fontWeight: FontWeight.w600,
-                    decoration: TextDecoration.underline,
-                  ),
-                ),
+            TextField(
+              controller: _emailController,
+              decoration: InputDecoration(labelText: 'Email'),
+              keyboardType: TextInputType.emailAddress,
+            ),
+            TextField(
+              controller: _passwordController,
+              decoration: InputDecoration(labelText: 'Password'),
+              obscureText: true,
+            ),
+            SizedBox(height: 20),
+            ElevatedButton(
+              onPressed: _login,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.teal,
               ),
-            ],
-          ),
+              child: Text('Login', style: TextStyle(color: Colors.amber)),
+            ),
+            TextButton(
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => SignupPage()),
+                );
+              },
+              child: Text("Don't have an account? Sign Up"),
+            ),
+          ],
         ),
       ),
     );
