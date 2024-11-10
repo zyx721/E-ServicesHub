@@ -8,6 +8,9 @@ import face_recognition
 import easyocr
 from PIL import Image
 import re
+import warnings
+# Suppress the FutureWarning for torch.load
+warnings.filterwarnings("ignore")
 # Load your trained YOLO model
 model = YOLO("best.pt")
 
