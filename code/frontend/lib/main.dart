@@ -53,7 +53,7 @@ class MyApp extends StatelessWidget {
         Locale('en', ''), // English
         Locale('ar', ''), // Arabic
       ],
-      locale: const Locale('en'), // Set default locale to English
+      locale: const Locale('ar'), // Set default locale to English
       initialRoute: '/',
       routes: _buildRoutes(),
     );

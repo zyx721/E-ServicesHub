@@ -142,7 +142,7 @@ async def upload_image(file: UploadFile = File(...)):
         })
 
 
-def compare_faces(face_image_path):
+def compare_faces(face_image_path, tolerance=0.5):
     # Load the two images for comparison
     extracted_face = cv2.imread(extracted_face_path)
     submitted_face = cv2.imread(face_image_path)
@@ -167,8 +167,8 @@ def compare_faces(face_image_path):
         print("No faces found in the submitted face image.")
         return False
 
-    # Compare the first encoding (assuming one face per image)
-    results = face_recognition.compare_faces([extracted_face_encodings[0]], submitted_face_encodings[0])
+    # Compare the first encoding (assuming one face per image) with tolerance
+    results = face_recognition.compare_faces([extracted_face_encodings[0]], submitted_face_encodings[0], tolerance=tolerance)
 
     if results[0]:
         print("Faces match.")
@@ -187,12 +187,16 @@ async def compare_face(file: UploadFile = File(...)):
     with open(file_location, "wb") as buffer:
         shutil.copyfileobj(file.file, buffer)
 
-    faces_match = compare_faces(file_location)
+    # Call compare_faces with a tolerance value, e.g., 0.5 for moderate strictness
+    faces_match = compare_faces(file_location, tolerance=0.5)
 
     if faces_match:
         return JSONResponse(content={"message": "Faces match!"})
     else:
         return JSONResponse(content={"message": "Faces do not match."})
+
+# To run the server, use:
+# uvicorn main:app --host 0.0.0.0 --port 8000 --reload 
 
 # To run the server, use:
 # uvicorn main:app --host 0.0.0.0 --port 8000 --reload
