@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:hanini_frontend/localization/app_localization.dart';
+import 'package:hanini_frontend/main.dart';
 
 class OnboardingScreen extends StatefulWidget {
   @override
@@ -11,10 +12,27 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   final PageController _pageController = PageController();
   int _currentPage = 0;
 
+  // Method to handle page change
   void _onPageChanged(int index) {
     setState(() {
       _currentPage = index;
     });
+  }
+
+  // Language change logic
+  void _changeLanguage(String languageCode) {
+    Locale newLocale;
+    switch (languageCode) {
+      case 'ar':
+        newLocale = Locale('ar', '');
+        break;
+      case 'fr':
+        newLocale = Locale('fr', '');
+        break;
+      default:
+        newLocale = Locale('en', '');
+    }
+    MyApp.of(context)?.changeLanguage(newLocale);
   }
 
   @override
@@ -24,7 +42,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
       return Center(child: CircularProgressIndicator());
     }
 
-    // Define pages dynamically based on localization strings
+    // Pages data with localization
     final pages = [
       {
         "imagePath": 'assets/images/onboarding1.png',
@@ -45,6 +63,13 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
 
     return Scaffold(
       backgroundColor: Colors.white,
+      appBar: AppBar(
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        actions: [
+          _buildLanguageDropdown(), // Modern language selection with flags
+        ],
+      ),
       body: Column(
         children: [
           Expanded(
@@ -71,6 +96,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     );
   }
 
+  // Build individual page with image, title, and description
   Widget _buildPage({
     required String imagePath,
     required String title,
@@ -85,13 +111,17 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
           SizedBox(height: 20),
           Text(
             title,
-            style: GoogleFonts.poppins(fontSize: 24, fontWeight: FontWeight.bold),
+            style: GoogleFonts.poppins(
+              fontSize: 26,
+              fontWeight: FontWeight.bold,
+              color: Colors.black,
+            ),
             textAlign: TextAlign.center,
           ),
           SizedBox(height: 10),
           Text(
             description,
-            style: GoogleFonts.poppins(fontSize: 16),
+            style: GoogleFonts.poppins(fontSize: 16, color: Colors.grey[700]),
             textAlign: TextAlign.center,
           ),
         ],
@@ -99,6 +129,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     );
   }
 
+  // Build the indicators below the pages
   Widget _buildIndicators(int pageCount) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.center,
@@ -106,10 +137,10 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
         return AnimatedContainer(
           duration: Duration(milliseconds: 300),
           margin: EdgeInsets.symmetric(horizontal: 5.0),
-          height: 10,
-          width: _currentPage == index ? 20 : 10,
+          height: 12,
+          width: _currentPage == index ? 25 : 12,
           decoration: BoxDecoration(
-            color: _currentPage == index ? Colors.blue : Colors.grey,
+            color: _currentPage == index ? Colors.blue : Colors.grey[300],
             borderRadius: BorderRadius.circular(12),
           ),
         );
@@ -117,7 +148,9 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     );
   }
 
-  Widget _buildNextButton(BuildContext context, AppLocalizations localizations) {
+  // Build the next button for navigation
+  Widget _buildNextButton(
+      BuildContext context, AppLocalizations localizations) {
     return ElevatedButton(
       onPressed: () {
         if (_currentPage == 2) {
@@ -125,18 +158,51 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
         } else {
           _pageController.nextPage(
             duration: Duration(milliseconds: 300),
-            curve: Curves.easeIn,
+            curve: Curves.easeInOut,
           );
         }
       },
       style: ElevatedButton.styleFrom(
         backgroundColor: Colors.blue,
-        padding: EdgeInsets.symmetric(horizontal: 40, vertical: 15),
+        padding: EdgeInsets.symmetric(horizontal: 50, vertical: 18),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
       ),
       child: Text(
         _currentPage == 2 ? localizations.getStarted : localizations.next,
         style: GoogleFonts.poppins(fontSize: 16, color: Colors.white),
+      ),
+    );
+  }
+
+  // Build the language selection dropdown with icons
+  Widget _buildLanguageDropdown() {
+    return Padding(
+      padding: const EdgeInsets.only(right: 20.0),
+      child: PopupMenuButton<String>(
+        onSelected: _changeLanguage,
+        icon: Icon(Icons.language, color: Colors.black, size: 28),
+        itemBuilder: (BuildContext context) {
+          return [
+            _buildLanguageMenuItem('en', 'English', 'assets/images/sen.png'),
+            _buildLanguageMenuItem('ar', 'Arabic', 'assets/images/sarab.png'),
+            _buildLanguageMenuItem('fr', 'French', 'assets/images/sfr.png'),
+          ];
+        },
+      ),
+    );
+  }
+
+  // Helper method to build individual language menu items with flags
+  PopupMenuItem<String> _buildLanguageMenuItem(
+      String languageCode, String languageName, String flagPath) {
+    return PopupMenuItem<String>(
+      value: languageCode,
+      child: Row(
+        children: [
+          Image.asset(flagPath, width: 22),
+          SizedBox(width: 10),
+          Text(languageName),
+        ],
       ),
     );
   }

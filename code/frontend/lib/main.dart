@@ -24,13 +24,28 @@ Future<UserRole> _retrieveUserRole() async {
   // Here you can implement dynamic retrieval of the user role
   return UserRole.serviceProvider; // Replace with your actual logic
 }
-
-class MyApp extends StatelessWidget {
+class MyApp extends StatefulWidget {
   final List<CameraDescription> cameras;
   final UserRole userRole;
 
   const MyApp({Key? key, required this.cameras, required this.userRole})
       : super(key: key);
+
+  static _MyAppState? of(BuildContext context) =>
+      context.findAncestorStateOfType<_MyAppState>();
+
+  @override
+  _MyAppState createState() => _MyAppState();
+}
+
+class _MyAppState extends State<MyApp> {
+  Locale _locale = const Locale('en'); // Default language is English
+
+  void changeLanguage(Locale locale) {
+    setState(() {
+      _locale = locale;
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -52,8 +67,9 @@ class MyApp extends StatelessWidget {
       supportedLocales: const [
         Locale('en', ''), // English
         Locale('ar', ''), // Arabic
+        Locale('fr', ''), // French
       ],
-      locale: const Locale('ar'), // Set default locale to English
+      locale: _locale,
       initialRoute: '/',
       routes: _buildRoutes(),
     );
@@ -65,8 +81,8 @@ class MyApp extends StatelessWidget {
       '/login': (context) => const LoginScreen(),
       '/signup': (context) => const SignupScreen(),
       '/home': (context) => HomeScreen(),
-      '/profile': (context) => ProfileScreen(cameras: cameras, userRole: userRole),
-      '/verification': (context) => RealTimeDetection(cameras: cameras),
+      '/profile': (context) => ProfileScreen(cameras: widget.cameras, userRole: widget.userRole),
+      '/verification': (context) => RealTimeDetection(cameras: widget.cameras),
       '/settings': (context) => SettingsScreen(),
       '/forgot_password': (context) => ForgotPasswordScreen(),
     };

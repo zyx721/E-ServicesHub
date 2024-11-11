@@ -181,30 +181,33 @@ class _LoginScreenState extends State<LoginScreen>
   }
 
   Widget _buildGoogleSignInButton() {
-    return ElevatedButton.icon(
-      onPressed: _handleGoogleSignIn,
-      style: ElevatedButton.styleFrom(
-        backgroundColor: Colors.white,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(30.0),
-        ),
-        padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 15),
-        elevation: 6,
+  final localizations = AppLocalizations.of(context)!; // Access localized strings
+
+  return ElevatedButton.icon(
+    onPressed: _handleGoogleSignIn,
+    style: ElevatedButton.styleFrom(
+      backgroundColor: Colors.white,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(30.0),
       ),
-      icon: Image.asset(
-        'assets/images/google_logo.png', // Add your Google logo path
-        height: 24,
-        width: 24,
+      padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 15),
+      elevation: 6,
+    ),
+    icon: Image.asset(
+      'assets/images/google_logo.png', // Add your Google logo path
+      height: 24,
+      width: 24,
+    ),
+    label: Text(
+      localizations.googleSignIn, // Use localized text here
+      style: GoogleFonts.poppins(
+        fontSize: 18,
+        color: const Color(0xFF1A237E),
       ),
-      label: Text(
-        'Sign in with Google',
-        style: GoogleFonts.poppins(
-          fontSize: 18,
-          color: const Color(0xFF1A237E),
-        ),
-      ),
-    );
-  }
+    ),
+  );
+}
+
 
   Widget _buildForgotPasswordButton(BuildContext context, String forgotPasswordText) {
     return TextButton(

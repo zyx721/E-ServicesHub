@@ -1,17 +1,24 @@
+
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:hanini_frontend/localization/app_localization.dart';
 
 class ForgotPasswordScreen extends StatelessWidget {
   const ForgotPasswordScreen({Key? key}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
+    final localization = AppLocalizations.of(context)!; // Access localization instance
+
     return Scaffold(
       backgroundColor: Colors.transparent,
       body: Container(
         decoration: const BoxDecoration(
           gradient: LinearGradient(
-            colors: [Color.fromARGB(255, 68, 137, 255), Colors.teal],
+            colors: [
+              Color(0xFF1A237E), // Deep indigo
+              Color(0xFF42A5F5), // Lighter blue
+            ],
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
           ),
@@ -31,7 +38,7 @@ class ForgotPasswordScreen extends StatelessWidget {
                   ),
                   const SizedBox(height: 20),
                   Text(
-                    'Forgot Password',
+                    localization.forgotPassword, // Localized text
                     style: GoogleFonts.poppins(
                       fontSize: 32,
                       fontWeight: FontWeight.bold,
@@ -39,12 +46,11 @@ class ForgotPasswordScreen extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(height: 20),
-                  _buildTextField('Email', false),
+                  _buildTextField(localization.email, false), // Localized text
                   const SizedBox(height: 20),
                   ElevatedButton(
                     onPressed: () {
                       // Implement password recovery logic here
-                      // E.g., send a recovery email
                     },
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Colors.white,
@@ -56,7 +62,7 @@ class ForgotPasswordScreen extends StatelessWidget {
                           horizontal: 40, vertical: 15),
                     ),
                     child: Text(
-                      'Send Recovery Email',
+                      localization.getStarted, // Localized button text
                       style: GoogleFonts.poppins(
                         fontSize: 18,
                         color: Colors.teal,
