@@ -27,7 +27,7 @@ class _RealTimeDetectionState extends State<RealTimeDetection> {
 
   Future<void> _initializeCamera() async {
     _cameraController = CameraController(
-      widget.cameras[0], // Use the first available camera
+      widget.cameras[0],
       ResolutionPreset.medium,
     );
 
@@ -82,7 +82,8 @@ class _RealTimeDetectionState extends State<RealTimeDetection> {
   Future<void> _uploadImage(File image) async {
     final request = http.MultipartRequest(
       'POST',
-      Uri.parse('http://192.168.246.195:8000/upload-image/'), // Replace with your server's IP address
+      Uri.parse(
+          'http://192.168.246.195:8000/upload-image/'), // Replace with your server's IP address
     );
 
     request.files.add(await http.MultipartFile.fromPath('file', image.path));
@@ -91,7 +92,7 @@ class _RealTimeDetectionState extends State<RealTimeDetection> {
       final response = await request.send();
       final responseData = await http.Response.fromStream(response);
 
-      if (!mounted) return; // Return if the widget is no longer mounted
+      if (!mounted) return;
 
       if (response.statusCode == 200) {
         final responseBody = jsonDecode(responseData.body);
@@ -104,7 +105,7 @@ class _RealTimeDetectionState extends State<RealTimeDetection> {
           Navigator.push(
             context,
             MaterialPageRoute(
-              builder: (context) => FaceCompareScreen(), // Replace with your actual FaceCompareScreen
+              builder: (context) => FaceCompareScreen(),
             ),
           );
         } else {
@@ -129,16 +130,80 @@ class _RealTimeDetectionState extends State<RealTimeDetection> {
 
   @override
   void dispose() {
-    _isDetecting = false; // Stop detection when disposing
+    _isDetecting = false;
     _cameraController.dispose();
     super.dispose();
+  }
+
+  // Function to show a dialog when "Support" button is clicked
+  void _showSupportDialog() {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text('Support'),
+          content: Text(
+              'If your card was not detected, please make sure it is aligned correctly and try again.'),
+          actions: <Widget>[
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+              child: Text('OK'),
+            ),
+          ],
+        );
+      },
+    );
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: Text('Real-Time Detection'),
+      appBar: PreferredSize(
+        preferredSize: Size.fromHeight(64.0),
+        child: Container(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              colors: [
+                Color(0xFF3949AB), // Indigo 600
+                Color(0xFF1E88E5), // Blue 600
+              ],
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.2),
+                blurRadius: 4,
+                offset: Offset(0, 2),
+              ),
+            ],
+          ),
+          child: AppBar(
+            backgroundColor: Colors.transparent,
+            elevation: 0,
+            title: Text(
+              'Real-Time Detection', // Use appropriate title
+              style: TextStyle(
+                fontSize: 22,
+                fontWeight: FontWeight.w600,
+                color: Colors.white,
+              ),
+            ),
+            actions: [
+              IconButton(
+                icon: Icon(
+                  Icons.help_outline, // Changed to a "Help" icon for support
+                  color: Colors.white,
+                  size: 28,
+                ),
+                onPressed:
+                    _showSupportDialog, // Show support dialog when clicked
+              ),
+            ],
+          ),
+        ),
       ),
       body: _cameraController.value.isInitialized
           ? Stack(
@@ -146,28 +211,32 @@ class _RealTimeDetectionState extends State<RealTimeDetection> {
                 CameraPreview(_cameraController),
                 Center(
                   child: Container(
-                    width: 300, // Adjusted width for a larger rectangle
-                    height: 200, // Adjusted height for a larger rectangle
+                    width: 380, // Slightly wider rectangle
+                    height: 250, // Slightly taller rectangle
                     decoration: BoxDecoration(
                       border: Border.all(
-                          color: Color.fromARGB(255, 143, 244, 54), width: 4),
-                      borderRadius:
-                          BorderRadius.circular(15), // Rounded corners
+                        color: Colors.greenAccent,
+                        width: 5,
+                      ),
+                      borderRadius: BorderRadius.circular(20),
                     ),
                     child: Center(
-                      child: Text(
-                        'Align ID Card Here', // Instructional text
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                          shadows: [
-                            Shadow(
-                              blurRadius: 10.0,
-                              color: Colors.black,
-                              offset: Offset(2.0, 2.0),
-                            ),
-                          ],
+                      child: Padding(
+                        padding: EdgeInsets.only(top: 45,left: 85), // Moves text down
+                        child: Text(
+                          'xxxxxxxxxxxxxxxxxx',
+                          style: TextStyle(
+                            color: const Color.fromARGB(117, 0, 0, 0),
+                            fontSize: 11,
+                            fontWeight: FontWeight.bold,
+                            shadows: [
+                              Shadow(
+                                blurRadius: 10.0,
+                                color: const Color.fromARGB(49, 0, 0, 0),
+                                offset: Offset(1, 0),
+                              ),
+                            ],
+                          ),
                         ),
                       ),
                     ),
@@ -177,19 +246,38 @@ class _RealTimeDetectionState extends State<RealTimeDetection> {
                   bottom: 30,
                   left: 20,
                   right: 20,
-                  child: ElevatedButton.icon(
-                    onPressed: _isDetecting ? _stopDetection : _startDetection,
-                    icon: Icon(_isDetecting ? Icons.stop : Icons.play_arrow),
-                    label: Text(
-                      _isDetecting ? 'Stop Detection' : 'Start Detection',
-                    ),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.green, // Button color
+                  child: InkWell(
+                    onTap: _isDetecting ? _stopDetection : _startDetection,
+                    child: Container(
                       padding: EdgeInsets.symmetric(vertical: 15),
-                      shape: RoundedRectangleBorder(
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          colors: [
+                            Color(0xFF3949AB), // Indigo 600
+                            Color(0xFF1E88E5), // Blue 600
+                          ],
+                          begin: Alignment.topCenter,
+                          end: Alignment.bottomCenter,
+                        ),
                         borderRadius: BorderRadius.circular(30),
                       ),
-                      textStyle: TextStyle(fontSize: 18), // Button text size
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(
+                            _isDetecting ? Icons.stop : Icons.play_arrow,
+                            color: Colors.white,
+                          ),
+                          SizedBox(width: 10),
+                          Text(
+                            _isDetecting ? 'Stop Detection' : 'Start Detection',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 18,
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
                   ),
                 ),
@@ -198,15 +286,32 @@ class _RealTimeDetectionState extends State<RealTimeDetection> {
                     bottom: 80,
                     left: 20,
                     right: 20,
-                    child: Text(
-                      _errorMessage!,
-                      style: TextStyle(
-                          color: Colors.red,
+                    child: Container(
+                      padding: EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: Colors.redAccent,
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: Text(
+                        _errorMessage!,
+                        style: TextStyle(
+                          color: Colors.white,
                           fontSize: 16,
-                          fontWeight: FontWeight.bold),
-                      textAlign: TextAlign.center,
+                          fontWeight: FontWeight.bold,
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
                     ),
                   ),
+                Positioned(
+                  bottom: 290, // Adjusted for position
+                  left: 12, // Positioned to the bottom left
+                  child: Image.asset(
+                    'assets/images/faee_shape.png',
+                    width: 150, // Adjust the size as necessary
+                    height: 140, // Adjust the size as necessary
+                  ),
+                ),
               ],
             )
           : Center(child: CircularProgressIndicator()),
