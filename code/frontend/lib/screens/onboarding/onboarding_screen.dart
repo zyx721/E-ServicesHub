@@ -176,21 +176,33 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
 
   // Build the language selection dropdown with icons
   Widget _buildLanguageDropdown() {
+  final localizations = AppLocalizations.of(context);
+  if (localizations == null) {
     return Padding(
       padding: const EdgeInsets.only(right: 20.0),
-      child: PopupMenuButton<String>(
-        onSelected: _changeLanguage,
-        icon: Icon(Icons.language, color: Colors.black, size: 28),
-        itemBuilder: (BuildContext context) {
-          return [
-            _buildLanguageMenuItem('en', 'English', 'assets/images/sen.png'),
-            _buildLanguageMenuItem('ar', 'Arabic', 'assets/images/sarab.png'),
-            _buildLanguageMenuItem('fr', 'French', 'assets/images/sfr.png'),
-          ];
-        },
-      ),
+      child: CircularProgressIndicator(),
     );
   }
+
+  return Padding(
+    padding: const EdgeInsets.only(right: 20.0),
+    child: PopupMenuButton<String>(
+      onSelected: _changeLanguage,
+      icon: Icon(Icons.language, color: Colors.black, size: 28),
+      itemBuilder: (BuildContext context) {
+        return [
+          _buildLanguageMenuItem(
+              'en', localizations.englishLanguageName, 'assets/images/sen.png'),
+          _buildLanguageMenuItem(
+              'ar', localizations.arabicLanguageName, 'assets/images/sarab.png'),
+          _buildLanguageMenuItem(
+              'fr', localizations.frenchLanguageName, 'assets/images/sfr.png'),
+        ];
+      },
+    ),
+  );
+}
+
 
   // Helper method to build individual language menu items with flags
   PopupMenuItem<String> _buildLanguageMenuItem(

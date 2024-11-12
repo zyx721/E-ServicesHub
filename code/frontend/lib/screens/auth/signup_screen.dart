@@ -1,6 +1,7 @@
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:hanini_frontend/localization/app_localization.dart';
 import 'terms_and_conditions_page.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 
@@ -23,7 +24,7 @@ class _SignupScreenState extends State<SignupScreen>
   late Animation<Offset> _slideAnimation;
   final GoogleSignIn _googleSignIn = GoogleSignIn();
   final TextEditingController _nameController = TextEditingController();
-
+ 
   @override
   void initState() {
     super.initState();
@@ -109,7 +110,7 @@ class _SignupScreenState extends State<SignupScreen>
                     SlideTransition(
                       position: _slideAnimation,
                       child: Text(
-                        'Create Account',
+                        signupTitle,
                         style: GoogleFonts.poppins(
                           fontSize: 36,
                           fontWeight: FontWeight.bold,
@@ -118,14 +119,13 @@ class _SignupScreenState extends State<SignupScreen>
                       ),
                     ),
                     const SizedBox(height: 30),
-                    _buildTextField(
-                        'Name', false, _nameController, _slideAnimation),
+                    _buildTextField(nameLabel, false, _nameController, _slideAnimation),
                     const SizedBox(height: 10),
-                    _buildEmailField(),
+                    _buildEmailField(emailLabel),
                     const SizedBox(height: 10),
-                    _buildPasswordField(),
+                    _buildPasswordField(passwordLabel),
                     const SizedBox(height: 10),
-                    _buildPhoneField(),
+                    _buildPhoneField(phoneLabel),
                     const SizedBox(height: 20),
                     _buildTermsCheckbox(),
                     const SizedBox(height: 20),
@@ -144,8 +144,49 @@ class _SignupScreenState extends State<SignupScreen>
     );
   }
 
-  Widget _buildTextField(String label, bool obscureText,
-      TextEditingController controller, Animation<Offset> slideAnimation) {
+  String get signupTitle =>
+      AppLocalizations.of(context)?.signupTitle ?? 'Create Account';
+
+  String get nameLabel =>
+      AppLocalizations.of(context)?.nameLabel ?? 'Name';
+
+  String get emailLabel =>
+      AppLocalizations.of(context)?.emailLabel ?? 'Email';
+
+  String get passwordLabel =>
+      AppLocalizations.of(context)?.passwordLabel ?? 'Password';
+
+  String get phoneLabel =>
+      AppLocalizations.of(context)?.phoneLabel ?? 'Phone';
+
+  String get termsAgreement =>
+      AppLocalizations.of(context)?.termsAgreement ?? 'I agree to the Terms and Conditions';
+
+  String get signInWithGoogle =>
+      AppLocalizations.of(context)?.signInWithGoogle ?? 'Sign in with Google';
+
+  String get signupButton =>
+      AppLocalizations.of(context)?.signupButton ?? 'Sign Up';
+
+  String get passwordMinLengthError =>
+      AppLocalizations.of(context)?.passwordMinLengthError ?? 'Password must be at least 8 characters long';
+
+  String get emailRequiredError =>
+      AppLocalizations.of(context)?.emailRequiredError ?? 'Please enter your email';
+
+  String get emailInvalidError =>
+      AppLocalizations.of(context)?.emailInvalidError ?? 'Please enter a valid email';
+
+  String get passwordRequiredError =>
+      AppLocalizations.of(context)?.passwordRequiredError ?? 'Please enter your password';
+
+  String get phoneRequiredError =>
+      AppLocalizations.of(context)?.phoneRequiredError ?? 'Please enter your phone number';
+
+  String get phoneInvalidError =>
+    AppLocalizations.of(context)?.phoneInvalidError ?? 'Please enter a valid phone number';
+
+  Widget _buildTextField(String label, bool obscureText, TextEditingController controller, Animation<Offset> slideAnimation) {
     return SlideTransition(
       position: slideAnimation,
       child: TextFormField(
@@ -175,7 +216,15 @@ class _SignupScreenState extends State<SignupScreen>
         },
         validator: (value) {
           if (value == null || value.isEmpty) {
-            return 'Please enter your $label';
+            return AppLocalizations.of(context)?.fieldRequiredError ?? 'Please enter your $label';
+          } else if (label == passwordLabel && (value.length < 8)) {
+            return passwordMinLengthError;
+          } else if (label == emailLabel) {
+            final emailRegex =
+                RegExp(r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$');
+            if (!emailRegex.hasMatch(value)) {
+              return AppLocalizations.of(context)?.emailInvalidError ?? 'Please enter a valid email';
+            }
           }
           return null;
         },
@@ -183,14 +232,14 @@ class _SignupScreenState extends State<SignupScreen>
     );
   }
 
-  Widget _buildEmailField() {
+  Widget _buildEmailField(String label) {
     return SlideTransition(
       position: _slideAnimation,
       child: TextFormField(
         controller: _emailController,
         keyboardType: TextInputType.emailAddress,
         decoration: InputDecoration(
-          labelText: 'Email',
+          labelText: label,
           labelStyle: GoogleFonts.poppins(color: Colors.white),
           floatingLabelStyle: GoogleFonts.poppins(
               color: const Color.fromARGB(255, 255, 255, 255)),
@@ -214,12 +263,12 @@ class _SignupScreenState extends State<SignupScreen>
         },
         validator: (value) {
           if (value == null || value.isEmpty) {
-            return 'Please enter your email';
+            return emailRequiredError;
           }
           final emailRegex =
               RegExp(r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$');
           if (!emailRegex.hasMatch(value)) {
-            return 'Please enter a valid email';
+            return emailInvalidError;
           }
           return null;
         },
@@ -227,14 +276,14 @@ class _SignupScreenState extends State<SignupScreen>
     );
   }
 
-  Widget _buildPasswordField() {
+  Widget _buildPasswordField(String label) {
     return SlideTransition(
       position: _slideAnimation,
       child: TextFormField(
         controller: _passwordController,
         obscureText: true,
         decoration: InputDecoration(
-          labelText: 'Password',
+          labelText: label,
           labelStyle: GoogleFonts.poppins(color: Colors.white),
           floatingLabelStyle: GoogleFonts.poppins(
               color: const Color.fromARGB(255, 255, 255, 255)),
@@ -258,9 +307,9 @@ class _SignupScreenState extends State<SignupScreen>
         },
         validator: (value) {
           if (value == null || value.isEmpty) {
-            return 'Please enter your password';
+            return passwordRequiredError;
           } else if (value.length < 8) {
-            return 'Password must be at least 8 characters long';
+            return passwordMinLengthError;
           }
           return null;
         },
@@ -268,14 +317,14 @@ class _SignupScreenState extends State<SignupScreen>
     );
   }
 
-  Widget _buildPhoneField() {
+  Widget _buildPhoneField(String label) {
     return SlideTransition(
       position: _slideAnimation,
       child: TextFormField(
         controller: _phoneController,
         keyboardType: TextInputType.phone,
         decoration: InputDecoration(
-          labelText: 'Phone Number',
+          labelText: label,
           labelStyle: GoogleFonts.poppins(color: Colors.white),
           floatingLabelStyle: GoogleFonts.poppins(
               color: const Color.fromARGB(255, 255, 255, 255)),
@@ -301,55 +350,53 @@ class _SignupScreenState extends State<SignupScreen>
         maxLength: 9,
         validator: (value) {
           if (value == null || value.isEmpty) {
-            return 'Please enter your phone number';
+            return phoneRequiredError;
           } else if (value.length < 9) {
-            return 'Please enter a valid phone number';
+            return phoneInvalidError;
           }
           return null;
         },
       ),
     );
   }
-
-
-Widget _buildTermsCheckbox() {
-  return SlideTransition(
-    position: _slideAnimation,
-    child: Row(
-      mainAxisAlignment: MainAxisAlignment.start,
-      children: [
-        Checkbox(
-          value: _isChecked,
-          onChanged: (value) {
-            setState(() {
-              _isChecked = value ?? false;
-            });
-          },
-        ),
-        Expanded(
-          child: RichText(
-            text: TextSpan(
-              children: [
-                const TextSpan(text: 'I agree to the '),
-                TextSpan(
-                  text: 'Terms and Conditions',
-                  style: const TextStyle(color: Color.fromARGB(255, 183, 173, 173)),
-                  recognizer: TapGestureRecognizer()
-                    ..onTap = () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(builder: (context) => TermsAndConditionsPage()),
-                      );
-                    },
-                ),
-              ],
+  Widget _buildTermsCheckbox() {
+    return SlideTransition(
+      position: _slideAnimation,
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.start,
+        children: [
+          Checkbox(
+            value: _isChecked,
+            onChanged: (value) {
+              setState(() {
+                _isChecked = value ?? false;
+              });
+            },
+          ),
+          Expanded(
+            child: RichText(
+              text: TextSpan(
+                children: [
+                  TextSpan(text: AppLocalizations.of(context)?.termsAgreementPrefix ?? 'I agree to the '),
+                  TextSpan(
+                    text: AppLocalizations.of(context)?.termsAgreementLink ?? 'Terms and Conditions',
+                    style: const TextStyle(color: Color.fromARGB(255, 183, 173, 173)),
+                    recognizer: TapGestureRecognizer()
+                      ..onTap = () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(builder: (context) => TermsAndConditionsPage()),
+                        );
+                      },
+                  ),
+                ],
+              ),
             ),
           ),
-        ),
-      ],
-    ),
-  );
-}
+        ],
+      ),
+    );
+  }
 
   Widget _buildGoogleSignInButton() {
     return SlideTransition(
@@ -368,7 +415,7 @@ Widget _buildTermsCheckbox() {
           children: [
             Image.asset('assets/images/google_logo.png', height: 24),
             const SizedBox(width: 10),
-            const Text('Sign up with Google'),
+            Text(signInWithGoogle),
           ],
         ),
       ),
@@ -391,7 +438,7 @@ Widget _buildTermsCheckbox() {
             borderRadius: BorderRadius.circular(10),
           ),
         ),
-        child: const Text('Sign Up'),
+        child: Text(signupButton),
       ),
     );
   }
@@ -403,9 +450,9 @@ Widget _buildTermsCheckbox() {
         onPressed: () {
           Navigator.pushNamed(context, '/login');
         },
-        child: const Text(
-          'Already have an account? Login',
-          style: TextStyle(color: Colors.white),
+        child: Text(
+          AppLocalizations.of(context)?.loginButtonText ?? 'Already have an account? Login',
+          style: const TextStyle(color: Colors.white),
         ),
       ),
     );

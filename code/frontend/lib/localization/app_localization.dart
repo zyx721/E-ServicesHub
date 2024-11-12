@@ -98,6 +98,76 @@ class AppLocalizations {
       ? "إنشاء حساب جديد"
       : (isFrench ? "Créer un nouveau compte" : "Create a new account");
 
+  // Signup screen translations
+  String get signupTitle => isArabic
+      ? "إنشاء حساب"
+      : (isFrench ? "Créer un compte" : "Create Account");
+
+  String get nameLabel => isArabic ? "الاسم" : (isFrench ? "Nom" : "Name");
+
+  String get emailLabel =>
+      isArabic ? "البريد الإلكتروني" : (isFrench ? "E-mail" : "Email");
+
+  String get passwordLabel =>
+      isArabic ? "كلمة المرور" : (isFrench ? "Mot de passe" : "Password");
+
+  String get phoneLabel =>
+      isArabic ? "رقم الهاتف" : (isFrench ? "Numéro de téléphone" : "Phone");
+
+  String get termsAgreement => isArabic
+      ? "أوافق على الشروط والأحكام"
+      : (isFrench
+          ? "J'accepte les termes"
+          : "I agree to the Terms and Conditions");
+
+  String get signInWithGoogle => isArabic
+      ? "تسجيل الدخول باستخدام Google"
+      : (isFrench ? "Se connecter avec Google" : "Sign in with Google");
+
+  String get signupButton =>
+      isArabic ? "إنشاء حساب" : (isFrench ? "Créer un compte" : "Sign Up");
+
+  String get termsAgreementLink => isArabic
+      ? "الشروط والأحكام"
+      : (isFrench ? "Conditions d'utilisation" : "Terms and Conditions");
+
+  String get termsAgreementPrefix => isArabic
+      ? "أوافق على "
+      : (isFrench ? "J'accepte les " : "I agree to the ");
+
+  String get loginButtonText => isArabic
+      ? "لديك حساب بالفعل؟ تسجيل الدخول"
+      : (isFrench
+          ? "Vous avez déjà un compte ? Connexion"
+          : "Already have an account? Login");
+  String get passwordRequiredError => isArabic
+      ? "الرجاء إدخال كلمة المرور"
+      : (isFrench
+          ? "Veuillez entrer un mot de passe"
+          : "Please enter your password");
+
+  String get passwordMinLengthError => isArabic
+      ? "كلمة المرور يجب أن تكون على الأقل 8 أحرف"
+      : (isFrench
+          ? "Le mot de passe doit comporter au moins 8 caractères"
+          : "Password must be at least 8 characters long");
+
+  String get emailRequiredError => isArabic
+      ? "الرجاء إدخال البريد الإلكتروني"
+      : (isFrench
+          ? "Veuillez entrer une adresse e-mail"
+          : "Please enter your email");
+
+  String get emailInvalidError => isArabic
+      ? "الرجاء إدخال بريد إلكتروني صالح"
+      : (isFrench
+          ? "Veuillez entrer une adresse e-mail valide"
+          : "Please enter a valid email");
+
+  String get fieldRequiredError => isArabic
+      ? "الرجاء إدخال اسمك"
+      : (isFrench ? "Veuillez entrer votre nom" : "Please enter your name");
+
   // Home Screen translations
   String get searchHint => isArabic
       ? "ابحث عن خدمات..."
@@ -114,6 +184,16 @@ class AppLocalizations {
       isArabic ? "اللغة" : (isFrench ? "Langue" : "Language");
   String get logout =>
       isArabic ? "تسجيل الخروج" : (isFrench ? "Se déconnecter" : "Logout");
+
+  String get phoneRequiredError => isArabic
+      ? "يرجى إدخال رقم الهاتف"
+      : (isFrench
+          ? "Veuillez entrer le numéro de téléphone"
+          : "Please enter phone number");
+
+  String get phoneInvalidError => isArabic
+      ? "رقم الهاتف غير صالح"
+      : (isFrench ? "Numéro de téléphone invalide" : "Invalid phone number");
 
   // Static method to access the instance
   static AppLocalizations? of(BuildContext context) {
