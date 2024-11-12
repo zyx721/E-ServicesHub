@@ -169,6 +169,10 @@ class AppLocalizations {
       : (isFrench ? "Veuillez entrer votre nom" : "Please enter your name");
 
   // Home Screen translations
+  
+  // Home Screen translations
+  String get appTitle =>
+      isArabic ? "هنيني" : (isFrench ? "Hanini" : "Hanini");
   String get searchHint => isArabic
       ? "ابحث عن خدمات..."
       : (isFrench ? "Recherchez des services..." : "Search for services...");
@@ -184,6 +188,8 @@ class AppLocalizations {
       isArabic ? "اللغة" : (isFrench ? "Langue" : "Language");
   String get logout =>
       isArabic ? "تسجيل الخروج" : (isFrench ? "Se déconnecter" : "Logout");
+  String get provider =>
+      isArabic ? "المزود" : (isFrench ? "Fournisseur" : "Provider");
 
   String get phoneRequiredError => isArabic
       ? "يرجى إدخال رقم الهاتف"
@@ -194,6 +200,13 @@ class AppLocalizations {
   String get phoneInvalidError => isArabic
       ? "رقم الهاتف غير صالح"
       : (isFrench ? "Numéro de téléphone invalide" : "Invalid phone number");
+  String get selectLanguage => isArabic
+      ? "اختر اللغة"
+      : (isFrench ? "Sélectionner la langue" : "Select Language");
+
+  String get cancel => isArabic
+      ? "إلغاء"
+      : (isFrench ? "Annuler" : "Cancel");
 
   // Static method to access the instance
   static AppLocalizations? of(BuildContext context) {
