@@ -32,57 +32,194 @@ class _HomeScreenState extends State<HomeScreen> {
     final AppLocalizations appLocalizations = AppLocalizations.of(context)!;
 
     return Scaffold(
-      appBar: AppBar(
-        title: Text(appLocalizations.appTitle,
-            style: GoogleFonts.poppins(fontSize: 20)),
-        backgroundColor: Colors.blue,
-        actions: [
-          IconButton(
-            icon: Icon(Icons.notifications),
-            onPressed: () {
-              // Handle notifications
-            },
+      appBar: PreferredSize(
+        preferredSize: Size.fromHeight(64.0),
+        child: Container(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              colors: [
+                Color(0xFF3949AB), // Indigo 600
+                Color(0xFF1E88E5), // Blue 600
+              ],
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.2),
+                blurRadius: 4,
+                offset: Offset(0, 2),
+              ),
+            ],
           ),
-          _buildLanguageDropdown(), // Add language dropdown
+          child: AppBar(
+            backgroundColor: Colors.transparent,
+            elevation: 0,
+            title: Text(
+              appLocalizations.appTitle,
+              style: GoogleFonts.poppins(
+                fontSize: 22,
+                fontWeight: FontWeight.w600,
+                color: Colors.white,
+              ),
+            ),
+            actions: [
+              IconButton(
+                icon: Icon(
+                  Icons.notifications_outlined,
+                  color: Colors.white,
+                  size: 28,
+                ),
+                onPressed: () {
+                  // Handle notifications
+                },
+              ),
+              _buildLanguageDropdown(),
+            ],
+          ),
+        ),
+      ),
+      drawer: _buildDrawer(context, appLocalizations),
+      body: _buildBody(context, appLocalizations),
+    );
+  }
+
+  Widget _buildBody(BuildContext context, AppLocalizations appLocalizations) {
+    return Padding(
+      padding: const EdgeInsets.all(20.0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _buildSearchBar(appLocalizations),
+          SizedBox(height: 20),
+          Text(
+            appLocalizations.availableServices,
+            style: GoogleFonts.poppins(
+              fontSize: 24,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          SizedBox(height: 16),
+          Expanded(
+            child: GridView.builder(
+              itemCount: 6,
+              gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                crossAxisCount: 2,
+                mainAxisSpacing: 20,
+                crossAxisSpacing: 20,
+                childAspectRatio: 0.8,
+              ),
+              itemBuilder: (context, index) {
+                String providerName = 'Provider ${index + 1}';
+                double rating = 4.0 + (index % 3) * 0.5;
+                return _buildServiceItem(
+                  context,
+                  appLocalizations.service(index + 1),
+                  'assets/images/service${index + 1}.png',
+                  providerName,
+                  rating,
+                  appLocalizations,
+                );
+              },
+            ),
+          ),
         ],
       ),
-      
-      drawer: _buildDrawer(context, appLocalizations),
-      body: Padding(
-        padding: const EdgeInsets.all(20.0),
+    );
+  }
+
+  Widget _buildServiceItem(
+    BuildContext context,
+    String serviceName,
+    String imagePath,
+    String providerName,
+    double rating,
+    AppLocalizations localizations,
+  ) {
+    return GestureDetector(
+      onTap: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => ServiceDetailScreen(
+              serviceName: serviceName,
+              imagePath: imagePath,
+              providerName: providerName,
+              rating: rating,
+              description: '',
+            ),
+          ),
+        );
+      },
+      child: Card(
+        elevation: 4,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(16),
+        ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            _buildSearchBar(appLocalizations),
-            SizedBox(height: 20),
-            Text(
-              appLocalizations.availableServices,
-              style: GoogleFonts.poppins(
-                  fontSize: 24, fontWeight: FontWeight.bold),
-            ),
-            SizedBox(height: 10),
-            // Wrap the GridView in Expanded to fill available space without overflow
-            Expanded(
-              child: GridView.builder(
-                itemCount: 6, // Adjust based on the number of services
-                gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                  crossAxisCount: 2,
-                  mainAxisSpacing: 20,
-                  crossAxisSpacing: 20,
-                  childAspectRatio: 0.8,
+            Stack(
+              children: [
+                ClipRRect(
+                  borderRadius: BorderRadius.vertical(
+                    top: Radius.circular(16),
+                  ),
+                  child: Image.asset(
+                    imagePath,
+                    height: 120,
+                    width: double.infinity,
+                    fit: BoxFit.cover,
+                  ),
                 ),
-                itemBuilder: (context, index) {
-                  String providerName = 'Provider ${index + 1}';
-                  double rating = 4.0 + (index % 3) * 0.5; // Example ratings
-                  return _buildServiceItem(
-                    context,
-                    appLocalizations.service(index + 1),
-                    'assets/images/service${index + 1}.png',
-                    providerName,
-                    rating,
-                    appLocalizations,
-                  );
-                },
+                Positioned(
+                  top: 8,
+                  right: 8,
+                  child: Icon(
+                    Icons.arrow_forward_ios_outlined,
+                    color: Colors.white,
+                    size: 20,
+                  ),
+                ),
+                Positioned.fill(
+                  child: Container(
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        colors: [
+                          Colors.transparent,
+                          Colors.black.withOpacity(0.4),
+                        ],
+                        begin: Alignment.topCenter,
+                        end: Alignment.bottomCenter,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            Padding(
+              padding: const EdgeInsets.all(12.0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    serviceName,
+                    style: GoogleFonts.poppins(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  SizedBox(height: 4),
+                  Text(
+                    '${localizations.provider}: $providerName',
+                    style: GoogleFonts.poppins(
+                      fontSize: 14,
+                      color: Colors.grey[600],
+                    ),
+                  ),
+                  SizedBox(height: 8),
+                  _buildStarRating(rating),
+                ],
               ),
             ),
           ],
@@ -91,7 +228,6 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  // Build the language selection dropdown with icons
   Widget _buildLanguageDropdown() {
     final localizations = AppLocalizations.of(context);
     if (localizations == null) {
@@ -120,9 +256,11 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  // Helper method to build individual language menu items with flags
   PopupMenuItem<String> _buildLanguageMenuItem(
-      String languageCode, String languageName, String flagPath) {
+    String languageCode,
+    String languageName,
+    String flagPath,
+  ) {
     return PopupMenuItem<String>(
       value: languageCode,
       child: Row(
@@ -148,72 +286,6 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  Widget _buildServiceItem(
-      BuildContext context,
-      String serviceName,
-      String imagePath,
-      String providerName,
-      double rating,
-      AppLocalizations localizations) {
-    return GestureDetector(
-      onTap: () {
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (context) => ServiceDetailScreen(
-              serviceName: serviceName,
-              imagePath: imagePath,
-              providerName: providerName,
-              rating: rating,
-              description: '',
-            ),
-          ),
-        );
-      },
-      child: Card(
-        elevation: 5,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            ClipRRect(
-              borderRadius: BorderRadius.vertical(top: Radius.circular(15)),
-              child: Image.asset(
-                imagePath,
-                height: 100,
-                width: double.infinity,
-                fit: BoxFit.cover,
-              ),
-            ),
-            Padding(
-              padding: const EdgeInsets.all(10.0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    serviceName,
-                    style: GoogleFonts.poppins(
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  SizedBox(height: 5),
-                  Text(
-                    '${localizations.provider}: $providerName',
-                    style: GoogleFonts.poppins(
-                        fontSize: 12, color: Colors.grey[600]),
-                  ),
-                  SizedBox(height: 5),
-                  _buildStarRating(rating), // Add the star rating widget
-                ],
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
   Widget _buildStarRating(double rating) {
     int fullStars = rating.floor();
     int halfStars = (rating % 1 >= 0.5) ? 1 : 0;
@@ -222,13 +294,11 @@ class _HomeScreenState extends State<HomeScreen> {
     return Row(
       children: [
         for (int i = 0; i < fullStars; i++)
-          Icon(Icons.star, color: Colors.amber, size: 20), // Increased size
+          Icon(Icons.star, color: Colors.amber, size: 20),
         for (int i = 0; i < halfStars; i++)
-          Icon(Icons.star_half,
-              color: Colors.amber, size: 20), // Increased size
+          Icon(Icons.star_half, color: Colors.amber, size: 20),
         for (int i = 0; i < emptyStars; i++)
-          Icon(Icons.star_border,
-              color: Colors.grey, size: 20), // Changed empty star color
+          Icon(Icons.star_border, color: Colors.grey, size: 20),
       ],
     );
   }
@@ -239,52 +309,78 @@ class _HomeScreenState extends State<HomeScreen> {
         padding: EdgeInsets.zero,
         children: [
           DrawerHeader(
-            decoration: BoxDecoration(color: Colors.blue),
+            decoration: BoxDecoration(color: Color(0xFF3949AB)),
             child: Text(
               appLocalizations.menu,
-              style: GoogleFonts.poppins(fontSize: 24, color: Colors.white),
+              style: GoogleFonts.poppins(
+                fontSize: 24,
+                fontWeight: FontWeight.w600,
+                color: Colors.white,
+              ),
             ),
           ),
           ListTile(
-            leading: Icon(Icons.person),
-            title: Text(appLocalizations.profile, style: GoogleFonts.poppins()),
+            leading: Icon(Icons.person, color: Color(0xFF3949AB)),
+            title: Text(
+              appLocalizations.profile,
+              style: GoogleFonts.poppins(
+                fontSize: 16,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
             onTap: () {
               Navigator.pop(context);
               Navigator.pushNamed(context, '/profile');
             },
           ),
           ListTile(
-            leading: Icon(Icons.settings),
-            title:
-                Text(appLocalizations.settings, style: GoogleFonts.poppins()),
+            leading: Icon(Icons.settings, color: Color(0xFF3949AB)),
+            title: Text(
+              appLocalizations.settings,
+              style: GoogleFonts.poppins(
+                fontSize: 16,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
             onTap: () {
               Navigator.pop(context);
               Navigator.pushNamed(context, '/settings');
             },
           ),
           ListTile(
-            leading: Icon(Icons.language),
-            title:
-                Text(appLocalizations.language, style: GoogleFonts.poppins()),
+            leading: Icon(Icons.language, color: Color(0xFF3949AB)),
+            title: Text(
+              appLocalizations.language,
+              style: GoogleFonts.poppins(
+                fontSize: 16,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
             onTap: () {
               Navigator.pop(context);
               // Implement language selection here
             },
           ),
-          Divider(),
+          Divider(
+            color: Colors.grey[400],
+            thickness: 1,
+          ),
           ListTile(
-            leading: Icon(Icons.logout),
-            title: Text(appLocalizations.logout, style: GoogleFonts.poppins()),
+            leading: Icon(Icons.logout, color: Color(0xFF3949AB)),
+            title: Text(
+              appLocalizations.logout,
+              style: GoogleFonts.poppins(
+                fontSize: 16,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
             onTap: () {
-              Navigator.pop(context); // Close the drawer
+              Navigator.pop(context);
               // Implement logout functionality here (if needed)
-
-              // Navigate to the OnboardingScreen
               Navigator.pushReplacement(
                 context,
                 MaterialPageRoute(
-                  builder: (context) =>
-                      OnboardingScreen(), // Navigate to OnboardingScreen
+                  builder: (context) => OnboardingScreen(),
                 ),
               );
             },
