@@ -83,7 +83,7 @@ class _RealTimeDetectionState extends State<RealTimeDetection> {
     final request = http.MultipartRequest(
       'POST',
       Uri.parse(
-          'http://192.168.246.195:8000/upload-image/'), // Replace with your server's IP address
+          'http://192.168.172.13:8000/upload-image/'), // Replace with your server's IP address
     );
 
     request.files.add(await http.MultipartFile.fromPath('file', image.path));
@@ -222,12 +222,13 @@ class _RealTimeDetectionState extends State<RealTimeDetection> {
                     ),
                     child: Center(
                       child: Padding(
-                        padding: EdgeInsets.only(top: 45,left: 85), // Moves text down
+                        padding: EdgeInsets.only(
+                            top: 45, left: 170), // Moves text down
                         child: Text(
-                          'xxxxxxxxxxxxxxxxxx',
+                          'XXXXXXXXXXXXXXXXXX : رقم التعريف الوطني ',
                           style: TextStyle(
                             color: const Color.fromARGB(117, 0, 0, 0),
-                            fontSize: 11,
+                            fontSize: 8,
                             fontWeight: FontWeight.bold,
                             shadows: [
                               Shadow(
@@ -304,12 +305,25 @@ class _RealTimeDetectionState extends State<RealTimeDetection> {
                     ),
                   ),
                 Positioned(
-                  bottom: 290, // Adjusted for position
-                  left: 12, // Positioned to the bottom left
-                  child: Image.asset(
-                    'assets/images/faee_shape.png',
-                    width: 150, // Adjust the size as necessary
-                    height: 140, // Adjust the size as necessary
+                  bottom: 280, // Adjusted for position
+                  left: 27, // Positioned to the bottom left
+                  width: 110, // Reduced width to make the rectangle narrower
+                  height: 150,
+                  child: Container(
+                    decoration: BoxDecoration(
+                      border: Border.all(
+                        color: const Color.fromARGB(
+                            69, 0, 0, 0), // Color for the boundary
+                        width: 2.0, // Thickness of the border
+                      ),
+                      borderRadius:
+                          BorderRadius.circular(10), // Optional rounded corners
+                    ),
+                    child: Image.asset(
+                      'assets/images/face_shape.png',
+                      width: 150, // Adjust the size as necessary
+                      height: 140, // Adjust the size as necessary
+                    ),
                   ),
                 ),
               ],
