@@ -135,7 +135,6 @@ class _RealTimeDetectionState extends State<RealTimeDetection> {
     super.dispose();
   }
 
-  // Function to show a dialog when "Support" button is clicked
   void _showSupportDialog() {
     showDialog(
       context: context,
@@ -194,12 +193,11 @@ class _RealTimeDetectionState extends State<RealTimeDetection> {
             actions: [
               IconButton(
                 icon: Icon(
-                  Icons.help_outline, // Changed to a "Help" icon for support
+                  Icons.help_outline,
                   color: Colors.white,
                   size: 28,
                 ),
-                onPressed:
-                    _showSupportDialog, // Show support dialog when clicked
+                onPressed: _showSupportDialog,
               ),
             ],
           ),
@@ -211,8 +209,8 @@ class _RealTimeDetectionState extends State<RealTimeDetection> {
                 CameraPreview(_cameraController),
                 Center(
                   child: Container(
-                    width: 380, // Slightly wider rectangle
-                    height: 250, // Slightly taller rectangle
+                    width: 380,
+                    height: 250,
                     decoration: BoxDecoration(
                       border: Border.all(
                         color: Colors.greenAccent,
@@ -222,18 +220,17 @@ class _RealTimeDetectionState extends State<RealTimeDetection> {
                     ),
                     child: Center(
                       child: Padding(
-                        padding: EdgeInsets.only(
-                            top: 45, left: 170), // Moves text down
+                        padding: EdgeInsets.only(top: 45, left: 170),
                         child: Text(
                           'XXXXXXXXXXXXXXXXXX : رقم التعريف الوطني ',
                           style: TextStyle(
-                            color: const Color.fromARGB(117, 0, 0, 0),
-                            fontSize: 8,
+                            color: const Color.fromARGB(109, 3, 68, 18),
+                            fontSize: 8.2,
                             fontWeight: FontWeight.bold,
                             shadows: [
                               Shadow(
                                 blurRadius: 10.0,
-                                color: const Color.fromARGB(49, 0, 0, 0),
+                                color: const Color.fromARGB(147, 43, 43, 43),
                                 offset: Offset(1, 0),
                               ),
                             ],
@@ -254,8 +251,8 @@ class _RealTimeDetectionState extends State<RealTimeDetection> {
                       decoration: BoxDecoration(
                         gradient: LinearGradient(
                           colors: [
-                            Color(0xFF3949AB), // Indigo 600
-                            Color(0xFF1E88E5), // Blue 600
+                            Color(0xFF3949AB),
+                            Color(0xFF1E88E5),
                           ],
                           begin: Alignment.topCenter,
                           end: Alignment.bottomCenter,
@@ -305,30 +302,41 @@ class _RealTimeDetectionState extends State<RealTimeDetection> {
                     ),
                   ),
                 Positioned(
-                  bottom: 280, // Adjusted for position
-                  left: 27, // Positioned to the bottom left
-                  width: 110, // Reduced width to make the rectangle narrower
+                  bottom: 280,
+                  left: 27,
+                  width: 110,
                   height: 150,
                   child: Container(
                     decoration: BoxDecoration(
                       border: Border.all(
-                        color: const Color.fromARGB(
-                            69, 0, 0, 0), // Color for the boundary
-                        width: 2.0, // Thickness of the border
+                        color: const Color.fromARGB(69, 0, 0, 0),
+                        width: 2.0,
                       ),
-                      borderRadius:
-                          BorderRadius.circular(10), // Optional rounded corners
+                      borderRadius: BorderRadius.circular(10),
                     ),
                     child: Image.asset(
                       'assets/images/face_shape.png',
-                      width: 150, // Adjust the size as necessary
-                      height: 140, // Adjust the size as necessary
+                      width: 150,
+                      height: 140,
                     ),
+                  ),
+                ),
+                Positioned(
+                  bottom: 458,
+                  left: 20,
+                  right: 20,
+                  child: Image.asset(
+                    'assets/images/id_things.png',
+                    height: 45,
                   ),
                 ),
               ],
             )
-          : Center(child: CircularProgressIndicator()),
+          : Center(
+              child: _errorMessage != null
+                  ? Text(_errorMessage!)
+                  : CircularProgressIndicator(),
+            ),
     );
   }
 }
