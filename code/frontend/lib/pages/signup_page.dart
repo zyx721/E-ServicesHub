@@ -26,13 +26,27 @@ class _SignupPageState extends State<SignupPage> {
         email: email,
         password: password,
       );
-      // Navigate to the main app screen upon successful sign-up
+      // Show success Snackbar
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Signed up successfully!'),
+          backgroundColor: Colors.green,
+        ),
+      );
+      // Navigate to the login or home screen upon successful sign-up
       print("Signed up successfully: ${userCredential.user?.uid}");
       // You can replace this with navigation to the login screen or home screen
     } catch (e) {
       setState(() {
         _errorMessage = "Sign-up failed: ${e.toString()}"; // Display error message
       });
+      // Show error Snackbar
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(_errorMessage!),
+          backgroundColor: Colors.red,
+        ),
+      );
     }
   }
 

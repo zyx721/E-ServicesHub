@@ -26,6 +26,13 @@ class _LoginPageState extends State<LoginPage> {
         email: email,
         password: password,
       );
+      // Show success Snackbar
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Logged in successfully!'),
+          backgroundColor: Colors.green,
+        ),
+      );
       // Navigate to the main app screen upon successful login
       print("Logged in successfully: ${userCredential.user?.uid}");
       // You can replace this with navigation to the home screen
@@ -33,6 +40,13 @@ class _LoginPageState extends State<LoginPage> {
       setState(() {
         _errorMessage = "Login failed: ${e.toString()}"; // Display error message
       });
+      // Show error Snackbar
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(_errorMessage!),
+          backgroundColor: Colors.red,
+        ),
+      );
     }
   }
 
