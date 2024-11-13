@@ -31,7 +31,6 @@ flutter:
   uses-material-design: true
   generate: true  # This line enables localization code generation
   assets:
-    - l10n/
     - assets/images/onboarding1.png
     - assets/images/onboarding2.png
     - assets/images/onboarding3.png
