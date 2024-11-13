@@ -129,37 +129,40 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _buildServiceItem(
-    BuildContext context,
-    String serviceName,
-    String imagePath,
-    String providerName,
-    double rating,
-    AppLocalizations localizations,
-  ) {
-    return GestureDetector(
-      onTap: () {
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (context) => ServiceDetailScreen(
-              serviceName: serviceName,
-              imagePath: imagePath,
-              providerName: providerName,
-              rating: rating,
-              description: '',
-            ),
+  BuildContext context,
+  String serviceName,
+  String imagePath,
+  String providerName,
+  double rating,
+  AppLocalizations localizations,
+) {
+  return GestureDetector(
+    onTap: () {
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => ServiceDetailScreen(
+            serviceName: serviceName,
+            imagePath: imagePath,
+            providerName: providerName,
+            rating: rating,
+            description: '',
           ),
-        );
-      },
-      child: Card(
-        elevation: 4,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
         ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Stack(
+      );
+    },
+    child: Card(
+      elevation: 4,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Expanded(
+            flex: 3, // Takes up 60% of the available space
+            child: Stack(
+              fit: StackFit.expand,
               children: [
                 ClipRRect(
                   borderRadius: BorderRadius.vertical(
@@ -167,8 +170,6 @@ class _HomeScreenState extends State<HomeScreen> {
                   ),
                   child: Image.asset(
                     imagePath,
-                    height: 120,
-                    width: double.infinity,
                     fit: BoxFit.cover,
                   ),
                 ),
@@ -197,36 +198,45 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
               ],
             ),
-            Padding(
-              padding: const EdgeInsets.all(12.0),
+          ),
+          Expanded(
+            flex: 2, // Takes up 40% of the available space
+            child: Padding(
+              padding: const EdgeInsets.all(8.0),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
                 children: [
                   Text(
                     serviceName,
                     style: GoogleFonts.poppins(
-                      fontSize: 16,
+                      fontSize: 14,
                       fontWeight: FontWeight.bold,
                     ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                   ),
-                  SizedBox(height: 4),
+                  SizedBox(height: 2),
                   Text(
                     '${localizations.provider}: $providerName',
                     style: GoogleFonts.poppins(
-                      fontSize: 14,
+                      fontSize: 12,
                       color: Colors.grey[600],
                     ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                   ),
-                  SizedBox(height: 8),
+                  SizedBox(height: 4),
                   _buildStarRating(rating),
                 ],
               ),
             ),
-          ],
-        ),
+          ),
+        ],
       ),
-    );
-  }
+    ),
+  );
+}
 
   Widget _buildLanguageDropdown() {
     final localizations = AppLocalizations.of(context);

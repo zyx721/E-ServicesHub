@@ -285,38 +285,47 @@ class FaceGuidelinePainter extends CustomPainter {
     final Path facePath = Path();
     final double ovalWidth = size.width * 0.85;
     final double ovalHeight = size.height * 0.8;
-    
+
     // Create natural V shape using cubic bezier curves
     facePath.moveTo(centerX, centerY - ovalHeight / 2);
-    
+
     // Top right curve (naturally rounded)
     facePath.cubicTo(
-      centerX + ovalWidth * 0.4, centerY - ovalHeight / 2,
-      centerX + ovalWidth / 2, centerY - ovalHeight * 0.3,
-      centerX + ovalWidth / 2, centerY - ovalHeight * 0.1
-    );
-    
+        centerX + ovalWidth * 0.4,
+        centerY - ovalHeight / 2,
+        centerX + ovalWidth / 2,
+        centerY - ovalHeight * 0.3,
+        centerX + ovalWidth / 2,
+        centerY - ovalHeight * 0.1);
+
     // Bottom right curve (gentle V-shape)
     facePath.cubicTo(
-      centerX + ovalWidth / 2, centerY + ovalHeight * 0.25,
-      centerX + ovalWidth * 0.25, centerY + ovalHeight * 0.4,
-      centerX, centerY + ovalHeight / 2  // More natural bottom point
-    );
-    
+        centerX + ovalWidth / 2,
+        centerY + ovalHeight * 0.25,
+        centerX + ovalWidth * 0.25,
+        centerY + ovalHeight * 0.4,
+        centerX,
+        centerY + ovalHeight / 2 // More natural bottom point
+        );
+
     // Bottom left curve (gentle V-shape)
     facePath.cubicTo(
-      centerX - ovalWidth * 0.25, centerY + ovalHeight * 0.4,
-      centerX - ovalWidth / 2, centerY + ovalHeight * 0.25,
-      centerX - ovalWidth / 2, centerY - ovalHeight * 0.1
-    );
-    
+        centerX - ovalWidth * 0.25,
+        centerY + ovalHeight * 0.4,
+        centerX - ovalWidth / 2,
+        centerY + ovalHeight * 0.25,
+        centerX - ovalWidth / 2,
+        centerY - ovalHeight * 0.1);
+
     // Top left curve (naturally rounded)
     facePath.cubicTo(
-      centerX - ovalWidth / 2, centerY - ovalHeight * 0.3,
-      centerX - ovalWidth * 0.4, centerY - ovalHeight / 2,
-      centerX, centerY - ovalHeight / 2
-    );
-    
+        centerX - ovalWidth / 2,
+        centerY - ovalHeight * 0.3,
+        centerX - ovalWidth * 0.4,
+        centerY - ovalHeight / 2,
+        centerX,
+        centerY - ovalHeight / 2);
+
     canvas.drawPath(facePath, paint);
 
     // Draw inner guidelines with dashed lines
@@ -352,48 +361,56 @@ class FaceGuidelinePainter extends CustomPainter {
     // Top left corner markers
     canvas.drawLine(
       Offset(centerX - ovalWidth * 0.4, centerY - ovalHeight * 0.35),
-      Offset(centerX - ovalWidth * 0.4 + markerSize, centerY - ovalHeight * 0.35),
+      Offset(
+          centerX - ovalWidth * 0.4 + markerSize, centerY - ovalHeight * 0.35),
       paint,
     );
     canvas.drawLine(
       Offset(centerX - ovalWidth * 0.4, centerY - ovalHeight * 0.35),
-      Offset(centerX - ovalWidth * 0.4, centerY - ovalHeight * 0.35 + markerSize),
+      Offset(
+          centerX - ovalWidth * 0.4, centerY - ovalHeight * 0.35 + markerSize),
       paint,
     );
 
     // Top right corner markers
     canvas.drawLine(
       Offset(centerX + ovalWidth * 0.4, centerY - ovalHeight * 0.35),
-      Offset(centerX + ovalWidth * 0.4 - markerSize, centerY - ovalHeight * 0.35),
+      Offset(
+          centerX + ovalWidth * 0.4 - markerSize, centerY - ovalHeight * 0.35),
       paint,
     );
     canvas.drawLine(
       Offset(centerX + ovalWidth * 0.4, centerY - ovalHeight * 0.35),
-      Offset(centerX + ovalWidth * 0.4, centerY - ovalHeight * 0.35 + markerSize),
+      Offset(
+          centerX + ovalWidth * 0.4, centerY - ovalHeight * 0.35 + markerSize),
       paint,
     );
 
     // Bottom left corner markers
     canvas.drawLine(
       Offset(centerX - ovalWidth * 0.4, centerY + ovalHeight * 0.35),
-      Offset(centerX - ovalWidth * 0.4 + markerSize, centerY + ovalHeight * 0.35),
+      Offset(
+          centerX - ovalWidth * 0.4 + markerSize, centerY + ovalHeight * 0.35),
       paint,
     );
     canvas.drawLine(
       Offset(centerX - ovalWidth * 0.4, centerY + ovalHeight * 0.35),
-      Offset(centerX - ovalWidth * 0.4, centerY + ovalHeight * 0.35 - markerSize),
+      Offset(
+          centerX - ovalWidth * 0.4, centerY + ovalHeight * 0.35 - markerSize),
       paint,
     );
 
     // Bottom right corner markers
     canvas.drawLine(
       Offset(centerX + ovalWidth * 0.4, centerY + ovalHeight * 0.35),
-      Offset(centerX + ovalWidth * 0.4 - markerSize, centerY + ovalHeight * 0.35),
+      Offset(
+          centerX + ovalWidth * 0.4 - markerSize, centerY + ovalHeight * 0.35),
       paint,
     );
     canvas.drawLine(
       Offset(centerX + ovalWidth * 0.4, centerY + ovalHeight * 0.35),
-      Offset(centerX + ovalWidth * 0.4, centerY + ovalHeight * 0.35 - markerSize),
+      Offset(
+          centerX + ovalWidth * 0.4, centerY + ovalHeight * 0.35 - markerSize),
       paint,
     );
   }

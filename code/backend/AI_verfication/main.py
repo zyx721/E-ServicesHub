@@ -145,7 +145,7 @@ async def upload_image(file: UploadFile = File(...)):
         })
 
 
-def compare_faces(face_image_path, tolerance=0.5):
+def compare_faces(face_image_path, tolerance=0.6):
     # Load the two images for comparison
     extracted_face = cv2.imread(extracted_face_path)
     submitted_face = cv2.imread(face_image_path)
@@ -191,7 +191,7 @@ async def compare_face(file: UploadFile = File(...)):
         shutil.copyfileobj(file.file, buffer)
 
     # Call compare_faces with a tolerance value, e.g., 0.5 for moderate strictness
-    faces_match = compare_faces(file_location, tolerance=0.5)
+    faces_match = compare_faces(file_location, tolerance=0.6)
 
     if faces_match:
         return JSONResponse(content={"message": "Faces match!"})
