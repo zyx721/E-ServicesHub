@@ -200,7 +200,7 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
           ),
           Expanded(
-            flex: 2, // Takes up 40% of the available space
+            flex: 3, // Takes up 40% of the available space
             child: Padding(
               padding: const EdgeInsets.all(8.0),
               child: Column(
