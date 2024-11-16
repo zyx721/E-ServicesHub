@@ -24,6 +24,7 @@ Future<UserRole> _retrieveUserRole() async {
   // Here you can implement dynamic retrieval of the user role
   return UserRole.serviceProvider; // Replace with your actual logic
 }
+
 class MyApp extends StatefulWidget {
   final List<CameraDescription> cameras;
   final UserRole userRole;
@@ -81,7 +82,8 @@ class _MyAppState extends State<MyApp> {
       '/login': (context) => const LoginScreen(),
       '/signup': (context) => const SignupScreen(),
       '/home': (context) => HomeScreen(),
-      '/profile': (context) => ProfileScreen(cameras: widget.cameras, userRole: widget.userRole),
+      '/profile': (context) =>
+          ProfileScreen(cameras: widget.cameras, userRole: widget.userRole),
       '/verification': (context) => RealTimeDetection(cameras: widget.cameras),
       '/settings': (context) => SettingsScreen(),
       '/forgot_password': (context) => ForgotPasswordScreen(),
