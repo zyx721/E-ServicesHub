@@ -4,6 +4,8 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:hanini_frontend/localization/app_localization.dart';
 import 'terms_and_conditions_page.dart';
 import 'package:google_sign_in/google_sign_in.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
 
 class SignupScreen extends StatefulWidget {
   const SignupScreen({Key? key}) : super(key: key);
@@ -14,6 +16,82 @@ class SignupScreen extends StatefulWidget {
 
 class _SignupScreenState extends State<SignupScreen>
     with SingleTickerProviderStateMixin {
+
+
+bool _isLoading = false; // To track loading state
+String _message = '';    // To display messages
+
+Future<void> _signup() async {
+  setState(() {
+    _isLoading = true;
+  });
+
+  final name = _nameController.text;
+  final email = _emailController.text;
+  final password = _passwordController.text;
+  final phone = _phoneController.text;
+
+  if (name.isEmpty || email.isEmpty || password.isEmpty || phone.isEmpty) {
+    setState(() {
+      _message = 'All fields are required';
+      _isLoading = false;
+    });
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text('All fields are required')),
+    );
+    return;
+  }
+
+  final url = Uri.parse('http://192.168.139.163:3000/signup');
+
+  try {
+    final response = await http.post(
+      url,
+      headers: {'Content-Type': 'application/json'},
+      body: json.encode({
+        'name': name,
+        'email': email,
+        'password': password,
+        'phone': phone,
+      }),
+    );
+
+    setState(() {
+      _isLoading = false;
+    });
+
+    final responseBody = json.decode(response.body);
+
+    if (response.statusCode == 201) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Signup successful: ${responseBody['message']}'),
+          backgroundColor: Colors.green,
+        ),
+      );
+      Navigator.pushNamed(context, '/home');
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Signup failed: ${responseBody['error']}'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
+  } catch (e) {
+    setState(() {
+      _isLoading = false;
+    });
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('Error: $e'),
+        backgroundColor: Colors.red,
+      ),
+    );
+  }
+}
+
+
   bool _isChecked = false;
   final TextEditingController _phoneController = TextEditingController();
   final TextEditingController _emailController = TextEditingController();
@@ -423,25 +501,24 @@ class _SignupScreenState extends State<SignupScreen>
   }
 
   Widget _buildSignUpButton(BuildContext context) {
-    return SlideTransition(
-      position: _slideAnimation,
-      child: ElevatedButton(
-        onPressed: _isFormValid()
-            ? () {
-                Navigator.pushNamed(context, '/home');
-              }
-            : null,
-        style: ElevatedButton.styleFrom(
-          backgroundColor: Colors.blue,
-          padding: const EdgeInsets.symmetric(vertical: 15, horizontal: 30),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(10),
-          ),
+  return SlideTransition(
+    position: _slideAnimation,
+    child: ElevatedButton(
+      onPressed: _isLoading ? null : _signup,
+      style: ElevatedButton.styleFrom(
+        backgroundColor: Colors.blue,
+        padding: const EdgeInsets.symmetric(vertical: 15, horizontal: 30),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(10),
         ),
-        child: Text(signupButton),
       ),
-    );
-  }
+      child: _isLoading
+          ? const CircularProgressIndicator(color: Colors.white)
+          : Text(signupButton),
+    ),
+  );
+}
+
 
   Widget _buildLoginButton(BuildContext context) {
     return SlideTransition(
@@ -461,139 +538,3 @@ class _SignupScreenState extends State<SignupScreen>
 
 
 
-// import 'package:flutter/material.dart';
-// import 'package:http/http.dart' as http;
-// import 'dart:convert';
-
-// void main() {
-//   runApp(MyApp());
-// }
-
-// class MyApp extends StatelessWidget {
-//   @override
-//   Widget build(BuildContext context) {
-//     return MaterialApp(
-//       title: 'Signup Form',
-//       theme: ThemeData(
-//         primarySwatch: Colors.blue,
-//       ),
-//       home: SignupScreen(),
-//     );
-//   }
-// }
-
-// class SignupScreen extends StatefulWidget {
-//   @override
-//   _SignupScreenState createState() => _SignupScreenState();
-// }
-
-// class _SignupScreenState extends State<SignupScreen> {
-//   final _nameController = TextEditingController();
-//   final _emailController = TextEditingController();
-//   final _passwordController = TextEditingController();
-//   final _phoneController = TextEditingController();
-
-//   String? _message;
-//   bool _isLoading = false;
-
-//   Future<void> _signup() async {
-//     setState(() {
-//       _isLoading = true;
-//     });
-
-//     final name = _nameController.text;
-//     final email = _emailController.text;
-//     final password = _passwordController.text;
-//     final phone = _phoneController.text;
-
-//     if (name.isEmpty || email.isEmpty || password.isEmpty || phone.isEmpty) {
-//       setState(() {
-//         _message = 'All fields are required';
-//         _isLoading = false;
-//       });
-//       return;
-//     }
-
-//     final url = Uri.parse('http://localhost:3000/signup');
-//     final response = await http.post(
-//       url,
-//       headers: {'Content-Type': 'application/json'},
-//       body: json.encode({
-//         'name': name,
-//         'email': email,
-//         'password': password,
-//         'phone': phone,
-//       }),
-//     );
-
-//     setState(() {
-//       _isLoading = false;
-//     });
-
-//     final responseBody = json.decode(response.body);
-
-//     if (response.statusCode == 201) {
-//       setState(() {
-//         _message = 'User created successfully: ${responseBody['message']}';
-//       });
-//     } else {
-//       setState(() {
-//         _message = responseBody['error'] ?? 'An error occurred';
-//       });
-//     }
-//   }
-
-//   @override
-//   Widget build(BuildContext context) {
-//     return Scaffold(
-//       appBar: AppBar(
-//         title: Text('Signup Form'),
-//       ),
-//       body: Padding(
-//         padding: const EdgeInsets.all(16.0),
-//         child: Column(
-//           crossAxisAlignment: CrossAxisAlignment.stretch,
-//           children: [
-//             TextField(
-//               controller: _nameController,
-//               decoration: InputDecoration(labelText: 'Name'),
-//             ),
-//             TextField(
-//               controller: _emailController,
-//               decoration: InputDecoration(labelText: 'Email'),
-//               keyboardType: TextInputType.emailAddress,
-//             ),
-//             TextField(
-//               controller: _passwordController,
-//               decoration: InputDecoration(labelText: 'Password'),
-//               obscureText: true,
-//             ),
-//             TextField(
-//               controller: _phoneController,
-//               decoration: InputDecoration(labelText: 'Phone'),
-//               keyboardType: TextInputType.phone,
-//             ),
-//             SizedBox(height: 20),
-//             ElevatedButton(
-//               onPressed: _isLoading ? null : _signup,
-//               child: _isLoading
-//                   ? CircularProgressIndicator()
-//                   : Text('Sign Up'),
-//             ),
-//             if (_message != null)
-//               Padding(
-//                 padding: const EdgeInsets.only(top: 16.0),
-//                 child: Text(
-//                   _message!,
-//                   style: TextStyle(
-//                     color: _message!.contains('success') ? Colors.green : Colors.red,
-//                   ),
-//                   textAlign: TextAlign.center,
-//                 ),
-//               ),
-//           ],
-//         ),
-//       ),
-//     );
-//   }
-// }
