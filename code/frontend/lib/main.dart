@@ -11,11 +11,12 @@ import 'package:hanini_frontend/screens/profile/profile_screen.dart';
 import 'package:hanini_frontend/screens/verification/face_verification_screen.dart';
 import 'localization/app_localization.dart'; // Update this path as needed
 import 'user_role.dart'; // Your UserRole enum and other imports...
+import 'package:firebase_core/firebase_core.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   final cameras = await availableCameras();
-
+  await Firebase.initializeApp(); // Initialize Firebase
   UserRole userRole = await _retrieveUserRole();
   runApp(MyApp(cameras: cameras, userRole: userRole));
 }

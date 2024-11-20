@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:hanini_frontend/localization/app_localization.dart';
-import 'package:google_sign_in/google_sign_in.dart'; // Import Google Sign-In
+import 'package:google_sign_in/google_sign_in.dart';
+import 'package:firebase_auth/firebase_auth.dart'; // Import Google Sign-In
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({Key? key}) : super(key: key);
@@ -16,6 +17,67 @@ class _LoginScreenState extends State<LoginScreen>
   late Animation<double> _fadeAnimation;
   late Animation<double> _scaleAnimation;
   final GoogleSignIn _googleSignIn = GoogleSignIn(); // Initialize GoogleSignIn
+
+
+  final TextEditingController _emailController = TextEditingController();
+  final TextEditingController _passwordController = TextEditingController();
+  final FirebaseAuth _auth = FirebaseAuth.instance;
+
+
+// Function to handle login
+  Future<void> handleLogin() async {
+    try {
+      final email = _emailController.text.trim();
+      final password = _passwordController.text.trim();
+
+      if (email.isNotEmpty && password.isNotEmpty) {
+        // Attempt to sign in with Firebase Auth
+        final UserCredential userCredential = await _auth.signInWithEmailAndPassword(
+          email: email,
+          password: password,
+        );
+
+        final User? user = userCredential.user;
+        if (user != null) {
+          print('Login Successful. User: ${user.email}');
+          // Show success SnackBar
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Login Successful. Welcome ${user.email}'),
+              backgroundColor: Colors.green,
+            ),
+          );
+          // Navigate to home page after successful login
+          Navigator.pushNamed(context, '/home');
+        } else {
+          // Show error SnackBar if no user is found
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('No user found.'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+      } else {
+        // Show SnackBar if email or password is empty
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Please enter both email and password.'),
+            backgroundColor: Colors.orange,
+          ),
+        );
+      }
+    } catch (error) {
+      // Show SnackBar for any errors during login
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Login Error: $error'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      print('Login Error: $error');
+    }
+  }
 
   @override
   void initState() {
@@ -116,9 +178,10 @@ class _LoginScreenState extends State<LoginScreen>
                     ),
                   ),
                   const SizedBox(height: 40),
-                  _buildTextField(localizations.email, false), // Localized email label
+                  _buildTextField(localizations.email, false, _emailController), // Bind email controller
                   const SizedBox(height: 15),
-                  _buildTextField(localizations.password, true), // Localized password label
+                  _buildTextField(localizations.password, true, _passwordController), // Bind password controller
+                  // Localized password label
                   const SizedBox(height: 30),
                   _buildLoginButton(context, localizations.loginButton), // Localized login button text
                   const SizedBox(height: 20),
@@ -134,34 +197,33 @@ class _LoginScreenState extends State<LoginScreen>
     );
   }
 
-  Widget _buildTextField(String label, bool obscureText) {
-    return TextField(
-      obscureText: obscureText,
-      decoration: InputDecoration(
-        labelText: label,
-        labelStyle: GoogleFonts.poppins(color: Colors.white),
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: Colors.white),
-        ),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: Colors.white, width: 2),
-        ),
-        filled: true,
-        fillColor: Colors.white.withOpacity(0.1),
-        contentPadding: const EdgeInsets.symmetric(vertical: 18, horizontal: 12),
+  Widget _buildTextField(String label, bool obscureText, TextEditingController controller) {
+  return TextField(
+    controller: controller, // Bind the controller here
+    obscureText: obscureText,
+    decoration: InputDecoration(
+      labelText: label,
+      labelStyle: GoogleFonts.poppins(color: Colors.white),
+      border: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: const BorderSide(color: Colors.white),
       ),
-      style: GoogleFonts.poppins(color: Colors.white),
-    );
-  }
+      focusedBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: const BorderSide(color: Colors.white, width: 2),
+      ),
+      filled: true,
+      fillColor: Colors.white.withOpacity(0.1),
+      contentPadding: const EdgeInsets.symmetric(vertical: 18, horizontal: 12),
+    ),
+    style: GoogleFonts.poppins(color: Colors.white),
+  );
+}
+
 
   Widget _buildLoginButton(BuildContext context, String buttonText) {
     return ElevatedButton(
-      onPressed: () {
-        // Add your login logic here
-        Navigator.pushNamed(context, '/home');
-      },
+      onPressed: handleLogin,
       style: ElevatedButton.styleFrom(
         backgroundColor: const Color(0xFFFFFFFF),
         shape: RoundedRectangleBorder(
