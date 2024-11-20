@@ -1,12 +1,19 @@
 const express = require('express');
 const bodyParser = require('body-parser');
-const { admin, db } = require('./config/firebaseAdmin'); // Ensure this points to your Firebase admin config
+const cors = require('cors'); // Add CORS if needed
+const bcrypt = require('bcrypt');
+const { admin, db } = require('./config/firebaseAdmin'); // Firebase Admin SDK
+require('dotenv').config(); // Use dotenv for environment variables
 
 const app = express();
 const port = 3000;
 
 // Middleware to parse JSON requests
 app.use(bodyParser.json());
+app.use(cors());
+
+// Helper function: Validate email format
+const isValidEmail = (email) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
 
 /**
  * Signup route
@@ -20,20 +27,24 @@ app.post('/signup', async (req, res) => {
     return res.status(400).json({ error: 'All fields are required' });
   }
 
-  try {
-    // Create user in Firebase Auth
-    const userRecord = await admin.auth().createUser({
-      email,
-      password,
-    });
+  if (!isValidEmail(email)) {
+    return res.status(400).json({ error: 'Invalid email format' });
+  }
 
-    // Add user details to Firestore
-    const usersCollection = db.collection('users');
-    await usersCollection.doc(userRecord.uid).set({
+  try {
+    // Hash password
+    const saltRounds = 10;
+    const hashedPassword = await bcrypt.hash(password, saltRounds);
+
+    // Create Firebase Auth user
+    const userRecord = await admin.auth().createUser({ email, password });
+
+    // Save additional details in Firestore
+    await db.collection('users').doc(userRecord.uid).set({
       name,
       email,
-      password,
       phone,
+      password: hashedPassword,
       createdAt: admin.firestore.FieldValue.serverTimestamp(),
     });
 
@@ -43,39 +54,60 @@ app.post('/signup', async (req, res) => {
       userId: userRecord.uid,
     });
   } catch (error) {
-    console.error('Error during signup:', error.message);
+    console.error('Signup error:', error.message);
+
+    // Specific Firebase error handling
+    if (error.code === 'auth/email-already-exists') {
+      return res.status(400).json({ error: 'Email is already in use' });
+    }
     return res.status(500).json({ error: 'Failed to sign up', details: error.message });
   }
 });
 
 /**
  * Login route
- * Verifies user credentials and returns a Firebase custom token
  */
 app.post('/login', async (req, res) => {
-  const { email } = req.body;
+  const { email, password } = req.body;
 
-  if (!email) {
-    return res.status(400).json({ error: 'Email is required' });
+  if (!email || !password) {
+    return res.status(400).json({ error: 'Email and password are required' });
   }
 
   try {
     // Retrieve user by email
     const user = await admin.auth().getUserByEmail(email);
 
-    // Generate a custom token for the user
+    // Fetch user details from Firestore
+    const userDoc = await db.collection('users').doc(user.uid).get();
+    if (!userDoc.exists) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    const userData = userDoc.data();
+
+    // Verify password
+    const isPasswordValid = await bcrypt.compare(password, userData.password);
+    if (!isPasswordValid) {
+      return res.status(401).json({ error: 'Invalid email or password' });
+    }
+
+    // Generate a custom token
     const customToken = await admin.auth().createCustomToken(user.uid);
 
-    return res.status(200).json({ success: true, token: customToken });
+    return res.status(200).json({
+      success: true,
+      token: customToken,
+      message: 'Login successful',
+    });
   } catch (error) {
     console.error('Login error:', error.message);
-    return res.status(401).json({ error: 'Authentication failed', details: error.message });
+    return res.status(500).json({ error: 'Login failed', details: error.message });
   }
 });
 
 /**
  * Check connection route
- * Ensures the backend is properly connected to Firebase
  */
 app.get('/check-connection', async (req, res) => {
   try {
@@ -94,6 +126,7 @@ app.get('/check-connection', async (req, res) => {
   }
 });
 
+// Start server
 app.listen(port, () => {
   console.log(`Server running on http://localhost:${port}`);
 });
