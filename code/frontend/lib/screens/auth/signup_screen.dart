@@ -42,8 +42,7 @@ Future<void> _signup() async {
     return;
   }
 
-  final url = Uri.parse('http://192.168.21.163:3000/signup');
-
+  final url = Uri.parse('http://192.168.1.10:3000/signup');
 
   try {
     final response = await http.post(
@@ -70,7 +69,9 @@ Future<void> _signup() async {
           backgroundColor: Colors.green,
         ),
       );
-      Navigator.pushNamed(context, '/home');
+
+      // Redirect the user to the login page and replace the current screen
+      Navigator.pushReplacementNamed(context, '/login');
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -91,7 +92,6 @@ Future<void> _signup() async {
     );
   }
 }
-
 
   bool _isChecked = false;
   final TextEditingController _phoneController = TextEditingController();
@@ -149,10 +149,7 @@ Future<void> _signup() async {
     }
   }
 
-  bool _isFormValid() {
-    return _formKey.currentState?.validate() ?? false && _isChecked;
-  }
-
+ 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -501,11 +498,11 @@ Future<void> _signup() async {
     );
   }
 
-  Widget _buildSignUpButton(BuildContext context) {
+Widget _buildSignUpButton(BuildContext context) {
   return SlideTransition(
     position: _slideAnimation,
     child: ElevatedButton(
-      onPressed: _isLoading ? null : _signup,
+      onPressed: _isChecked && !_isLoading ? _signup : null,  // Disable if _isChecked is false or _isLoading is true
       style: ElevatedButton.styleFrom(
         backgroundColor: Colors.blue,
         padding: const EdgeInsets.symmetric(vertical: 15, horizontal: 30),
@@ -519,6 +516,7 @@ Future<void> _signup() async {
     ),
   );
 }
+
 
 
   Widget _buildLoginButton(BuildContext context) {

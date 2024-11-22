@@ -3,6 +3,8 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:hanini_frontend/localization/app_localization.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:firebase_auth/firebase_auth.dart'; // Import Google Sign-In
+import 'package:shared_preferences/shared_preferences.dart';
+
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({Key? key}) : super(key: key);
@@ -25,59 +27,66 @@ class _LoginScreenState extends State<LoginScreen>
 
 
 // Function to handle login
-  Future<void> handleLogin() async {
-    try {
-      final email = _emailController.text.trim();
-      final password = _passwordController.text.trim();
+Future<void> handleLogin() async {
+  try {
+    final email = _emailController.text.trim();
+    final password = _passwordController.text.trim();
 
-      if (email.isNotEmpty && password.isNotEmpty) {
-        // Attempt to sign in with Firebase Auth
-        final UserCredential userCredential = await _auth.signInWithEmailAndPassword(
-          email: email,
-          password: password,
-        );
+    if (email.isNotEmpty && password.isNotEmpty) {
+      // Attempt to sign in with Firebase Auth
+      final UserCredential userCredential = await _auth.signInWithEmailAndPassword(
+        email: email,
+        password: password,
+      );
 
-        final User? user = userCredential.user;
-        if (user != null) {
-          print('Login Successful. User: ${user.email}');
-          // Show success SnackBar
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('Login Successful. Welcome ${user.email}'),
-              backgroundColor: Colors.green,
-            ),
-          );
-          // Navigate to home page after successful login
-          Navigator.pushNamed(context, '/home');
-        } else {
-          // Show error SnackBar if no user is found
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('No user found.'),
-              backgroundColor: Colors.red,
-            ),
-          );
-        }
-      } else {
-        // Show SnackBar if email or password is empty
+      final User? user = userCredential.user;
+      if (user != null) {
+        print('Login Successful. User: ${user.email}');
+        
+        // Save login state in SharedPreferences
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.setBool('isLoggedIn', true);
+
+        // Show success SnackBar
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Please enter both email and password.'),
-            backgroundColor: Colors.orange,
+            content: Text('Login Successful. Welcome ${user.email}'),
+            backgroundColor: Colors.green,
+          ),
+        );
+
+        // Navigate to home page and remove login page from stack
+        Navigator.pushReplacementNamed(context, '/home');
+      } else {
+        // Show error SnackBar if no user is found
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('No user found.'),
+            backgroundColor: Colors.red,
           ),
         );
       }
-    } catch (error) {
-      // Show SnackBar for any errors during login
+    } else {
+      // Show SnackBar if email or password is empty
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Login Error: $error'),
-          backgroundColor: Colors.red,
+          content: Text('Please enter both email and password.'),
+          backgroundColor: Colors.orange,
         ),
       );
-      print('Login Error: $error');
     }
+  } catch (error) {
+    // Show SnackBar for any errors during login
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('Login Error: $error'),
+        backgroundColor: Colors.red,
+      ),
+    );
+    print('Login Error: $error');
   }
+}
+
 
   @override
   void initState() {

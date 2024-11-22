@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:hanini_frontend/localization/app_localization.dart';
 import 'package:hanini_frontend/main.dart';
-import 'package:hanini_frontend/screens/onboarding/onboarding_screen.dart';
 import 'package:hanini_frontend/screens/services/ServiceDetailScreen.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class HomeScreen extends StatefulWidget {
   @override
@@ -11,6 +11,14 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
+
+  Future<void> handleLogout() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool('isLoggedIn', false); // Reset login state
+    // After logout, redirect to OnboardingScreen or Login page
+    Navigator.pushReplacementNamed(context, '/login'); // Or '/onboarding' depending on your flow
+  }
+
   // Language change logic
   void _changeLanguage(String languageCode) {
     Locale newLocale;
@@ -31,56 +39,59 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget build(BuildContext context) {
     final AppLocalizations appLocalizations = AppLocalizations.of(context)!;
 
-    return Scaffold(
-      appBar: PreferredSize(
-        preferredSize: Size.fromHeight(64.0),
-        child: Container(
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              colors: [
-                Color(0xFF3949AB), // Indigo 600
-                Color(0xFF1E88E5), // Blue 600
-              ],
-              begin: Alignment.topCenter,
-              end: Alignment.bottomCenter,
-            ),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withOpacity(0.2),
-                blurRadius: 4,
-                offset: Offset(0, 2),
+    return PopScope(
+      canPop: false,
+      child: Scaffold(
+        appBar: PreferredSize(
+          preferredSize: Size.fromHeight(64.0),
+          child: Container(
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: [
+                  Color(0xFF3949AB), // Indigo 600
+                  Color(0xFF1E88E5), // Blue 600
+                ],
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
               ),
-            ],
-          ),
-          child: AppBar(
-            backgroundColor: Colors.transparent,
-            elevation: 0,
-            title: Text(
-              appLocalizations.appTitle,
-              style: GoogleFonts.poppins(
-                fontSize: 22,
-                fontWeight: FontWeight.w600,
-                color: Colors.white,
-              ),
-            ),
-            actions: [
-              IconButton(
-                icon: Icon(
-                  Icons.notifications_outlined,
-                  color: Colors.white,
-                  size: 28,
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.2),
+                  blurRadius: 4,
+                  offset: Offset(0, 2),
                 ),
-                onPressed: () {
-                  // Handle notifications
-                },
+              ],
+            ),
+            child: AppBar(
+              backgroundColor: Colors.transparent,
+              elevation: 0,
+              title: Text(
+                appLocalizations.appTitle,
+                style: GoogleFonts.poppins(
+                  fontSize: 22,
+                  fontWeight: FontWeight.w600,
+                  color: Colors.white,
+                ),
               ),
-              _buildLanguageDropdown(),
-            ],
+              actions: [
+                IconButton(
+                  icon: Icon(
+                    Icons.notifications_outlined,
+                    color: Colors.white,
+                    size: 28,
+                  ),
+                  onPressed: () {
+                    // Handle notifications
+                  },
+                ),
+                _buildLanguageDropdown(),
+              ],
+            ),
           ),
         ),
+        drawer: _buildDrawer(context, appLocalizations),
+        body: _buildBody(context, appLocalizations),
       ),
-      drawer: _buildDrawer(context, appLocalizations),
-      body: _buildBody(context, appLocalizations),
     );
   }
 
@@ -375,26 +386,21 @@ class _HomeScreenState extends State<HomeScreen> {
             color: Colors.grey[400],
             thickness: 1,
           ),
-          ListTile(
-            leading: Icon(Icons.logout, color: Color(0xFF3949AB)),
-            title: Text(
-              appLocalizations.logout,
-              style: GoogleFonts.poppins(
-                fontSize: 16,
-                fontWeight: FontWeight.w500,
-              ),
-            ),
-            onTap: () {
-              Navigator.pop(context);
-              // Implement logout functionality here (if needed)
-              Navigator.pushReplacement(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => OnboardingScreen(),
-                ),
-              );
-            },
-          ),
+ListTile(
+  leading: Icon(Icons.logout, color: Color(0xFF3949AB)),
+  title: Text(
+    appLocalizations.logout,
+    style: GoogleFonts.poppins(
+      fontSize: 16,
+      fontWeight: FontWeight.w500,
+    ),
+  ),
+  onTap: () async {
+    // Call the handleLogout function
+    await handleLogout();
+  },
+),
+
         ],
       ),
     );

@@ -9,29 +9,56 @@ import 'package:hanini_frontend/screens/home/home_screen.dart';
 import 'package:hanini_frontend/screens/onboarding/onboarding_screen.dart';
 import 'package:hanini_frontend/screens/profile/profile_screen.dart';
 import 'package:hanini_frontend/screens/verification/face_verification_screen.dart';
-import 'localization/app_localization.dart'; // Update this path as needed
-import 'user_role.dart'; // Your UserRole enum and other imports...
+import 'localization/app_localization.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:shared_preferences/shared_preferences.dart'; // Import SharedPreferences
+import 'user_role.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   final cameras = await availableCameras();
   await Firebase.initializeApp(); // Initialize Firebase
+
+  final initialRoute = await _determineInitialRoute(); // Determine initial route
   UserRole userRole = await _retrieveUserRole();
-  runApp(MyApp(cameras: cameras, userRole: userRole));
+  runApp(MyApp(cameras: cameras, userRole: userRole, initialRoute: initialRoute));
 }
 
+Future<String> _determineInitialRoute() async {
+  final prefs = await SharedPreferences.getInstance();
+  final bool isFirstLaunch = prefs.getBool('isFirstLaunch') ?? true;
+  final bool isLoggedIn = prefs.getBool('isLoggedIn') ?? false;
+
+  if (isFirstLaunch) {
+    // Mark onboarding as shown after the first launch
+    await prefs.setBool('isFirstLaunch', false);
+    return '/'; // Show onboarding screen
+  }
+
+  if (isLoggedIn) {
+    return '/home'; // Skip to home if user is logged in
+  }
+
+  return '/login'; // Default to login if not logged in
+}
+
+
 Future<UserRole> _retrieveUserRole() async {
-  // Here you can implement dynamic retrieval of the user role
-  return UserRole.serviceProvider; // Replace with your actual logic
+  // Replace with actual user role retrieval logic
+  return UserRole.serviceProvider;
 }
 
 class MyApp extends StatefulWidget {
   final List<CameraDescription> cameras;
   final UserRole userRole;
+  final String initialRoute;
 
-  const MyApp({Key? key, required this.cameras, required this.userRole})
-      : super(key: key);
+  const MyApp({
+    Key? key,
+    required this.cameras,
+    required this.userRole,
+    required this.initialRoute,
+  }) : super(key: key);
 
   static _MyAppState? of(BuildContext context) =>
       context.findAncestorStateOfType<_MyAppState>();
@@ -64,7 +91,7 @@ class _MyAppState extends State<MyApp> {
         GlobalMaterialLocalizations.delegate,
         GlobalWidgetsLocalizations.delegate,
         GlobalCupertinoLocalizations.delegate,
-        AppLocalizationsDelegate(), // Ensure this is included
+        AppLocalizationsDelegate(),
       ],
       supportedLocales: const [
         Locale('en', ''), // English
@@ -72,7 +99,7 @@ class _MyAppState extends State<MyApp> {
         Locale('fr', ''), // French
       ],
       locale: _locale,
-      initialRoute: '/',
+      initialRoute: widget.initialRoute, // Use dynamic initial route
       routes: _buildRoutes(),
     );
   }
