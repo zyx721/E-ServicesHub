@@ -16,82 +16,80 @@ class SignupScreen extends StatefulWidget {
 
 class _SignupScreenState extends State<SignupScreen>
     with SingleTickerProviderStateMixin {
+  bool _isLoading = false; // To track loading state
+  String _message = ''; // To display messages
 
-
-bool _isLoading = false; // To track loading state
-String _message = '';    // To display messages
-
-Future<void> _signup() async {
-  setState(() {
-    _isLoading = true;
-  });
-
-  final name = _nameController.text;
-  final email = _emailController.text;
-  final password = _passwordController.text;
-  final phone = _phoneController.text;
-
-  if (name.isEmpty || email.isEmpty || password.isEmpty || phone.isEmpty) {
+  Future<void> _signup() async {
     setState(() {
-      _message = 'All fields are required';
-      _isLoading = false;
-    });
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('All fields are required')),
-    );
-    return;
-  }
-
-  final url = Uri.parse('http://192.168.1.10:3000/signup');
-
-  try {
-    final response = await http.post(
-      url,
-      headers: {'Content-Type': 'application/json'},
-      body: json.encode({
-        'name': name,
-        'email': email,
-        'password': password,
-        'phone': phone,
-      }),
-    );
-
-    setState(() {
-      _isLoading = false;
+      _isLoading = true;
     });
 
-    final responseBody = json.decode(response.body);
+    final name = _nameController.text;
+    final email = _emailController.text;
+    final password = _passwordController.text;
+    final phone = _phoneController.text;
 
-    if (response.statusCode == 201) {
+    if (name.isEmpty || email.isEmpty || password.isEmpty || phone.isEmpty) {
+      setState(() {
+        _message = 'All fields are required';
+        _isLoading = false;
+      });
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Signup successful: ${responseBody['message']}'),
-          backgroundColor: Colors.green,
-        ),
+        SnackBar(content: Text('All fields are required')),
+      );
+      return;
+    }
+
+    final url = Uri.parse('http://192.168.97.235:3000/signup');
+
+    try {
+      final response = await http.post(
+        url,
+        headers: {'Content-Type': 'application/json'},
+        body: json.encode({
+          'name': name,
+          'email': email,
+          'password': password,
+          'phone': phone,
+        }),
       );
 
-      // Redirect the user to the login page and replace the current screen
-      Navigator.pushReplacementNamed(context, '/login');
-    } else {
+      setState(() {
+        _isLoading = false;
+      });
+
+      final responseBody = json.decode(response.body);
+
+      if (response.statusCode == 201) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Signup successful: ${responseBody['message']}'),
+            backgroundColor: Colors.green,
+          ),
+        );
+
+        // Redirect the user to the login page and replace the current screen
+        Navigator.pushReplacementNamed(context, '/login');
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Signup failed: ${responseBody['error']}'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } catch (e) {
+      setState(() {
+        _isLoading = false;
+      });
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Signup failed: ${responseBody['error']}'),
+          content: Text('Error: $e'),
           backgroundColor: Colors.red,
         ),
       );
     }
-  } catch (e) {
-    setState(() {
-      _isLoading = false;
-    });
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('Error: $e'),
-        backgroundColor: Colors.red,
-      ),
-    );
   }
-}
 
   bool _isChecked = false;
   final TextEditingController _phoneController = TextEditingController();
@@ -103,7 +101,7 @@ Future<void> _signup() async {
   late Animation<Offset> _slideAnimation;
   final GoogleSignIn _googleSignIn = GoogleSignIn();
   final TextEditingController _nameController = TextEditingController();
- 
+
   @override
   void initState() {
     super.initState();
@@ -149,7 +147,6 @@ Future<void> _signup() async {
     }
   }
 
- 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -195,7 +192,8 @@ Future<void> _signup() async {
                       ),
                     ),
                     const SizedBox(height: 30),
-                    _buildTextField(nameLabel, false, _nameController, _slideAnimation),
+                    _buildTextField(
+                        nameLabel, false, _nameController, _slideAnimation),
                     const SizedBox(height: 10),
                     _buildEmailField(emailLabel),
                     const SizedBox(height: 10),
@@ -223,20 +221,18 @@ Future<void> _signup() async {
   String get signupTitle =>
       AppLocalizations.of(context)?.signupTitle ?? 'Create Account';
 
-  String get nameLabel =>
-      AppLocalizations.of(context)?.nameLabel ?? 'Name';
+  String get nameLabel => AppLocalizations.of(context)?.nameLabel ?? 'Name';
 
-  String get emailLabel =>
-      AppLocalizations.of(context)?.emailLabel ?? 'Email';
+  String get emailLabel => AppLocalizations.of(context)?.emailLabel ?? 'Email';
 
   String get passwordLabel =>
       AppLocalizations.of(context)?.passwordLabel ?? 'Password';
 
-  String get phoneLabel =>
-      AppLocalizations.of(context)?.phoneLabel ?? 'Phone';
+  String get phoneLabel => AppLocalizations.of(context)?.phoneLabel ?? 'Phone';
 
   String get termsAgreement =>
-      AppLocalizations.of(context)?.termsAgreement ?? 'I agree to the Terms and Conditions';
+      AppLocalizations.of(context)?.termsAgreement ??
+      'I agree to the Terms and Conditions';
 
   String get signInWithGoogle =>
       AppLocalizations.of(context)?.signInWithGoogle ?? 'Sign in with Google';
@@ -245,24 +241,31 @@ Future<void> _signup() async {
       AppLocalizations.of(context)?.signupButton ?? 'Sign Up';
 
   String get passwordMinLengthError =>
-      AppLocalizations.of(context)?.passwordMinLengthError ?? 'Password must be at least 8 characters long';
+      AppLocalizations.of(context)?.passwordMinLengthError ??
+      'Password must be at least 8 characters long';
 
   String get emailRequiredError =>
-      AppLocalizations.of(context)?.emailRequiredError ?? 'Please enter your email';
+      AppLocalizations.of(context)?.emailRequiredError ??
+      'Please enter your email';
 
   String get emailInvalidError =>
-      AppLocalizations.of(context)?.emailInvalidError ?? 'Please enter a valid email';
+      AppLocalizations.of(context)?.emailInvalidError ??
+      'Please enter a valid email';
 
   String get passwordRequiredError =>
-      AppLocalizations.of(context)?.passwordRequiredError ?? 'Please enter your password';
+      AppLocalizations.of(context)?.passwordRequiredError ??
+      'Please enter your password';
 
   String get phoneRequiredError =>
-      AppLocalizations.of(context)?.phoneRequiredError ?? 'Please enter your phone number';
+      AppLocalizations.of(context)?.phoneRequiredError ??
+      'Please enter your phone number';
 
   String get phoneInvalidError =>
-    AppLocalizations.of(context)?.phoneInvalidError ?? 'Please enter a valid phone number';
+      AppLocalizations.of(context)?.phoneInvalidError ??
+      'Please enter a valid phone number';
 
-  Widget _buildTextField(String label, bool obscureText, TextEditingController controller, Animation<Offset> slideAnimation) {
+  Widget _buildTextField(String label, bool obscureText,
+      TextEditingController controller, Animation<Offset> slideAnimation) {
     return SlideTransition(
       position: slideAnimation,
       child: TextFormField(
@@ -292,14 +295,16 @@ Future<void> _signup() async {
         },
         validator: (value) {
           if (value == null || value.isEmpty) {
-            return AppLocalizations.of(context)?.fieldRequiredError ?? 'Please enter your $label';
+            return AppLocalizations.of(context)?.fieldRequiredError ??
+                'Please enter your $label';
           } else if (label == passwordLabel && (value.length < 8)) {
             return passwordMinLengthError;
           } else if (label == emailLabel) {
             final emailRegex =
                 RegExp(r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$');
             if (!emailRegex.hasMatch(value)) {
-              return AppLocalizations.of(context)?.emailInvalidError ?? 'Please enter a valid email';
+              return AppLocalizations.of(context)?.emailInvalidError ??
+                  'Please enter a valid email';
             }
           }
           return null;
@@ -435,6 +440,7 @@ Future<void> _signup() async {
       ),
     );
   }
+
   Widget _buildTermsCheckbox() {
     return SlideTransition(
       position: _slideAnimation,
@@ -453,15 +459,21 @@ Future<void> _signup() async {
             child: RichText(
               text: TextSpan(
                 children: [
-                  TextSpan(text: AppLocalizations.of(context)?.termsAgreementPrefix ?? 'I agree to the '),
                   TextSpan(
-                    text: AppLocalizations.of(context)?.termsAgreementLink ?? 'Terms and Conditions',
-                    style: const TextStyle(color: Color.fromARGB(255, 183, 173, 173)),
+                      text:
+                          AppLocalizations.of(context)?.termsAgreementPrefix ??
+                              'I agree to the '),
+                  TextSpan(
+                    text: AppLocalizations.of(context)?.termsAgreementLink ??
+                        'Terms and Conditions',
+                    style: const TextStyle(
+                        color: Color.fromARGB(255, 183, 173, 173)),
                     recognizer: TapGestureRecognizer()
                       ..onTap = () {
                         Navigator.push(
                           context,
-                          MaterialPageRoute(builder: (context) => TermsAndConditionsPage()),
+                          MaterialPageRoute(
+                              builder: (context) => TermsAndConditionsPage()),
                         );
                       },
                   ),
@@ -498,26 +510,26 @@ Future<void> _signup() async {
     );
   }
 
-Widget _buildSignUpButton(BuildContext context) {
-  return SlideTransition(
-    position: _slideAnimation,
-    child: ElevatedButton(
-      onPressed: _isChecked && !_isLoading ? _signup : null,  // Disable if _isChecked is false or _isLoading is true
-      style: ElevatedButton.styleFrom(
-        backgroundColor: Colors.blue,
-        padding: const EdgeInsets.symmetric(vertical: 15, horizontal: 30),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(10),
+  Widget _buildSignUpButton(BuildContext context) {
+    return SlideTransition(
+      position: _slideAnimation,
+      child: ElevatedButton(
+        onPressed: _isChecked && !_isLoading
+            ? _signup
+            : null, // Disable if _isChecked is false or _isLoading is true
+        style: ElevatedButton.styleFrom(
+          backgroundColor: Colors.blue,
+          padding: const EdgeInsets.symmetric(vertical: 15, horizontal: 30),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(10),
+          ),
         ),
+        child: _isLoading
+            ? const CircularProgressIndicator(color: Colors.white)
+            : Text(signupButton),
       ),
-      child: _isLoading
-          ? const CircularProgressIndicator(color: Colors.white)
-          : Text(signupButton),
-    ),
-  );
-}
-
-
+    );
+  }
 
   Widget _buildLoginButton(BuildContext context) {
     return SlideTransition(
@@ -527,13 +539,11 @@ Widget _buildSignUpButton(BuildContext context) {
           Navigator.pushNamed(context, '/login');
         },
         child: Text(
-          AppLocalizations.of(context)?.loginButtonText ?? 'Already have an account? Login',
+          AppLocalizations.of(context)?.loginButtonText ??
+              'Already have an account? Login',
           style: const TextStyle(color: Colors.white),
         ),
       ),
     );
   }
 }
-
-
-

@@ -1,4 +1,4 @@
-package com.example.hanini_frontend
+package com.Nit.Hanini
 
 import io.flutter.embedding.android.FlutterActivity
 

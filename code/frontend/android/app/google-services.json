@@ -1,40 +1,21 @@
 {
   "project_info": {
-    "project_number": "809442785368",
-    "project_id": "hanini-f24b0",
-    "storage_bucket": "hanini-f24b0.firebasestorage.app"
+    "project_number": "733920147635",
+    "project_id": "hanini-2024",
+    "storage_bucket": "hanini-2024.firebasestorage.app"
   },
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:809442785368:android:6dab4a6979d1c1a2dc322d",
+        "mobilesdk_app_id": "1:733920147635:android:c9d5ab54a23ab59dcb98c6",
         "android_client_info": {
-          "package_name": "com.example.hanini_frontend"
+          "package_name": "com.Nit.Hanini"
         }
       },
       "oauth_client": [],
       "api_key": [
         {
-          "current_key": "AIzaSyBUn585SYQIXqyv-MFkoUugNO7BNM8QBAM"
-        }
-      ],
-      "services": {
-        "appinvite_service": {
-          "other_platform_oauth_client": []
-        }
-      }
-    },
-    {
-      "client_info": {
-        "mobilesdk_app_id": "1:809442785368:android:c5606b3307405a4ddc322d",
-        "android_client_info": {
-          "package_name": "h.anini"
-        }
-      },
-      "oauth_client": [],
-      "api_key": [
-        {
-          "current_key": "AIzaSyBUn585SYQIXqyv-MFkoUugNO7BNM8QBAM"
+          "current_key": "AIzaSyBjdEDzPKXsCxzFeDjDBJtbOWEz0JVS2Qk"
         }
       ],
       "services": {
