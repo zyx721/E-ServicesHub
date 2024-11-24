@@ -3,6 +3,8 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:hanini_frontend/localization/app_localization.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:firebase_auth/firebase_auth.dart'; // Import Google Sign-In
+import 'package:http/http.dart' as http;
+import 'dart:convert';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({Key? key}) : super(key: key);
@@ -112,15 +114,72 @@ class _LoginScreenState extends State<LoginScreen>
   }
 
   Future<void> _handleGoogleSignIn() async {
-    try {
-      await _googleSignIn.signIn();
-      // Navigate to home or handle the signed-in user
-      Navigator.pushNamed(context, '/home');
-    } catch (error) {
-      print("Google Sign-In Error: $error");
-      // Handle error (show a message, etc.)
+  try {
+    // Start the Google sign-in process
+    final GoogleSignInAccount? googleUser = await _googleSignIn.signIn();
+    if (googleUser == null) {
+      // The user canceled the sign-in process
+      return;
     }
+
+    // Obtain the Google authentication details
+    final GoogleSignInAuthentication googleAuth = await googleUser.authentication;
+    final String idToken = googleAuth.idToken!;
+    final String accessToken = googleAuth.accessToken!;
+
+    // Send the ID token to the backend for verification
+    final response = await http.post(
+      Uri.parse('http://192.168.210.249:3000/verify-google-token'), // Your backend URL here
+      headers: <String, String>{
+        'Content-Type': 'application/json',
+      },
+      body: jsonEncode({
+        'idToken': idToken,
+      }),
+    );
+
+    final responseBody = jsonDecode(response.body);
+    if (response.statusCode == 200 && responseBody['success']) {
+      // The server verified the token, now you can authenticate the user with Firebase
+      final firebaseToken = responseBody['token'];
+
+      // Use the Firebase custom token to sign in
+      final UserCredential userCredential = await _auth.signInWithCustomToken(firebaseToken);
+      print('User signed in: ${userCredential.user?.email}');
+
+      // Navigate to the home screen after successful login
+      Navigator.pushReplacementNamed(context, '/home');
+    } else {
+      // Handle the error if the token verification fails
+      print('Error: ${responseBody['error']}');
+      // Show an error to the user (Snackbar or dialog)
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Google Sign-In Error: ${responseBody['error']}'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
+  } catch (e) {
+    print("Google Sign-In Error: $e");
+    // Handle error (e.g., show a message)
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('Google Sign-In Error: $e'),
+        backgroundColor: Colors.red,
+      ),
+    );
   }
+}
+
+
+
+
+
+
+
+  
+
 
   @override
   Widget build(BuildContext context) {

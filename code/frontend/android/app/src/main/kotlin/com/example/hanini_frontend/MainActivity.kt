@@ -1,4 +1,4 @@
-package com.nit.hanini
+package com.Nit.Hanini
 
 import io.flutter.embedding.android.FlutterActivity
 

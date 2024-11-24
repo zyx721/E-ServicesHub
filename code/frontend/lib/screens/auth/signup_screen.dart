@@ -42,7 +42,7 @@ Future<void> _signup() async {
     return;
   }
 
-  final url = Uri.parse('http://192.168.21.163:3000/signup');
+  final url = Uri.parse('http://192.168.210.249:3000/signup');
 
 
   try {

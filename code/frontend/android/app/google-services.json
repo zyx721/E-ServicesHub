@@ -1,27 +1,45 @@
 {
   "project_info": {
-    "project_number": "47757300424",
-    "firebase_url": "https://hanini-2025-default-rtdb.europe-west1.firebasedatabase.app",
-    "project_id": "hanini-2025",
-    "storage_bucket": "hanini-2025.firebasestorage.app"
+    "project_number": "733920147635",
+    "firebase_url": "https://hanini-2024-default-rtdb.europe-west1.firebasedatabase.app",
+    "project_id": "hanini-2024",
+    "storage_bucket": "hanini-2024.firebasestorage.app"
   },
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:47757300424:android:c5308ef311519299cd4bfd",
+        "mobilesdk_app_id": "1:733920147635:android:c9d5ab54a23ab59dcb98c6",
         "android_client_info": {
-          "package_name": "com.nit.hanini"
+          "package_name": "com.Nit.Hanini"
         }
       },
-      "oauth_client": [],
+      "oauth_client": [
+        {
+          "client_id": "733920147635-o9emma9qe98ttb07vfb4h4nb7060vtqs.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.Nit.Hanini",
+            "certificate_hash": "38437e68eb449e0b209ea346f42a7f2ab3707b56"
+          }
+        },
+        {
+          "client_id": "733920147635-egvclvgmj2quvv1b7fid1qubmad94rhu.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
       "api_key": [
         {
-          "current_key": "AIzaSyCwKon5vaopyyYsoh7brtgBrQqukS8DGWA"
+          "current_key": "AIzaSyBjdEDzPKXsCxzFeDjDBJtbOWEz0JVS2Qk"
         }
       ],
       "services": {
         "appinvite_service": {
-          "other_platform_oauth_client": []
+          "other_platform_oauth_client": [
+            {
+              "client_id": "733920147635-egvclvgmj2quvv1b7fid1qubmad94rhu.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
         }
       }
     }
