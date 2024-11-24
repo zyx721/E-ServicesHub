@@ -40,7 +40,7 @@ class _SignupScreenState extends State<SignupScreen>
       return;
     }
 
-    final url = Uri.parse('http://192.168.97.235:3000/signup');
+    final url = Uri.parse('https://hanini-2024.onrender.com/signup');
 
     try {
       final response = await http.post(
@@ -141,7 +141,7 @@ class _SignupScreenState extends State<SignupScreen>
   Future<void> _handleGoogleSignIn() async {
     try {
       await _googleSignIn.signIn();
-      Navigator.pushNamed(context, '/home');
+      Navigator.pushNamed(context, '/navbar');
     } catch (error) {
       print("Google Sign-In Error: $error");
     }

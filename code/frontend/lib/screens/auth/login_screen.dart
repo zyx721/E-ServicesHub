@@ -55,8 +55,9 @@ Future<void> handleLogin() async {
           ),
         );
 
-        // Navigate to home page and remove login page from stack
-        Navigator.pushReplacementNamed(context, '/home');
+        // Navigate to navbar
+        // page and remove login page from stack
+        Navigator.pushReplacementNamed(context, '/navbar');
       } else {
         // Show error SnackBar if no user is found
         ScaffoldMessenger.of(context).showSnackBar(

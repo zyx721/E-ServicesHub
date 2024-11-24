@@ -1,18 +1,19 @@
 import 'package:camera/camera.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
-import 'package:hanini_frontend/screens/SettingsScreen/SettingsScreen.dart';
-import 'package:hanini_frontend/screens/auth/forgot_password_screen.dart';
+// import 'package:hanini_frontend/screens/SettingsScreen/SettingsScreen.dart';
+// import 'package:hanini_frontend/screens/auth/forgot_password_screen.dart';
 import 'package:hanini_frontend/screens/auth/login_screen.dart';
 import 'package:hanini_frontend/screens/auth/signup_screen.dart';
-import 'package:hanini_frontend/screens/home/home_screen.dart';
+// import 'package:hanini_frontend/screens/home/home_screen.dart';
 import 'package:hanini_frontend/screens/onboarding/onboarding_screen.dart';
-import 'package:hanini_frontend/screens/profile/profile_screen.dart';
-import 'package:hanini_frontend/screens/verification/face_verification_screen.dart';
+// import 'package:hanini_frontend/screens/profile/profile_screen.dart';
+// import 'package:hanini_frontend/screens/verification/face_verification_screen.dart';
 import 'localization/app_localization.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:shared_preferences/shared_preferences.dart'; // Import SharedPreferences
 import 'user_role.dart';
+import 'navbar.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -35,9 +36,9 @@ Future<String> _determineInitialRoute() async {
     return '/'; // Show onboarding screen
   }
 
-  if (isLoggedIn) {
-    return '/home'; // Skip to home if user is logged in
-  }
+if (isLoggedIn) {
+  return '/navbar'; // Show navbar if user is logged in
+}
 
   return '/login'; // Default to login if not logged in
 }
@@ -109,12 +110,12 @@ class _MyAppState extends State<MyApp> {
       '/': (context) => OnboardingScreen(),
       '/login': (context) => const LoginScreen(),
       '/signup': (context) => const SignupScreen(),
-      '/home': (context) => HomeScreen(),
-      '/profile': (context) =>
-          ProfileScreen(cameras: widget.cameras, userRole: widget.userRole),
-      '/verification': (context) => RealTimeDetection(cameras: widget.cameras),
-      '/settings': (context) => SettingsScreen(),
-      '/forgot_password': (context) => ForgotPasswordScreen(),
+      '/navbar': (context) => NavbarPage(),
+      // '/home': (context) => HomeScreen(),
+      // '/profile': (context) => const ProfileScreen(cameras: widget.cameras, userRole: widget.userRole),
+      // '/verification': (context) => RealTimeDetection(cameras: widget.cameras),
+      // '/settings': (context) => SettingsScreen(),
+      // '/forgot_password': (context) => ForgotPasswordScreen(),
     };
   }
 }
