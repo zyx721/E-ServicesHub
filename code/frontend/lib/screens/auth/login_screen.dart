@@ -49,7 +49,7 @@ class _LoginScreenState extends State<LoginScreen>
             ),
           );
           // Navigate to home page after successful login
-          Navigator.pushNamed(context, '/home');
+          Navigator.pushNamed(context, '/navbar');
         } else {
           // Show error SnackBar if no user is found
           ScaffoldMessenger.of(context).showSnackBar(
@@ -148,7 +148,7 @@ class _LoginScreenState extends State<LoginScreen>
         print('User signed in: ${userCredential.user?.email}');
 
         // Navigate to the home screen after successful login
-        Navigator.pushReplacementNamed(context, '/home');
+        Navigator.pushReplacementNamed(context, '/navbar');
       } else {
         // Handle the error if the token verification fails
         print('Error: ${responseBody['error']}');

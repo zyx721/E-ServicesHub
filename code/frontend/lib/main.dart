@@ -2,13 +2,13 @@ import 'package:camera/camera.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 // import 'package:hanini_frontend/screens/SettingsScreen/SettingsScreen.dart';
-// import 'package:hanini_frontend/screens/auth/forgot_password_screen.dart';
+import 'package:hanini_frontend/screens/auth/forgot_password_screen.dart';
 import 'package:hanini_frontend/screens/auth/login_screen.dart';
 import 'package:hanini_frontend/screens/auth/signup_screen.dart';
 // import 'package:hanini_frontend/screens/home/home_screen.dart';
 import 'package:hanini_frontend/screens/onboarding/onboarding_screen.dart';
 // import 'package:hanini_frontend/screens/profile/profile_screen.dart';
-// import 'package:hanini_frontend/screens/verification/face_verification_screen.dart';
+import 'package:hanini_frontend/screens/verification/face_verification_screen.dart';
 import 'localization/app_localization.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:shared_preferences/shared_preferences.dart'; // Import SharedPreferences
@@ -113,9 +113,9 @@ class _MyAppState extends State<MyApp> {
       '/navbar': (context) => NavbarPage(),
       // '/home': (context) => HomeScreen(),
       // '/profile': (context) => const ProfileScreen(cameras: widget.cameras, userRole: widget.userRole),
-      // '/verification': (context) => RealTimeDetection(cameras: widget.cameras),
+      '/verification': (context) => RealTimeDetection(cameras: widget.cameras),
       // '/settings': (context) => SettingsScreen(),
-      // '/forgot_password': (context) => ForgotPasswordScreen(),
+      '/forgot_password': (context) => ForgotPasswordScreen(),
     };
   }
 }
