@@ -126,15 +126,11 @@ app.get('/check-connection', async (req, res) => {
   }
 });
 
-// Start server
-app.listen(port, () => {
-  console.log(`Server running on http://localhost:${port}`);
-});
 
 
 
-
-
+const { OAuth2Client } = require('google-auth-library');
+const client = new OAuth2Client("733920147635-oo5ntbeokk91snik5hjkrojr9v0l715i.apps.googleusercontent.com");
 
 app.post('/verify-google-token', async (req, res) => {
   const { idToken } = req.body;
@@ -144,22 +140,24 @@ app.post('/verify-google-token', async (req, res) => {
   }
 
   try {
-    // Verify Google ID Token using Firebase Admin SDK
-    const decodedToken = await admin.auth().verifyIdToken(idToken);
+    // Verify Google ID Token
+    const ticket = await client.verifyIdToken({
+      idToken,
+      audience: "733920147635-oo5ntbeokk91snik5hjkrojr9v0l715i.apps.googleusercontent.com", // Replace with your Web Client ID
+    });
+    
+    const user = ticket.getPayload();
+    const uid = user['sub'];
 
-    // Extract user info from decoded token
-    const uid = decodedToken.uid;
-    const user = await admin.auth().getUser(uid);
-
-    // Use Firestore transaction to ensure atomicity
+    // Save user to Firestore or proceed as necessary
     const userRef = db.collection('users').doc(uid);
     await db.runTransaction(async (transaction) => {
       const userDoc = await transaction.get(userRef);
       if (!userDoc.exists) {
         transaction.set(userRef, {
           email: user.email,
-          name: user.displayName,
-          photoUrl: user.photoURL,
+          name: user.name,
+          photoUrl: user.picture,
           createdAt: admin.firestore.FieldValue.serverTimestamp(),
         });
       }
@@ -172,10 +170,20 @@ app.post('/verify-google-token', async (req, res) => {
       success: true,
       message: 'Google authentication successful',
       token: firebaseToken,
-      user: { email: user.email, name: user.displayName, photoUrl: user.photoURL },
+      user: { 
+        email: user.email,
+         name: user.name, 
+         photoUrl: user.picture 
+        },
     });
   } catch (error) {
     console.error('Error verifying Google token:', error.message);
     return res.status(500).json({ error: 'Failed to verify token', details: error.message });
   }
+});
+
+
+// Start server
+app.listen(port, () => {
+  console.log(`Server running on http://localhost:${port}`);
 });

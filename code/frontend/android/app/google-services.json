@@ -15,15 +15,15 @@
       },
       "oauth_client": [
         {
-          "client_id": "733920147635-o9emma9qe98ttb07vfb4h4nb7060vtqs.apps.googleusercontent.com",
+          "client_id": "733920147635-8o0f5m4gmcprmppdcga7pbe2h696i23m.apps.googleusercontent.com",
           "client_type": 1,
           "android_info": {
             "package_name": "com.Nit.Hanini",
-            "certificate_hash": "38437e68eb449e0b209ea346f42a7f2ab3707b56"
+            "certificate_hash": "58fa735f6889e860dc1e8952845fa645a1082a1c"
           }
         },
         {
-          "client_id": "733920147635-egvclvgmj2quvv1b7fid1qubmad94rhu.apps.googleusercontent.com",
+          "client_id": "733920147635-oo5ntbeokk91snik5hjkrojr9v0l715i.apps.googleusercontent.com",
           "client_type": 3
         }
       ],
@@ -36,7 +36,7 @@
         "appinvite_service": {
           "other_platform_oauth_client": [
             {
-              "client_id": "733920147635-egvclvgmj2quvv1b7fid1qubmad94rhu.apps.googleusercontent.com",
+              "client_id": "733920147635-e1hd1ib45d834khi99qemdcs9b4sf7vs.apps.googleusercontent.com",
               "client_type": 3
             }
           ]
