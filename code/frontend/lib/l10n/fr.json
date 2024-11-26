@@ -5,5 +5,13 @@
   "bookWithEase": "Réservez facilement",
   "rateAndReview": "Évaluer et examiner",
   "next": "Suivant",
-  "getStarted": "Commencer"
+  "getStarted": "Commencer",
+    "forgotPassword": "Mot de passe oublié",
+    "email": "E-mail",
+    "enterValidEmail": "Veuillez entrer une adresse e-mail valide.",
+    "networkError": "Erreur réseau. Veuillez réessayer plus tard.",
+    "emailNotFound": "E-mail introuvable. Veuillez vérifier et réessayer.",
+    "passwordResetEmailSent": "Un e-mail de réinitialisation du mot de passe a été envoyé à votre boîte de réception."
+
+  
 }
