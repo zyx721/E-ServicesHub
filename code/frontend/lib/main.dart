@@ -55,6 +55,7 @@ class MyApp extends StatefulWidget {
   final String initialRoute;
 
   const MyApp({
+    
     Key? key,
     required this.cameras,
     required this.userRole,
@@ -110,7 +111,7 @@ class _MyAppState extends State<MyApp> {
       '/': (context) => OnboardingScreen(),
       '/login': (context) => const LoginScreen(),
       '/signup': (context) => const SignupScreen(),
-      '/navbar': (context) => NavbarPage(),
+      '/navbar': (context) => const NavbarPage(),
       // '/home': (context) => HomeScreen(),
       // '/profile': (context) => const ProfileScreen(cameras: widget.cameras, userRole: widget.userRole),
       // '/verification': (context) => RealTimeDetection(cameras: widget.cameras),

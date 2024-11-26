@@ -17,16 +17,20 @@ class _NavbarPageState extends State<NavbarPage> {
   int selectedIndex = 0;
 
   final List<Widget> screens = const [
-    HomePage(),
+    ProfilePage(),
     ShopPage(),
     FavoritesPage(),
-    ProfilePage(),
+    HomePage(),
   ];
 
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      home: Scaffold(
+      debugShowCheckedModeBanner: false,
+
+      home: 
+      // SafeArea(child: 
+      Scaffold(
         body: screens[selectedIndex],
         bottomNavigationBar: NavigationBar(
           selectedIndex: selectedIndex,          
@@ -42,9 +46,8 @@ class _NavbarPageState extends State<NavbarPage> {
             NavigationDestination(icon: Icon(Iconsax.save_2), label: 'Save'),
             NavigationDestination(icon: Icon(Iconsax.home), label: 'Home'),
           ],
-            // animationDuration: Duration(milliseconds: 300), // Controls animation duration
-            // indicatorColor: Colors.blue, // Adds emphasis to the active tab
         ),
+        // ),
       ),
     );
   }

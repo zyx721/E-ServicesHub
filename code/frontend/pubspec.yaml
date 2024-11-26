@@ -24,6 +24,8 @@ dependencies:
     sdk: flutter
   intl: ^0.19.0 # Correctly aligned
   shared_preferences: ^2.3.3 #required for storing login state
+  font_awesome_flutter: ^10.4.0
+
 
 dev_dependencies:
   flutter_test:
@@ -53,4 +55,11 @@ flutter:
     - assets/images/sen.png
     - assets/images/face_shape.png
     - assets/images/id_things.png
-
+    - assets/images/work/pic1.jpeg
+    - assets/images/work/pic2.jpeg
+    - assets/images/work/provider.jpeg
+    - assets/images/work/painter.jpeg
+    - assets/images/work/portpfolio1.jpeg
+    - assets/images/work/portpfolio2.jpeg
+    - assets/images/work/portpfolio3.jpeg
+    - assets/images/work/portpfolio4.jpeg

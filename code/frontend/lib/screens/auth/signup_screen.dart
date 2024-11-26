@@ -40,7 +40,7 @@ class _SignupScreenState extends State<SignupScreen>
       return;
     }
 
-    final url = Uri.parse('https://hanini-2024.onrender.com/signup');
+final url = Uri.parse('http://192.168.113.70:5000/signup');
 
     try {
       final response = await http.post(
