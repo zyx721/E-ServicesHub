@@ -24,7 +24,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
     // final baseUrl = dotenv.env['ip'];
     // final url = Uri.parse('http://$baseUrl:3000/forget-password');
 
-    final url = Uri.parse('http://192.168.113.236:3000/forget-password');
+    final url = Uri.parse('http://192.168.210.163:3000/forget-password');
 
     try {
       final response = await http.post(

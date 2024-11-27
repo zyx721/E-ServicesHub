@@ -6,6 +6,7 @@ import 'package:firebase_auth/firebase_auth.dart'; // Import Google Sign-In
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:flutter_dotenv/flutter_dotenv.dart'; // dotenv for .env variables
+import 'package:shared_preferences/shared_preferences.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({Key? key}) : super(key: key);
@@ -131,7 +132,7 @@ class _LoginScreenState extends State<LoginScreen>
       // Send the ID token to the backend for verification
       // final baseUrl = dotenv.env['ip'];
       // final url = Uri.parse('http://$baseUrl:3000/verify-google-token');
-      final url = Uri.parse('http://192.168.113.236:3000/verify-google-token');
+      final url = Uri.parse('http://192.168.210.163:3000/verify-google-token');
 
       final response = await http.post(
         url,
@@ -150,6 +151,10 @@ class _LoginScreenState extends State<LoginScreen>
         final UserCredential userCredential =
             await _auth.signInWithCustomToken(firebaseToken);
         print('User signed in: ${userCredential.user?.email}');
+
+        // Save login state in shared preferences
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setBool('isLoggedIn', true);
 
         // Navigate to the home screen after successful login
         Navigator.pushReplacementNamed(context, '/navbar');

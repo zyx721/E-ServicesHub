@@ -8,6 +8,7 @@ import 'package:http/http.dart' as http;
 import 'package:firebase_auth/firebase_auth.dart'; // Import Google Sign-In
 import 'dart:convert';
 import 'package:flutter_dotenv/flutter_dotenv.dart'; // dotenv for .env variables
+import 'package:shared_preferences/shared_preferences.dart';
 
 class SignupScreen extends StatefulWidget {
   const SignupScreen({Key? key}) : super(key: key);
@@ -91,7 +92,7 @@ class _SignupScreenState extends State<SignupScreen>
     // final baseUrl = dotenv.env['ip'];
     // final url = Uri.parse('http://$baseUrl:3000/signup');
 
-    final url = Uri.parse('http://192.168.113.236:3000/signup');
+    final url = Uri.parse('http://192.168.210.163:3000/signup');
 
     try {
       final response = await http.post(
@@ -117,6 +118,10 @@ class _SignupScreenState extends State<SignupScreen>
             backgroundColor: Colors.green,
           ),
         );
+
+        // Save login state in shared preferences
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setBool('isLoggedIn', true);
 
         // Redirect the user to the login page and replace the current screen
         Navigator.pushReplacementNamed(context, '/login');
@@ -209,7 +214,7 @@ class _SignupScreenState extends State<SignupScreen>
       // Send the ID token to the backend for verification
       // final baseUrl = dotenv.env['ip'];
       // final url = Uri.parse('http://$baseUrl:3000/verify-google-token');
-      final url = Uri.parse('http://192.168.113.236:3000/verify-google-token');
+      final url = Uri.parse('http://192.168.210.163:3000/verify-google-token');
 
       final response = await http.post(
         url,
@@ -228,6 +233,10 @@ class _SignupScreenState extends State<SignupScreen>
         final UserCredential userCredential =
             await _auth.signInWithCustomToken(firebaseToken);
         print('User signed in: ${userCredential.user?.email}');
+
+        // Save login state in shared preferences
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setBool('isLoggedIn', true);
 
         // Navigate to the home screen after successful login
         Navigator.pushReplacementNamed(context, '/navbar');
