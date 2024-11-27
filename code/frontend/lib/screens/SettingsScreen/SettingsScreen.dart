@@ -35,17 +35,6 @@ class SettingsScreen extends StatelessWidget {
             _buildOptionCard(context, 'About App', Icons.info, () {
               // Show app info or navigate to an about screen
             }),
-            SizedBox(height: 10),
-            // Logout Option
-            _buildOptionCard(context, 'Logout', Icons.logout, () {
-              // Navigate to onboarding screen
-              Navigator.pushReplacement(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => OnboardingScreen(), // Change to your onboarding screen
-                ),
-              );
-            }, isLogout: true),
           ],
         ),
       ),

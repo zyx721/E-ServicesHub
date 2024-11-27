@@ -1,13 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:iconsax/iconsax.dart';
+import 'screens/navScreens/homepage.dart';
+import 'screens/navScreens/searchpage.dart';
+import 'screens/navScreens/profilepage.dart';
+import 'screens/navScreens/favoritespage.dart';
+import 'package:hanini_frontend/screens/navScreens/sidebar.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:hanini_frontend/screens/navScreens/homepage.dart';
-import 'package:hanini_frontend/screens/navScreens/searchpage.dart';
-import 'package:hanini_frontend/screens/navScreens/profilepage.dart';
-import 'package:hanini_frontend/screens/navScreens/favoritespage.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import 'package:hanini_frontend/localization/app_localization.dart';
-import 'screens/navScreens/sidebar.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+
 class NavbarPage extends StatefulWidget {
   const NavbarPage({Key? key}) : super(key: key);
 
@@ -16,12 +17,6 @@ class NavbarPage extends StatefulWidget {
 }
 
 class _NavbarPageState extends State<NavbarPage> {
-  Future<void> handleLogout() async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setBool('isLoggedIn', false); // Reset login state
-    Navigator.pushReplacementNamed(context, '/login'); // Or '/onboarding'
-  }
-
   int selectedIndex = 0;
 
   final List<Widget> screens = const [
@@ -46,7 +41,7 @@ class _NavbarPageState extends State<NavbarPage> {
         ),
         backgroundColor: const Color(0xFF3949AB),
       ),
-      drawer: Sidebar(handleLogout: handleLogout), // Add Sidebar here
+      drawer: Sidebar(context, appLocalizations), // Add Sidebar here
       body: screens[selectedIndex],
       bottomNavigationBar: NavigationBar(
         selectedIndex: selectedIndex,
@@ -63,5 +58,12 @@ class _NavbarPageState extends State<NavbarPage> {
         ],
       ),
     );
+  }
+
+  // Logout handler function
+  Future<void> handleLogout() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool('isLoggedIn', false); // Reset login state
+    Navigator.pushReplacementNamed(context, '/login'); // Or '/onboarding'
   }
 }

@@ -5,28 +5,22 @@ import 'package:hanini_frontend/screens/SettingsScreen/SettingsScreen.dart';
 import 'package:hanini_frontend/screens/auth/forgot_password_screen.dart';
 import 'package:hanini_frontend/screens/auth/login_screen.dart';
 import 'package:hanini_frontend/screens/auth/signup_screen.dart';
-// import 'package:hanini_frontend/screens/home/home_screen.dart';
 import 'package:hanini_frontend/screens/onboarding/onboarding_screen.dart';
-// import 'package:hanini_frontend/screens/profile/profile_screen.dart';
 import 'package:hanini_frontend/screens/verification/face_verification_screen.dart';
 import 'localization/app_localization.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:shared_preferences/shared_preferences.dart'; // Import SharedPreferences
 import 'user_role.dart';
 import 'navbar.dart';
-import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   final cameras = await availableCameras();
   await Firebase.initializeApp(); // Initialize Firebase
 
-  final initialRoute =
-      await _determineInitialRoute(); // Determine initial route
+  final initialRoute = await _determineInitialRoute(); // Determine initial route
   UserRole userRole = await _retrieveUserRole();
-  runApp(
-      MyApp(cameras: cameras, userRole: userRole, initialRoute: initialRoute));
-  await dotenv.load(fileName: ".env"); // Load environment variables
+  runApp(MyApp(cameras: cameras, userRole: userRole, initialRoute: initialRoute));
 }
 
 Future<String> _determineInitialRoute() async {
@@ -40,12 +34,12 @@ Future<String> _determineInitialRoute() async {
     return '/'; // Show onboarding screen
   }
 
-  if (isLoggedIn) {
-    return '/navbar'; // Show navbar if user is logged in
-  }
-
+if (isLoggedIn) {
+  return '/navbar'; // Show navbar if user is logged in
+}
   return '/login'; // Default to login if not logged in
 }
+
 
 Future<UserRole> _retrieveUserRole() async {
   // Replace with actual user role retrieval logic
@@ -58,6 +52,7 @@ class MyApp extends StatefulWidget {
   final String initialRoute;
 
   const MyApp({
+    
     Key? key,
     required this.cameras,
     required this.userRole,
@@ -114,8 +109,6 @@ class _MyAppState extends State<MyApp> {
       '/login': (context) => const LoginScreen(),
       '/signup': (context) => const SignupScreen(),
       '/navbar': (context) => const NavbarPage(),
-      // '/home': (context) => HomeScreen(),
-      // '/profile': (context) => const ProfileScreen(cameras: widget.cameras, userRole: widget.userRole),
       '/verification': (context) => RealTimeDetection(cameras: widget.cameras),
       '/settings': (context) => SettingsScreen(),
       '/forgot_password': (context) => ForgotPasswordScreen(),
