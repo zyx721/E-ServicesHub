@@ -2,6 +2,7 @@ const express = require('express');
 const nodemailer = require('nodemailer');
 const router = express.Router();
 const isValidEmail = (email) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email); // Helper function: Validate email format
+const { admin, db } = require('../config/firebaseAdmin'); // Firebase Admin SDK
 
 
 /**

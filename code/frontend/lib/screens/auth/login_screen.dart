@@ -5,7 +5,7 @@ import 'package:google_sign_in/google_sign_in.dart';
 import 'package:firebase_auth/firebase_auth.dart'; // Import Google Sign-In
 import 'package:http/http.dart' as http;
 import 'dart:convert';
-import 'package:shared_preferences/shared_preferences.dart'; 
+import 'package:flutter_dotenv/flutter_dotenv.dart'; // dotenv for .env variables
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({Key? key}) : super(key: key);
@@ -49,10 +49,6 @@ class _LoginScreenState extends State<LoginScreen>
               backgroundColor: Colors.green,
             ),
           );
-           // Save login state in shared preferences
-           final prefs = await SharedPreferences.getInstance();
-           await prefs.setBool('isLoggedIn', true);
-
           // Navigate to home page after successful login
           Navigator.pushNamed(context, '/navbar');
         } else {
@@ -133,7 +129,10 @@ class _LoginScreenState extends State<LoginScreen>
       final String accessToken = googleAuth.accessToken!;
 
       // Send the ID token to the backend for verification
-      final url = Uri.parse('http://192.168.113.70:3000/verify-google-token');
+      // final baseUrl = dotenv.env['ip'];
+      // final url = Uri.parse('http://$baseUrl:3000/verify-google-token');
+      final url = Uri.parse('http://192.168.113.236:3000/verify-google-token');
+
       final response = await http.post(
         url,
         headers: {'Content-Type': 'application/json'},
@@ -149,12 +148,8 @@ class _LoginScreenState extends State<LoginScreen>
 
         // Use the Firebase custom token to sign in
         final UserCredential userCredential =
-        await _auth.signInWithCustomToken(firebaseToken);
+            await _auth.signInWithCustomToken(firebaseToken);
         print('User signed in: ${userCredential.user?.email}');
-        
-        // Save login state in shared preferences
-        final prefs = await SharedPreferences.getInstance();
-        await prefs.setBool('isLoggedIn', true);
 
         // Navigate to the home screen after successful login
         Navigator.pushReplacementNamed(context, '/navbar');
