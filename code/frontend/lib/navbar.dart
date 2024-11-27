@@ -30,35 +30,34 @@ class _NavbarPageState extends State<NavbarPage> {
   Widget build(BuildContext context) {
     final AppLocalizations appLocalizations = AppLocalizations.of(context)!;
 
-    return MaterialApp(
-      debugShowCheckedModeBanner: false,
-      home: Scaffold(
-        appBar: AppBar(
-          title: Text(
-            appLocalizations.appTitle,
-            style: GoogleFonts.poppins(
-              fontSize: 22,
-              fontWeight: FontWeight.w600,
-            ),
+    return Scaffold(
+      appBar: AppBar(
+        title: Text(
+          appLocalizations.appTitle,
+          style: GoogleFonts.poppins(
+            fontSize: 22,
+            fontWeight: FontWeight.w600,
           ),
-          backgroundColor: const Color(0xFF3949AB),
         ),
-        drawer: buildDrawer(context, appLocalizations), // Use the imported function
-        body: screens[selectedIndex],
-        bottomNavigationBar: NavigationBar(
-          selectedIndex: selectedIndex,
-          onDestinationSelected: (int index) {
-            setState(() {
-              selectedIndex = index;
-            });
-          },
-          destinations: const [
-            NavigationDestination(icon: Icon(Iconsax.home), label: 'Home'),
-            NavigationDestination(icon: Icon(Iconsax.search_normal), label: 'Search'),
-            NavigationDestination(icon: Icon(Iconsax.save_2), label: 'Favorites'),
-            NavigationDestination(icon: Icon(Iconsax.user), label: 'Profile'),
-          ],
-        ),
+        backgroundColor: const Color(0xFF3949AB),
+      ),
+      drawer:
+          buildDrawer(context, appLocalizations), // Use the imported function
+      body: screens[selectedIndex],
+      bottomNavigationBar: NavigationBar(
+        selectedIndex: selectedIndex,
+        onDestinationSelected: (int index) {
+          setState(() {
+            selectedIndex = index;
+          });
+        },
+        destinations: const [
+          NavigationDestination(icon: Icon(Iconsax.home), label: 'Home'),
+          NavigationDestination(
+              icon: Icon(Iconsax.search_normal), label: 'Search'),
+          NavigationDestination(icon: Icon(Iconsax.save_2), label: 'Favorites'),
+          NavigationDestination(icon: Icon(Iconsax.user), label: 'Profile'),
+        ],
       ),
     );
   }
