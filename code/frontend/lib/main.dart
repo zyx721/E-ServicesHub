@@ -1,7 +1,7 @@
 import 'package:camera/camera.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
-// import 'package:hanini_frontend/screens/SettingsScreen/SettingsScreen.dart';
+import 'package:hanini_frontend/screens/SettingsScreen/SettingsScreen.dart';
 import 'package:hanini_frontend/screens/auth/forgot_password_screen.dart';
 import 'package:hanini_frontend/screens/auth/login_screen.dart';
 import 'package:hanini_frontend/screens/auth/signup_screen.dart';
@@ -117,7 +117,7 @@ class _MyAppState extends State<MyApp> {
       // '/home': (context) => HomeScreen(),
       // '/profile': (context) => const ProfileScreen(cameras: widget.cameras, userRole: widget.userRole),
       '/verification': (context) => RealTimeDetection(cameras: widget.cameras),
-      // '/settings': (context) => SettingsScreen(),
+      '/settings': (context) => SettingsScreen(),
       '/forgot_password': (context) => ForgotPasswordScreen(),
     };
   }

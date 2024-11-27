@@ -131,7 +131,7 @@ class _LoginScreenState extends State<LoginScreen>
       // Send the ID token to the backend for verification
       // final baseUrl = dotenv.env['ip'];
       // final url = Uri.parse('http://$baseUrl:3000/verify-google-token');
-      final url = Uri.parse('http://192.168.250.235:3000/verify-google-token');
+      final url = Uri.parse('http://192.168.113.70:3000/verify-google-token');
 
       final response = await http.post(
         url,
