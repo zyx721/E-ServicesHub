@@ -41,24 +41,29 @@ class _NavbarPageState extends State<NavbarPage> {
         ),
         backgroundColor: const Color(0xFF3949AB),
       ),
-      drawer:
-          buildDrawer(context, appLocalizations), // Use the imported function
+      drawer: Sidebar(context, appLocalizations), // Add Sidebar here
       body: screens[selectedIndex],
       bottomNavigationBar: NavigationBar(
         selectedIndex: selectedIndex,
         onDestinationSelected: (int index) {
           setState(() {
-            selectedIndex = index;
+            selectedIndex = index; // Update selectedIndex on tap
           });
         },
         destinations: const [
           NavigationDestination(icon: Icon(Iconsax.home), label: 'Home'),
-          NavigationDestination(
-              icon: Icon(Iconsax.search_normal), label: 'Search'),
+          NavigationDestination(icon: Icon(Iconsax.search_normal), label: 'Search'),
           NavigationDestination(icon: Icon(Iconsax.save_2), label: 'Favorites'),
           NavigationDestination(icon: Icon(Iconsax.user), label: 'Profile'),
         ],
       ),
     );
+  }
+
+  // Logout handler function
+  Future<void> handleLogout() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool('isLoggedIn', false); // Reset login state
+    Navigator.pushReplacementNamed(context, '/login'); // Or '/onboarding'
   }
 }

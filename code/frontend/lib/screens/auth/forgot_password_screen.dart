@@ -20,7 +20,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
       _isLoading = true;
     });
 
-    final String backendUrl = 'http://192.168.1.9:3000/forget-password'; // Replace with your backend URL
+    final String backendUrl = 'http://192.168.113.70:3000/forget-password'; // Replace with your backend URL
 
     try {
       final response = await http.post(

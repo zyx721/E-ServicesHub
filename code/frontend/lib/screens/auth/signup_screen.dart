@@ -6,6 +6,8 @@ import 'terms_and_conditions_page.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:shared_preferences/shared_preferences.dart'; 
 
 class SignupScreen extends StatefulWidget {
   const SignupScreen({Key? key}) : super(key: key);
@@ -18,6 +20,7 @@ class _SignupScreenState extends State<SignupScreen>
     with SingleTickerProviderStateMixin {
   bool _isLoading = false; // To track loading state
   String _message = ''; // To display messages
+  final FirebaseAuth _auth = FirebaseAuth.instance;
 
   Future<void> _signup() async {
     setState(() {
@@ -40,7 +43,7 @@ class _SignupScreenState extends State<SignupScreen>
       return;
     }
 
-final url = Uri.parse('http://192.168.113.70:5000/signup');
+final url = Uri.parse('http://192.168.113.70:3000/signup');
 
     try {
       final response = await http.post(
@@ -138,14 +141,74 @@ final url = Uri.parse('http://192.168.113.70:5000/signup');
     super.dispose();
   }
 
-  Future<void> _handleGoogleSignIn() async {
+
+Future<void> _handleGoogleSignIn() async {
     try {
-      await _googleSignIn.signIn();
-      Navigator.pushNamed(context, '/navbar');
-    } catch (error) {
-      print("Google Sign-In Error: $error");
+      // Start the Google sign-in process
+      final GoogleSignInAccount? googleUser = await _googleSignIn.signIn();
+      if (googleUser == null) {
+        // The user canceled the sign-in process
+        return;
+      }
+
+      // Obtain the Google authentication details
+      final GoogleSignInAuthentication googleAuth =
+          await googleUser.authentication;
+      final String idToken = googleAuth.idToken!;
+      final String accessToken = googleAuth.accessToken!;
+
+      // Send the ID token to the backend for verification
+      // final baseUrl = dotenv.env['ip'];
+      // final url = Uri.parse('http://$baseUrl:3000/verify-google-token');
+      final url = Uri.parse('http://192.168.113.70:3000/verify-google-token');
+
+      final response = await http.post(
+        url,
+        headers: {'Content-Type': 'application/json'},
+        body: json.encode({
+          'idToken': idToken,
+        }),
+      );
+
+      final responseBody = jsonDecode(response.body);
+      if (response.statusCode == 200 && responseBody['success']) {
+        // The server verified the token, now you can authenticate the user with Firebase
+        final firebaseToken = responseBody['token'];
+
+        // Use the Firebase custom token to sign in
+        final UserCredential userCredential =
+        await _auth.signInWithCustomToken(firebaseToken);
+        print('User signed in: ${userCredential.user?.email}');
+
+         // Save login state in shared preferences
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.setBool('isLoggedIn', true);
+
+        // Navigate to the home screen after successful login
+        Navigator.pushReplacementNamed(context, '/navbar');
+      } else {
+        // Handle the error if the token verification fails
+        print('Error: ${responseBody['error']}');
+        // Show an error to the user (Snackbar or dialog)
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Google Sign-In Error: ${responseBody['error']}'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } catch (e) {
+      print("Google Sign-In Error: $e");
+      // Handle error (e.g., show a message)
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Google Sign-In Error: $e'),
+          backgroundColor: Colors.red,
+        ),
+      );
     }
   }
+
 
   @override
   Widget build(BuildContext context) {
