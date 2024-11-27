@@ -1,5 +1,4 @@
 // firebaseAdmin.js
-
 const admin = require('firebase-admin');
 const serviceAccount = require('./firebase-adminsdk-key.json'); // Update the path
 
@@ -11,4 +10,5 @@ admin.initializeApp({
 // Ensure that 'db' is properly initialized as Firestore instance
 const db = admin.firestore();
 
-module.exports = { admin, db }; // Export db for use in other files
+// Export db for use in other files
+module.exports = { admin, db }; 
