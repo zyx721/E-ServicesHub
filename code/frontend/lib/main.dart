@@ -14,15 +14,19 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:shared_preferences/shared_preferences.dart'; // Import SharedPreferences
 import 'user_role.dart';
 import 'navbar.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   final cameras = await availableCameras();
   await Firebase.initializeApp(); // Initialize Firebase
 
-  final initialRoute = await _determineInitialRoute(); // Determine initial route
+  final initialRoute =
+      await _determineInitialRoute(); // Determine initial route
   UserRole userRole = await _retrieveUserRole();
-  runApp(MyApp(cameras: cameras, userRole: userRole, initialRoute: initialRoute));
+  runApp(
+      MyApp(cameras: cameras, userRole: userRole, initialRoute: initialRoute));
+  await dotenv.load(fileName: ".env"); // Load environment variables
 }
 
 Future<String> _determineInitialRoute() async {
@@ -36,13 +40,12 @@ Future<String> _determineInitialRoute() async {
     return '/'; // Show onboarding screen
   }
 
-if (isLoggedIn) {
-  return '/navbar'; // Show navbar if user is logged in
-}
+  if (isLoggedIn) {
+    return '/navbar'; // Show navbar if user is logged in
+  }
 
   return '/login'; // Default to login if not logged in
 }
-
 
 Future<UserRole> _retrieveUserRole() async {
   // Replace with actual user role retrieval logic
@@ -55,7 +58,6 @@ class MyApp extends StatefulWidget {
   final String initialRoute;
 
   const MyApp({
-    
     Key? key,
     required this.cameras,
     required this.userRole,

@@ -34,23 +34,31 @@ class AppLocalizations {
             : (isFrench ? "Service inconnu" : "Unknown Service");
     }
   }
+
   // Password recovery translations
-String get enterValidEmail => isArabic
-    ? "يرجى إدخال بريد إلكتروني صالح"
-    : (isFrench ? "Veuillez entrer une adresse e-mail valide." : "Please enter a valid email.");
+  String get enterValidEmail => isArabic
+      ? "يرجى إدخال بريد إلكتروني صالح"
+      : (isFrench
+          ? "Veuillez entrer une adresse e-mail valide."
+          : "Please enter a valid email.");
 
-String get networkError => isArabic
-    ? "خطأ في الشبكة. يرجى المحاولة مرة أخرى لاحقًا."
-    : (isFrench ? "Erreur réseau. Veuillez réessayer plus tard." : "Network error. Please try again later.");
+  String get networkError => isArabic
+      ? "خطأ في الشبكة. يرجى المحاولة مرة أخرى لاحقًا."
+      : (isFrench
+          ? "Erreur réseau. Veuillez réessayer plus tard."
+          : "Network error. Please try again later.");
 
-String get emailNotFound => isArabic
-    ? "البريد الإلكتروني غير موجود. يرجى التحقق والمحاولة مرة أخرى."
-    : (isFrench ? "E-mail introuvable. Veuillez vérifier et réessayer." : "Email not found. Please check and try again.");
+  String get emailNotFound => isArabic
+      ? "البريد الإلكتروني غير موجود. يرجى التحقق والمحاولة مرة أخرى."
+      : (isFrench
+          ? "E-mail introuvable. Veuillez vérifier et réessayer."
+          : "Email not found. Please check and try again.");
 
-String get passwordResetEmailSent => isArabic
-    ? "تم إرسال بريد إلكتروني لإعادة تعيين كلمة المرور إلى بريدك الإلكتروني."
-    : (isFrench ? "Un e-mail de réinitialisation du mot de passe a été envoyé à votre boîte de réception." : "A password reset email has been sent to your inbox.");
-
+  String get passwordResetEmailSent => isArabic
+      ? "تم إرسال بريد إلكتروني لإعادة تعيين كلمة المرور إلى بريدك الإلكتروني."
+      : (isFrench
+          ? "Un e-mail de réinitialisation du mot de passe a été envoyé à votre boîte de réception."
+          : "A password reset email has been sent to your inbox.");
 
   // Onboarding translations
   // Get the language name based on the current locale
@@ -128,6 +136,10 @@ String get passwordResetEmailSent => isArabic
   String get passwordLabel =>
       isArabic ? "كلمة المرور" : (isFrench ? "Mot de passe" : "Password");
 
+
+  String get passwordCheckLabel =>
+   isArabic ? "أعد كتابة كلمة المرور" : (isFrench ? "Confirmez le Mot de passe" : "Confirm Password");
+
   String get phoneLabel =>
       isArabic ? "رقم الهاتف" : (isFrench ? "Numéro de téléphone" : "Phone");
 
@@ -186,10 +198,9 @@ String get passwordResetEmailSent => isArabic
       : (isFrench ? "Veuillez entrer votre nom" : "Please enter your name");
 
   // Home Screen translations
-  
+
   // Home Screen translations
-  String get appTitle =>
-      isArabic ? "هنيني" : (isFrench ? "Hanini" : "Hanini");
+  String get appTitle => isArabic ? "هنيني" : (isFrench ? "Hanini" : "Hanini");
   String get searchHint => isArabic
       ? "ابحث عن خدمات..."
       : (isFrench ? "Recherchez des services..." : "Search for services...");
@@ -221,9 +232,7 @@ String get passwordResetEmailSent => isArabic
       ? "اختر اللغة"
       : (isFrench ? "Sélectionner la langue" : "Select Language");
 
-  String get cancel => isArabic
-      ? "إلغاء"
-      : (isFrench ? "Annuler" : "Cancel");
+  String get cancel => isArabic ? "إلغاء" : (isFrench ? "Annuler" : "Cancel");
 
   // Static method to access the instance
   static AppLocalizations? of(BuildContext context) {

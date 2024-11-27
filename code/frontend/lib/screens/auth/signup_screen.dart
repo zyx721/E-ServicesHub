@@ -5,7 +5,9 @@ import 'package:hanini_frontend/localization/app_localization.dart';
 import 'terms_and_conditions_page.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:http/http.dart' as http;
+import 'package:firebase_auth/firebase_auth.dart'; // Import Google Sign-In
 import 'dart:convert';
+import 'package:flutter_dotenv/flutter_dotenv.dart'; // dotenv for .env variables
 
 class SignupScreen extends StatefulWidget {
   const SignupScreen({Key? key}) : super(key: key);
@@ -18,7 +20,7 @@ class _SignupScreenState extends State<SignupScreen>
     with SingleTickerProviderStateMixin {
   bool _isLoading = false; // To track loading state
   String _message = ''; // To display messages
-
+  final FirebaseAuth _auth = FirebaseAuth.instance;
   Future<void> _signup() async {
     setState(() {
       _isLoading = true;
@@ -27,20 +29,69 @@ class _SignupScreenState extends State<SignupScreen>
     final name = _nameController.text;
     final email = _emailController.text;
     final password = _passwordController.text;
-    final phone = _phoneController.text;
+    final passwordCheck = _passwordCheckController.text;
 
-    if (name.isEmpty || email.isEmpty || password.isEmpty || phone.isEmpty) {
+    if (name.isEmpty ||
+        email.isEmpty ||
+        password.isEmpty ||
+        passwordCheck.isEmpty) {
       setState(() {
         _message = 'All fields are required';
         _isLoading = false;
       });
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('All fields are required')),
+        SnackBar(
+          content: Text(
+            'All fields are required',
+            style: TextStyle(color: Colors.red), // Red text in SnackBar
+          ),
+          backgroundColor:
+              Colors.white, // Optional: Black background for better contrast
+        ),
       );
       return;
     }
 
-final url = Uri.parse('http://192.168.113.70:5000/signup');
+    if (password.length < 6) {
+      setState(() {
+        _message = 'Password must be at least 6 characters';
+        _isLoading = false;
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            'Password must be at least 6 characters',
+            style: TextStyle(color: Colors.red),
+          ),
+          backgroundColor: Colors
+              .white, // Optional: Set background to highlight the red text
+        ),
+      );
+      return;
+    }
+
+    if (password != passwordCheck) {
+      setState(() {
+        _message = 'Passwords do not match';
+        _isLoading = false;
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            'Passwords do not match',
+            style: TextStyle(color: Colors.red),
+          ),
+          backgroundColor: Colors
+              .white, // Optional: Set background to highlight the red text
+        ),
+      );
+      return;
+    }
+
+    // final baseUrl = dotenv.env['ip'];
+    // final url = Uri.parse('http://$baseUrl:3000/signup');
+
+    final url = Uri.parse('http://192.168.250.235:3000/signup');
 
     try {
       final response = await http.post(
@@ -50,7 +101,6 @@ final url = Uri.parse('http://192.168.113.70:5000/signup');
           'name': name,
           'email': email,
           'password': password,
-          'phone': phone,
         }),
       );
 
@@ -95,6 +145,8 @@ final url = Uri.parse('http://192.168.113.70:5000/signup');
   final TextEditingController _phoneController = TextEditingController();
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
+  final TextEditingController _passwordCheckController =
+      TextEditingController();
   final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
   late AnimationController _animationController;
   late Animation<double> _fadeAnimation;
@@ -135,15 +187,70 @@ final url = Uri.parse('http://192.168.113.70:5000/signup');
     _phoneController.dispose();
     _emailController.dispose();
     _passwordController.dispose();
+    _passwordCheckController.dispose();
     super.dispose();
   }
 
   Future<void> _handleGoogleSignIn() async {
     try {
-      await _googleSignIn.signIn();
-      Navigator.pushNamed(context, '/navbar');
-    } catch (error) {
-      print("Google Sign-In Error: $error");
+      // Start the Google sign-in process
+      final GoogleSignInAccount? googleUser = await _googleSignIn.signIn();
+      if (googleUser == null) {
+        // The user canceled the sign-in process
+        return;
+      }
+
+      // Obtain the Google authentication details
+      final GoogleSignInAuthentication googleAuth =
+          await googleUser.authentication;
+      final String idToken = googleAuth.idToken!;
+      final String accessToken = googleAuth.accessToken!;
+
+      // Send the ID token to the backend for verification
+      // final baseUrl = dotenv.env['ip'];
+      // final url = Uri.parse('http://$baseUrl:3000/verify-google-token');
+      final url = Uri.parse('http://192.168.250.235:3000/verify-google-token');
+
+      final response = await http.post(
+        url,
+        headers: {'Content-Type': 'application/json'},
+        body: json.encode({
+          'idToken': idToken,
+        }),
+      );
+
+      final responseBody = jsonDecode(response.body);
+      if (response.statusCode == 200 && responseBody['success']) {
+        // The server verified the token, now you can authenticate the user with Firebase
+        final firebaseToken = responseBody['token'];
+
+        // Use the Firebase custom token to sign in
+        final UserCredential userCredential =
+            await _auth.signInWithCustomToken(firebaseToken);
+        print('User signed in: ${userCredential.user?.email}');
+
+        // Navigate to the home screen after successful login
+        Navigator.pushReplacementNamed(context, '/navbar');
+      } else {
+        // Handle the error if the token verification fails
+        print('Error: ${responseBody['error']}');
+        // Show an error to the user (Snackbar or dialog)
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Google Sign-In Error: ${responseBody['error']}'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } catch (e) {
+      print("Google Sign-In Error: $e");
+      // Handle error (e.g., show a message)
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Google Sign-In Error: $e'),
+          backgroundColor: Colors.red,
+        ),
+      );
     }
   }
 
@@ -199,7 +306,9 @@ final url = Uri.parse('http://192.168.113.70:5000/signup');
                     const SizedBox(height: 10),
                     _buildPasswordField(passwordLabel),
                     const SizedBox(height: 10),
-                    _buildPhoneField(phoneLabel),
+                    _buildPasswordCheckField(passwordCheckLabel),
+                    // const SizedBox(height: 10),
+                    // _buildPhoneField(phoneLabel),
                     const SizedBox(height: 20),
                     _buildTermsCheckbox(),
                     const SizedBox(height: 20),
@@ -227,6 +336,9 @@ final url = Uri.parse('http://192.168.113.70:5000/signup');
 
   String get passwordLabel =>
       AppLocalizations.of(context)?.passwordLabel ?? 'Password';
+
+  String get passwordCheckLabel =>
+      AppLocalizations.of(context)?.passwordCheckLabel ?? 'Confirm Password';
 
   String get phoneLabel => AppLocalizations.of(context)?.phoneLabel ?? 'Phone';
 
@@ -274,7 +386,7 @@ final url = Uri.parse('http://192.168.113.70:5000/signup');
         decoration: InputDecoration(
           labelText: label,
           labelStyle: GoogleFonts.poppins(color: Colors.white),
-          floatingLabelStyle: GoogleFonts.poppins(color: Colors.blue),
+          floatingLabelStyle: GoogleFonts.poppins(color: Colors.white),
           floatingLabelBehavior: FloatingLabelBehavior.auto,
           border: OutlineInputBorder(
             borderRadius: BorderRadius.circular(12),
@@ -362,6 +474,47 @@ final url = Uri.parse('http://192.168.113.70:5000/signup');
       position: _slideAnimation,
       child: TextFormField(
         controller: _passwordController,
+        obscureText: true,
+        decoration: InputDecoration(
+          labelText: label,
+          labelStyle: GoogleFonts.poppins(color: Colors.white),
+          floatingLabelStyle: GoogleFonts.poppins(
+              color: const Color.fromARGB(255, 255, 255, 255)),
+          floatingLabelBehavior: FloatingLabelBehavior.auto,
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12),
+            borderSide: const BorderSide(color: Colors.white),
+          ),
+          focusedBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12),
+            borderSide: const BorderSide(color: Colors.white, width: 2),
+          ),
+          filled: true,
+          fillColor: Colors.white.withOpacity(0.1),
+          contentPadding:
+              const EdgeInsets.symmetric(vertical: 18, horizontal: 12),
+        ),
+        style: GoogleFonts.poppins(color: Colors.white),
+        onChanged: (value) {
+          setState(() {}); // Trigger rebuild for real-time validation if needed
+        },
+        validator: (value) {
+          if (value == null || value.isEmpty) {
+            return passwordRequiredError;
+          } else if (value.length < 8) {
+            return passwordMinLengthError;
+          }
+          return null;
+        },
+      ),
+    );
+  }
+
+  Widget _buildPasswordCheckField(String label) {
+    return SlideTransition(
+      position: _slideAnimation,
+      child: TextFormField(
+        controller: _passwordCheckController,
         obscureText: true,
         decoration: InputDecoration(
           labelText: label,
@@ -519,6 +672,7 @@ final url = Uri.parse('http://192.168.113.70:5000/signup');
             : null, // Disable if _isChecked is false or _isLoading is true
         style: ElevatedButton.styleFrom(
           backgroundColor: Colors.blue,
+          foregroundColor: Colors.black,
           padding: const EdgeInsets.symmetric(vertical: 15, horizontal: 30),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(10),

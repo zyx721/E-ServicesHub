@@ -5,6 +5,7 @@ import 'package:google_sign_in/google_sign_in.dart';
 import 'package:firebase_auth/firebase_auth.dart'; // Import Google Sign-In
 import 'package:http/http.dart' as http;
 import 'dart:convert';
+import 'package:flutter_dotenv/flutter_dotenv.dart'; // dotenv for .env variables
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({Key? key}) : super(key: key);
@@ -128,7 +129,10 @@ class _LoginScreenState extends State<LoginScreen>
       final String accessToken = googleAuth.accessToken!;
 
       // Send the ID token to the backend for verification
-      final url = Uri.parse('http://192.168.71.235:3000/verify-google-token');
+      // final baseUrl = dotenv.env['ip'];
+      // final url = Uri.parse('http://$baseUrl:3000/verify-google-token');
+      final url = Uri.parse('http://192.168.250.235:3000/verify-google-token');
+
       final response = await http.post(
         url,
         headers: {'Content-Type': 'application/json'},
@@ -171,6 +175,8 @@ class _LoginScreenState extends State<LoginScreen>
       );
     }
   }
+
+
 
   @override
   Widget build(BuildContext context) {
