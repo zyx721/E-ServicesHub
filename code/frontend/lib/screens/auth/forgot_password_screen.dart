@@ -1,4 +1,3 @@
-
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:hanini_frontend/localization/app_localization.dart';
@@ -8,10 +7,11 @@ class ForgotPasswordScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final localization = AppLocalizations.of(context)!; // Access localization instance
+    final localization =
+        AppLocalizations.of(context)!; // Access localization instance
 
     return Scaffold(
-      backgroundColor: Colors.transparent,
+      backgroundColor: const Color.fromARGB(0, 0, 0, 0),
       body: Container(
         decoration: const BoxDecoration(
           gradient: LinearGradient(
@@ -79,24 +79,25 @@ class ForgotPasswordScreen extends StatelessWidget {
   }
 
   Widget _buildTextField(String label, bool obscureText) {
-    return TextField(
-      obscureText: obscureText,
-      decoration: InputDecoration(
-        labelText: label,
-        labelStyle: GoogleFonts.poppins(color: Colors.grey[700]),
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(10),
-          borderSide: const BorderSide(color: Colors.white),
-        ),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(10),
-          borderSide: const BorderSide(color: Colors.white, width: 2),
-        ),
-        filled: true,
-        fillColor: Colors.white.withOpacity(0.8),
-        contentPadding:
-            const EdgeInsets.symmetric(vertical: 15, horizontal: 10),
+  return TextField(
+    obscureText: obscureText,
+    decoration: InputDecoration(
+      labelText: label,
+      labelStyle: GoogleFonts.poppins(color: Colors.white),
+      border: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: const BorderSide(color: Colors.white),
       ),
-    );
-  }
+      focusedBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: const BorderSide(color: Colors.white, width: 2),
+      ),
+      filled: true,
+      fillColor: Colors.white.withOpacity(0.1),
+      contentPadding: const EdgeInsets.symmetric(vertical: 18, horizontal: 12),
+    ),
+    style: GoogleFonts.poppins(color: Colors.white),
+  );
+}
+
 }

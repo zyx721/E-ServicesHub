@@ -110,8 +110,7 @@ class _MyAppState extends State<MyApp> {
       '/login': (context) => const LoginScreen(),
       '/signup': (context) => const SignupScreen(),
       '/home': (context) => HomeScreen(),
-      '/profile': (context) =>
-          ProfileScreen(cameras: widget.cameras, userRole: widget.userRole),
+      '/profile': (context) =>ProfileScreen(cameras: widget.cameras, userRole: widget.userRole),
       '/verification': (context) => RealTimeDetection(cameras: widget.cameras),
       '/settings': (context) => SettingsScreen(),
       '/forgot_password': (context) => ForgotPasswordScreen(),
