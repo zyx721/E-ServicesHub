@@ -2,9 +2,39 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:hanini_frontend/localization/app_localization.dart';
 import 'package:shared_preferences/shared_preferences.dart'; // Import SharedPreferences
+import 'package:google_sign_in/google_sign_in.dart';
+
+
 
 
 Widget buildDrawer(BuildContext context, AppLocalizations appLocalizations) {
+
+  final GoogleSignIn _googleSignIn = GoogleSignIn();
+
+   
+   Future<void> handleLogout() async {
+  final prefs = await SharedPreferences.getInstance();
+
+  try {
+    // Sign out from Google
+    await _googleSignIn.signOut();
+
+    // Reset login state in SharedPreferences
+    await prefs.setBool('isLoggedIn', false);
+
+  
+  } catch (e) {
+    print('Error during logout: $e');
+    // Optionally, show an error message to the user
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('Logout failed: $e'),
+        backgroundColor: Colors.red,
+      ),
+    );
+  }
+}
+
   return Drawer(
     child: ListView(
       padding: EdgeInsets.zero,
@@ -29,10 +59,10 @@ Widget buildDrawer(BuildContext context, AppLocalizations appLocalizations) {
               fontWeight: FontWeight.w500,
             ),
           ),
-          onTap: () {
-            Navigator.pop(context);
-            Navigator.pushNamed(context, '/profile');
-          },
+  onTap: () {
+  Navigator.pushNamed(context, '/profile');
+},
+
         ),
         ListTile(
           leading: Icon(Icons.settings, color: Color(0xFF3949AB)),
@@ -44,9 +74,9 @@ Widget buildDrawer(BuildContext context, AppLocalizations appLocalizations) {
             ),
           ),
           onTap: () {
-            Navigator.pop(context);
-            Navigator.pushNamed(context, '/settings');
-          },
+  Navigator.pushNamed(context, '/settings');
+},
+
         ),
         ListTile(
           leading: Icon(Icons.language, color: Color(0xFF3949AB)),
@@ -58,7 +88,6 @@ Widget buildDrawer(BuildContext context, AppLocalizations appLocalizations) {
             ),
           ),
           onTap: () {
-            Navigator.pop(context);
             // Implement language selection here
           },
         ),
@@ -66,21 +95,47 @@ Widget buildDrawer(BuildContext context, AppLocalizations appLocalizations) {
           color: Colors.grey[400],
           thickness: 1,
         ),
-        ListTile(
-          leading: Icon(Icons.logout, color: Color(0xFF3949AB)),
-          title: Text(
-            appLocalizations.logout,
-            style: GoogleFonts.poppins(
-              fontSize: 16,
-              fontWeight: FontWeight.w500,
+ListTile(
+  leading: Icon(Icons.logout, color: Color(0xFF3949AB)),
+  title: Text(
+    appLocalizations.logout,
+    style: GoogleFonts.poppins(
+      fontSize: 16,
+      fontWeight: FontWeight.w500,
+    ),
+  ),
+  onTap: () async {
+    final shouldLogout = await showDialog<bool>(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text('Confirm Logout'),
+          content: Text('Are you sure you want to log out?'),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop(false); // Cancel
+              },
+              child: Text('Cancel'),
             ),
-          ),
-          onTap: () async {
-            final prefs = await SharedPreferences.getInstance();
-            await prefs.setBool('isLoggedIn', false);
-            Navigator.pushReplacementNamed(context, '/login');
-          },
-        ),
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop(true); // Confirm
+              },
+              child: Text('Logout'),
+            ),
+          ],
+        );
+      },
+    );
+
+    if (shouldLogout == true) {
+      handleLogout();
+      Navigator.pushReplacementNamed(context, '/login');
+    }
+  },
+),
+
       ],
     ),
   );

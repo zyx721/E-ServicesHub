@@ -30,7 +30,9 @@ class _NavbarPageState extends State<NavbarPage> {
   Widget build(BuildContext context) {
     final AppLocalizations appLocalizations = AppLocalizations.of(context)!;
 
-    return MaterialApp(
+    return PopScope(
+      canPop: false,
+      child :MaterialApp(
       debugShowCheckedModeBanner: false,
       home: Scaffold(
         appBar: AppBar(
@@ -60,6 +62,8 @@ class _NavbarPageState extends State<NavbarPage> {
           ],
         ),
       ),
-    );
+    ),
+  );
+
   }
 }
