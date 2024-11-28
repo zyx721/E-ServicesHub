@@ -3,8 +3,9 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:hanini_frontend/localization/app_localization.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:firebase_auth/firebase_auth.dart'; // Import Google Sign-In
-import 'package:shared_preferences/shared_preferences.dart';
-
+import 'package:http/http.dart' as http;
+import 'dart:convert';
+import 'package:shared_preferences/shared_preferences.dart'; 
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({Key? key}) : super(key: key);
@@ -20,73 +21,69 @@ class _LoginScreenState extends State<LoginScreen>
   late Animation<double> _scaleAnimation;
   final GoogleSignIn _googleSignIn = GoogleSignIn(); // Initialize GoogleSignIn
 
-
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
   final FirebaseAuth _auth = FirebaseAuth.instance;
 
-
 // Function to handle login
-Future<void> handleLogin() async {
-  try {
-    final email = _emailController.text.trim();
-    final password = _passwordController.text.trim();
+  Future<void> handleLogin() async {
+    try {
+      final email = _emailController.text.trim();
+      final password = _passwordController.text.trim();
 
-    if (email.isNotEmpty && password.isNotEmpty) {
-      // Attempt to sign in with Firebase Auth
-      final UserCredential userCredential = await _auth.signInWithEmailAndPassword(
-        email: email,
-        password: password,
-      );
-
-      final User? user = userCredential.user;
-      if (user != null) {
-        print('Login Successful. User: ${user.email}');
-        
-        // Save login state in SharedPreferences
-        final prefs = await SharedPreferences.getInstance();
-        await prefs.setBool('isLoggedIn', true);
-
-        // Show success SnackBar
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Login Successful. Welcome ${user.email}'),
-            backgroundColor: Colors.green,
-          ),
+      if (email.isNotEmpty && password.isNotEmpty) {
+        // Attempt to sign in with Firebase Auth
+        final UserCredential userCredential =
+            await _auth.signInWithEmailAndPassword(
+          email: email,
+          password: password,
         );
 
-        // Navigate to home page and remove login page from stack
-        Navigator.pushReplacementNamed(context, '/home');
+        final User? user = userCredential.user;
+        if (user != null) {
+          print('Login Successful. User: ${user.email}');
+          // Show success SnackBar
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Login Successful. Welcome ${user.email}'),
+              backgroundColor: Colors.green,
+            ),
+          );
+           // Save login state in shared preferences
+           final prefs = await SharedPreferences.getInstance();
+           await prefs.setBool('isLoggedIn', true);
+
+          // Navigate to home page after successful login
+          Navigator.pushNamed(context, '/navbar');
+        } else {
+          // Show error SnackBar if no user is found
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('No user found.'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
       } else {
-        // Show error SnackBar if no user is found
+        // Show SnackBar if email or password is empty
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('No user found.'),
-            backgroundColor: Colors.red,
+            content: Text('Please enter both email and password.'),
+            backgroundColor: Colors.orange,
           ),
         );
       }
-    } else {
-      // Show SnackBar if email or password is empty
+    } catch (error) {
+      // Show SnackBar for any errors during login
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Please enter both email and password.'),
-          backgroundColor: Colors.orange,
+          content: Text('Login Error: $error'),
+          backgroundColor: Colors.red,
         ),
       );
+      print('Login Error: $error');
     }
-  } catch (error) {
-    // Show SnackBar for any errors during login
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('Login Error: $error'),
-        backgroundColor: Colors.red,
-      ),
-    );
-    print('Login Error: $error');
   }
-}
-
 
   @override
   void initState() {
@@ -122,18 +119,72 @@ Future<void> handleLogin() async {
 
   Future<void> _handleGoogleSignIn() async {
     try {
-      await _googleSignIn.signIn();
-      // Navigate to home or handle the signed-in user
-      Navigator.pushNamed(context, '/home');
-    } catch (error) {
-      print("Google Sign-In Error: $error");
-      // Handle error (show a message, etc.)
+      // Start the Google sign-in process
+      final GoogleSignInAccount? googleUser = await _googleSignIn.signIn();
+      if (googleUser == null) {
+        // The user canceled the sign-in process
+        return;
+      }
+
+      // Obtain the Google authentication details
+      final GoogleSignInAuthentication googleAuth =
+          await googleUser.authentication;
+      final String idToken = googleAuth.idToken!;
+      final String accessToken = googleAuth.accessToken!;
+
+      // Send the ID token to the backend for verification
+      final url = Uri.parse('http://192.168.113.70:3000/verify-google-token');
+      final response = await http.post(
+        url,
+        headers: {'Content-Type': 'application/json'},
+        body: json.encode({
+          'idToken': idToken,
+        }),
+      );
+
+      final responseBody = jsonDecode(response.body);
+      if (response.statusCode == 200 && responseBody['success']) {
+        // The server verified the token, now you can authenticate the user with Firebase
+        final firebaseToken = responseBody['token'];
+
+        // Use the Firebase custom token to sign in
+        final UserCredential userCredential =
+        await _auth.signInWithCustomToken(firebaseToken);
+        print('User signed in: ${userCredential.user?.email}');
+        
+        // Save login state in shared preferences
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.setBool('isLoggedIn', true);
+
+        // Navigate to the home screen after successful login
+        Navigator.pushReplacementNamed(context, '/navbar');
+      } else {
+        // Handle the error if the token verification fails
+        print('Error: ${responseBody['error']}');
+        // Show an error to the user (Snackbar or dialog)
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Google Sign-In Error: ${responseBody['error']}'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } catch (e) {
+      print("Google Sign-In Error: $e");
+      // Handle error (e.g., show a message)
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Google Sign-In Error: $e'),
+          backgroundColor: Colors.red,
+        ),
+      );
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    final localizations = AppLocalizations.of(context)!; // Access localized strings
+    final localizations =
+        AppLocalizations.of(context)!; // Access localized strings
 
     return Scaffold(
       body: Container(
@@ -154,25 +205,32 @@ Future<void> handleLogin() async {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  FadeTransition(
-                    opacity: _fadeAnimation,
-                    child: ScaleTransition(
-                      scale: _scaleAnimation,
-                      child: Container(
-                        decoration: BoxDecoration(
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.black.withOpacity(0.3),
-                              offset: const Offset(0, 8),
-                              blurRadius: 200,
-                              spreadRadius: 2,
-                            ),
-                          ],
-                        ),
-                        child: Image.asset(
-                          'assets/images/onboarding3_b.png', // Replace with your logo path
-                          height: 220,
-                          width: 220,
+                  // Wrap the logo with GestureDetector to detect taps
+                  GestureDetector(
+                    onTap: () {
+                      // Navigate to the navbar when logo is clicked
+                      Navigator.pushNamed(context, '/navbar');
+                    },
+                    child: FadeTransition(
+                      opacity: _fadeAnimation,
+                      child: ScaleTransition(
+                        scale: _scaleAnimation,
+                        child: Container(
+                          decoration: BoxDecoration(
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withOpacity(0.3),
+                                offset: const Offset(0, 8),
+                                blurRadius: 200,
+                                spreadRadius: 2,
+                              ),
+                            ],
+                          ),
+                          child: Image.asset(
+                            'assets/images/onboarding3_b.png', // Replace with your logo path
+                            height: 220,
+                            width: 220,
+                          ),
                         ),
                       ),
                     ),
@@ -187,16 +245,22 @@ Future<void> handleLogin() async {
                     ),
                   ),
                   const SizedBox(height: 40),
-                  _buildTextField(localizations.email, false, _emailController), // Bind email controller
+                  _buildTextField(localizations.email, false,
+                      _emailController), // Bind email controller
                   const SizedBox(height: 15),
-                  _buildTextField(localizations.password, true, _passwordController), // Bind password controller
-                  // Localized password label
+                  _buildTextField(localizations.password, true,
+                      _passwordController), // Bind password controller
                   const SizedBox(height: 30),
-                  _buildLoginButton(context, localizations.loginButton), // Localized login button text
+                  _buildLoginButton(context,
+                      localizations.loginButton), // Localized login button text
                   const SizedBox(height: 20),
                   _buildGoogleSignInButton(), // Add Google Sign-In Button
-                  _buildForgotPasswordButton(context, localizations.forgotPassword), // Localized forgot password text
-                  _buildSignupPrompt(context, localizations.createAccount), // Localized sign-up prompt
+                  _buildForgotPasswordButton(
+                      context,
+                      localizations
+                          .forgotPassword), // Localized forgot password text
+                  _buildSignupPrompt(context,
+                      localizations.createAccount), // Localized sign-up prompt
                 ],
               ),
             ),
@@ -206,29 +270,30 @@ Future<void> handleLogin() async {
     );
   }
 
-  Widget _buildTextField(String label, bool obscureText, TextEditingController controller) {
-  return TextField(
-    controller: controller, // Bind the controller here
-    obscureText: obscureText,
-    decoration: InputDecoration(
-      labelText: label,
-      labelStyle: GoogleFonts.poppins(color: Colors.white),
-      border: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(12),
-        borderSide: const BorderSide(color: Colors.white),
+  Widget _buildTextField(
+      String label, bool obscureText, TextEditingController controller) {
+    return TextField(
+      controller: controller, // Bind the controller here
+      obscureText: obscureText,
+      decoration: InputDecoration(
+        labelText: label,
+        labelStyle: GoogleFonts.poppins(color: Colors.white),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: const BorderSide(color: Colors.white),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: const BorderSide(color: Colors.white, width: 2),
+        ),
+        filled: true,
+        fillColor: Colors.white.withOpacity(0.1),
+        contentPadding:
+            const EdgeInsets.symmetric(vertical: 18, horizontal: 12),
       ),
-      focusedBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(12),
-        borderSide: const BorderSide(color: Colors.white, width: 2),
-      ),
-      filled: true,
-      fillColor: Colors.white.withOpacity(0.1),
-      contentPadding: const EdgeInsets.symmetric(vertical: 18, horizontal: 12),
-    ),
-    style: GoogleFonts.poppins(color: Colors.white),
-  );
-}
-
+      style: GoogleFonts.poppins(color: Colors.white),
+    );
+  }
 
   Widget _buildLoginButton(BuildContext context, String buttonText) {
     return ElevatedButton(
@@ -252,35 +317,36 @@ Future<void> handleLogin() async {
   }
 
   Widget _buildGoogleSignInButton() {
-  final localizations = AppLocalizations.of(context)!; // Access localized strings
+    final localizations =
+        AppLocalizations.of(context)!; // Access localized strings
 
-  return ElevatedButton.icon(
-    onPressed: _handleGoogleSignIn,
-    style: ElevatedButton.styleFrom(
-      backgroundColor: Colors.white,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(30.0),
+    return ElevatedButton.icon(
+      onPressed: _handleGoogleSignIn,
+      style: ElevatedButton.styleFrom(
+        backgroundColor: Colors.white,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(30.0),
+        ),
+        padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 15),
+        elevation: 6,
       ),
-      padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 15),
-      elevation: 6,
-    ),
-    icon: Image.asset(
-      'assets/images/google_logo.png', // Add your Google logo path
-      height: 24,
-      width: 24,
-    ),
-    label: Text(
-      localizations.googleSignIn, // Use localized text here
-      style: GoogleFonts.poppins(
-        fontSize: 18,
-        color: const Color(0xFF1A237E),
+      icon: Image.asset(
+        'assets/images/google_logo.png', // Add your Google logo path
+        height: 24,
+        width: 24,
       ),
-    ),
-  );
-}
+      label: Text(
+        localizations.googleSignIn, // Use localized text here
+        style: GoogleFonts.poppins(
+          fontSize: 18,
+          color: const Color(0xFF1A237E),
+        ),
+      ),
+    );
+  }
 
-
-  Widget _buildForgotPasswordButton(BuildContext context, String forgotPasswordText) {
+  Widget _buildForgotPasswordButton(
+      BuildContext context, String forgotPasswordText) {
     return TextButton(
       onPressed: () {
         Navigator.pushNamed(context, '/forgot_password');

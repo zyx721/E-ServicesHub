@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:hanini_frontend/localization/app_localization.dart';
-import 'package:hanini_frontend/main.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class HomePage extends StatefulWidget {
@@ -12,28 +11,12 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
-
   Future<void> handleLogout() async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool('isLoggedIn', false); // Reset login state
     // After logout, redirect to OnboardingScreen or Login page
-    Navigator.pushReplacementNamed(context, '/login'); // Or '/onboarding' depending on your flow
-  }
-
-  // Language change logic
-  void _changeLanguage(String languageCode) {
-    Locale newLocale;
-    switch (languageCode) {
-      case 'ar':
-        newLocale = Locale('ar', '');
-        break;
-      case 'fr':
-        newLocale = Locale('fr', '');
-        break;
-      default:
-        newLocale = Locale('en', '');
-    }
-    MyApp.of(context)?.changeLanguage(newLocale);
+    Navigator.pushReplacementNamed(
+        context, '/login'); // Or '/onboarding' depending on your flow
   }
 
   @override
@@ -41,53 +24,6 @@ class _HomePageState extends State<HomePage> {
     final AppLocalizations appLocalizations = AppLocalizations.of(context)!;
 
     return Scaffold(
-      appBar: PreferredSize(
-        preferredSize: Size.fromHeight(64.0),
-        child: Container(
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              colors: [
-                Color(0xFF3949AB), // Indigo 600
-                Color(0xFF1E88E5), // Blue 600
-              ],
-              begin: Alignment.topCenter,
-              end: Alignment.bottomCenter,
-            ),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withOpacity(0.2),
-                blurRadius: 4,
-                offset: Offset(0, 2),
-              ),
-            ],
-          ),
-          child: AppBar(
-            backgroundColor: Colors.transparent,
-            elevation: 0,
-            title: Text(
-              appLocalizations.appTitle,
-              style: GoogleFonts.poppins(
-                fontSize: 22,
-                fontWeight: FontWeight.w600,
-                color: Colors.white,
-              ),
-            ),
-            actions: [
-              IconButton(
-                icon: Icon(
-                  Icons.notifications_outlined,
-                  color: Colors.white,
-                  size: 28,
-                ),
-                onPressed: () {
-                  // Handle notifications
-                },
-              ),
-              _buildLanguageDropdown(),
-            ],
-          ),
-        ),
-      ),
       drawer: _buildDrawer(context, appLocalizations),
       body: _buildBody(context, appLocalizations),
     );
@@ -167,15 +103,6 @@ class _HomePageState extends State<HomePage> {
                     fit: BoxFit.cover,
                   ),
                 ),
-                Positioned(
-                  top: 8,
-                  right: 8,
-                  child: Icon(
-                    Icons.arrow_forward_ios_outlined,
-                    color: Colors.white,
-                    size: 20,
-                  ),
-                ),
                 Positioned.fill(
                   child: Container(
                     decoration: BoxDecoration(
@@ -226,51 +153,6 @@ class _HomePageState extends State<HomePage> {
               ),
             ),
           ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildLanguageDropdown() {
-    final localizations = AppLocalizations.of(context);
-    if (localizations == null) {
-      return Padding(
-        padding: const EdgeInsets.only(right: 20.0),
-        child: CircularProgressIndicator(),
-      );
-    }
-
-    return Padding(
-      padding: const EdgeInsets.only(right: 20.0),
-      child: PopupMenuButton<String>(
-        onSelected: _changeLanguage,
-        icon: Icon(Icons.language, color: Colors.white, size: 28),
-        itemBuilder: (BuildContext context) {
-          return [
-            _buildLanguageMenuItem('en', localizations.englishLanguageName,
-                'assets/images/sen.png'),
-            _buildLanguageMenuItem('ar', localizations.arabicLanguageName,
-                'assets/images/sarab.png'),
-            _buildLanguageMenuItem('fr', localizations.frenchLanguageName,
-                'assets/images/sfr.png'),
-          ];
-        },
-      ),
-    );
-  }
-
-  PopupMenuItem<String> _buildLanguageMenuItem(
-    String languageCode,
-    String languageName,
-    String flagPath,
-  ) {
-    return PopupMenuItem<String>(
-      value: languageCode,
-      child: Row(
-        children: [
-          Image.asset(flagPath, width: 22),
-          SizedBox(width: 10),
-          Text(languageName),
         ],
       ),
     );

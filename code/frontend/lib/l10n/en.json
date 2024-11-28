@@ -6,6 +6,12 @@
     "rateAndReview": "Rate and Review",
     "shareExperience": "Share your experience",
     "getStarted": "Get Started",
-    "next": "Next"
+    "next": "Next",
+    "forgotPassword": "Forgot Password",
+    "email": "Email",
+    "enterValidEmail": "Please enter a valid email address.",
+    "networkError": "Network error. Please try again later.",
+    "emailNotFound": "Email not found. Please check and try again.",
+    "passwordResetEmailSent": "A password reset email has been sent to your inbox."
   }
   
