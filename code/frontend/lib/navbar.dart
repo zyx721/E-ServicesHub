@@ -23,7 +23,7 @@ class _NavbarPageState extends State<NavbarPage> {
     HomePage(),
     SearchPage(),
     FavoritesPage(),
-    ProfilePage(),
+    ServiceProviderProfile(),
   ];
 
   // Language change logic

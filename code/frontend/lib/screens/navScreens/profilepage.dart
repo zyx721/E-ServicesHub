@@ -1,388 +1,409 @@
 import 'package:flutter/material.dart';
-import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 
-// Main ProfilePage StatefulWidget
-class ProfilePage extends StatefulWidget {
-  const ProfilePage({Key? key}) : super(key: key);
+class ServiceProviderProfile extends StatefulWidget {
+  const ServiceProviderProfile({Key? key}) : super(key: key);
 
   @override
-  State<ProfilePage> createState() => _ProfilePageState();
+  State<ServiceProviderProfile> createState() => _ServiceProviderProfileState();
 }
 
-// ProfilePage
-class _ProfilePageState extends State<ProfilePage> {
-  final double coverHeight = 280;
-  final double profileHeight = 144;
+class _ServiceProviderProfileState extends State<ServiceProviderProfile> {
+  final double profileHeight = 120;
+  String hourlyRate = '2500 DZD/hr';
+  String aboutMe =
+      'I am a professional Flutter developer with over 4 years of experience building intuitive, cross-platform mobile applications.';
+  List<String> portfolioImages = [
+    'assets/images/work/portpfolio1.jpeg',
+    'assets/images/work/portpfolio2.jpeg',
+    'assets/images/work/portpfolio3.jpeg',
+  ];
+
+  bool isEditMode = false;
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       body: ListView(
         padding: EdgeInsets.zero,
-        children: <Widget>[
+        children: [
           buildTop(),
-          buildContent(),
-        ],
-      ),
-    );
-  }
-
-  // Top section with Cover and Profile Images
-  Widget buildTop() {
-    final bottom = profileHeight / 2;
-    final top = coverHeight - (profileHeight / 2);
-    return Stack(
-      clipBehavior: Clip.none,
-      alignment: Alignment.center,
-      children: [
-        Container(
-          margin: EdgeInsets.only(bottom: bottom),
-          child: buildCoverImage(),
-        ),
-        Positioned(
-          top: top,
-          child: buildProfileImage(),
-        ),
-      ],
-    );
-  }
-
-  Widget buildCoverImage() => Container(
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            colors: [Colors.black.withOpacity(0.6), Colors.transparent],
-            begin: Alignment.bottomCenter,
-            end: Alignment.topCenter,
-          ),
-        ),
-        child: Image.asset(
-          'assets/images/work/pic2.jpeg',
-          width: double.infinity,
-          height: coverHeight,
-          fit: BoxFit.cover,
-        ),
-      );
-
-  Widget buildProfileImage() => Container(
-        padding: const EdgeInsets.all(4),
-        decoration: BoxDecoration(
-          color: Colors.grey.shade300,
-          shape: BoxShape.circle,
-        ),
-        child: CircleAvatar(
-          radius: profileHeight / 2,
-          backgroundColor: Colors.grey.shade800,
-          backgroundImage: const AssetImage('assets/images/work/painter.jpeg'),
-        ),
-      );
-
-  // Main content section
-  Widget buildContent() => Column(
-        children: [
-          const SizedBox(height: 8),
+          const SizedBox(height: 16),
           buildProfileInfo(),
-          const SizedBox(height: 16),
-          buildSocialIcons(),
-          const SizedBox(height: 16),
-          const Divider(),
-          const SizedBox(height: 16),
-          NumbersWidget(),
-          const SizedBox(height: 16),
-          const Divider(),
-          // const SizedBox(height: 16),
-          buildBarAboutAndComment(),
-          const Divider(),
-
-          const SizedBox(height: 32),
-          portpholio(),
+          const Divider(thickness: 1, height: 32),
+          buildPortfolioSection(),
+          const Divider(thickness: 1, height: 32),
+          buildReviews(),
         ],
-      );
-
-  Widget buildProfileInfo() => Column(
-        children: [
-          Text(
-            'James Summer',
-            style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold),
-          ),
-          const SizedBox(height: 16),
-          Text(
-            'Flutter Software Engineer',
-            style: TextStyle(fontSize: 20, color: Colors.black),
-          ),
-        ],
-      );
-
-  Widget buildSocialIcons() => Row(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          buildSocialIcon(Icons.call),
-          const SizedBox(width: 12),
-          buildSocialIcon(Icons.location_on),
-          const SizedBox(width: 12),
-          buildSocialIcon(FontAwesomeIcons.route),
-          const SizedBox(width: 12),
-          buildSocialIcon(FontAwesomeIcons.commentDots),
-          const SizedBox(width: 12),
-          // buildSocialIcon(FontAwesomeIcons.solidSave),
-          // const SizedBox(width: 12),
-        ],
-      );
-
-  Widget buildSocialIcon(IconData icon) => CircleAvatar(
-        radius: 25,
-        backgroundColor: Colors.blue,
-        child: Material(
-          
-          shape: CircleBorder(),
-          clipBehavior: Clip.hardEdge,
-          child: InkWell(
-            onTap: () {},
-            child: Center(child: Icon(icon, size: 32)),
-          ),
-        ),
-      );
-
-  // About Me and Comments Section
-  Widget buildBarAboutAndComment() {
-    return DefaultTabController(
-      length: 2,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          TabBar(
-            labelColor: Colors.black,
-            unselectedLabelColor: Colors.grey,
-            indicatorColor: Colors.blue,
-            tabs: [
-              Tab(text: 'About Me'),
-              Tab(text: 'Comments'),
-            ],
-          ),
-          Container(
-            height: 300,
-            padding: const EdgeInsets.all(16.0),
-            child: TabBarView(
-              children: [
-                buildAboutMeContent(),
-                buildCommentsContent(),
-              ],
-            ),
-          ),
-        ],
+      ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: toggleEditMode,
+        child: Icon(isEditMode ? Icons.check : Icons.edit),
+        tooltip: isEditMode ? 'Save Changes' : 'Edit Profile',
       ),
     );
   }
 
-  Widget buildAboutMeContent() => Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            'About Me',
-            style: TextStyle(
-              fontSize: 24,
-              fontWeight: FontWeight.bold,
-              color: Colors.black,
-            ),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            'I am a passionate Flutter Software Engineer with experience in building mobile applications. '
-            'I love exploring new technologies and improving my skills in mobile development. In my spare time, '
-            'I enjoy contributing to open-source projects and learning about different areas of tech.',
-            style: TextStyle(fontSize: 16, color: Colors.black54),
-            textAlign: TextAlign.justify,
-          ),
-        ],
-      );
+  void toggleEditMode() {
+    if (isEditMode) {
+      // Save changes (if necessary) and exit edit mode
+    }
+    setState(() {
+      isEditMode = !isEditMode;
+    });
+  }
 
-  Widget buildCommentsContent() => Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            'Comments',
-            style: TextStyle(
-              fontSize: 24,
-              fontWeight: FontWeight.bold,
-              color: Colors.black,
-            ),
-          ),
-          const SizedBox(height: 8),
-          Expanded(
-            child: ListView(
-              children: [
-                buildComment('John Doe', 'Great profile, James!'),
-                buildComment('Jane Smith', 'Amazing work and portfolio!'),
-                buildComment('Bob Johnson', 'Keep up the great work!'),
-              ],
-            ),
-          ),
-        ],
-      );
-
-Widget buildComment(String username, String comment) => Padding(
-  padding: const EdgeInsets.symmetric(vertical: 8.0),
-  child: Container(
-    padding: const EdgeInsets.all(16),
-    decoration: BoxDecoration(
-      color: Colors.white,
-      borderRadius: BorderRadius.circular(12),
-      border: Border.all(color: Colors.grey.shade300, width: 1), // Add border to create the frame
-      boxShadow: [
-        BoxShadow(
-          color: Colors.black.withOpacity(0.1),
-          blurRadius: 6,
-          offset: Offset(0, 4),
-        ),
-      ],
-    ),
-    child: Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
+  // Top Profile Section
+  Widget buildTop() {
+    return Column(
       children: [
-        CircleAvatar(
-          radius: 20,
-          child: Text(username[0], style: TextStyle(fontWeight: FontWeight.bold)),
-        ),
-        const SizedBox(width: 12),
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                username,
-                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-              ),
-              const SizedBox(height: 4),
-              Text(
-                comment,
-                style: TextStyle(fontSize: 14, color: Colors.black87),
-              ),
-            ],
-          ),
-        ),
-      ],
-    ),
-  ),
-);
-}
-
-// Portfolio Section
-Widget portpholio() {
-  return Container(
-    child: Column(
-      children: [
-        Text(
-          'Portpholio',
-          style: TextStyle(
-            fontSize: 24,
-            fontWeight: FontWeight.bold,
-            color: Colors.black,
-          ),
-        ),
-        const SizedBox(height: 16),
-
-        Container(
-    height: 220,
-    child: ListView(
-      scrollDirection: Axis.horizontal,
-      children: [
-        SizedBox(width: 12),
-        buildCard('assets/images/work/portpfolio1.jpeg'),
-        SizedBox(width: 12),
-        buildCard('assets/images/work/portpfolio2.jpeg'),
-        SizedBox(width: 12),
-        buildCard('assets/images/work/portpfolio3.jpeg'),
-        SizedBox(width: 12),
-        buildCard('assets/images/work/portpfolio4.jpeg'),
-        SizedBox(width: 12),
-            ],
-          ),
-        ),
-      ],
-    ),
-  );
-}
-
-Widget buildCard(String imagePath) => GestureDetector(
-      child: Container(
-        decoration: BoxDecoration(
-          color: Colors.blue,
-          borderRadius: BorderRadius.circular(16),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.2),
-              blurRadius: 8,
-              offset: Offset(4, 4),
-            ),
-          ],
-        ),
-        clipBehavior: Clip.antiAlias,
-        child: Stack(
+        const SizedBox(
+            height: 40), // Added space between navbar and profile picture
+        Stack(
+          alignment: Alignment.bottomRight,
           children: [
-            Image.asset(
-              imagePath,
-              fit: BoxFit.cover,
+            CircleAvatar(
+              radius: profileHeight / 2,
+              backgroundColor: Colors.grey.shade200,
+              backgroundImage:
+                  const AssetImage('assets/images/profile_picture.png'),
             ),
-            Positioned(
-              bottom: 8,
-              left: 8,
-              child: Container(
-                padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                color: Colors.black.withOpacity(0.6),
-                child: Text(
-                  'Portfolio',
-                  style: TextStyle(
+            if (isEditMode)
+              GestureDetector(
+                onTap: () {
+                  pickNewProfilePicture();
+                },
+                child: Container(
+                  padding: const EdgeInsets.all(6),
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: Colors.blue,
+                  ),
+                  child: const Icon(
+                    Icons.camera_alt,
+                    size: 20,
                     color: Colors.white,
-                    fontWeight: FontWeight.bold,
-                    fontSize: 16,
                   ),
                 ),
               ),
-            ),
           ],
         ),
-      ),
-    );
-
-// Numbers Widget
-class NumbersWidget extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-      children: <Widget>[
-        buildNumber(context, '50', 'Posts'),
-        buildDivider(),
-        buildNumber(context, '120K', 'Followers'),
-        buildDivider(),
-        buildNumber(context, '300', 'Following'),
+        const SizedBox(
+            height: 20), // Increased the space for better positioning
+        Text(
+          'Benmati Ziad', // Changed name
+          style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+        ),
+        const SizedBox(height: 4),
+        Text(
+          'Flutter Developer',
+          style: TextStyle(fontSize: 16, color: Colors.grey.shade700),
+        ),
+        const SizedBox(height: 8),
+        Text(
+          'benmatiziad5@gmail.com', // Added Gmail
+          style: TextStyle(fontSize: 14, color: Colors.grey.shade600),
+        ),
       ],
     );
   }
 
-  Widget buildNumber(BuildContext context, String value, String title) =>
-      Column(
-        mainAxisSize: MainAxisSize.min,
+  // Main Profile Information
+  Widget buildProfileInfo() {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      child: Column(
         children: [
-          Text(
-            value,
-            style: TextStyle(
-              fontWeight: FontWeight.bold,
-              fontSize: 24,
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              buildStat('Projects', '24'),
+              buildStat('Rating', _buildStarRating(4.5)),
+              buildStat('Hourly Rate',
+                  isEditMode ? buildHourlyRateEditor() : hourlyRate),
+            ],
+          ),
+          const SizedBox(height: 24),
+          Align(
+            alignment: Alignment.centerLeft,
+            child: const Text(
+              'About Me',
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
             ),
           ),
-          const SizedBox(height: 4),
-          Text(
-            title,
-            style: TextStyle(fontSize: 16, color: Colors.grey),
+          const SizedBox(height: 8),
+          isEditMode
+              ? TextField(
+                  controller: TextEditingController(text: aboutMe),
+                  onChanged: (value) => aboutMe = value,
+                  maxLines: 4,
+                  decoration: const InputDecoration(
+                    border: OutlineInputBorder(),
+                    hintText: 'Write about yourself...',
+                  ),
+                )
+              : Text(
+                  aboutMe,
+                  style: TextStyle(fontSize: 14, color: Colors.grey.shade700),
+                  textAlign: TextAlign.justify,
+                ),
+        ],
+      ),
+    );
+  }
+
+  Widget buildHourlyRateEditor() {
+    return SizedBox(
+      width: 100,
+      child: TextField(
+        controller: TextEditingController(text: hourlyRate),
+        onChanged: (value) => hourlyRate = value,
+        decoration:
+            const InputDecoration(border: OutlineInputBorder(), isDense: true),
+      ),
+    );
+  }
+
+  // Portfolio Section
+  Widget buildPortfolioSection() {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            'Portfolio',
+            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+          ),
+          const SizedBox(height: 16),
+          SizedBox(
+            height: 100, // Match the fixed height of portfolio cards
+            child: ListView.builder(
+              scrollDirection: Axis.horizontal,
+              itemCount: portfolioImages.length,
+              itemBuilder: (context, index) {
+                return Stack(
+                  children: [
+                    buildPortfolioCard(portfolioImages[index]),
+                    if (isEditMode)
+                      Positioned(
+                        top: 8,
+                        right: 8,
+                        child: GestureDetector(
+                          onTap: () {
+                            setState(() {
+                              portfolioImages.removeAt(index);
+                            });
+                          },
+                          child: const CircleAvatar(
+                            radius: 12,
+                            backgroundColor: Colors.red,
+                            child: Icon(Icons.close,
+                                size: 14, color: Colors.white),
+                          ),
+                        ),
+                      ),
+                  ],
+                );
+              },
+            ),
+          ),
+          const SizedBox(height: 12),
+          if (isEditMode)
+            ElevatedButton.icon(
+              onPressed: addPortfolioImage,
+              icon: const Icon(Icons.add),
+              label: const Text('Add Portfolio Image'),
+            ),
+        ],
+      ),
+    );
+  }
+
+  // Placeholder methods
+  void pickNewProfilePicture() {
+    debugPrint('Profile picture update triggered!');
+  }
+
+  void addPortfolioImage() {
+    debugPrint('Add portfolio image triggered!');
+  }
+
+  Widget buildReviews() {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            'Client Reviews',
+            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+          ),
+          const SizedBox(height: 16),
+          buildReview('John Doe', 4.5, 'James is a highly skilled developer.'),
+          const SizedBox(height: 12),
+          buildReview(
+              'Jane Smith', 5.0, 'Amazing experience! Highly recommended.'),
+        ],
+      ),
+    );
+  }
+
+  Widget buildReview(String reviewer, double rating, String comment) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: Colors.grey.shade300, width: 1),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 6,
+            offset: const Offset(0, 4),
           ),
         ],
-      );
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              CircleAvatar(
+                radius: 20,
+                child: Text(
+                  reviewer[0],
+                  style: const TextStyle(fontWeight: FontWeight.bold),
+                ),
+              ),
+              const SizedBox(width: 12),
+              Text(
+                reviewer,
+                style:
+                    const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+              ),
+              const Spacer(),
+              _buildStarRating(rating),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Text(
+            comment,
+            style: TextStyle(fontSize: 14, color: Colors.grey.shade700),
+          ),
+        ],
+      ),
+    );
+  }
 
-  Widget buildDivider() => Container(
-        height: 24,
-        child: VerticalDivider(
-          thickness: 1,
-          color: Colors.grey.shade300,
+  Widget _buildStarRating(double rating) {
+    int fullStars = rating.floor();
+    int halfStars = (rating % 1 >= 0.5) ? 1 : 0;
+    int emptyStars = 5 - fullStars - halfStars;
+
+    return Row(
+      children: [
+        for (int i = 0; i < fullStars; i++)
+          const Icon(Icons.star, color: Colors.amber, size: 18),
+        for (int i = 0; i < halfStars; i++)
+          const Icon(Icons.star_half, color: Colors.amber, size: 18),
+        for (int i = 0; i < emptyStars; i++)
+          const Icon(Icons.star_border, color: Colors.grey, size: 18),
+      ],
+    );
+  }
+
+  // Dialog for Editing Profile
+  void showEditProfileDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('Edit Profile'),
+          content: Column(
+            children: [
+              TextField(
+                decoration: const InputDecoration(
+                  labelText: 'Hourly Rate',
+                ),
+                onChanged: (value) {
+                  setState(() {
+                    hourlyRate = value;
+                  });
+                },
+              ),
+              TextField(
+                decoration: const InputDecoration(
+                  labelText: 'About Me',
+                ),
+                onChanged: (value) {
+                  setState(() {
+                    aboutMe = value;
+                  });
+                },
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.pop(context);
+              },
+              child: const Text('Cancel'),
+            ),
+            TextButton(
+              onPressed: () {
+                Navigator.pop(context);
+                setState(() {
+                  isEditMode = false;
+                });
+              },
+              child: const Text('Save'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  Widget buildStat(String title, dynamic value) {
+    return Column(
+      children: [
+        if (value is String)
+          Text(
+            value,
+            style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+          ),
+        if (value is Widget) value,
+        const SizedBox(height: 4),
+        Text(
+          title,
+          style: TextStyle(fontSize: 14, color: Colors.grey.shade600),
         ),
-      );
+      ],
+    );
+  }
+
+  Widget buildPortfolioCard(String imagePath) {
+    return Container(
+      width: 160, // Fixed width
+      height: 100, // Fixed height
+      margin: const EdgeInsets.only(right: 12),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.1),
+            blurRadius: 8,
+            offset: const Offset(4, 4),
+          ),
+        ],
+      ),
+      clipBehavior: Clip.antiAlias,
+      child: Image.asset(
+        imagePath,
+        fit: BoxFit
+            .cover, // Ensures the image fills the container proportionally
+      ),
+    );
+  }
 }

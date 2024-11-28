@@ -135,7 +135,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                           },
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Colors.white,
-                      foregroundColor: Colors.teal,
+                      foregroundColor: const Color.fromARGB(255, 0, 0, 0),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(30.0),
                       ),
@@ -143,12 +143,12 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                           horizontal: 40, vertical: 15),
                     ),
                     child: _isLoading
-                        ? const CircularProgressIndicator(color: Colors.teal)
+                        ? const CircularProgressIndicator(color: Color.fromARGB(255, 0, 0, 0))
                         : Text(
                             localization.getStarted, // Localized button text
                             style: GoogleFonts.poppins(
                               fontSize: 18,
-                              color: Colors.teal,
+                              color: const Color.fromARGB(255, 0, 0, 0),
                             ),
                           ),
                   ),
@@ -161,26 +161,27 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
     );
   }
 
-  Widget _buildTextField(String label, bool obscureText) {
+  Widget _buildTextField(
+      String label, bool obscureText) {
     return TextField(
-      controller: _emailController,
       obscureText: obscureText,
       decoration: InputDecoration(
         labelText: label,
-        labelStyle: GoogleFonts.poppins(color: Colors.grey[700]),
+        labelStyle: GoogleFonts.poppins(color: Colors.white),
         border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(10),
+          borderRadius: BorderRadius.circular(12),
           borderSide: const BorderSide(color: Colors.white),
         ),
         focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(10),
+          borderRadius: BorderRadius.circular(12),
           borderSide: const BorderSide(color: Colors.white, width: 2),
         ),
         filled: true,
-        fillColor: Colors.white.withOpacity(0.8),
+        fillColor: Colors.white.withOpacity(0.1),
         contentPadding:
-            const EdgeInsets.symmetric(vertical: 15, horizontal: 10),
+            const EdgeInsets.symmetric(vertical: 18, horizontal: 12),
       ),
+      style: GoogleFonts.poppins(color: Colors.white),
     );
   }
 }

@@ -29,21 +29,21 @@ Future<String> _determineInitialRoute() async {
   final bool isLoggedIn = prefs.getBool('isLoggedIn') ?? false;
 
   if (isFirstLaunch) {
-    // Mark onboarding as shown after the first launch
     await prefs.setBool('isFirstLaunch', false);
     return '/'; // Show onboarding screen
   }
 
-if (isLoggedIn) {
-  return '/navbar'; // Show navbar if user is logged in
-}
+  if (isLoggedIn) {
+    return '/navbar'; // Show navbar if logged in
+  }
   return '/login'; // Default to login if not logged in
 }
 
 
+
 Future<UserRole> _retrieveUserRole() async {
   // Replace with actual user role retrieval logic
-  return UserRole.serviceProvider;
+  return UserRole.client;
 }
 
 class MyApp extends StatefulWidget {
