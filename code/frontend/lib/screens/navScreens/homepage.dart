@@ -31,7 +31,7 @@ Widget _buildAdsSlider(List<String> adImages) {
   ];
 
   // Auto-slide logic
-  Timer.periodic(Duration(seconds: 2), (Timer timer) {
+  Timer.periodic(Duration(seconds: 3), (Timer timer) {
     if (_pageController.hasClients) {
       _currentPage = (_currentPage + 1) % adImages.length;
       _pageController.animateToPage(
