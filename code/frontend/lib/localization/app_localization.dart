@@ -136,9 +136,9 @@ class AppLocalizations {
   String get passwordLabel =>
       isArabic ? "كلمة المرور" : (isFrench ? "Mot de passe" : "Password");
 
-
-  String get passwordCheckLabel =>
-   isArabic ? "أعد كتابة كلمة المرور" : (isFrench ? "Confirmez le Mot de passe" : "Confirm Password");
+  String get passwordCheckLabel => isArabic
+      ? "أعد كتابة كلمة المرور"
+      : (isFrench ? "Confirmez le Mot de passe" : "Confirm Password");
 
   String get phoneLabel =>
       isArabic ? "رقم الهاتف" : (isFrench ? "Numéro de téléphone" : "Phone");
@@ -233,6 +233,12 @@ class AppLocalizations {
       : (isFrench ? "Sélectionner la langue" : "Select Language");
 
   String get cancel => isArabic ? "إلغاء" : (isFrench ? "Annuler" : "Cancel");
+
+  String get services =>
+      isArabic ? "إلغاء" : (isFrench ? "service" : "service");
+
+  String get myProfile =>
+      isArabic ? "إلغاء" : (isFrench ? "mon profile" : "my Profil");
 
   // Static method to access the instance
   static AppLocalizations? of(BuildContext context) {

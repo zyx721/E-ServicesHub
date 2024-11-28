@@ -205,25 +205,32 @@ class _LoginScreenState extends State<LoginScreen>
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  FadeTransition(
-                    opacity: _fadeAnimation,
-                    child: ScaleTransition(
-                      scale: _scaleAnimation,
-                      child: Container(
-                        decoration: BoxDecoration(
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.black.withOpacity(0.3),
-                              offset: const Offset(0, 8),
-                              blurRadius: 200,
-                              spreadRadius: 2,
-                            ),
-                          ],
-                        ),
-                        child: Image.asset(
-                          'assets/images/onboarding3_b.png', // Replace with your logo path
-                          height: 220,
-                          width: 220,
+                  // Wrap the logo with GestureDetector to detect taps
+                  GestureDetector(
+                    onTap: () {
+                      // Navigate to the navbar when logo is clicked
+                      Navigator.pushNamed(context, '/navbar');
+                    },
+                    child: FadeTransition(
+                      opacity: _fadeAnimation,
+                      child: ScaleTransition(
+                        scale: _scaleAnimation,
+                        child: Container(
+                          decoration: BoxDecoration(
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withOpacity(0.3),
+                                offset: const Offset(0, 8),
+                                blurRadius: 200,
+                                spreadRadius: 2,
+                              ),
+                            ],
+                          ),
+                          child: Image.asset(
+                            'assets/images/onboarding3_b.png', // Replace with your logo path
+                            height: 220,
+                            width: 220,
+                          ),
                         ),
                       ),
                     ),
@@ -243,7 +250,6 @@ class _LoginScreenState extends State<LoginScreen>
                   const SizedBox(height: 15),
                   _buildTextField(localizations.password, true,
                       _passwordController), // Bind password controller
-                  // Localized password label
                   const SizedBox(height: 30),
                   _buildLoginButton(context,
                       localizations.loginButton), // Localized login button text
