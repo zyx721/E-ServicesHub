@@ -10,6 +10,7 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
+  lottie: ^2.1.0
   url_launcher: ^6.1.8
   google_sign_in: ^5.4.2 
   provider: ^6.0.5
@@ -53,6 +54,15 @@ flutter:
     - assets/images/service4.png
     - assets/images/service5.png
     - assets/images/service6.png
+    - assets/images/service7.png
+    - assets/images/service8.png
+    - assets/images/service9.png
+    - assets/images/service10.png
+    - assets/images/service11.png
+    - assets/images/service12.png
+    - assets/images/service13.png
+    - assets/images/service14.png
+    
     - assets/images/onboarding3_b.png
     - assets/images/google_logo.png
     - assets/images/sarab.png
@@ -71,3 +81,9 @@ flutter:
     - assets/images/ads/first_page.png
     - assets/images/ads/second_page.png
     - assets/images/ads/third_page.png
+    - assets/animation/animation1.json
+    - assets/animation/animation2.json
+    - assets/animation/animation3.json
+    - assets/animation/animation4.json
+    - assets/animation/animation5.json
+    - assets/saved_images/
