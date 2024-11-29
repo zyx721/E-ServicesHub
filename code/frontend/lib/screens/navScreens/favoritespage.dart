@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:hanini_frontend/localization/app_localization.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class FavoritesPage extends StatefulWidget {
   const FavoritesPage({Key? key}) : super(key: key);
@@ -10,16 +11,82 @@ class FavoritesPage extends StatefulWidget {
 }
 
 class _FavoritesPageState extends State<FavoritesPage> {
-  // Filtered services with favorite status
-  final List<Map<String, dynamic>> services = [
-    {'name': 'Electrical Engineer', 'image': 'assets/images/service4.png', 'isFavorite': true},
-    {'name': 'Locksmith', 'image': 'assets/images/service11.png', 'isFavorite': true},
-    {'name': 'Chef', 'image': 'assets/images/service13.png', 'isFavorite': true},
+  // Full list of all services
+  final List<Map<String, dynamic>> allServices = [
+    {
+      'id': 'service_001',
+      'name': 'Painter',
+      'image': 'assets/images/service1.png',
+      'provider': 'ziad',
+      'rating': 4.5,
+    },
+    {
+      'id': 'service_002',
+      'name': 'Plumber',
+      'image': 'assets/images/service2.png',
+      'provider': 'anas',
+      'rating': 4.0,
+    },
+    {
+      'id': 'service_003',
+      'name': 'Big House Plumbing',
+      'image': 'assets/images/service3.png',
+      'provider': 'raouf',
+      'rating': 4.5,
+    },
+    {
+      'id': 'service_004',
+      'name': 'Electrical Engineer',
+      'image': 'assets/images/service4.png',
+      'provider': 'fares',
+      'rating': 5.0,
+    },
+    {
+      'id': 'service_005',
+      'name': 'Floor Cleaning',
+      'image': 'assets/images/service5.png',
+      'provider': 'Provider 5',
+      'rating': 4.2,
+    },
   ];
 
-  void toggleFavorite(int index) {
+  // List to store liked service IDs
+  List<String> likedServiceIds = [];
+
+  @override
+  void initState() {
+    super.initState();
+    _loadLikedServices();
+  }
+
+  // Load liked services from SharedPreferences
+  Future<void> _loadLikedServices() async {
+    final prefs = await SharedPreferences.getInstance();
     setState(() {
-      services[index]['isFavorite'] = !services[index]['isFavorite'];
+      likedServiceIds = prefs.getStringList('likedServiceIds') ?? [];
+    });
+  }
+
+  // Save liked services to SharedPreferences
+  Future<void> _saveLikedServices() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setStringList('likedServiceIds', likedServiceIds);
+  }
+
+  // Get liked services
+  List<Map<String, dynamic>> get likedServices {
+    return allServices.where((service) => 
+      likedServiceIds.contains(service['id'])).toList();
+  }
+
+  void toggleFavorite(String serviceId) {
+    setState(() {
+      if (likedServiceIds.contains(serviceId)) {
+        likedServiceIds.remove(serviceId);
+      } else {
+        likedServiceIds.add(serviceId);
+      }
+      _saveLikedServices();
     });
   }
 
@@ -33,27 +100,38 @@ class _FavoritesPageState extends State<FavoritesPage> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const SizedBox(height: 20), // Removed the search bar
+            const SizedBox(height: 20),
             Expanded(
-              child: GridView.builder(
-                itemCount: services.length,
-                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                  crossAxisCount: 2,
-                  mainAxisSpacing: 20,
-                  crossAxisSpacing: 20,
-                  childAspectRatio: 0.8,
-                ),
-                itemBuilder: (context, index) {
-                  final service = services[index];
-                  return _buildServiceItem(
-                    service['name']!,
-                    service['image']!,
-                    service['isFavorite'],
-                    index,
-                    appLocalizations,
-                  );
-                },
-              ),
+              child: likedServices.isEmpty
+                ? Center(
+                    child: Text(
+                      'No favorite services yet',
+                      style: GoogleFonts.poppins(
+                        fontSize: 16,
+                        color: Colors.grey,
+                      ),
+                    ),
+                  )
+                : GridView.builder(
+                    itemCount: likedServices.length,
+                    gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                      crossAxisCount: 2,
+                      mainAxisSpacing: 20,
+                      crossAxisSpacing: 20,
+                      childAspectRatio: 0.8,
+                    ),
+                    itemBuilder: (context, index) {
+                      final service = likedServices[index];
+                      return _buildServiceItem(
+                        service['id']!,
+                        service['name']!,
+                        service['image']!,
+                        service['provider']!,
+                        service['rating']!,
+                        appLocalizations,
+                      );
+                    },
+                  ),
             ),
           ],
         ),
@@ -62,10 +140,11 @@ class _FavoritesPageState extends State<FavoritesPage> {
   }
 
   Widget _buildServiceItem(
+    String serviceId,
     String serviceName,
     String imagePath,
-    bool isFavorite,
-    int index,
+    String providerName,
+    double rating,
     AppLocalizations localizations,
   ) {
     return Card(
@@ -128,7 +207,7 @@ class _FavoritesPageState extends State<FavoritesPage> {
                       ),
                       const SizedBox(height: 2),
                       Text(
-                        '${localizations.provider}: Provider ${index + 1}',
+                        '${localizations.provider}: $providerName',
                         style: GoogleFonts.poppins(
                           fontSize: 12,
                           color: Colors.grey[600],
@@ -137,7 +216,7 @@ class _FavoritesPageState extends State<FavoritesPage> {
                         overflow: TextOverflow.ellipsis,
                       ),
                       const SizedBox(height: 4),
-                      _buildStarRating(4.0 + (index % 3) * 0.5),
+                      _buildStarRating(rating),
                     ],
                   ),
                 ),
@@ -148,11 +227,11 @@ class _FavoritesPageState extends State<FavoritesPage> {
             top: 8,
             right: 8,
             child: IconButton(
-              icon: Icon(
-                isFavorite ? Icons.favorite : Icons.favorite_border,
-                color: isFavorite ? Colors.red : Colors.grey,
+              icon: const Icon(
+                Icons.favorite,
+                color: Colors.red,
               ),
-              onPressed: () => toggleFavorite(index),
+              onPressed: () => toggleFavorite(serviceId),
             ),
           ),
         ],
