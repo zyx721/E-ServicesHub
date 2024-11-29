@@ -48,7 +48,8 @@ class OnboardingScreen2 extends StatelessWidget {
           // Gradient Button
           GestureDetector(
             onTap: () {
-              Navigator.pushNamed(context, '/verification'); // Replace with your route
+              // Navigate to the NameEntryScreen first
+              Navigator.pushNamed(context, '/name_entry');
             },
             child: Container(
               padding: EdgeInsets.symmetric(horizontal: 50, vertical: 16),

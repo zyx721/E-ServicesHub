@@ -89,22 +89,69 @@ Widget _buildAdsSlider(List<String> adImages) {
 
  Widget _buildBody(BuildContext context, AppLocalizations appLocalizations) {
   // Define the list of services with their respective names and images
-  final List<Map<String, String>> services = [
-    {'name': 'Painter', 'image': 'assets/images/service1.png'},
-    {'name': 'Plumber', 'image': 'assets/images/service2.png'},
-    {'name': 'Big House Plumbing', 'image': 'assets/images/service3.png'},
-    {'name': 'Electrical Engineer', 'image': 'assets/images/service4.png'},
-    {'name': 'Floor Cleaning', 'image': 'assets/images/service5.png'},
-    {'name': 'Carpentry', 'image': 'assets/images/service6.png'},
-    {'name': 'Makeup Artist', 'image': 'assets/images/service7.png'},
-    {'name': 'Private Tutor', 'image': 'assets/images/service8.png'},
-    {'name': 'Workout Coach', 'image': 'assets/images/service9.png'},
-    {'name': 'Therapy for Mental Help', 'image': 'assets/images/service10.png'},
-    {'name': 'Locksmith', 'image': 'assets/images/service11.png'},
-    {'name': 'Guardian', 'image': 'assets/images/service12.png'},
-    {'name': 'Chef', 'image': 'assets/images/service13.png'},
-    {'name': 'Solar Panel Installation', 'image': 'assets/images/service14.png'},
-  ];
+final List<Map<String, dynamic>> services = [
+  {
+    'name': 'Painter',
+    'image': 'assets/images/service1.png',
+    'provider': 'Provider 1',
+    'rating': 4.5,
+    'favorite': false,
+  },
+  {
+    'name': 'Plumber',
+    'image': 'assets/images/service2.png',
+    'provider': 'Provider 2',
+    'rating': 4.0,
+    'favorite': false,
+  },
+  {
+    'name': 'Big House Plumbing',
+    'image': 'assets/images/service3.png',
+    'provider': 'Provider 3',
+    'rating': 4.5,
+    'favorite': false,
+  },
+  {
+    'name': 'Electrical Engineer',
+    'image': 'assets/images/service4.png',
+    'provider': 'Provider 4',
+    'rating': 5.0,
+    'favorite': false,
+  },
+  {
+    'name': 'Floor Cleaning',
+    'image': 'assets/images/service5.png',
+    'provider': 'Provider 5',
+    'rating': 4.2,
+    'favorite': false,
+  },
+  // Add more services as needed...
+];
+
+Expanded(
+  child: GridView.builder(
+    itemCount: services.length, // Total number of services
+    gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+      crossAxisCount: 2,
+      mainAxisSpacing: 20,
+      crossAxisSpacing: 20,
+      childAspectRatio: 0.9,
+    ),
+    itemBuilder: (context, index) {
+      // Extract service details for each item
+      final service = services[index];
+      return _buildServiceItem(
+        context,
+        service['name'],
+        service['image'],
+        service['provider'],
+        service['rating'],
+        service['favorite'],
+      );
+    },
+  ),
+);
+
 
   return Padding(
     padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
@@ -151,7 +198,7 @@ Widget _buildAdsSlider(List<String> adImages) {
                 service['image']!,
                 'Provider ${index + 1}', // Placeholder provider name
                 4.0 + (index % 3) * 0.5, // Dynamic rating
-                appLocalizations,
+                appLocalizations as bool,
               );
             },
           ),
@@ -162,90 +209,93 @@ Widget _buildAdsSlider(List<String> adImages) {
 }
 
 
-  Widget _buildServiceItem(
-    BuildContext context,
-    String serviceName,
-    String imagePath,
-    String providerName,
-    double rating,
-    AppLocalizations localizations,
-  ) {
-    return Card(
-      elevation: 4,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Expanded(
-            flex: 3,
-            child: Stack(
-              fit: StackFit.expand,
+ Widget _buildServiceItem(
+  BuildContext context,
+  String serviceName,
+  String imagePath,
+  String providerName,
+  double rating,
+  bool favorite,
+) {
+  return Card(
+    elevation: 4,
+    shape: RoundedRectangleBorder(
+      borderRadius: BorderRadius.circular(16),
+    ),
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Expanded(
+          flex: 3,
+          child: Stack(
+            fit: StackFit.expand,
+            children: [
+              ClipRRect(
+                borderRadius: BorderRadius.vertical(
+                  top: Radius.circular(16),
+                ),
+                child: Image.asset(
+                  imagePath,
+                  fit: BoxFit.cover,
+                ),
+              ),
+              Positioned(
+                top: 8,
+                right: 8,
+                child: IconButton(
+                  icon: Icon(
+                    favorite ? Icons.favorite : Icons.favorite_border,
+                    color: favorite ? Colors.red : Colors.grey,
+                  ),
+                  onPressed: () {
+                    setState(() {
+                      services.firstWhere(
+                              (service) => service['name'] == serviceName)['favorite'] =
+                          !favorite;
+                    });
+                  },
+                ),
+              ),
+            ],
+          ),
+        ),
+        Expanded(
+          flex: 3,
+          child: Padding(
+            padding: const EdgeInsets.all(8.0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
               children: [
-                ClipRRect(
-                  borderRadius: BorderRadius.vertical(
-                    top: Radius.circular(16),
+                Text(
+                  serviceName,
+                  style: GoogleFonts.poppins(
+                    fontSize: 14,
+                    fontWeight: FontWeight.bold,
                   ),
-                  child: Image.asset(
-                    imagePath,
-                    fit: BoxFit.cover,
-                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                 ),
-                Positioned.fill(
-                  child: Container(
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        colors: [
-                          Colors.transparent,
-                          Colors.black.withOpacity(0.4),
-                        ],
-                        begin: Alignment.topCenter,
-                        end: Alignment.bottomCenter,
-                      ),
-                    ),
+                SizedBox(height: 2),
+                Text(
+                  'Provider: $providerName',
+                  style: GoogleFonts.poppins(
+                    fontSize: 12,
+                    color: Colors.grey[600],
                   ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                 ),
+                SizedBox(height: 4),
+                _buildStarRating(rating),
               ],
             ),
           ),
-          Expanded(
-            flex: 3,
-            child: Padding(
-              padding: const EdgeInsets.all(8.0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(
-                    serviceName,
-                    style: GoogleFonts.poppins(
-                      fontSize: 14,
-                      fontWeight: FontWeight.bold,
-                    ),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                  SizedBox(height: 2),
-                  Text(
-                    '${localizations.provider}: $providerName',
-                    style: GoogleFonts.poppins(
-                      fontSize: 12,
-                      color: Colors.grey[600],
-                    ),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                  SizedBox(height: 4),
-                  _buildStarRating(rating),
-                ],
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
+        ),
+      ],
+    ),
+  );
+}
 
   Widget _buildStarRating(double rating) {
     int fullStars = rating.floor();

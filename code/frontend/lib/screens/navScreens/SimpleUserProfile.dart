@@ -31,7 +31,7 @@ class _SimpleUserProfileState extends State<SimpleUserProfile> {
           buildTop(),
           const SizedBox(height: 30), // More space below the profile picture
           buildProfileInfo(),
-          const SizedBox(height: 80), // Button moved further down
+          const SizedBox(height: 60), // Button moved further down
           buildBecomeProviderButton(),
         ],
       ),

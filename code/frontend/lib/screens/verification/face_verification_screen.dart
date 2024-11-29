@@ -1,9 +1,10 @@
 import 'dart:ui';
-
 import 'package:flutter/material.dart';
 import 'package:camera/camera.dart';
+import 'package:hanini_frontend/screens/become_provider_screen/profilepage.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
+import 'package:lottie/lottie.dart'; // Import the Lottie package
 
 class FaceCompareScreen extends StatefulWidget {
   @override
@@ -16,6 +17,7 @@ class _FaceCompareScreenState extends State<FaceCompareScreen> {
   bool _isLoading = false;
   String _comparisonResult = "";
   Color _resultColor = Colors.black;
+  bool _showAnimation = false; // Flag to trigger animation
 
   @override
   void initState() {
@@ -45,6 +47,7 @@ class _FaceCompareScreenState extends State<FaceCompareScreen> {
     setState(() {
       _isLoading = true;
       _comparisonResult = "";
+      _showAnimation = false; // Reset animation on new picture
     });
 
     try {
@@ -57,6 +60,15 @@ class _FaceCompareScreenState extends State<FaceCompareScreen> {
           _resultColor = (_comparisonResult.trim() == "Faces match!")
               ? Colors.greenAccent
               : Colors.redAccent;
+
+          // Show animation only when faces match
+          if (_comparisonResult.trim() == "Faces match!") {
+            _showAnimation = true;
+            // Delay transition to next screen to allow the animation to play
+            Future.delayed(Duration(seconds: 1), () {
+              _navigateToNextScreen();
+            });
+          }
         });
       } else {
         setState(() {
@@ -76,7 +88,7 @@ class _FaceCompareScreenState extends State<FaceCompareScreen> {
   Future<Map<String, dynamic>?> _submitFaceImage(String imagePath) async {
     final request = http.MultipartRequest(
       'POST',
-      Uri.parse('http://192.168.172.13:8000/compare-face/'),
+      Uri.parse('http://192.168.16.54:8000/compare-face/'),
     );
 
     try {
@@ -95,6 +107,23 @@ class _FaceCompareScreenState extends State<FaceCompareScreen> {
       return null;
     }
   }
+
+  // Function to navigate to the next screen with a smooth transition
+  void _navigateToNextScreen() {
+  Navigator.of(context).push(PageRouteBuilder(
+    pageBuilder: (context, animation, secondaryAnimation) => ServiceProviderProfile2(),
+    transitionsBuilder: (context, animation, secondaryAnimation, child) {
+      const begin = Offset(1.0, 0.0); // Start from the right, but less aggressive than before
+      const end = Offset.zero; // End at the center
+      const curve = Curves.easeInOut;
+      var tween = Tween(begin: begin, end: end).chain(CurveTween(curve: curve));
+      var offsetAnimation = animation.drive(tween);
+
+      return SlideTransition(position: offsetAnimation, child: child);
+    },
+  ));
+}
+
 
   void _showSupportDialog() {
     showDialog(
@@ -205,6 +234,16 @@ class _FaceCompareScreenState extends State<FaceCompareScreen> {
                       ),
                     ),
                   ),
+                if (_showAnimation)
+                  Positioned.fill(
+                    child: Center(
+                      child: Lottie.asset(
+                        'assets/animation/animation3.json', // Path to your animation file
+                        width: 150,
+                        height: 150,
+                      ),
+                    ),
+                  ),
                 Positioned(
                   bottom: 30,
                   left: 20,
@@ -237,8 +276,7 @@ class _FaceCompareScreenState extends State<FaceCompareScreen> {
                                   width: 20,
                                   height: 20,
                                   child: CircularProgressIndicator(
-                                    valueColor: AlwaysStoppedAnimation<Color>(
-                                        Colors.white),
+                                    valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
                                     strokeWidth: 2,
                                   ),
                                 )
