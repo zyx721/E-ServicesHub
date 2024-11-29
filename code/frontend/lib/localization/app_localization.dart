@@ -204,9 +204,10 @@ class AppLocalizations {
   String get searchHint => isArabic
       ? "ابحث عن خدمات..."
       : (isFrench ? "Recherchez des services..." : "Search for services...");
-  String get availableServices => isArabic
-      ? "الخدمات المتاحة"
-      : (isFrench ? "Services disponibles" : "Available Services");
+ String get topService => isArabic
+    ? "الخدمات المميزة"
+    : (isFrench ? "Services principaux" : "Top Services");
+
   String get menu => isArabic ? "القائمة" : (isFrench ? "Menu" : "Menu");
   String get profile =>
       isArabic ? "الملف الشخصي" : (isFrench ? "Profil" : "Profile");
@@ -247,7 +248,6 @@ class AppLocalizations {
       isArabic ? "إلغاء" : (isFrench ? "mon profile" : "my Profil");
 
   String get sponsoredServices => isArabic ? "إلغاء" : (isFrench ? "mon profile" : "Sponsored Services");
-
 
 
   // Static method to access the instance
