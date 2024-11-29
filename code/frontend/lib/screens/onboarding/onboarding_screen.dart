@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:hanini_frontend/localization/app_localization.dart';
 import 'package:hanini_frontend/main.dart';
+import 'package:lottie/lottie.dart';
 
 class OnboardingScreen extends StatefulWidget {
   @override
@@ -42,10 +43,10 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
       return Center(child: CircularProgressIndicator());
     }
 
-    // Pages data with localization
+    // Pages data with mixed content
     final pages = [
       {
-        "imagePath": 'assets/images/onboarding1.png',
+        "animationPath": 'assets/animation/animation1.json',
         "title": localizations.onboardingTitle1,
         "description": localizations.onboardingDescription1,
       },
@@ -67,7 +68,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
         backgroundColor: Colors.transparent,
         elevation: 0,
         actions: [
-          _buildLanguageDropdown(), // Modern language selection with flags
+          _buildLanguageDropdown(),
         ],
       ),
       body: Column(
@@ -80,7 +81,8 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
               itemBuilder: (context, index) {
                 final page = pages[index];
                 return _buildPage(
-                  imagePath: page["imagePath"]!,
+                  animationPath: page["animationPath"],
+                  imagePath: page["imagePath"],
                   title: page["title"]!,
                   description: page["description"]!,
                 );
@@ -96,9 +98,10 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     );
   }
 
-  // Build individual page with image, title, and description
+  // Build individual page with either Lottie animation or static image
   Widget _buildPage({
-    required String imagePath,
+    String? animationPath,
+    String? imagePath,
     required String title,
     required String description,
   }) {
@@ -107,7 +110,10 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Image.asset(imagePath, fit: BoxFit.cover, height: 300),
+          if (animationPath != null)
+            Lottie.asset(animationPath, fit: BoxFit.cover, height: 300, repeat: true)
+          else if (imagePath != null)
+            Image.asset(imagePath, fit: BoxFit.cover, height: 300),
           SizedBox(height: 20),
           Text(
             title,
@@ -176,33 +182,32 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
 
   // Build the language selection dropdown with icons
   Widget _buildLanguageDropdown() {
-  final localizations = AppLocalizations.of(context);
-  if (localizations == null) {
+    final localizations = AppLocalizations.of(context);
+    if (localizations == null) {
+      return Padding(
+        padding: const EdgeInsets.only(right: 20.0),
+        child: CircularProgressIndicator(),
+      );
+    }
+
     return Padding(
       padding: const EdgeInsets.only(right: 20.0),
-      child: CircularProgressIndicator(),
+      child: PopupMenuButton<String>(
+        onSelected: _changeLanguage,
+        icon: Icon(Icons.language, color: Colors.black, size: 28),
+        itemBuilder: (BuildContext context) {
+          return [
+            _buildLanguageMenuItem(
+                'en', localizations.englishLanguageName, 'assets/images/sen.png'),
+            _buildLanguageMenuItem(
+                'ar', localizations.arabicLanguageName, 'assets/images/sarab.png'),
+            _buildLanguageMenuItem(
+                'fr', localizations.frenchLanguageName, 'assets/images/sfr.png'),
+          ];
+        },
+      ),
     );
   }
-
-  return Padding(
-    padding: const EdgeInsets.only(right: 20.0),
-    child: PopupMenuButton<String>(
-      onSelected: _changeLanguage,
-      icon: Icon(Icons.language, color: Colors.black, size: 28),
-      itemBuilder: (BuildContext context) {
-        return [
-          _buildLanguageMenuItem(
-              'en', localizations.englishLanguageName, 'assets/images/sen.png'),
-          _buildLanguageMenuItem(
-              'ar', localizations.arabicLanguageName, 'assets/images/sarab.png'),
-          _buildLanguageMenuItem(
-              'fr', localizations.frenchLanguageName, 'assets/images/sfr.png'),
-        ];
-      },
-    ),
-  );
-}
-
 
   // Helper method to build individual language menu items with flags
   PopupMenuItem<String> _buildLanguageMenuItem(

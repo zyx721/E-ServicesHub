@@ -87,11 +87,23 @@ Widget _buildAdsSlider(List<String> adImages) {
     );
   }
 
-  Widget _buildBody(BuildContext context, AppLocalizations appLocalizations) {
-  final List<String> adImages = [
-    'assets/images/ads/first_page.png',
-    'assets/images/ads/second_page.png',
-    'assets/images/ads/third_page.png',
+ Widget _buildBody(BuildContext context, AppLocalizations appLocalizations) {
+  // Define the list of services with their respective names and images
+  final List<Map<String, String>> services = [
+    {'name': 'Painter', 'image': 'assets/images/service1.png'},
+    {'name': 'Plumber', 'image': 'assets/images/service2.png'},
+    {'name': 'Big House Plumbing', 'image': 'assets/images/service3.png'},
+    {'name': 'Electrical Engineer', 'image': 'assets/images/service4.png'},
+    {'name': 'Floor Cleaning', 'image': 'assets/images/service5.png'},
+    {'name': 'Carpentry', 'image': 'assets/images/service6.png'},
+    {'name': 'Makeup Artist', 'image': 'assets/images/service7.png'},
+    {'name': 'Private Tutor', 'image': 'assets/images/service8.png'},
+    {'name': 'Workout Coach', 'image': 'assets/images/service9.png'},
+    {'name': 'Therapy for Mental Help', 'image': 'assets/images/service10.png'},
+    {'name': 'Locksmith', 'image': 'assets/images/service11.png'},
+    {'name': 'Guardian', 'image': 'assets/images/service12.png'},
+    {'name': 'Chef', 'image': 'assets/images/service13.png'},
+    {'name': 'Solar Panel Installation', 'image': 'assets/images/service14.png'},
   ];
 
   return Padding(
@@ -99,8 +111,12 @@ Widget _buildAdsSlider(List<String> adImages) {
     child: Column(
       children: [
         // Ads slider at the top
-        _buildAdsSlider(adImages),
-        SizedBox(height: 20),
+        _buildAdsSlider([
+          'assets/images/ads/first_page.png',
+          'assets/images/ads/second_page.png',
+          'assets/images/ads/third_page.png',
+        ]),
+        const SizedBox(height: 20),
         // Modern "Services" title with icon
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -112,29 +128,29 @@ Widget _buildAdsSlider(List<String> adImages) {
                 fontWeight: FontWeight.bold,
               ),
             ),
-            Icon(Icons.more_horiz, color: Colors.grey),
+            const Icon(Icons.more_horiz, color: Colors.grey),
           ],
         ),
-        SizedBox(height: 10),
-        // Services grid with new styling
+        const SizedBox(height: 10),
+        // Services grid with updated styling and list
         Expanded(
           child: GridView.builder(
-            itemCount: 6,
-            gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+            itemCount: services.length, // Set the total number of services
+            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
               crossAxisCount: 2,
               mainAxisSpacing: 20,
               crossAxisSpacing: 20,
               childAspectRatio: 0.9,
             ),
             itemBuilder: (context, index) {
-              String providerName = 'Provider ${index + 1}';
-              double rating = 4.0 + (index % 3) * 0.5;
+              // Extract service details for each item
+              final service = services[index];
               return _buildServiceItem(
                 context,
-                appLocalizations.service(index + 1),
-                'assets/images/service${index + 1}.png',
-                providerName,
-                rating,
+                service['name']!,
+                service['image']!,
+                'Provider ${index + 1}', // Placeholder provider name
+                4.0 + (index % 3) * 0.5, // Dynamic rating
                 appLocalizations,
               );
             },

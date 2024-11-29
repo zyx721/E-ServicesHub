@@ -6,7 +6,7 @@ import 'package:hanini_frontend/screens/auth/forgot_password_screen.dart';
 import 'package:hanini_frontend/screens/auth/login_screen.dart';
 import 'package:hanini_frontend/screens/auth/signup_screen.dart';
 import 'package:hanini_frontend/screens/onboarding/onboarding_screen.dart';
-import 'package:hanini_frontend/screens/verification/face_verification_screen.dart';
+import 'package:hanini_frontend/screens/verification/id_verification_screen.dart';
 import 'localization/app_localization.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:shared_preferences/shared_preferences.dart'; // Import SharedPreferences

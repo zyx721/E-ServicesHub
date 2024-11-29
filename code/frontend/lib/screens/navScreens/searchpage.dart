@@ -10,14 +10,30 @@ class SearchPage extends StatefulWidget {
 }
 
 class _SearchPageState extends State<SearchPage> {
-  List<String> allServices = List.generate(6, (index) => 'Service ${index + 1}');
-  List<String> filteredServices = [];
+  final List<Map<String, String>> services = [
+    {'name': 'Painter', 'image': 'assets/images/service1.png'},
+    {'name': 'Plumber', 'image': 'assets/images/service2.png'},
+    {'name': 'Big House Plumbing', 'image': 'assets/images/service3.png'},
+    {'name': 'Electrical Engineer', 'image': 'assets/images/service4.png'},
+    {'name': 'Floor Cleaning', 'image': 'assets/images/service5.png'},
+    {'name': 'Carpentry', 'image': 'assets/images/service6.png'},
+    {'name': 'Makeup Artist', 'image': 'assets/images/service7.png'},
+    {'name': 'Private Tutor', 'image': 'assets/images/service8.png'},
+    {'name': 'Workout Coach', 'image': 'assets/images/service9.png'},
+    {'name': 'Therapy for Mental Help', 'image': 'assets/images/service10.png'},
+    {'name': 'Locksmith', 'image': 'assets/images/service11.png'},
+    {'name': 'Guardian', 'image': 'assets/images/service12.png'},
+    {'name': 'Chef', 'image': 'assets/images/service13.png'},
+    {'name': 'Solar Panel Installation', 'image': 'assets/images/service14.png'},
+  ];
+
+  List<Map<String, String>> filteredServices = [];
   TextEditingController _searchController = TextEditingController();
 
   @override
   void initState() {
     super.initState();
-    filteredServices = allServices; // Initially show all services
+    filteredServices = services;
 
     _searchController.addListener(() {
       _filterServices();
@@ -26,9 +42,11 @@ class _SearchPageState extends State<SearchPage> {
 
   void _filterServices() {
     setState(() {
-      filteredServices = allServices
+      filteredServices = services
           .where((service) =>
-              service.toLowerCase().contains(_searchController.text.toLowerCase()))
+              service['name']!
+                  .toLowerCase()
+                  .contains(_searchController.text.toLowerCase()))
           .toList();
     });
   }
@@ -38,7 +56,6 @@ class _SearchPageState extends State<SearchPage> {
     final AppLocalizations appLocalizations = AppLocalizations.of(context)!;
 
     return Scaffold(
-      
       body: Padding(
         padding: const EdgeInsets.all(20.0),
         child: Column(
@@ -49,21 +66,19 @@ class _SearchPageState extends State<SearchPage> {
             Expanded(
               child: GridView.builder(
                 itemCount: filteredServices.length,
-                gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
                   crossAxisCount: 2,
                   mainAxisSpacing: 20,
                   crossAxisSpacing: 20,
                   childAspectRatio: 0.8,
                 ),
                 itemBuilder: (context, index) {
-                  String serviceName = filteredServices[index];
-                  double rating = 4.0 + (index % 3) * 0.5;
+                  final service = filteredServices[index];
                   return _buildServiceItem(
-                    context,
-                    serviceName,
-                    'assets/images/service${index + 1}.png',
+                    service['name']!,
+                    service['image']!,
                     'Provider ${index + 1}',
-                    rating,
+                    4.0 + (index % 3) * 0.5,
                     appLocalizations,
                   );
                 },
@@ -82,15 +97,14 @@ class _SearchPageState extends State<SearchPage> {
         hintText: appLocalizations.searchHint,
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(30),
-          borderSide: BorderSide(color: Colors.blue),
+          borderSide: const BorderSide(color: Colors.blue),
         ),
-        prefixIcon: Icon(Icons.search, color: Colors.blue),
+        prefixIcon: const Icon(Icons.search, color: Colors.blue),
       ),
     );
   }
 
   Widget _buildServiceItem(
-    BuildContext context,
     String serviceName,
     String imagePath,
     String providerName,
@@ -111,7 +125,7 @@ class _SearchPageState extends State<SearchPage> {
               fit: StackFit.expand,
               children: [
                 ClipRRect(
-                  borderRadius: BorderRadius.vertical(
+                  borderRadius: const BorderRadius.vertical(
                     top: Radius.circular(16),
                   ),
                   child: Image.asset(
@@ -153,7 +167,7 @@ class _SearchPageState extends State<SearchPage> {
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                   ),
-                  SizedBox(height: 2),
+                  const SizedBox(height: 2),
                   Text(
                     '${localizations.provider}: $providerName',
                     style: GoogleFonts.poppins(
@@ -163,7 +177,7 @@ class _SearchPageState extends State<SearchPage> {
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                   ),
-                  SizedBox(height: 4),
+                  const SizedBox(height: 4),
                   _buildStarRating(rating),
                 ],
               ),
@@ -182,11 +196,11 @@ class _SearchPageState extends State<SearchPage> {
     return Row(
       children: [
         for (int i = 0; i < fullStars; i++)
-          Icon(Icons.star, color: Colors.amber, size: 20),
+          const Icon(Icons.star, color: Colors.amber, size: 20),
         for (int i = 0; i < halfStars; i++)
-          Icon(Icons.star_half, color: Colors.amber, size: 20),
+          const Icon(Icons.star_half, color: Colors.amber, size: 20),
         for (int i = 0; i < emptyStars; i++)
-          Icon(Icons.star_border, color: Colors.grey, size: 20),
+          const Icon(Icons.star_border, color: Colors.grey, size: 20),
       ],
     );
   }
