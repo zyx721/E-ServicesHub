@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:hanini_frontend/localization/app_localization.dart';
 import 'package:http/http.dart' as http;
-import 'package:flutter_dotenv/flutter_dotenv.dart'; // dotenv for .env variables
 
 class ForgotPasswordScreen extends StatefulWidget {
   const ForgotPasswordScreen({Key? key}) : super(key: key);
@@ -21,14 +20,11 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
       _isLoading = true;
     });
 
-    // final baseUrl = dotenv.env['ip'];
-    // final url = Uri.parse('http://$baseUrl:3000/forget-password');
-
-    final url = Uri.parse('http://192.168.113.236:3000/forget-password');
+    final String backendUrl = 'http://192.168.113.70:3000/forget-password'; // Replace with your backend URL
 
     try {
       final response = await http.post(
-        url,
+        Uri.parse(backendUrl),
         headers: {'Content-Type': 'application/json'},
         body: '{"email": "$email"}',
       );
@@ -41,8 +37,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
         // Success
         final snackBar = SnackBar(
           content: Text(
-            AppLocalizations.of(context)!
-                .passwordResetEmailSent, // Localized text
+            AppLocalizations.of(context)!.passwordResetEmailSent, // Localized text
             style: GoogleFonts.poppins(color: Colors.white),
           ),
           backgroundColor: Colors.green,
@@ -82,7 +77,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
         AppLocalizations.of(context)!; // Access localization instance
 
     return Scaffold(
-      backgroundColor: Colors.transparent,
+      backgroundColor: const Color.fromARGB(0, 0, 0, 0),
       body: Container(
         decoration: const BoxDecoration(
           gradient: LinearGradient(
@@ -129,10 +124,8 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                             } else {
                               final snackBar = SnackBar(
                                 content: Text(
-                                  localization
-                                      .enterValidEmail, // Localized text
-                                  style:
-                                      GoogleFonts.poppins(color: Colors.white),
+                                  localization.enterValidEmail, // Localized text
+                                  style: GoogleFonts.poppins(color: Colors.white),
                                 ),
                                 backgroundColor: Colors.red,
                               );
@@ -141,8 +134,8 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                             }
                           },
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.blue,
-                      foregroundColor: Colors.teal,
+                      backgroundColor: Colors.white,
+                      foregroundColor: const Color.fromARGB(255, 0, 0, 0),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(30.0),
                       ),
@@ -150,12 +143,12 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                           horizontal: 40, vertical: 15),
                     ),
                     child: _isLoading
-                        ? const CircularProgressIndicator(color: Colors.teal)
+                        ? const CircularProgressIndicator(color: Color.fromARGB(255, 0, 0, 0))
                         : Text(
                             localization.getStarted, // Localized button text
                             style: GoogleFonts.poppins(
                               fontSize: 18,
-                              color: Colors.white,
+                              color: const Color.fromARGB(255, 0, 0, 0),
                             ),
                           ),
                   ),
@@ -168,27 +161,27 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
     );
   }
 
-  Widget _buildTextField(String label, bool obscureText) {
+  Widget _buildTextField(
+      String label, bool obscureText) {
     return TextField(
-      controller: _emailController,
       obscureText: obscureText,
       decoration: InputDecoration(
         labelText: label,
-        labelStyle: GoogleFonts.poppins(
-            color: const Color.fromARGB(255, 251, 250, 250)),
+        labelStyle: GoogleFonts.poppins(color: Colors.white),
         border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(10),
+          borderRadius: BorderRadius.circular(12),
           borderSide: const BorderSide(color: Colors.white),
         ),
         focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(10),
+          borderRadius: BorderRadius.circular(12),
           borderSide: const BorderSide(color: Colors.white, width: 2),
         ),
         filled: true,
-        fillColor: Colors.white.withOpacity(0.2),
+        fillColor: Colors.white.withOpacity(0.1),
         contentPadding:
-            const EdgeInsets.symmetric(vertical: 15, horizontal: 10),
+            const EdgeInsets.symmetric(vertical: 18, horizontal: 12),
       ),
+      style: GoogleFonts.poppins(color: Colors.white),
     );
   }
 }

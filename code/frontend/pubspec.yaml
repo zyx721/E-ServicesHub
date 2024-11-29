@@ -10,6 +10,7 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
+  url_launcher: ^6.1.8
   google_sign_in: ^5.4.2 
   provider: ^6.0.5
   animated_text_kit: ^4.2.2
@@ -26,6 +27,9 @@ dependencies:
   shared_preferences: ^2.3.3 #required for storing login state
   font_awesome_flutter: ^10.4.0
   flutter_dotenv: ^5.2.1
+  flutter_animate: ^4.5.2
+  image_picker: ^1.1.2
+  carousel_slider: ^5.0.0
 
 
 dev_dependencies:
@@ -64,3 +68,6 @@ flutter:
     - assets/images/work/portpfolio2.jpeg
     - assets/images/work/portpfolio3.jpeg
     - assets/images/work/portpfolio4.jpeg
+    - assets/images/ads/first_page.png
+    - assets/images/ads/second_page.png
+    - assets/images/ads/third_page.png

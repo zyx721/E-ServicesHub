@@ -2,5 +2,5 @@
 enum UserRole {
   admin,
   serviceProvider,
-  client,
+  client, provider,
 }
