@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:hanini_frontend/localization/app_localization.dart';
-import 'package:http/http.dart' as http;
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 class ForgotPasswordScreen extends StatefulWidget {
   const ForgotPasswordScreen({Key? key}) : super(key: key);
@@ -14,60 +15,55 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
   final TextEditingController _emailController = TextEditingController();
   bool _isLoading = false;
 
-  // Function to handle password recovery
   Future<void> _recoverPassword(String email) async {
+    if (email.isEmpty ||
+        !RegExp(r"^[a-zA-Z0-9]+@[a-zA-Z0-9]+\.[a-zA-Z]+").hasMatch(email)) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please enter a valid email address.')),
+      );
+      return;
+    }
+
     setState(() {
       _isLoading = true;
     });
 
-    final String backendUrl = 'http://192.168.113.70:3000/forget-password'; // Replace with your backend URL
-
     try {
-      final response = await http.post(
-        Uri.parse(backendUrl),
-        headers: {'Content-Type': 'application/json'},
-        body: '{"email": "$email"}',
-      );
+      // Check if the email exists in Firestore
+      final usersCollection = FirebaseFirestore.instance.collection('users');
+      final querySnapshot =
+          await usersCollection.where('email', isEqualTo: email).get();
 
-      setState(() {
-        _isLoading = false;
-      });
-
-      if (response.statusCode == 200) {
-        // Success
-        final snackBar = SnackBar(
-          content: Text(
-            AppLocalizations.of(context)!.passwordResetEmailSent, // Localized text
-            style: GoogleFonts.poppins(color: Colors.white),
+      if (querySnapshot.docs.isEmpty) {
+        // Email doesn't exist
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('No user found for that email.'),
+            backgroundColor: Colors.red,
           ),
-          backgroundColor: Colors.green,
         );
-        ScaffoldMessenger.of(context).showSnackBar(snackBar);
       } else {
-        // Handle error response
-        final snackBar = SnackBar(
-          content: Text(
-            AppLocalizations.of(context)!.emailNotFound, // Localized text
-            style: GoogleFonts.poppins(color: Colors.white),
+        // Email exists, send password reset
+        await FirebaseAuth.instance.sendPasswordResetEmail(email: email);
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Password reset email sent.'),
+            backgroundColor: Colors.green,
           ),
-          backgroundColor: Colors.red,
         );
-        ScaffoldMessenger.of(context).showSnackBar(snackBar);
       }
+    } on FirebaseAuthException catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error: ${e.message}')),
+      );
     } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('An unexpected error occurred: $e')),
+      );
+    } finally {
       setState(() {
         _isLoading = false;
       });
-
-      // Handle network or unexpected errors
-      final snackBar = SnackBar(
-        content: Text(
-          AppLocalizations.of(context)!.networkError, // Localized text
-          style: GoogleFonts.poppins(color: Colors.white),
-        ),
-        backgroundColor: Colors.red,
-      );
-      ScaffoldMessenger.of(context).showSnackBar(snackBar);
     }
   }
 
@@ -112,7 +108,8 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                     ),
                   ),
                   const SizedBox(height: 20),
-                  _buildTextField(localization.email, false),
+                  _buildTextField(localization.email, false,
+                      _emailController), // Pass the controller here
                   const SizedBox(height: 20),
                   ElevatedButton(
                     onPressed: _isLoading
@@ -124,8 +121,10 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                             } else {
                               final snackBar = SnackBar(
                                 content: Text(
-                                  localization.enterValidEmail, // Localized text
-                                  style: GoogleFonts.poppins(color: Colors.white),
+                                  localization
+                                      .enterValidEmail, // Localized text
+                                  style:
+                                      GoogleFonts.poppins(color: Colors.white),
                                 ),
                                 backgroundColor: Colors.red,
                               );
@@ -143,7 +142,8 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                           horizontal: 40, vertical: 15),
                     ),
                     child: _isLoading
-                        ? const CircularProgressIndicator(color: Color.fromARGB(255, 0, 0, 0))
+                        ? const CircularProgressIndicator(
+                            color: Color.fromARGB(255, 0, 0, 0))
                         : Text(
                             localization.getStarted, // Localized button text
                             style: GoogleFonts.poppins(
@@ -162,8 +162,9 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
   }
 
   Widget _buildTextField(
-      String label, bool obscureText) {
+      String label, bool obscureText, TextEditingController controller) {
     return TextField(
+      controller: controller, // Link controller to TextField
       obscureText: obscureText,
       decoration: InputDecoration(
         labelText: label,
