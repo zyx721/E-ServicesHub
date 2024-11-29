@@ -18,9 +18,11 @@ void main() async {
   final cameras = await availableCameras();
   await Firebase.initializeApp(); // Initialize Firebase
 
-  final initialRoute = await _determineInitialRoute(); // Determine initial route
+  final initialRoute =
+      await _determineInitialRoute(); // Determine initial route
   UserRole userRole = await _retrieveUserRole();
-  runApp(MyApp(cameras: cameras, userRole: userRole, initialRoute: initialRoute));
+  runApp(
+      MyApp(cameras: cameras, userRole: userRole, initialRoute: initialRoute));
 }
 
 Future<String> _determineInitialRoute() async {
@@ -39,8 +41,6 @@ Future<String> _determineInitialRoute() async {
   return '/login'; // Default to login if not logged in
 }
 
-
-
 Future<UserRole> _retrieveUserRole() async {
   // Replace with actual user role retrieval logic
   return UserRole.client;
@@ -52,7 +52,6 @@ class MyApp extends StatefulWidget {
   final String initialRoute;
 
   const MyApp({
-    
     Key? key,
     required this.cameras,
     required this.userRole,

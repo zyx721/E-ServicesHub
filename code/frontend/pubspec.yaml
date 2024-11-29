@@ -11,11 +11,8 @@ dependencies:
   flutter:
     sdk: flutter
   url_launcher: ^6.1.8
-  google_sign_in: ^5.4.2 
   provider: ^6.0.5
   animated_text_kit: ^4.2.2
-  firebase_core: ^3.8.0
-  firebase_auth: ^5.3.3
   google_fonts: ^6.2.1
   http: ^1.2.2
   path_provider: ^2.1.5
@@ -30,6 +27,10 @@ dependencies:
   flutter_animate: ^4.5.2
   image_picker: ^1.1.2
   carousel_slider: ^5.0.0
+  firebase_auth: ^5.3.3
+  firebase_core: ^3.8.0
+  google_sign_in: ^5.4.2 
+  cloud_firestore: ^5.5.0
 
 
 dev_dependencies:

@@ -2,10 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:hanini_frontend/localization/app_localization.dart';
 import 'package:google_sign_in/google_sign_in.dart';
-import 'package:firebase_auth/firebase_auth.dart'; // Import Google Sign-In
-import 'package:http/http.dart' as http;
-import 'dart:convert';
-import 'package:flutter_dotenv/flutter_dotenv.dart'; // dotenv for .env variables
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({Key? key}) : super(key: key);
@@ -19,20 +17,34 @@ class _LoginScreenState extends State<LoginScreen>
   late AnimationController _animationController;
   late Animation<double> _fadeAnimation;
   late Animation<double> _scaleAnimation;
-  final GoogleSignIn _googleSignIn = GoogleSignIn(); // Initialize GoogleSignIn
 
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
   final FirebaseAuth _auth = FirebaseAuth.instance;
 
-// Function to handle login
   Future<void> handleLogin() async {
     try {
       final email = _emailController.text.trim();
       final password = _passwordController.text.trim();
 
+      print('Email: $email');
+      print('Password: $password');
+
+      // Validate email format using a simple regex pattern
+      final emailPattern = r"^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$";
+      final emailRegex = RegExp(emailPattern);
+
       if (email.isNotEmpty && password.isNotEmpty) {
-        // Attempt to sign in with Firebase Auth
+        if (!emailRegex.hasMatch(email)) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Invalid email format.'),
+              backgroundColor: Colors.red,
+            ),
+          );
+          return;
+        }
+
         final UserCredential userCredential =
             await _auth.signInWithEmailAndPassword(
           email: email,
@@ -40,6 +52,7 @@ class _LoginScreenState extends State<LoginScreen>
         );
 
         final User? user = userCredential.user;
+
         if (user != null) {
           print('Login Successful. User: ${user.email}');
           // Show success SnackBar
@@ -54,7 +67,7 @@ class _LoginScreenState extends State<LoginScreen>
         } else {
           // Show error SnackBar if no user is found
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
+            const SnackBar(
               content: Text('No user found.'),
               backgroundColor: Colors.red,
             ),
@@ -63,21 +76,57 @@ class _LoginScreenState extends State<LoginScreen>
       } else {
         // Show SnackBar if email or password is empty
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
+          const SnackBar(
             content: Text('Please enter both email and password.'),
             backgroundColor: Colors.orange,
           ),
         );
       }
     } catch (error) {
-      // Show SnackBar for any errors during login
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Login Error: $error'),
-          backgroundColor: Colors.red,
-        ),
-      );
       print('Login Error: $error');
+      if (error is FirebaseAuthException) {
+        if (error.code == 'user-not-found') {
+          print('No user found for that email.');
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('No user found for that email.'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        } else if (error.code == 'wrong-password') {
+          print('Wrong password provided.');
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Incorrect password.'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        } else if (error.code == 'invalid-credential') {
+          print('The supplied auth credential is incorrect or malformed.');
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Invalid credentials provided.'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        } else {
+          print('Error: ${error.message}');
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Error: ${error.message}'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+      } else {
+        // Handle any other error
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('An error occurred: $error'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
     }
   }
 
@@ -110,69 +159,99 @@ class _LoginScreenState extends State<LoginScreen>
   @override
   void dispose() {
     _animationController.dispose();
+    _emailController.dispose(); // Dispose controllers to free resources
+    _passwordController.dispose();
     super.dispose();
   }
 
   Future<void> _handleGoogleSignIn() async {
     try {
-      // Start the Google sign-in process
-      final GoogleSignInAccount? googleUser = await _googleSignIn.signIn();
-      if (googleUser == null) {
-        // The user canceled the sign-in process
-        return;
-      }
+      // Initialize GoogleSignIn instance
+      final GoogleSignIn googleSignIn = GoogleSignIn();
 
-      // Obtain the Google authentication details
-      final GoogleSignInAuthentication googleAuth =
-          await googleUser.authentication;
-      final String idToken = googleAuth.idToken!;
-      final String accessToken = googleAuth.accessToken!;
+      // Attempt to sign in with Google
+      final GoogleSignInAccount? googleUser = await googleSignIn.signIn();
 
-      // Send the ID token to the backend for verification
-      // final baseUrl = dotenv.env['ip'];
-      // final url = Uri.parse('http://$baseUrl:3000/verify-google-token');
-      final url = Uri.parse('http://192.168.113.236:3000/verify-google-token');
+      if (googleUser != null) {
+        try {
+          // Proceed with Google Authentication
+          final GoogleSignInAuthentication googleAuth =
+              await googleUser.authentication;
+          final AuthCredential credential = GoogleAuthProvider.credential(
+            accessToken: googleAuth.accessToken,
+            idToken: googleAuth.idToken,
+          );
 
-      final response = await http.post(
-        url,
-        headers: {'Content-Type': 'application/json'},
-        body: json.encode({
-          'idToken': idToken,
-        }),
-      );
+          // Sign in to Firebase using the Google credentials
+          final UserCredential userCredential =
+              await FirebaseAuth.instance.signInWithCredential(credential);
+          final User? user = userCredential.user;
 
-      final responseBody = jsonDecode(response.body);
-      if (response.statusCode == 200 && responseBody['success']) {
-        // The server verified the token, now you can authenticate the user with Firebase
-        final firebaseToken = responseBody['token'];
+          if (user != null) {
+            // Save user data to Firestore
+            await FirebaseFirestore.instance
+                .collection('users')
+                .doc(user.uid)
+                .set({
+              'uid': user.uid,
+              'name': user.displayName ?? 'No Name',
+              'email': user.email ?? 'No Email',
+              'createdAt': DateTime.now(),
+              'photoURL': user.photoURL ?? '',
+            });
 
-        // Use the Firebase custom token to sign in
-        final UserCredential userCredential =
-            await _auth.signInWithCustomToken(firebaseToken);
-        print('User signed in: ${userCredential.user?.email}');
-
-        // Navigate to the home screen after successful login
-        Navigator.pushReplacementNamed(context, '/navbar');
+            // Show success message and navigate
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text('Welcome ${user.displayName ?? user.email}'),
+                backgroundColor: Colors.green,
+              ),
+            );
+            Navigator.pushNamed(context, '/navbar'); // Navigate to home screen
+          } else {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('Sign-In failed. Please try again.'),
+                backgroundColor: Colors.red,
+              ),
+            );
+          }
+        } on FirebaseAuthException catch (e) {
+          // Handle Firebase-specific errors
+          if (e.code == 'account-exists-with-different-credential') {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('Account exists with different credentials.'),
+                backgroundColor: Colors.red,
+              ),
+            );
+          } else {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text('Authentication error: ${e.message}'),
+                backgroundColor: Colors.red,
+              ),
+            );
+          }
+        }
       } else {
-        // Handle the error if the token verification fails
-        print('Error: ${responseBody['error']}');
-        // Show an error to the user (Snackbar or dialog)
+        // Handle case where Google Sign-In was canceled
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Google Sign-In Error: ${responseBody['error']}'),
-            backgroundColor: Colors.red,
+          const SnackBar(
+            content: Text('Google Sign-In was canceled.'),
+            backgroundColor: Colors.orange,
           ),
         );
       }
-    } catch (e) {
-      print("Google Sign-In Error: $e");
-      // Handle error (e.g., show a message)
+    } catch (error) {
+      // Handle general errors
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Google Sign-In Error: $e'),
+          content: Text('Error during sign-in: ${error.toString()}'),
           backgroundColor: Colors.red,
         ),
       );
+      print('Error during Google Sign-In: $error');
     }
   }
 

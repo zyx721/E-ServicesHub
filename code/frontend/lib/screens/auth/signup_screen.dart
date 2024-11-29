@@ -4,10 +4,8 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:hanini_frontend/localization/app_localization.dart';
 import 'terms_and_conditions_page.dart';
 import 'package:google_sign_in/google_sign_in.dart';
-import 'package:http/http.dart' as http;
-import 'package:firebase_auth/firebase_auth.dart'; // Import Google Sign-In
-import 'dart:convert';
-import 'package:flutter_dotenv/flutter_dotenv.dart'; // dotenv for .env variables
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 class SignupScreen extends StatefulWidget {
   const SignupScreen({Key? key}) : super(key: key);
@@ -18,124 +16,105 @@ class SignupScreen extends StatefulWidget {
 
 class _SignupScreenState extends State<SignupScreen>
     with SingleTickerProviderStateMixin {
-  bool _isLoading = false; // To track loading state
-  String _message = ''; // To display messages
+  final bool _isLoading = false; // To track loading state
   final FirebaseAuth _auth = FirebaseAuth.instance;
-  Future<void> _signup() async {
-    setState(() {
-      _isLoading = true;
-    });
+  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
-    final name = _nameController.text;
-    final email = _emailController.text;
-    final password = _passwordController.text;
-    final passwordCheck = _passwordCheckController.text;
+  void _signup() async {
+    final String name = _nameController.text.trim();
+    final String email = _emailController.text.trim();
+    final String password = _passwordController.text.trim();
+    final String passwordCheck = _passwordCheckController.text.trim();
 
-    if (name.isEmpty ||
-        email.isEmpty ||
-        password.isEmpty ||
-        passwordCheck.isEmpty) {
-      setState(() {
-        _message = 'All fields are required';
-        _isLoading = false;
-      });
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            'All fields are required',
-            style: TextStyle(color: Colors.red), // Red text in SnackBar
-          ),
-          backgroundColor:
-              Colors.white, // Optional: Black background for better contrast
-        ),
-      );
-      return;
-    }
+    if (name.isNotEmpty &&
+        email.isNotEmpty &&
+        password.isNotEmpty &&
+        passwordCheck.isNotEmpty) {
+      if (password == passwordCheck) {
+        try {
+          // Create user with Firebase Authentication
+          final UserCredential userCredential =
+              await _auth.createUserWithEmailAndPassword(
+            email: email,
+            password: password,
+          );
 
-    if (password.length < 6) {
-      setState(() {
-        _message = 'Password must be at least 6 characters';
-        _isLoading = false;
-      });
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            'Password must be at least 6 characters',
-            style: TextStyle(color: Colors.red),
-          ),
-          backgroundColor: Colors
-              .white, // Optional: Set background to highlight the red text
-        ),
-      );
-      return;
-    }
+          // Check if the user is successfully created
+          if (userCredential.user != null) {
+            // Save user data to Firestore
+            await _firestore
+                .collection('users')
+                .doc(userCredential.user!.uid)
+                .set({
+              'uid': userCredential.user!.uid,
+              'name': name,
+              'email': email,
+              'password': password,
+              'createdAt': DateTime.now(),
+            });
 
-    if (password != passwordCheck) {
-      setState(() {
-        _message = 'Passwords do not match';
-        _isLoading = false;
-      });
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            'Passwords do not match',
-            style: TextStyle(color: Colors.red),
-          ),
-          backgroundColor: Colors
-              .white, // Optional: Set background to highlight the red text
-        ),
-      );
-      return;
-    }
+            // Show success message
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text('Signup successful! Welcome $name'),
+                backgroundColor: Colors.green,
+                duration: const Duration(seconds: 5),
+              ),
+            );
 
-    // final baseUrl = dotenv.env['ip'];
-    // final url = Uri.parse('http://$baseUrl:3000/signup');
+            // Navigate to home page after successful signup
+            Navigator.pushNamed(context, '/navbar');
+          } else {
+            // In case user is null, handle the error
+            throw Exception('User creation failed.');
+          }
+        } on FirebaseAuthException catch (e) {
+          // Handle Firebase authentication errors
+          String errorMessage = 'An error occurred during signup';
+          if (e.code == 'email-already-in-use') {
+            errorMessage = 'This email is already in use.';
+          } else if (e.code == 'weak-password') {
+            errorMessage =
+                'Password is too weak. Please choose a stronger password.';
+          } else if (e.code == 'invalid-email') {
+            errorMessage = 'The email address is not valid.';
+          }
 
-    final url = Uri.parse('http://192.168.113.236:3000/signup');
-
-    try {
-      final response = await http.post(
-        url,
-        headers: {'Content-Type': 'application/json'},
-        body: json.encode({
-          'name': name,
-          'email': email,
-          'password': password,
-        }),
-      );
-
-      setState(() {
-        _isLoading = false;
-      });
-
-      final responseBody = json.decode(response.body);
-
-      if (response.statusCode == 201) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Signup successful: ${responseBody['message']}'),
-            backgroundColor: Colors.green,
-          ),
-        );
-
-        // Redirect the user to the login page and replace the current screen
-        Navigator.pushReplacementNamed(context, '/login');
+          // Show the error message to the user
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(errorMessage),
+              backgroundColor: Colors.orange,
+              duration: const Duration(seconds: 3),
+            ),
+          );
+        } catch (e) {
+          // Handle any other errors that might occur
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('An unexpected error occurred: $e'),
+              backgroundColor: Colors.red,
+              duration: const Duration(seconds: 3),
+            ),
+          );
+        }
       } else {
+        // Passwords do not match
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Signup failed: ${responseBody['error']}'),
-            backgroundColor: Colors.red,
+          const SnackBar(
+            content: Text('Passwords do not match. Please try again.'),
+            backgroundColor: Colors.orange,
+            duration: Duration(seconds: 3),
           ),
         );
       }
-    } catch (e) {
-      setState(() {
-        _isLoading = false;
-      });
+    } else {
+      // Ensure all fields are filled
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Error: $e'),
-          backgroundColor: Colors.red,
+        const SnackBar(
+          content: Text('All fields are required. Please fill them in.'),
+          backgroundColor: Colors.orange,
+          duration: Duration(seconds: 3),
         ),
       );
     }
@@ -193,64 +172,54 @@ class _SignupScreenState extends State<SignupScreen>
 
   Future<void> _handleGoogleSignIn() async {
     try {
-      // Start the Google sign-in process
+      // Trigger the Google Authentication flow
       final GoogleSignInAccount? googleUser = await _googleSignIn.signIn();
+
       if (googleUser == null) {
-        // The user canceled the sign-in process
+        // The user canceled the sign-in
+        print('Google Sign-In aborted by user');
         return;
       }
 
-      // Obtain the Google authentication details
+      // Obtain the auth details from the request
       final GoogleSignInAuthentication googleAuth =
           await googleUser.authentication;
-      final String idToken = googleAuth.idToken!;
-      final String accessToken = googleAuth.accessToken!;
 
-      // Send the ID token to the backend for verification
-      // final baseUrl = dotenv.env['ip'];
-      // final url = Uri.parse('http://$baseUrl:3000/verify-google-token');
-      final url = Uri.parse('http://192.168.113.236:3000/verify-google-token');
-
-      final response = await http.post(
-        url,
-        headers: {'Content-Type': 'application/json'},
-        body: json.encode({
-          'idToken': idToken,
-        }),
+      // Create a new credential using the token
+      final AuthCredential credential = GoogleAuthProvider.credential(
+        accessToken: googleAuth.accessToken,
+        idToken: googleAuth.idToken,
       );
 
-      final responseBody = jsonDecode(response.body);
-      if (response.statusCode == 200 && responseBody['success']) {
-        // The server verified the token, now you can authenticate the user with Firebase
-        final firebaseToken = responseBody['token'];
+      // Sign in to Firebase with the Google credential
+      final UserCredential userCredential =
+          await _auth.signInWithCredential(credential);
 
-        // Use the Firebase custom token to sign in
-        final UserCredential userCredential =
-            await _auth.signInWithCustomToken(firebaseToken);
-        print('User signed in: ${userCredential.user?.email}');
+      // Save the user data to Firestore
+      final User? user = userCredential.user;
+      if (user != null) {
+        final DocumentReference userDoc =
+            _firestore.collection('users').doc(user.uid);
 
-        // Navigate to the home screen after successful login
-        Navigator.pushReplacementNamed(context, '/navbar');
-      } else {
-        // Handle the error if the token verification fails
-        print('Error: ${responseBody['error']}');
-        // Show an error to the user (Snackbar or dialog)
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Google Sign-In Error: ${responseBody['error']}'),
-            backgroundColor: Colors.red,
-          ),
-        );
+        // Check if the user document already exists
+        final DocumentSnapshot docSnapshot = await userDoc.get();
+        if (!docSnapshot.exists) {
+          // Create a new document if it doesn't exist
+          await userDoc.set({
+            'uid': user.uid,
+            'name': user.displayName,
+            'email': user.email,
+            'photoUrl': user.photoURL,
+            'signInMethod': 'google',
+            'createdAt': FieldValue.serverTimestamp(),
+          });
+          print('New user data saved to Firestore');
+        } else {
+          print('User already exists in Firestore');
+        }
       }
     } catch (e) {
-      print("Google Sign-In Error: $e");
-      // Handle error (e.g., show a message)
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Google Sign-In Error: $e'),
-          backgroundColor: Colors.red,
-        ),
-      );
+      print('Error during Google Sign-In: $e');
     }
   }
 
@@ -667,9 +636,7 @@ class _SignupScreenState extends State<SignupScreen>
     return SlideTransition(
       position: _slideAnimation,
       child: ElevatedButton(
-        onPressed: _isChecked && !_isLoading
-            ? _signup
-            : null, // Disable if _isChecked is false or _isLoading is true
+        onPressed: _signup,
         style: ElevatedButton.styleFrom(
           backgroundColor: Colors.blue,
           foregroundColor: Colors.black,
