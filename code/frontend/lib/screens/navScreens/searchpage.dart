@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:hanini_frontend/localization/app_localization.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class SearchPage extends StatefulWidget {
   const SearchPage({Key? key}) : super(key: key);
@@ -10,25 +11,68 @@ class SearchPage extends StatefulWidget {
 }
 
 class _SearchPageState extends State<SearchPage> {
-  List<String> allServices = List.generate(6, (index) => 'Service ${index + 1}');
-  List<String> filteredServices = [];
+  final List<Map<String, dynamic>> services = [
+  {'id': 'service_001', 'name': 'Painter', 'image': 'assets/images/service1.png', 'provider': 'ziad', 'rating': 4.0},
+  {'id': 'service_002', 'name': 'Plumber', 'image': 'assets/images/service2.png', 'provider': 'anas', 'rating': 4.2},
+  {'id': 'service_003', 'name': 'Big House Plumbing', 'image': 'assets/images/service3.png', 'provider': 'raouf', 'rating': 4.5},
+  {'id': 'service_004', 'name': 'Electrical Engineer', 'image': 'assets/images/service4.png', 'provider': 'mouh', 'rating': 4.1},
+  {'id': 'service_005', 'name': 'Floor Cleaning', 'image': 'assets/images/service5.png', 'provider': 'fares', 'rating': 3.9},
+  {'id': 'service_006', 'name': 'Carpentry', 'image': 'assets/images/service6.png', 'provider': 'ziad', 'rating': 4.0},
+  {'id': 'service_007', 'name': 'Makeup Artist', 'image': 'assets/images/service7.png', 'provider': 'anas', 'rating': 4.5},
+  {'id': 'service_008', 'name': 'Private Tutor', 'image': 'assets/images/service8.png', 'provider': 'raouf', 'rating': 4.3},
+  {'id': 'service_009', 'name': 'Workout Coach', 'image': 'assets/images/service9.png', 'provider': 'mouh', 'rating': 4.4},
+  {'id': 'service_010', 'name': 'Therapy for Mental Help', 'image': 'assets/images/service10.png', 'provider': 'fares', 'rating': 4.2},
+  {'id': 'service_011', 'name': 'Locksmith', 'image': 'assets/images/service11.png', 'provider': 'ziad', 'rating': 3.8},
+  {'id': 'service_012', 'name': 'Guardian', 'image': 'assets/images/service12.png', 'provider': 'anas', 'rating': 4.1},
+  {'id': 'service_013', 'name': 'Chef', 'image': 'assets/images/service13.png', 'provider': 'raouf', 'rating': 4.6},
+  {'id': 'service_014', 'name': 'Solar Panel Installation', 'image': 'assets/images/service14.png', 'provider': 'mouh', 'rating': 4.5},
+];
+
+
+  List<Map<String, dynamic>> filteredServices = [];
+  List<String> likedServiceIds = [];
   TextEditingController _searchController = TextEditingController();
 
   @override
   void initState() {
     super.initState();
-    filteredServices = allServices; // Initially show all services
+    filteredServices = services;
 
     _searchController.addListener(() {
       _filterServices();
+    });
+    _loadLikedServices();
+  }
+
+  Future<void> _loadLikedServices() async {
+    final prefs = await SharedPreferences.getInstance();
+    setState(() {
+      likedServiceIds = prefs.getStringList('likedServiceIds') ?? [];
+    });
+  }
+
+  Future<void> _saveLikedServices() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setStringList('likedServiceIds', likedServiceIds);
+  }
+
+  void toggleFavorite(String serviceId) {
+    setState(() {
+      if (likedServiceIds.contains(serviceId)) {
+        likedServiceIds.remove(serviceId);
+      } else {
+        likedServiceIds.add(serviceId);
+      }
+      _saveLikedServices();
     });
   }
 
   void _filterServices() {
     setState(() {
-      filteredServices = allServices
-          .where((service) =>
-              service.toLowerCase().contains(_searchController.text.toLowerCase()))
+      filteredServices = services
+          .where((service) => service['name']!
+              .toLowerCase()
+              .contains(_searchController.text.toLowerCase()))
           .toList();
     });
   }
@@ -38,7 +82,6 @@ class _SearchPageState extends State<SearchPage> {
     final AppLocalizations appLocalizations = AppLocalizations.of(context)!;
 
     return Scaffold(
-      
       body: Padding(
         padding: const EdgeInsets.all(20.0),
         child: Column(
@@ -49,22 +92,25 @@ class _SearchPageState extends State<SearchPage> {
             Expanded(
               child: GridView.builder(
                 itemCount: filteredServices.length,
-                gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
                   crossAxisCount: 2,
                   mainAxisSpacing: 20,
                   crossAxisSpacing: 20,
                   childAspectRatio: 0.8,
                 ),
                 itemBuilder: (context, index) {
-                  String serviceName = filteredServices[index];
-                  double rating = 4.0 + (index % 3) * 0.5;
+                  final service = filteredServices[index];
                   return _buildServiceItem(
                     context,
-                    serviceName,
-                    'assets/images/service${index + 1}.png',
-                    'Provider ${index + 1}',
-                    rating,
-                    appLocalizations,
+                    service['id']!,
+                    service['name']!,
+                    service['image']!,
+                    service['provider']!,
+                    service['rating']!,
+                    likedServiceIds.contains(service['id']),
+                    (String serviceId) {
+                      toggleFavorite(serviceId);
+                    },
                   );
                 },
               ),
@@ -82,20 +128,22 @@ class _SearchPageState extends State<SearchPage> {
         hintText: appLocalizations.searchHint,
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(30),
-          borderSide: BorderSide(color: Colors.blue),
+          borderSide: const BorderSide(color: Colors.blue),
         ),
-        prefixIcon: Icon(Icons.search, color: Colors.blue),
+        prefixIcon: const Icon(Icons.search, color: Colors.blue),
       ),
     );
   }
 
   Widget _buildServiceItem(
     BuildContext context,
+    String serviceId,
     String serviceName,
     String imagePath,
     String providerName,
     double rating,
-    AppLocalizations localizations,
+    bool favorite,
+    Function(String) toggleFavorite,
   ) {
     return Card(
       elevation: 4,
@@ -111,7 +159,7 @@ class _SearchPageState extends State<SearchPage> {
               fit: StackFit.expand,
               children: [
                 ClipRRect(
-                  borderRadius: BorderRadius.vertical(
+                  borderRadius: const BorderRadius.vertical(
                     top: Radius.circular(16),
                   ),
                   child: Image.asset(
@@ -119,18 +167,17 @@ class _SearchPageState extends State<SearchPage> {
                     fit: BoxFit.cover,
                   ),
                 ),
-                Positioned.fill(
-                  child: Container(
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        colors: [
-                          Colors.transparent,
-                          Colors.black.withOpacity(0.4),
-                        ],
-                        begin: Alignment.topCenter,
-                        end: Alignment.bottomCenter,
-                      ),
+                Positioned(
+                  top: 8,
+                  right: 8,
+                  child: IconButton(
+                    icon: Icon(
+                      favorite ? Icons.favorite : Icons.favorite_border,
+                      color: favorite ? Colors.red : Colors.grey,
                     ),
+                    onPressed: () {
+                      toggleFavorite(serviceId);
+                    },
                   ),
                 ),
               ],
@@ -153,9 +200,9 @@ class _SearchPageState extends State<SearchPage> {
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                   ),
-                  SizedBox(height: 2),
+                  const SizedBox(height: 2),
                   Text(
-                    '${localizations.provider}: $providerName',
+                    '$providerName',
                     style: GoogleFonts.poppins(
                       fontSize: 12,
                       color: Colors.grey[600],
@@ -163,7 +210,7 @@ class _SearchPageState extends State<SearchPage> {
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                   ),
-                  SizedBox(height: 4),
+                  const SizedBox(height: 4),
                   _buildStarRating(rating),
                 ],
               ),
@@ -182,11 +229,11 @@ class _SearchPageState extends State<SearchPage> {
     return Row(
       children: [
         for (int i = 0; i < fullStars; i++)
-          Icon(Icons.star, color: Colors.amber, size: 20),
+          const Icon(Icons.star, color: Colors.amber, size: 20),
         for (int i = 0; i < halfStars; i++)
-          Icon(Icons.star_half, color: Colors.amber, size: 20),
+          const Icon(Icons.star_half, color: Colors.amber, size: 20),
         for (int i = 0; i < emptyStars; i++)
-          Icon(Icons.star_border, color: Colors.grey, size: 20),
+          const Icon(Icons.star_border, color: Colors.grey, size: 20),
       ],
     );
   }

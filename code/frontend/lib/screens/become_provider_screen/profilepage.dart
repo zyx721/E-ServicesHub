@@ -1,16 +1,12 @@
-import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
-import 'package:image_picker/image_picker.dart';
-import 'package:path_provider/path_provider.dart';
-import 'package:path/path.dart' as path;
+import 'package:image_picker/image_picker.dart'; // for picking images
 
 class ServiceProviderProfile2 extends StatefulWidget {
   const ServiceProviderProfile2({Key? key}) : super(key: key);
 
   @override
-  State<ServiceProviderProfile2> createState() =>
-      _ServiceProviderProfileState();
+  State<ServiceProviderProfile2> createState() => _ServiceProviderProfileState();
 }
 
 class _ServiceProviderProfileState extends State<ServiceProviderProfile2> {
@@ -18,7 +14,11 @@ class _ServiceProviderProfileState extends State<ServiceProviderProfile2> {
   String hourlyRate = '2500 DZD/hr';
   String aboutMe =
       'I am a professional Flutter developer with over 4 years of experience building intuitive, cross-platform mobile applications.';
-  List<String> portfolioImages = [];
+  List<String> portfolioImages = [
+    'assets/images/work/portpfolio1.jpeg',
+    'assets/images/work/portpfolio2.jpeg',
+    'assets/images/work/portpfolio3.jpeg',
+  ];
 
   bool isEditMode = false;
   bool isVerified = true;
@@ -31,7 +31,6 @@ class _ServiceProviderProfileState extends State<ServiceProviderProfile2> {
     super.initState();
     hourlyRateController.text = hourlyRate;
     aboutMeController.text = aboutMe;
-    _loadPortfolioImages();
   }
 
   @override
@@ -40,72 +39,44 @@ class _ServiceProviderProfileState extends State<ServiceProviderProfile2> {
     aboutMeController.dispose();
     super.dispose();
   }
-
-  // Load saved portfolio images from local storage
-  Future<void> _loadPortfolioImages() async {
-    final directory = await getApplicationDocumentsDirectory();
-    final dirPath =
-        directory.path + '/saved_images'; // Change to your desired directory
-    final directoryExists = Directory(dirPath).existsSync();
-
-    if (!directoryExists) {
-      Directory(dirPath).createSync();
+void toggleEditMode() {
+  setState(() {
+    if (isEditMode) {
+      // Save changes (you can save your form values here if needed)
+      hourlyRate = hourlyRateController.text;
+      aboutMe = aboutMeController.text;
     }
+    isEditMode = !isEditMode;
+  });
 
-    final List<FileSystemEntity> files = Directory(dirPath).listSync();
-
-    setState(() {
-      portfolioImages = files
-          .where((file) =>
-              file.path.endsWith('.jpg') || file.path.endsWith('.png'))
-          .map((file) => file.path)
-          .toList();
-    });
+  // After saving changes, navigate to '/navbar'
+  if (!isEditMode) {
+    Navigator.pushReplacementNamed(context, '/navbar');
   }
+}
 
-  // Pick a new portfolio image and save it to local storage
-  Future<void> pickNewPortfolioImage() async {
-    final ImagePicker picker = ImagePicker();
-    final XFile? pickedFile =
-        await picker.pickImage(source: ImageSource.gallery);
-    if (pickedFile != null) {
-      final directory = await getApplicationDocumentsDirectory();
-      final fileName = path.basename(pickedFile.path);
-      final newDirPath =
-          '${directory.path}/saved_images'; // Path for saving images
-      final newFile = File('$newDirPath/$fileName');
-
-      // Ensure the directory exists
-      Directory(newDirPath).createSync();
-
-      // Copy the image to the app's local directory
-      await File(pickedFile.path).copy(newFile.path);
-
-      setState(() {
-        portfolioImages.add(newFile.path); // Add new image to the list
-      });
-    }
-  }
-
-  // Toggle edit mode and save changes
-  void toggleEditMode() {
-    setState(() {
-      if (isEditMode) {
-        // Save changes (you can save your form values here if needed)
-        hourlyRate = hourlyRateController.text;
-        aboutMe = aboutMeController.text;
-      }
-      isEditMode = !isEditMode;
-    });
-
-    // After saving changes, navigate to '/navbar'
-    if (!isEditMode) {
-      Navigator.pushReplacementNamed(context, '/navbar');
-    }
-  }
 
   void navigateBack() {
     Navigator.pop(context); // Navigate back to the previous screen or navbar
+  }
+
+  Future<void> pickNewProfilePicture() async {
+    final ImagePicker picker = ImagePicker();
+    final XFile? pickedFile = await picker.pickImage(source: ImageSource.gallery);
+    if (pickedFile != null) {
+      debugPrint('Profile picture update triggered!');
+      // Update profile picture logic here
+    }
+  }
+
+  Future<void> pickNewPortfolioImage() async {
+    final ImagePicker picker = ImagePicker();
+    final XFile? pickedFile = await picker.pickImage(source: ImageSource.gallery);
+    if (pickedFile != null) {
+      setState(() {
+        portfolioImages.add(pickedFile.path); // Add picked image to portfolio
+      });
+    }
   }
 
   @override
@@ -113,6 +84,14 @@ class _ServiceProviderProfileState extends State<ServiceProviderProfile2> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Set Up Profile'),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.check),
+            onPressed: () {
+              toggleEditMode();
+            },
+          ),
+        ],
       ),
       body: ListView(
         padding: EdgeInsets.zero,
@@ -125,17 +104,11 @@ class _ServiceProviderProfileState extends State<ServiceProviderProfile2> {
           const Divider(thickness: 1, height: 32),
         ],
       ),
-      floatingActionButton: isEditMode
-          ? ElevatedButton(
-              onPressed: toggleEditMode,
-              child: const Text('Save'),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.blue,
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 40, vertical: 12),
-              ),
-            )
-          : null, // Hide the button when not in edit mode
+      floatingActionButton: FloatingActionButton(
+        onPressed: toggleEditMode,
+        child: Icon(isEditMode ? Icons.check : Icons.edit),
+        tooltip: isEditMode ? 'Save Changes' : 'Edit Profile',
+      ),
     );
   }
 
@@ -149,8 +122,7 @@ class _ServiceProviderProfileState extends State<ServiceProviderProfile2> {
             CircleAvatar(
               radius: profileHeight / 2,
               backgroundColor: Colors.grey.shade200,
-              backgroundImage:
-                  const AssetImage('assets/images/profile_picture.png'),
+              backgroundImage: const AssetImage('assets/images/profile_picture.png'),
             ),
             if (isEditMode)
               GestureDetector(
@@ -215,8 +187,8 @@ class _ServiceProviderProfileState extends State<ServiceProviderProfile2> {
             children: [
               buildStat('Projects', '24'),
               buildStat('Rating', _buildStarRating(4.5)),
-              buildStat('Hourly Rate',
-                  isEditMode ? buildHourlyRateEditor() : hourlyRate),
+              buildStat(
+                  'Hourly Rate', isEditMode ? buildHourlyRateEditor() : hourlyRate),
             ],
           ),
           const SizedBox(height: 24),
@@ -254,8 +226,7 @@ class _ServiceProviderProfileState extends State<ServiceProviderProfile2> {
       child: TextField(
         controller: hourlyRateController,
         onChanged: (value) => hourlyRate = value,
-        decoration:
-            const InputDecoration(border: OutlineInputBorder(), isDense: true),
+        decoration: const InputDecoration(border: OutlineInputBorder(), isDense: true),
       ),
     );
   }
@@ -280,18 +251,18 @@ class _ServiceProviderProfileState extends State<ServiceProviderProfile2> {
 
   Widget _buildStarRating(double rating) {
     int fullStars = rating.floor();
-    int halfStars = (rating - fullStars) >= 0.5 ? 1 : 0;
+    int halfStars = (rating % 1 >= 0.5) ? 1 : 0;
+    int emptyStars = 5 - fullStars - halfStars;
 
     return Row(
-      children: List.generate(5, (index) {
-        if (index < fullStars) {
-          return const Icon(Icons.star, color: Colors.yellow, size: 16);
-        } else if (index < fullStars + halfStars) {
-          return const Icon(Icons.star_half, color: Colors.yellow, size: 16);
-        } else {
-          return const Icon(Icons.star_border, color: Colors.yellow, size: 16);
-        }
-      }),
+      children: [
+        for (int i = 0; i < fullStars; i++)
+          const Icon(Icons.star, color: Colors.amber, size: 18),
+        for (int i = 0; i < halfStars; i++)
+          const Icon(Icons.star_half, color: Colors.amber, size: 18),
+        for (int i = 0; i < emptyStars; i++)
+          const Icon(Icons.star_border, color: Colors.grey, size: 18),
+      ],
     );
   }
 
@@ -305,48 +276,61 @@ class _ServiceProviderProfileState extends State<ServiceProviderProfile2> {
             'Portfolio',
             style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
           ),
-          const SizedBox(height: 8),
-          portfolioImages.isNotEmpty
-              ? GridView.builder(
-                  shrinkWrap: true,
-                  physics: const NeverScrollableScrollPhysics(),
-                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                    crossAxisCount: 3,
-                    crossAxisSpacing: 8,
-                    mainAxisSpacing: 8,
-                  ),
-                  itemCount: portfolioImages.length,
-                  itemBuilder: (context, index) {
-                    return GestureDetector(
-                      onTap: () {
-                        // Show image in full screen
-                      },
-                      child: Image.file(
-                        File(portfolioImages[index]),
-                        fit: BoxFit.cover,
-                      ),
-                    );
-                  })
-              : const Center(child: Text('No portfolio images available')),
           const SizedBox(height: 16),
-          ElevatedButton(
-            onPressed: pickNewPortfolioImage,
-            child: const Text('Add Portfolio Image'),
+          SizedBox(
+            height: 100,
+            child: ListView.builder(
+              scrollDirection: Axis.horizontal,
+              itemCount: portfolioImages.length,
+              itemBuilder: (context, index) {
+                return buildPortfolioCard(portfolioImages[index], index);
+              },
+            ),
           ),
+          if (isEditMode)
+            IconButton(
+              icon: const Icon(Icons.add_a_photo),
+              onPressed: pickNewPortfolioImage,
+            ),
+          const SizedBox(height: 12),
         ],
       ),
     );
   }
 
-  // Pick a new profile picture (similar to portfolio image picker)
-  Future<void> pickNewProfilePicture() async {
-    final ImagePicker picker = ImagePicker();
-    final XFile? pickedFile =
-        await picker.pickImage(source: ImageSource.gallery);
-    if (pickedFile != null) {
-      setState(() {
-        // Update the profile picture with the picked file.
-      });
-    }
+  Widget buildPortfolioCard(String imagePath, int index) {
+    return GestureDetector(
+      onTap: () {
+        if (isEditMode) {
+          setState(() {
+            portfolioImages.removeAt(index); // Remove image on tap in edit mode
+          });
+        }
+      },
+      child: Container(
+        margin: const EdgeInsets.only(right: 16),
+        width: 120,
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(8),
+          image: DecorationImage(
+            image: AssetImage(imagePath),
+            fit: BoxFit.cover,
+          ),
+        ),
+        child: isEditMode
+            ? Align(
+                alignment: Alignment.topRight,
+                child: IconButton(
+                  icon: const Icon(Icons.remove_circle, color: Colors.red),
+                  onPressed: () {
+                    setState(() {
+                      portfolioImages.removeAt(index); // Remove image on tap in edit mode
+                    });
+                  },
+                ),
+              )
+            : Container(),
+      ),
+    );
   }
 }

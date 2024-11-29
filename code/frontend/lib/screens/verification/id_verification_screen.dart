@@ -1,21 +1,23 @@
-import 'dart:ui';
-
 import 'package:flutter/material.dart';
 import 'package:camera/camera.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
+import 'dart:io';
+import 'face_verification_screen.dart'; // Replace with your actual face comparison screen import
 
-class FaceCompareScreen extends StatefulWidget {
+class RealTimeDetection extends StatefulWidget {
+  final List<CameraDescription> cameras;
+
+  RealTimeDetection({required this.cameras});
+
   @override
-  _FaceCompareScreenState createState() => _FaceCompareScreenState();
+  _RealTimeDetectionState createState() => _RealTimeDetectionState();
 }
 
-class _FaceCompareScreenState extends State<FaceCompareScreen> {
-  CameraController? _cameraController;
-  List<CameraDescription> cameras = [];
-  bool _isLoading = false;
-  String _comparisonResult = "";
-  Color _resultColor = Colors.black;
+class _RealTimeDetectionState extends State<RealTimeDetection> {
+  late CameraController _cameraController;
+  bool _isDetecting = false;
+  String? _errorMessage;
 
   @override
   void initState() {
@@ -24,76 +26,113 @@ class _FaceCompareScreenState extends State<FaceCompareScreen> {
   }
 
   Future<void> _initializeCamera() async {
-    try {
-      cameras = await availableCameras();
-      _cameraController = CameraController(
-        cameras.firstWhere(
-            (camera) => camera.lensDirection == CameraLensDirection.front),
-        ResolutionPreset.high,
-      );
+    _cameraController = CameraController(
+      widget.cameras[0],
+      ResolutionPreset.medium,
+    );
 
-      await _cameraController?.initialize();
+    try {
+      await _cameraController.initialize();
+      if (!mounted) return;
       setState(() {});
     } catch (e) {
       print("Error initializing camera: $e");
+      if (mounted) {
+        setState(() {
+          _errorMessage = "Camera error: $e";
+        });
+      }
     }
   }
 
-  Future<void> _takeAndSendPicture() async {
-    if (_isLoading) return;
-
-    setState(() {
-      _isLoading = true;
-      _comparisonResult = "";
-    });
-
-    try {
-      final image = await _cameraController!.takePicture();
-      final response = await _submitFaceImage(image.path);
-
-      if (response != null) {
-        setState(() {
-          _comparisonResult = response['message'];
-          _resultColor = (_comparisonResult.trim() == "Faces match!")
-              ? Colors.greenAccent
-              : Colors.redAccent;
-        });
-      } else {
-        setState(() {
-          _comparisonResult = "Failed to compare faces.";
-          _resultColor = Colors.redAccent;
-        });
-      }
-    } catch (e) {
-      print("Error capturing image: $e");
-    } finally {
+  void _startDetection() {
+    if (_cameraController.value.isInitialized) {
       setState(() {
-        _isLoading = false;
+        _isDetecting = true;
+      });
+      _captureFrames();
+    }
+  }
+
+  void _stopDetection() {
+    if (mounted) {
+      setState(() {
+        _isDetecting = false;
       });
     }
   }
 
-  Future<Map<String, dynamic>?> _submitFaceImage(String imagePath) async {
+  Future<void> _captureFrames() async {
+    while (_isDetecting && mounted) {
+      try {
+        final XFile image = await _cameraController.takePicture();
+        await _uploadImage(File(image.path));
+      } catch (e) {
+        print("Error capturing frame: $e");
+        if (mounted) {
+          setState(() {
+            _errorMessage = "Capture error: $e";
+          });
+        }
+        break;
+      }
+    }
+  }
+
+  Future<void> _uploadImage(File image) async {
     final request = http.MultipartRequest(
       'POST',
-      Uri.parse('http://192.168.172.13:8000/compare-face/'),
+      Uri.parse(
+          'http://192.168.16.54:8000/upload-image/'), // Replace with your server's IP address
     );
 
+    request.files.add(await http.MultipartFile.fromPath('file', image.path));
+
     try {
-      request.files.add(await http.MultipartFile.fromPath('file', imagePath));
       final response = await request.send();
       final responseData = await http.Response.fromStream(response);
 
+      if (!mounted) return;
+
       if (response.statusCode == 200) {
-        return json.decode(responseData.body);
+        final responseBody = jsonDecode(responseData.body);
+        final message = responseBody["message"];
+        final stopCapture = responseBody["stop_capture"];
+        print("Response: $message");
+
+        if (stopCapture) {
+          _stopDetection();
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => FaceCompareScreen(),
+            ),
+          );
+        } else {
+          setState(() {
+            _errorMessage = "Invalid ID: $message";
+          });
+        }
       } else {
-        print("Failed to submit face image: ${response.statusCode}");
-        return null;
+        setState(() {
+          _errorMessage = "Upload failed: ${response.statusCode}";
+        });
       }
     } catch (e) {
-      print("Error submitting face image: $e");
-      return null;
+      print("Error uploading image: $e");
+      if (mounted) {
+        setState(() {
+          _errorMessage = "An error occurred during upload.";
+        });
+      }
     }
+  }
+
+  @override
+  void dispose() {
+    _isDetecting = false;
+    _cameraController.dispose();
+    super.dispose();
   }
 
   void _showSupportDialog() {
@@ -103,7 +142,7 @@ class _FaceCompareScreenState extends State<FaceCompareScreen> {
         return AlertDialog(
           title: Text('Support'),
           content: Text(
-              'Please ensure your face is clearly visible within the oval guide and look directly at the camera. Keep your face centered and maintain a neutral expression.'),
+              'If your card was not detected, please make sure it is aligned correctly and try again.'),
           actions: <Widget>[
             TextButton(
               onPressed: () {
@@ -115,12 +154,6 @@ class _FaceCompareScreenState extends State<FaceCompareScreen> {
         );
       },
     );
-  }
-
-  @override
-  void dispose() {
-    _cameraController?.dispose();
-    super.dispose();
   }
 
   @override
@@ -150,7 +183,7 @@ class _FaceCompareScreenState extends State<FaceCompareScreen> {
             backgroundColor: Colors.transparent,
             elevation: 0,
             title: Text(
-              'Face Verification',
+              'Real-Time Detection', // Use appropriate title
               style: TextStyle(
                 fontSize: 22,
                 fontWeight: FontWeight.w600,
@@ -170,47 +203,49 @@ class _FaceCompareScreenState extends State<FaceCompareScreen> {
           ),
         ),
       ),
-      body: _cameraController?.value.isInitialized == true
+      body: _cameraController.value.isInitialized
           ? Stack(
               children: [
-                Transform.scale(
-                  scaleX: -1.0,
-                  child: CameraPreview(_cameraController!),
-                ),
+                CameraPreview(_cameraController),
                 Center(
-                  child: CustomPaint(
-                    size: Size(280, 350),
-                    painter: FaceGuidelinePainter(),
-                  ),
-                ),
-                if (_comparisonResult.isNotEmpty)
-                  Positioned(
-                    bottom: 100,
-                    left: 20,
-                    right: 20,
-                    child: Container(
-                      padding: EdgeInsets.all(12),
-                      decoration: BoxDecoration(
-                        color: _resultColor,
-                        borderRadius: BorderRadius.circular(10),
+                  child: Container(
+                    width: 380,
+                    height: 250,
+                    decoration: BoxDecoration(
+                      border: Border.all(
+                        color: const Color.fromARGB(255, 0, 0, 0),
+                        width: 2.5,
                       ),
-                      child: Text(
-                        _comparisonResult,
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: Center(
+                      child: Padding(
+                        padding: EdgeInsets.only(top: 45, left: 170),
+                        child: Text(
+                          'XXXXXXXXXXXXXXXXXX : رقم التعريف الوطني ',
+                          style: TextStyle(
+                            color: const Color.fromARGB(109, 3, 68, 18),
+                            fontSize: 8.2,
+                            fontWeight: FontWeight.bold,
+                            shadows: [
+                              Shadow(
+                                blurRadius: 10.0,
+                                color: const Color.fromARGB(147, 43, 43, 43),
+                                offset: Offset(1, 0),
+                              ),
+                            ],
+                          ),
                         ),
-                        textAlign: TextAlign.center,
                       ),
                     ),
                   ),
+                ),
                 Positioned(
                   bottom: 30,
                   left: 20,
                   right: 20,
                   child: InkWell(
-                    onTap: _isLoading ? null : _takeAndSendPicture,
+                    onTap: _isDetecting ? _stopDetection : _startDetection,
                     child: Container(
                       padding: EdgeInsets.symmetric(vertical: 15),
                       decoration: BoxDecoration(
@@ -228,216 +263,80 @@ class _FaceCompareScreenState extends State<FaceCompareScreen> {
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
                           Icon(
-                            Icons.camera_alt,
+                            _isDetecting ? Icons.stop : Icons.play_arrow,
                             color: Colors.white,
                           ),
                           SizedBox(width: 10),
-                          _isLoading
-                              ? SizedBox(
-                                  width: 20,
-                                  height: 20,
-                                  child: CircularProgressIndicator(
-                                    valueColor: AlwaysStoppedAnimation<Color>(
-                                        Colors.white),
-                                    strokeWidth: 2,
-                                  ),
-                                )
-                              : Text(
-                                  'Verify Face',
-                                  style: TextStyle(
-                                    color: Colors.white,
-                                    fontSize: 18,
-                                  ),
-                                ),
+                          Text(
+                            _isDetecting ? 'Stop Detection' : 'Start Detection',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 18,
+                            ),
+                          ),
                         ],
                       ),
                     ),
                   ),
                 ),
+                if (_errorMessage != null)
+                  Positioned(
+                    bottom: 100,
+                    left: 20,
+                    right: 20,
+                    child: Container(
+                      padding: EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: Colors.redAccent,
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: Text(
+                        _errorMessage!,
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
+                    ),
+                  ),
+                Positioned(
+                  bottom: 280,
+                  left: 27,
+                  width: 110,
+                  height: 150,
+                  child: Container(
+                    decoration: BoxDecoration(
+                      border: Border.all(
+                        color: const Color.fromARGB(69, 0, 0, 0),
+                        width: 2.0,
+                      ),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: Image.asset(
+                      'assets/images/face_shape.png',
+                      width: 150,
+                      height: 140,
+                    ),
+                  ),
+                ),
+                Positioned(
+                  bottom: 458,
+                  left: 20,
+                  right: 20,
+                  child: Image.asset(
+                    'assets/images/id_things.png',
+                    height: 45,
+                  ),
+                ),
               ],
             )
           : Center(
-              child: CircularProgressIndicator(
-                valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF3949AB)),
-              ),
+              child: _errorMessage != null
+                  ? Text(_errorMessage!)
+                  : CircularProgressIndicator(),
             ),
     );
   }
-}
-
-class FaceGuidelinePainter extends CustomPainter {
-  @override
-  void paint(Canvas canvas, Size size) {
-    final Paint paint = Paint()
-      ..color = const Color.fromARGB(255, 75, 0, 31)
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 2.0;
-
-    final Paint dashedPaint = Paint()
-      ..color = Colors.greenAccent.withOpacity(0.5)
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 1.0;
-
-    final double centerX = size.width / 2;
-    final double centerY = size.height / 2;
-
-    // Draw outer face oval - modified to be slightly V-shaped
-    final Path facePath = Path();
-    final double ovalWidth = size.width * 0.85;
-    final double ovalHeight = size.height * 0.8;
-
-    // Create natural V shape using cubic bezier curves
-    facePath.moveTo(centerX, centerY - ovalHeight / 2);
-
-    // Top right curve (naturally rounded)
-    facePath.cubicTo(
-        centerX + ovalWidth * 0.4,
-        centerY - ovalHeight / 2,
-        centerX + ovalWidth / 2,
-        centerY - ovalHeight * 0.3,
-        centerX + ovalWidth / 2,
-        centerY - ovalHeight * 0.1);
-
-    // Bottom right curve (gentle V-shape)
-    facePath.cubicTo(
-        centerX + ovalWidth / 2,
-        centerY + ovalHeight * 0.25,
-        centerX + ovalWidth * 0.25,
-        centerY + ovalHeight * 0.4,
-        centerX,
-        centerY + ovalHeight / 2 // More natural bottom point
-        );
-
-    // Bottom left curve (gentle V-shape)
-    facePath.cubicTo(
-        centerX - ovalWidth * 0.25,
-        centerY + ovalHeight * 0.4,
-        centerX - ovalWidth / 2,
-        centerY + ovalHeight * 0.25,
-        centerX - ovalWidth / 2,
-        centerY - ovalHeight * 0.1);
-
-    // Top left curve (naturally rounded)
-    facePath.cubicTo(
-        centerX - ovalWidth / 2,
-        centerY - ovalHeight * 0.3,
-        centerX - ovalWidth * 0.4,
-        centerY - ovalHeight / 2,
-        centerX,
-        centerY - ovalHeight / 2);
-
-    canvas.drawPath(facePath, paint);
-
-    // Draw inner guidelines with dashed lines
-    // Horizontal center line
-    drawDashedLine(
-      canvas,
-      Offset(centerX - ovalWidth * 0.35, centerY),
-      Offset(centerX + ovalWidth * 0.35, centerY),
-      dashedPaint,
-    );
-
-    // Vertical center line
-    drawDashedLine(
-      canvas,
-      Offset(centerX, centerY - ovalHeight * 0.3),
-      Offset(centerX, centerY + ovalHeight * 0.3),
-      dashedPaint,
-    );
-
-    // Draw eye level guideline
-    final double eyeLevel = centerY - ovalHeight * 0.15;
-    drawDashedLine(
-      canvas,
-      Offset(centerX - ovalWidth * 0.3, eyeLevel),
-      Offset(centerX + ovalWidth * 0.3, eyeLevel),
-      dashedPaint,
-    );
-
-    // Add corner markers
-    final double markerSize = 15.0;
-    paint.strokeWidth = 3.0;
-
-    // Top left corner markers
-    canvas.drawLine(
-      Offset(centerX - ovalWidth * 0.4, centerY - ovalHeight * 0.35),
-      Offset(
-          centerX - ovalWidth * 0.4 + markerSize, centerY - ovalHeight * 0.35),
-      paint,
-    );
-    canvas.drawLine(
-      Offset(centerX - ovalWidth * 0.4, centerY - ovalHeight * 0.35),
-      Offset(
-          centerX - ovalWidth * 0.4, centerY - ovalHeight * 0.35 + markerSize),
-      paint,
-    );
-
-    // Top right corner markers
-    canvas.drawLine(
-      Offset(centerX + ovalWidth * 0.4, centerY - ovalHeight * 0.35),
-      Offset(
-          centerX + ovalWidth * 0.4 - markerSize, centerY - ovalHeight * 0.35),
-      paint,
-    );
-    canvas.drawLine(
-      Offset(centerX + ovalWidth * 0.4, centerY - ovalHeight * 0.35),
-      Offset(
-          centerX + ovalWidth * 0.4, centerY - ovalHeight * 0.35 + markerSize),
-      paint,
-    );
-
-    // Bottom left corner markers
-    canvas.drawLine(
-      Offset(centerX - ovalWidth * 0.4, centerY + ovalHeight * 0.35),
-      Offset(
-          centerX - ovalWidth * 0.4 + markerSize, centerY + ovalHeight * 0.35),
-      paint,
-    );
-    canvas.drawLine(
-      Offset(centerX - ovalWidth * 0.4, centerY + ovalHeight * 0.35),
-      Offset(
-          centerX - ovalWidth * 0.4, centerY + ovalHeight * 0.35 - markerSize),
-      paint,
-    );
-
-    // Bottom right corner markers
-    canvas.drawLine(
-      Offset(centerX + ovalWidth * 0.4, centerY + ovalHeight * 0.35),
-      Offset(
-          centerX + ovalWidth * 0.4 - markerSize, centerY + ovalHeight * 0.35),
-      paint,
-    );
-    canvas.drawLine(
-      Offset(centerX + ovalWidth * 0.4, centerY + ovalHeight * 0.35),
-      Offset(
-          centerX + ovalWidth * 0.4, centerY + ovalHeight * 0.35 - markerSize),
-      paint,
-    );
-  }
-
-  void drawDashedLine(Canvas canvas, Offset start, Offset end, Paint paint) {
-    final Path path = Path()
-      ..moveTo(start.dx, start.dy)
-      ..lineTo(end.dx, end.dy);
-
-    final Path dashPath = Path();
-    const double dashWidth = 10.0;
-    const double dashSpace = 5.0;
-    double distance = 0.0;
-
-    for (PathMetric pathMetric in path.computeMetrics()) {
-      while (distance < pathMetric.length) {
-        dashPath.addPath(
-          pathMetric.extractPath(distance, distance + dashWidth),
-          Offset.zero,
-        );
-        distance += dashWidth;
-        distance += dashSpace;
-      }
-    }
-    canvas.drawPath(dashPath, paint);
-  }
-
-  @override
-  bool shouldRepaint(CustomPainter oldDelegate) => false;
 }

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:hanini_frontend/main.dart';
+import 'package:hanini_frontend/screens/navScreens/SimpleUserProfile.dart';
 import 'package:iconsax/iconsax.dart';
 import 'package:hanini_frontend/screens/navScreens/searchpage.dart';
 import 'package:hanini_frontend/screens/navScreens/profilepage.dart';
@@ -23,7 +24,7 @@ class _NavbarPageState extends State<NavbarPage> {
     HomePage(),
     SearchPage(),
     FavoritesPage(),
-    ServiceProviderProfile(),
+    SimpleUserProfile(),
   ];
 
   // Language change logic

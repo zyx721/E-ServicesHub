@@ -5,8 +5,9 @@ import 'package:hanini_frontend/screens/SettingsScreen/SettingsScreen.dart';
 import 'package:hanini_frontend/screens/auth/forgot_password_screen.dart';
 import 'package:hanini_frontend/screens/auth/login_screen.dart';
 import 'package:hanini_frontend/screens/auth/signup_screen.dart';
+import 'package:hanini_frontend/screens/become_provider_screen/NameEntryScreen.dart';
 import 'package:hanini_frontend/screens/onboarding/onboarding_screen.dart';
-import 'package:hanini_frontend/screens/verification/face_verification_screen.dart';
+import 'package:hanini_frontend/screens/verification/id_verification_screen.dart';
 import 'localization/app_localization.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:shared_preferences/shared_preferences.dart'; // Import SharedPreferences
@@ -108,6 +109,7 @@ class _MyAppState extends State<MyApp> {
       '/login': (context) => const LoginScreen(),
       '/signup': (context) => const SignupScreen(),
       '/navbar': (context) => const NavbarPage(),
+      '/name_entry': (context) => NameEntryScreen(),
       '/verification': (context) => RealTimeDetection(cameras: widget.cameras),
       '/settings': (context) => SettingsScreen(),
       '/forgot_password': (context) => ForgotPasswordScreen(),

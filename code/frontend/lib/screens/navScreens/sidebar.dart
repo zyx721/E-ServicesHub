@@ -1,142 +1,132 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:hanini_frontend/localization/app_localization.dart';
-import 'package:shared_preferences/shared_preferences.dart'; // Import SharedPreferences
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 
-
-
-
 Widget Sidebar(BuildContext context, AppLocalizations appLocalizations) {
-
   final GoogleSignIn _googleSignIn = GoogleSignIn();
-
-   
-  Future<void> handleLogout() async {
-  final prefs = await SharedPreferences.getInstance();
-
-  try {
-    // Sign out from Google
-    await _googleSignIn.signOut();
-
-    // Reset login state in SharedPreferences
-    await prefs.setBool('isLoggedIn', false);
-
   
-  } catch (e) {
-    print('Error during logout: $e');
-    // Optionally, show an error message to the user
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('Logout failed: $e'),
-        backgroundColor: Colors.red,
-      ),
-    );
+  Future<void> handleLogout() async {
+    final prefs = await SharedPreferences.getInstance();
+    try {
+      await _googleSignIn.signOut();
+      await prefs.setBool('isLoggedIn', false);
+      Navigator.pushReplacementNamed(context, '/login');
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Logout failed: $e'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
   }
-}
 
   return Drawer(
-    child: ListView(
-      padding: EdgeInsets.zero,
+    child: Column(
       children: [
-        DrawerHeader(
-          decoration: const BoxDecoration(color: Color(0xFF3949AB)),
-          child: Text(
-            appLocalizations.menu,
-            style: GoogleFonts.poppins(
-              fontSize: 24,
-              fontWeight: FontWeight.w600,
-              color: Colors.white,
+        Container(
+          padding: EdgeInsets.only(top: 50, bottom: 30, left: 20, right: 20),
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [
+                Color(0xFF1A237E), // Deep indigo
+                Color(0xFF42A5F5), // Lighter blue
+              ],
             ),
           ),
-        ),
-        ListTile(
-          leading: Icon(Icons.person, color: Color(0xFF3949AB)),
-          title: Text(
-            appLocalizations.profile,
-            style: GoogleFonts.poppins(
-              fontSize: 16,
-              fontWeight: FontWeight.w500,
-            ),
+          child: Row(
+            children: [
+              Text(
+                appLocalizations.menu,
+                style: GoogleFonts.poppins(
+                  fontSize: 32,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.white,
+                ),
+              ),
+            ],
           ),
-  onTap: () {
-  Navigator.pushNamed(context, '/profile');
-},
-
         ),
-        ListTile(
-          leading: Icon(Icons.settings, color: Color(0xFF3949AB)),
-          title: Text(
-            appLocalizations.settings,
-            style: GoogleFonts.poppins(
-              fontSize: 16,
-              fontWeight: FontWeight.w500,
-            ),
+        Expanded(
+          child: ListView(
+            padding: EdgeInsets.zero,
+            children: [
+              _buildSidebarItem(
+                context, 
+                icon: Icons.settings, 
+                title: appLocalizations.settings, 
+                onTap: () => Navigator.pushNamed(context, '/settings')
+              ),
+              _buildSidebarItem(
+                context, 
+                icon: Icons.logout, 
+                title: appLocalizations.logout, 
+                onTap: () => _showLogoutDialog(context, handleLogout)
+              ),
+            ],
           ),
-          onTap: () {
-  Navigator.pushNamed(context, '/settings');
-},
-
         ),
-        ListTile(
-          leading: Icon(Icons.language, color: Color(0xFF3949AB)),
-          title: Text(
-            appLocalizations.language,
-            style: GoogleFonts.poppins(
-              fontSize: 16,
-              fontWeight: FontWeight.w500,
-            ),
-          ),
-          onTap: () {
-            // Implement language selection here
-          },
-        ),
-        Divider(
-          color: Colors.grey[400],
-          thickness: 1,
-        ),
-ListTile(
-  leading: Icon(Icons.logout, color: Color(0xFF3949AB)),
-  title: Text(
-    appLocalizations.logout,
-    style: GoogleFonts.poppins(
-      fontSize: 16,
-      fontWeight: FontWeight.w500,
-    ),
-  ),
-  onTap: () async {
-    final shouldLogout = await showDialog<bool>(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: Text('Confirm Logout'),
-          content: Text('Are you sure you want to log out?'),
-          actions: [
-            TextButton(
-              onPressed: () {
-                Navigator.of(context).pop(false); // Cancel
-              },
-              child: Text('Cancel'),
-            ),
-            TextButton(
-              onPressed: () {
-                Navigator.of(context).pop(true); // Confirm
-              },
-              child: Text('Logout'),
-            ),
-          ],
-        );
-      },
-    );
-
-    if (shouldLogout == true) {
-      handleLogout();
-      Navigator.pushReplacementNamed(context, '/login');
-    }
-  },
-),
-
       ],
     ),
   );
+}
+
+Widget _buildSidebarItem(
+  BuildContext context, {
+  required IconData icon, 
+  required String title, 
+  required VoidCallback onTap
+}) {
+  return ListTile(
+    leading: Icon(icon, color: Colors.blueAccent, size: 24),
+    title: Text(
+      title,
+      style: GoogleFonts.poppins(
+        fontSize: 16,
+        fontWeight: FontWeight.w500,
+      ),
+    ),
+    onTap: onTap,
+    contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+    hoverColor: Colors.grey.shade100,
+  );
+}
+
+Future<void> _showLogoutDialog(BuildContext context, Future<void> Function() onLogout) async {
+  final shouldLogout = await showDialog<bool>(
+    context: context,
+    builder: (BuildContext context) {
+      return AlertDialog(
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(15),
+        ),
+        title: Text(
+          'Confirm Logout', 
+          style: GoogleFonts.poppins(fontWeight: FontWeight.bold),
+        ),
+        content: Text(
+          'Are you sure you want to log out?',
+          style: GoogleFonts.poppins(),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: Text('Cancel', style: GoogleFonts.poppins(color: Colors.red)),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            child: Text('Logout', style: GoogleFonts.poppins(color: Colors.blue)),
+          ),
+        ],
+      );
+    },
+  );
+
+  if (shouldLogout == true) {
+    await onLogout();
+  }
 }
