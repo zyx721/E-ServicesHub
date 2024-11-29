@@ -48,6 +48,69 @@ class _FavoritesPageState extends State<FavoritesPage> {
       'provider': 'Provider 5',
       'rating': 4.2,
     },
+    {
+      'id': 'service_005',
+      'name': 'Floor Cleaning',
+      'image': 'assets/images/service5.png',
+      'provider': 'Provider 5',
+      'rating': 4.2,
+    },
+    {
+      'id': 'service_007',
+      'name': 'Makeup Artist',
+      'image': 'assets/images/service7.png',
+      'provider': 'anas',
+      'rating': 4.5
+    },
+    {
+      'id': 'service_008',
+      'name': 'Private Tutor',
+      'image': 'assets/images/service8.png',
+      'provider': 'raouf',
+      'rating': 4.3
+    },
+    {
+      'id': 'service_009',
+      'name': 'Workout Coach',
+      'image': 'assets/images/service9.png',
+      'provider': 'mouh',
+      'rating': 4.4
+    },
+    {
+      'id': 'service_010',
+      'name': 'Therapy for Mental Help',
+      'image': 'assets/images/service10.png',
+      'provider': 'fares',
+      'rating': 4.2
+    },
+    {
+      'id': 'service_011',
+      'name': 'Locksmith',
+      'image': 'assets/images/service11.png',
+      'provider': 'ziad',
+      'rating': 3.8
+    },
+    {
+      'id': 'service_012',
+      'name': 'Guardian',
+      'image': 'assets/images/service12.png',
+      'provider': 'anas',
+      'rating': 4.1
+    },
+    {
+      'id': 'service_013',
+      'name': 'Chef',
+      'image': 'assets/images/service13.png',
+      'provider': 'raouf',
+      'rating': 4.6
+    },
+    {
+      'id': 'service_014',
+      'name': 'Solar Panel Installation',
+      'image': 'assets/images/service14.png',
+      'provider': 'mouh',
+      'rating': 4.5
+    },
   ];
 
   // List to store liked service IDs
@@ -75,8 +138,9 @@ class _FavoritesPageState extends State<FavoritesPage> {
 
   // Get liked services
   List<Map<String, dynamic>> get likedServices {
-    return allServices.where((service) => 
-      likedServiceIds.contains(service['id'])).toList();
+    return allServices
+        .where((service) => likedServiceIds.contains(service['id']))
+        .toList();
   }
 
   void toggleFavorite(String serviceId) {
@@ -103,35 +167,36 @@ class _FavoritesPageState extends State<FavoritesPage> {
             const SizedBox(height: 20),
             Expanded(
               child: likedServices.isEmpty
-                ? Center(
-                    child: Text(
-                      'No favorite services yet',
-                      style: GoogleFonts.poppins(
-                        fontSize: 16,
-                        color: Colors.grey,
+                  ? Center(
+                      child: Text(
+                        'No favorite services yet',
+                        style: GoogleFonts.poppins(
+                          fontSize: 16,
+                          color: Colors.grey,
+                        ),
                       ),
+                    )
+                  : GridView.builder(
+                      itemCount: likedServices.length,
+                      gridDelegate:
+                          const SliverGridDelegateWithFixedCrossAxisCount(
+                        crossAxisCount: 2,
+                        mainAxisSpacing: 20,
+                        crossAxisSpacing: 20,
+                        childAspectRatio: 0.8,
+                      ),
+                      itemBuilder: (context, index) {
+                        final service = likedServices[index];
+                        return _buildServiceItem(
+                          service['id']!,
+                          service['name']!,
+                          service['image']!,
+                          service['provider']!,
+                          service['rating']!,
+                          appLocalizations,
+                        );
+                      },
                     ),
-                  )
-                : GridView.builder(
-                    itemCount: likedServices.length,
-                    gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                      crossAxisCount: 2,
-                      mainAxisSpacing: 20,
-                      crossAxisSpacing: 20,
-                      childAspectRatio: 0.8,
-                    ),
-                    itemBuilder: (context, index) {
-                      final service = likedServices[index];
-                      return _buildServiceItem(
-                        service['id']!,
-                        service['name']!,
-                        service['image']!,
-                        service['provider']!,
-                        service['rating']!,
-                        appLocalizations,
-                      );
-                    },
-                  ),
             ),
           ],
         ),
