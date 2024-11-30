@@ -44,7 +44,7 @@ Future<String> _determineInitialRoute() async {
 
 Future<UserRole> _retrieveUserRole() async {
   // Replace with actual user role retrieval logic
-  return UserRole.client;
+  return UserRole.provider;
 }
 
 class MyApp extends StatefulWidget {

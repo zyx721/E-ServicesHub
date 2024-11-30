@@ -1,17 +1,26 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:hanini_frontend/localization/app_localization.dart';
+import 'package:hanini_frontend/user_role.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 
 Widget Sidebar(BuildContext context, AppLocalizations appLocalizations) {
   final GoogleSignIn _googleSignIn = GoogleSignIn();
-  
+
   Future<void> handleLogout() async {
     final prefs = await SharedPreferences.getInstance();
     try {
+      // Sign out from Google
       await _googleSignIn.signOut();
+
+      // Reset the logged-in status
       await prefs.setBool('isLoggedIn', false);
+
+      // Set the user role to 'client' upon logout
+      await prefs.setString('userRole', UserRole.client.toString());
+
+      // Navigate to the login screen
       Navigator.pushReplacementNamed(context, '/login');
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -56,16 +65,16 @@ Widget Sidebar(BuildContext context, AppLocalizations appLocalizations) {
             padding: EdgeInsets.zero,
             children: [
               _buildSidebarItem(
-                context, 
-                icon: Icons.settings, 
-                title: appLocalizations.settings, 
-                onTap: () => Navigator.pushNamed(context, '/settings')
+                context,
+                icon: Icons.settings,
+                title: appLocalizations.settings,
+                onTap: () => Navigator.pushNamed(context, '/settings'),
               ),
               _buildSidebarItem(
-                context, 
-                icon: Icons.logout, 
-                title: appLocalizations.logout, 
-                onTap: () => _showLogoutDialog(context, handleLogout)
+                context,
+                icon: Icons.logout,
+                title: appLocalizations.logout,
+                onTap: () => _showLogoutDialog(context, handleLogout),
               ),
             ],
           ),
@@ -77,9 +86,9 @@ Widget Sidebar(BuildContext context, AppLocalizations appLocalizations) {
 
 Widget _buildSidebarItem(
   BuildContext context, {
-  required IconData icon, 
-  required String title, 
-  required VoidCallback onTap
+  required IconData icon,
+  required String title,
+  required VoidCallback onTap,
 }) {
   return ListTile(
     leading: Icon(icon, color: Colors.blueAccent, size: 24),
@@ -105,7 +114,7 @@ Future<void> _showLogoutDialog(BuildContext context, Future<void> Function() onL
           borderRadius: BorderRadius.circular(15),
         ),
         title: Text(
-          'Confirm Logout', 
+          'Confirm Logout',
           style: GoogleFonts.poppins(fontWeight: FontWeight.bold),
         ),
         content: Text(
