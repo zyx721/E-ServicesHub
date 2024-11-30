@@ -10,17 +10,18 @@ import 'package:hanini_frontend/screens/onboarding/onboarding_screen.dart';
 import 'package:hanini_frontend/screens/verification/id_verification_screen.dart';
 import 'localization/app_localization.dart';
 import 'package:firebase_core/firebase_core.dart';
-import 'package:shared_preferences/shared_preferences.dart'; // Import SharedPreferences
+import 'package:shared_preferences/shared_preferences.dart';
 import 'user_role.dart';
 import 'navbar.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   final cameras = await availableCameras();
-  await Firebase.initializeApp(); // Initialize Firebase
+  await Firebase.initializeApp();
 
-  final initialRoute = await _determineInitialRoute(); // Determine initial route
-  UserRole userRole = await _retrieveUserRole();
+  final initialRoute = await _determineInitialRoute();
+  final userRole = await _retrieveUserRole();
+  
   runApp(MyApp(cameras: cameras, userRole: userRole, initialRoute: initialRoute));
 }
 
@@ -40,11 +41,19 @@ Future<String> _determineInitialRoute() async {
   return '/login'; // Default to login if not logged in
 }
 
-
-
+// Updated to retrieve user role from SharedPreferences
 Future<UserRole> _retrieveUserRole() async {
-  // Replace with actual user role retrieval logic
-  return UserRole.provider;
+  final prefs = await SharedPreferences.getInstance();
+  String? savedRoleString = prefs.getString('userRole');
+  
+  if (savedRoleString != null) {
+    return UserRole.values.firstWhere(
+      (role) => role.toString() == savedRoleString,
+      orElse: () => UserRole.client, // Default to client if not found
+    );
+  }
+  
+  return UserRole.client; // Default role if no role is saved
 }
 
 class MyApp extends StatefulWidget {
@@ -53,7 +62,6 @@ class MyApp extends StatefulWidget {
   final String initialRoute;
 
   const MyApp({
-    
     Key? key,
     required this.cameras,
     required this.userRole,
@@ -68,11 +76,28 @@ class MyApp extends StatefulWidget {
 }
 
 class _MyAppState extends State<MyApp> {
+  late UserRole _currentUserRole;
   Locale _locale = const Locale('en'); // Default language is English
+
+  @override
+  void initState() {
+    super.initState();
+    _currentUserRole = widget.userRole;
+  }
 
   void changeLanguage(Locale locale) {
     setState(() {
       _locale = locale;
+    });
+  }
+
+  // Method to update user role and save it
+  Future<void> updateUserRole(UserRole newRole) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString('userRole', newRole.toString());
+    
+    setState(() {
+      _currentUserRole = newRole;
     });
   }
 
@@ -99,7 +124,7 @@ class _MyAppState extends State<MyApp> {
         Locale('fr', ''), // French
       ],
       locale: _locale,
-      initialRoute: widget.initialRoute, // Use dynamic initial route
+      initialRoute: widget.initialRoute,
       routes: _buildRoutes(),
     );
   }
@@ -109,7 +134,7 @@ class _MyAppState extends State<MyApp> {
       '/': (context) => OnboardingScreen(),
       '/login': (context) => const LoginScreen(),
       '/signup': (context) => const SignupScreen(),
-      '/navbar': (context) => NavbarPage(userRole: widget.userRole),
+      '/navbar': (context) => NavbarPage(userRole: _currentUserRole),
       '/name_entry': (context) => NameEntryScreen(),
       '/verification': (context) => RealTimeDetection(cameras: widget.cameras),
       '/settings': (context) => SettingsScreen(),
