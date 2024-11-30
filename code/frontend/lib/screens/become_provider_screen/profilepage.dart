@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import 'package:hanini_frontend/navbar.dart';
 import 'package:hanini_frontend/user_role.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:shared_preferences/shared_preferences.dart'; // for picking images
@@ -43,22 +44,26 @@ class _ServiceProviderProfileState extends State<ServiceProviderProfile2> {
   }
 
   void toggleEditMode() async {
-    setState(() {
-      if (isEditMode) {
-        // Save changes (you can save your form values here if needed)
-        hourlyRate = hourlyRateController.text;
-        aboutMe = aboutMeController.text;
-      }
-      isEditMode = !isEditMode;
-    });
-
-    // After saving changes, update user role and navigate to navbar
-    if (!isEditMode) {
-      // Update user role to provider
-      await _updateUserRole();
-      Navigator.pushReplacementNamed(context, '/navbar');
+  setState(() {
+    if (isEditMode) {
+      hourlyRate = hourlyRateController.text;
+      aboutMe = aboutMeController.text;
     }
+    isEditMode = !isEditMode;
+  });
+
+  if (!isEditMode) {
+    await _updateUserRole();
+    
+    // Navigate to navbar with the updated role
+    Navigator.pushReplacement(
+      context, 
+      MaterialPageRoute(
+        builder: (context) => NavbarPage(userRole: UserRole.provider)
+      )
+    );
   }
+}
 
   Future<void> _updateUserRole() async {
     // Use SharedPreferences to persist the role change
