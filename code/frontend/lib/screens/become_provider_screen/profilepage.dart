@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
-import 'package:image_picker/image_picker.dart'; // for picking images
+import 'package:hanini_frontend/navbar.dart';
+import 'package:hanini_frontend/user_role.dart';
+import 'package:image_picker/image_picker.dart';
+import 'package:shared_preferences/shared_preferences.dart'; // for picking images
 
 class ServiceProviderProfile2 extends StatefulWidget {
   const ServiceProviderProfile2({Key? key}) : super(key: key);
@@ -39,22 +42,32 @@ class _ServiceProviderProfileState extends State<ServiceProviderProfile2> {
     aboutMeController.dispose();
     super.dispose();
   }
-void toggleEditMode() {
+
+  void toggleEditMode() async {
   setState(() {
     if (isEditMode) {
-      // Save changes (you can save your form values here if needed)
       hourlyRate = hourlyRateController.text;
       aboutMe = aboutMeController.text;
     }
     isEditMode = !isEditMode;
   });
 
-  // After saving changes, navigate to '/navbar'
   if (!isEditMode) {
-    Navigator.pushReplacementNamed(context, '/navbar');
+    await _updateUserRole();
+    
+    // Navigate to navbar with the updated role
+    Navigator.pushReplacement(
+      context, 
+      MaterialPageRoute(
+        builder: (context) => NavbarPage(userRole: UserRole.provider)
+      )
+    );
   }
 }
-
+Future<void> _updateUserRole() async {
+  final prefs = await SharedPreferences.getInstance();
+  await prefs.setString('userRole', UserRole.provider.toString());
+}
 
   void navigateBack() {
     Navigator.pop(context); // Navigate back to the previous screen or navbar

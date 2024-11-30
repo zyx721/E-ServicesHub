@@ -83,7 +83,7 @@ class _RealTimeDetectionState extends State<RealTimeDetection> {
     final request = http.MultipartRequest(
       'POST',
       Uri.parse(
-          'http://192.168.16.54:8000/upload-image/'), // Replace with your server's IP address
+          'http://192.168.48.161:8000/upload-image/'), // Replace with your server's IP address
     );
 
     request.files.add(await http.MultipartFile.fromPath('file', image.path));

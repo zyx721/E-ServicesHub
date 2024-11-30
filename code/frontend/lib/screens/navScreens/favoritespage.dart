@@ -28,7 +28,90 @@ class _FavoritesPageState extends State<FavoritesPage> {
       'provider': 'anas',
       'rating': 4.0,
     },
-    // Add more services here...
+    {
+      'id': 'service_003',
+      'name': 'Big House Plumbing',
+      'image': 'assets/images/service3.png',
+      'provider': 'raouf',
+      'rating': 4.5,
+    },
+    {
+      'id': 'service_004',
+      'name': 'Electrical Engineer',
+      'image': 'assets/images/service4.png',
+      'provider': 'fares',
+      'rating': 5.0,
+    },
+    {
+      'id': 'service_005',
+      'name': 'Floor Cleaning',
+      'image': 'assets/images/service5.png',
+      'provider': 'Provider 5',
+      'rating': 4.2,
+    },
+    {
+      'id': 'service_005',
+      'name': 'Floor Cleaning',
+      'image': 'assets/images/service5.png',
+      'provider': 'Provider 5',
+      'rating': 4.2,
+    },
+    {
+      'id': 'service_007',
+      'name': 'Makeup Artist',
+      'image': 'assets/images/service7.png',
+      'provider': 'anas',
+      'rating': 4.5
+    },
+    {
+      'id': 'service_008',
+      'name': 'Private Tutor',
+      'image': 'assets/images/service8.png',
+      'provider': 'raouf',
+      'rating': 4.3
+    },
+    {
+      'id': 'service_009',
+      'name': 'Workout Coach',
+      'image': 'assets/images/service9.png',
+      'provider': 'mouh',
+      'rating': 4.4
+    },
+    {
+      'id': 'service_010',
+      'name': 'Therapy for Mental Help',
+      'image': 'assets/images/service10.png',
+      'provider': 'fares',
+      'rating': 4.2
+    },
+    {
+      'id': 'service_011',
+      'name': 'Locksmith',
+      'image': 'assets/images/service11.png',
+      'provider': 'ziad',
+      'rating': 3.8
+    },
+    {
+      'id': 'service_012',
+      'name': 'Guardian',
+      'image': 'assets/images/service12.png',
+      'provider': 'anas',
+      'rating': 4.1
+    },
+    {
+      'id': 'service_013',
+      'name': 'Chef',
+      'image': 'assets/images/service13.png',
+      'provider': 'raouf',
+      'rating': 4.6
+    },
+    {
+      'id': 'service_014',
+      'name': 'Solar Panel Installation',
+      'image': 'assets/images/service14.png',
+      'provider': 'mouh',
+      'rating': 4.5
+    },
   ];
 
   // List to store liked service IDs
