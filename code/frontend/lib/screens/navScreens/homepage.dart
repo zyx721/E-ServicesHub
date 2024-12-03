@@ -364,91 +364,115 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-  Widget _buildServiceItem(
-    BuildContext context,
-    String serviceId,
-    String serviceName,
-    String imagePath,
-    String providerName,
-    double rating,
-    bool favorite,
-    Function(String) toggleFavorite,
-  ) {
-    return Card(
-      elevation: 4,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16),
-      ),
+Widget _buildServiceItem(
+  BuildContext context,
+  String serviceId,
+  String serviceName,
+  String imagePath,
+  String providerName,
+  double rating,
+  bool favorite,
+  Function(String) toggleFavorite,
+) {
+  return Card(
+    elevation: 6,
+    shadowColor: Colors.blue.withOpacity(0.3),
+    shape: RoundedRectangleBorder(
+      borderRadius: BorderRadius.circular(16),
+    ),
+    child: InkWell(
+      onTap: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => ServiceProviderFullProfile(
+              serviceId: serviceId,
+            ),
+          ),
+        );
+      },
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Expanded(
-            flex: 3,
             child: Stack(
-              fit: StackFit.expand,
               children: [
                 ClipRRect(
-                  borderRadius: BorderRadius.vertical(
+                  borderRadius: const BorderRadius.vertical(
                     top: Radius.circular(16),
                   ),
                   child: Image.asset(
                     imagePath,
                     fit: BoxFit.cover,
+                    width: double.infinity,
                   ),
                 ),
                 Positioned(
-                  top: 8,
-                  right: 8,
-                  child: IconButton(
-                    icon: Icon(
-                      favorite ? Icons.favorite : Icons.favorite_border,
-                      color: favorite ? Colors.red : Colors.grey,
-                    ),
-                    onPressed: () {
+                  top: 10,
+                  right: 10,
+                  child: GestureDetector(
+                    onTap: () {
                       toggleFavorite(serviceId);
                     },
+                    child: Container(
+                      padding: const EdgeInsets.all(4),
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: Colors.white.withOpacity(0.8),
+                      ),
+                      child: Icon(
+                        favorite ? Icons.favorite : Icons.favorite_border,
+                        color: favorite ? Colors.red : Colors.grey,
+                      ),
+                    ),
                   ),
                 ),
               ],
             ),
           ),
-          Expanded(
-            flex: 3,
-            child: Padding(
-              padding: const EdgeInsets.all(8.0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(
-                    serviceName,
-                    style: GoogleFonts.poppins(
-                      fontSize: 14,
-                      fontWeight: FontWeight.bold,
-                    ),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
+          Padding(
+            padding: const EdgeInsets.all(8.0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  serviceName,
+                  style: GoogleFonts.poppins(
+                    fontSize: 14,
+                    fontWeight: FontWeight.bold,
                   ),
-                  SizedBox(height: 2),
-                  Text(
-                    'Provider: $providerName',
-                    style: GoogleFonts.poppins(
-                      fontSize: 12,
-                      color: Colors.grey[600],
-                    ),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                Text(
+                  'Provider: $providerName',
+                  style: GoogleFonts.poppins(
+                    fontSize: 12,
+                    color: Colors.grey[600],
                   ),
-                  SizedBox(height: 4),
-                  _buildStarRating(rating),
-                ],
-              ),
+                  maxLines: 1,
+                ),
+                Row(
+                  children: [
+                    Icon(Icons.star, size: 16, color: Colors.amber),
+                    const SizedBox(width: 4),
+                    Text(
+                      rating.toStringAsFixed(1),
+                      style: GoogleFonts.poppins(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ],
+                ),
+              ],
             ),
           ),
         ],
       ),
-    );
-  }
+    ),
+  );
+}
 
   Widget _buildStarRating(double rating) {
     int fullStars = rating.floor();
