@@ -88,7 +88,7 @@ class _FaceCompareScreenState extends State<FaceCompareScreen> {
   Future<Map<String, dynamic>?> _submitFaceImage(String imagePath) async {
     final request = http.MultipartRequest(
       'POST',
-      Uri.parse('https://rotten-wings-fix.loca.lt/compare-face/'),
+      Uri.parse('https://polite-schools-ask.loca.lt/compare-face/'),
     );
 
     try {
