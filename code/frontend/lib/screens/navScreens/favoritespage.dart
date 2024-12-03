@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:hanini_frontend/localization/app_localization.dart';
+import 'package:hanini_frontend/screens/navScreens/service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class FavoritesPage extends StatefulWidget {
@@ -188,6 +189,7 @@ class _FavoritesPageState extends State<FavoritesPage> {
                       itemBuilder: (context, index) {
                         final service = likedServices[index];
                         return _buildServiceItem(
+                          context,
                           service['id']!,
                           service['name']!,
                           service['image']!,
@@ -205,6 +207,7 @@ class _FavoritesPageState extends State<FavoritesPage> {
   }
 
   Widget _buildServiceItem(
+    BuildContext context,
     String serviceId,
     String serviceName,
     String imagePath,
@@ -212,94 +215,107 @@ class _FavoritesPageState extends State<FavoritesPage> {
     double rating,
     AppLocalizations localizations,
   ) {
-    return Card(
-      elevation: 4,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16),
-      ),
-      child: Stack(
-        children: [
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Expanded(
-                flex: 3,
-                child: Stack(
-                  fit: StackFit.expand,
-                  children: [
-                    ClipRRect(
-                      borderRadius: const BorderRadius.vertical(
-                        top: Radius.circular(16),
+    return GestureDetector(
+      onTap: () {
+        // Navigate to ServiceProviderFullProfile when service is tapped
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => ServiceProviderFullProfile(
+              serviceId: serviceId,
+            ),
+          ),
+        );
+      },
+      child: Card(
+        elevation: 4,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(16),
+        ),
+        child: Stack(
+          children: [
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Expanded(
+                  flex: 3,
+                  child: Stack(
+                    fit: StackFit.expand,
+                    children: [
+                      ClipRRect(
+                        borderRadius: const BorderRadius.vertical(
+                          top: Radius.circular(16),
+                        ),
+                        child: Image.asset(
+                          imagePath,
+                          fit: BoxFit.cover,
+                        ),
                       ),
-                      child: Image.asset(
-                        imagePath,
-                        fit: BoxFit.cover,
-                      ),
-                    ),
-                    Positioned.fill(
-                      child: Container(
-                        decoration: BoxDecoration(
-                          gradient: LinearGradient(
-                            colors: [
-                              Colors.transparent,
-                              Colors.black.withOpacity(0.4),
-                            ],
-                            begin: Alignment.topCenter,
-                            end: Alignment.bottomCenter,
+                      Positioned.fill(
+                        child: Container(
+                          decoration: BoxDecoration(
+                            gradient: LinearGradient(
+                              colors: [
+                                Colors.transparent,
+                                Colors.black.withOpacity(0.4),
+                              ],
+                              begin: Alignment.topCenter,
+                              end: Alignment.bottomCenter,
+                            ),
                           ),
                         ),
                       ),
-                    ),
-                  ],
-                ),
-              ),
-              Expanded(
-                flex: 3,
-                child: Padding(
-                  padding: const EdgeInsets.all(8.0),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Text(
-                        serviceName,
-                        style: GoogleFonts.poppins(
-                          fontSize: 14,
-                          fontWeight: FontWeight.bold,
-                        ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                      const SizedBox(height: 2),
-                      Text(
-                        '${localizations.provider}: $providerName',
-                        style: GoogleFonts.poppins(
-                          fontSize: 12,
-                          color: Colors.grey[600],
-                        ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                      const SizedBox(height: 4),
-                      _buildStarRating(rating),
                     ],
                   ),
                 ),
-              ),
-            ],
-          ),
-          Positioned(
-            top: 8,
-            right: 8,
-            child: IconButton(
-              icon: const Icon(
-                Icons.favorite,
-                color: Colors.red,
-              ),
-              onPressed: () => toggleFavorite(serviceId),
+                Expanded(
+                  flex: 3,
+                  child: Padding(
+                    padding: const EdgeInsets.all(8.0),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          serviceName,
+                          style: GoogleFonts.poppins(
+                            fontSize: 14,
+                            fontWeight: FontWeight.bold,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        const SizedBox(height: 2),
+                        Text(
+                          '${localizations.provider}: $providerName',
+                          style: GoogleFonts.poppins(
+                            fontSize: 12,
+                            color: Colors.grey[600],
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        const SizedBox(height: 4),
+                        _buildStarRating(rating),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
             ),
-          ),
-        ],
+            Positioned(
+              top: 8,
+              right: 8,
+              child: IconButton(
+                icon: const Icon(
+                  Icons.favorite,
+                  color: Colors.red,
+                ),
+                onPressed: () => toggleFavorite(serviceId),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -321,3 +337,5 @@ class _FavoritesPageState extends State<FavoritesPage> {
     );
   }
 }
+
+

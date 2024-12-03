@@ -88,7 +88,7 @@ class _FaceCompareScreenState extends State<FaceCompareScreen> {
   Future<Map<String, dynamic>?> _submitFaceImage(String imagePath) async {
     final request = http.MultipartRequest(
       'POST',
-      Uri.parse('http://192.168.16.54:8000/compare-face/'),
+      Uri.parse('http://192.168.48.161:8000/compare-face/'),
     );
 
     try {
@@ -110,20 +110,22 @@ class _FaceCompareScreenState extends State<FaceCompareScreen> {
 
   // Function to navigate to the next screen with a smooth transition
   void _navigateToNextScreen() {
-  Navigator.of(context).push(PageRouteBuilder(
-    pageBuilder: (context, animation, secondaryAnimation) => ServiceProviderProfile2(),
-    transitionsBuilder: (context, animation, secondaryAnimation, child) {
-      const begin = Offset(1.0, 0.0); // Start from the right, but less aggressive than before
-      const end = Offset.zero; // End at the center
-      const curve = Curves.easeInOut;
-      var tween = Tween(begin: begin, end: end).chain(CurveTween(curve: curve));
-      var offsetAnimation = animation.drive(tween);
+    Navigator.of(context).push(PageRouteBuilder(
+      pageBuilder: (context, animation, secondaryAnimation) =>
+          ServiceProviderProfile2(),
+      transitionsBuilder: (context, animation, secondaryAnimation, child) {
+        const begin = Offset(
+            1.0, 0.0); // Start from the right, but less aggressive than before
+        const end = Offset.zero; // End at the center
+        const curve = Curves.easeInOut;
+        var tween =
+            Tween(begin: begin, end: end).chain(CurveTween(curve: curve));
+        var offsetAnimation = animation.drive(tween);
 
-      return SlideTransition(position: offsetAnimation, child: child);
-    },
-  ));
-}
-
+        return SlideTransition(position: offsetAnimation, child: child);
+      },
+    ));
+  }
 
   void _showSupportDialog() {
     showDialog(
@@ -276,7 +278,8 @@ class _FaceCompareScreenState extends State<FaceCompareScreen> {
                                   width: 20,
                                   height: 20,
                                   child: CircularProgressIndicator(
-                                    valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                                    valueColor: AlwaysStoppedAnimation<Color>(
+                                        Colors.white),
                                     strokeWidth: 2,
                                   ),
                                 )

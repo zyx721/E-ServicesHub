@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:hanini_frontend/main.dart';
 import 'package:hanini_frontend/screens/navScreens/SimpleUserProfile.dart';
+import 'package:hanini_frontend/user_role.dart';
 import 'package:iconsax/iconsax.dart';
 import 'package:hanini_frontend/screens/navScreens/searchpage.dart';
 import 'package:hanini_frontend/screens/navScreens/profilepage.dart';
@@ -10,23 +11,40 @@ import 'package:hanini_frontend/screens/navScreens/homepage.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:hanini_frontend/localization/app_localization.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-class NavbarPage extends StatefulWidget {
-  const NavbarPage({Key? key}) : super(key: key);
 
+class NavbarPage extends StatefulWidget {
+  final UserRole userRole;
+
+  const NavbarPage({Key? key, required this.userRole}) : super(key: key);
   @override
   State<NavbarPage> createState() => _NavbarPageState();
 }
 
 class _NavbarPageState extends State<NavbarPage> {
+  late UserRole _currentUserRole;
   int selectedIndex = 0;
+  late List<Widget> screens;
 
-  final List<Widget> screens = [
-    HomePage(),
-    SearchPage(),
-    FavoritesPage(),
-    SimpleUserProfile(),
-  ];
 
+  @override
+  void initState() {
+    super.initState();
+    _currentUserRole = widget.userRole;
+    _updateScreens();
+  }
+  void _updateScreens() {
+    setState(() {
+      screens = [
+        HomePage(),
+        SearchPage(),
+        FavoritesPage(),
+        // Conditional profile screen based on current role
+        _currentUserRole == UserRole.client
+            ? SimpleUserProfile()
+            : ServiceProviderProfile2(),
+      ];
+    });
+  }
   // Language change logic
   void _changeLanguage(String languageCode) {
     Locale newLocale;
@@ -96,7 +114,8 @@ class _NavbarPageState extends State<NavbarPage> {
         ),
       ),
       drawer: Sidebar(context, appLocalizations),
-      body: screens[selectedIndex], // Switch between screens based on the selected index
+      body: screens[
+          selectedIndex], // Switch between screens based on the selected index
       bottomNavigationBar: NavigationBar(
         selectedIndex: selectedIndex,
         onDestinationSelected: (int index) {
@@ -106,7 +125,8 @@ class _NavbarPageState extends State<NavbarPage> {
         },
         destinations: const [
           NavigationDestination(icon: Icon(Iconsax.home), label: 'Home'),
-          NavigationDestination(icon: Icon(Iconsax.search_normal), label: 'Search'),
+          NavigationDestination(
+              icon: Icon(Iconsax.search_normal), label: 'Search'),
           NavigationDestination(icon: Icon(Iconsax.save_2), label: 'Favorites'),
           NavigationDestination(icon: Icon(Iconsax.user), label: 'Profile'),
         ],

@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:hanini_frontend/localization/app_localization.dart';
+import 'package:hanini_frontend/screens/navScreens/service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:async';
 import 'package:url_launcher/url_launcher.dart';
+// Import the ServiceProviderFullProfile screen
 
 class HomePage extends StatefulWidget {
   const HomePage({Key? key}) : super(key: key);
@@ -83,15 +85,8 @@ class _HomePageState extends State<HomePage> {
         itemCount: adImages.length,
         itemBuilder: (context, index) {
           return GestureDetector(
-            onTap: () async {
-              final url = Uri.parse(adLinks[index]);
-              if (await canLaunchUrl(url)) {
-                await launchUrl(url, mode: LaunchMode.externalApplication);
-              } else {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(content: Text("Could not launch ${adLinks[index]}")),
-                );
-              }
+            onTap: () {
+              // You can add ad-specific navigation here if needed
             },
             child: ClipRRect(
               borderRadius: BorderRadius.circular(16),
@@ -235,7 +230,7 @@ class _HomePageState extends State<HomePage> {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text(
-                appLocalizations.topService ,
+                appLocalizations.topService,
                 style: GoogleFonts.poppins(
                   fontSize: 20,
                   fontWeight: FontWeight.bold,
@@ -257,26 +252,39 @@ class _HomePageState extends State<HomePage> {
               ),
               itemBuilder: (context, index) {
                 final service = services[index];
-                return _buildServiceItem(
-                  context,
-                  service['id']!,
-                  service['name']!,
-                  service['image']!,
-                  service['provider']!,
-                  service['rating']!,
-                  likedServiceIds.contains(service['id']),
-                  (String serviceId) {
-                    setState(() {
-                      // Toggle liked status
-                      if (likedServiceIds.contains(serviceId)) {
-                        likedServiceIds.remove(serviceId);
-                      } else {
-                        likedServiceIds.add(serviceId);
-                      }
-                      // Save updated liked services
-                      _saveLikedServices();
-                    });
+                return InkWell(
+                  onTap: () {
+                    // Navigate to ServiceProviderFullProfile when service is tapped
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => ServiceProviderFullProfile(
+                          serviceId: service['id'],
+                        ),
+                      ),
+                    );
                   },
+                  child: _buildServiceItem(
+                    context,
+                    service['id']!,
+                    service['name']!,
+                    service['image']!,
+                    service['provider']!,
+                    service['rating']!,
+                    likedServiceIds.contains(service['id']),
+                    (String serviceId) {
+                      setState(() {
+                        // Toggle liked status
+                        if (likedServiceIds.contains(serviceId)) {
+                          likedServiceIds.remove(serviceId);
+                        } else {
+                          likedServiceIds.add(serviceId);
+                        }
+                        // Save updated liked services
+                        _saveLikedServices();
+                      });
+                    },
+                  ),
                 );
               },
             ),

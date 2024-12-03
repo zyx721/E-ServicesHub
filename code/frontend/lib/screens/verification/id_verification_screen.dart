@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:camera/camera.dart';
+import 'package:hanini_frontend/screens/become_provider_screen/profilepage.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'dart:io';
@@ -83,7 +84,7 @@ class _RealTimeDetectionState extends State<RealTimeDetection> {
     final request = http.MultipartRequest(
       'POST',
       Uri.parse(
-          'http://192.168.16.54:8000/upload-image/'), // Replace with your server's IP address
+          'http://192.168.48.161:8000/upload-image/'), // Replace with your server's IP address
     );
 
     request.files.add(await http.MultipartFile.fromPath('file', image.path));
@@ -330,13 +331,30 @@ class _RealTimeDetectionState extends State<RealTimeDetection> {
                     height: 45,
                   ),
                 ),
+                Positioned(
+                  top: 50,
+                  right: 20,
+                  child: ElevatedButton(
+                    onPressed: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => ServiceProviderProfile2(),
+                        ),
+                      );
+                    },
+                    child: Text('Skip'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.orange,
+                      padding:
+                          EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                      textStyle: TextStyle(fontSize: 16),
+                    ),
+                  ),
+                ),
               ],
             )
-          : Center(
-              child: _errorMessage != null
-                  ? Text(_errorMessage!)
-                  : CircularProgressIndicator(),
-            ),
+          : Center(child: CircularProgressIndicator()),
     );
   }
 }

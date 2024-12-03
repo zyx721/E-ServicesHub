@@ -249,6 +249,8 @@ class AppLocalizations {
 
   String get sponsoredServices => isArabic ? "إلغاء" : (isFrench ? "mon profile" : "Sponsored Services");
 
+  String get homePage => isArabic ? "إلغاء" : (isFrench ? "mon profile" : "home page");
+
 
   // Static method to access the instance
   static AppLocalizations? of(BuildContext context) {
