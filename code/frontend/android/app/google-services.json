@@ -15,11 +15,27 @@
       },
       "oauth_client": [
         {
+          "client_id": "733920147635-0be9l2u9e4kv0bko0b8ulaao8sdrm5hh.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.Nit.Hanini",
+            "certificate_hash": "f3a0a70b99a6af5d88f28087d0c0668e660d290c"
+          }
+        },
+        {
           "client_id": "733920147635-8o0f5m4gmcprmppdcga7pbe2h696i23m.apps.googleusercontent.com",
           "client_type": 1,
           "android_info": {
             "package_name": "com.Nit.Hanini",
             "certificate_hash": "58fa735f6889e860dc1e8952845fa645a1082a1c"
+          }
+        },
+        {
+          "client_id": "733920147635-ja7smud7ul8edmq94luh1umf6rffdvaq.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.Nit.Hanini",
+            "certificate_hash": "c374a75263cd2ae91e07eca9a537a83e26a2bb0b"
           }
         },
         {
