@@ -5,6 +5,7 @@ import 'package:hanini_frontend/screens/navScreens/service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:async';
 import 'package:url_launcher/url_launcher.dart';
+import 'dart:io' show InternetAddress, SocketException;
 // Import the ServiceProviderFullProfile screen
 
 class HomePage extends StatefulWidget {
@@ -70,33 +71,102 @@ class _HomePageState extends State<HomePage> {
     Navigator.pushReplacementNamed(context, '/login');
   }
 
+  Future<void> _launchAdUrl(String urlString) async {
+    try {
+      final Uri url = Uri.parse(urlString);
+
+      // Fallback to system default browser
+      if (!await launchUrl(url, mode: LaunchMode.externalApplication)) {
+        // If external launch fails, try in-app webview
+        if (!await launchUrl(url, mode: LaunchMode.inAppWebView)) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Could not launch $urlString')),
+          );
+        }
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error launching URL: $e')),
+      );
+    }
+  }
+
   Widget _buildAdsSlider(List<String> adImages) {
-    // List of URLs corresponding to each ad
     final List<String> adLinks = [
       'https://www.economic-dz.com',
       'https://www.aegiscare.in',
       'https://yashfine.com/ar/searchinfo/soins_%C3%A0_domicile_mhs/735',
     ];
 
-    return SizedBox(
-      height: 200,
-      child: PageView.builder(
-        controller: _pageController,
-        itemCount: adImages.length,
-        itemBuilder: (context, index) {
-          return GestureDetector(
-            onTap: () {
-              // You can add ad-specific navigation here if needed
+    return Container(
+      height: 220,
+      decoration: BoxDecoration(
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black12,
+            blurRadius: 15,
+            offset: Offset(0, 6),
+          )
+        ],
+      ),
+      child: Stack(
+        children: [
+          PageView.builder(
+            controller: _pageController,
+            itemCount: adImages.length,
+            onPageChanged: (index) {
+              setState(() {
+                _currentPage = index;
+              });
             },
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(16),
-              child: Image.asset(
-                adImages[index],
-                fit: BoxFit.cover,
-              ),
+            itemBuilder: (context, index) {
+              return GestureDetector(
+                onTap: () => _launchAdUrl(adLinks[index]),
+                child: Container(
+                  margin: EdgeInsets.symmetric(horizontal: 8),
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(20),
+                    gradient: LinearGradient(
+                      begin: Alignment.topCenter,
+                      end: Alignment.bottomCenter,
+                      colors: [Colors.white, Colors.grey.shade100],
+                    ),
+                  ),
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(20),
+                    child: Image.asset(
+                      adImages[index],
+                      fit: BoxFit.cover,
+                      width: double.infinity,
+                    ),
+                  ),
+                ),
+              );
+            },
+          ),
+          Positioned(
+            bottom: 10,
+            left: 0,
+            right: 0,
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: List.generate(adImages.length, (index) {
+                return AnimatedContainer(
+                  duration: Duration(milliseconds: 300),
+                  margin: EdgeInsets.symmetric(horizontal: 4),
+                  width: _currentPage == index ? 16 : 8,
+                  height: 8,
+                  decoration: BoxDecoration(
+                    color: _currentPage == index
+                        ? Colors.blue.shade600
+                        : Colors.grey.shade400,
+                    borderRadius: BorderRadius.circular(4),
+                  ),
+                );
+              }),
             ),
-          );
-        },
+          ),
+        ],
       ),
     );
   }
@@ -294,91 +364,115 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-  Widget _buildServiceItem(
-    BuildContext context,
-    String serviceId,
-    String serviceName,
-    String imagePath,
-    String providerName,
-    double rating,
-    bool favorite,
-    Function(String) toggleFavorite,
-  ) {
-    return Card(
-      elevation: 4,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16),
-      ),
+Widget _buildServiceItem(
+  BuildContext context,
+  String serviceId,
+  String serviceName,
+  String imagePath,
+  String providerName,
+  double rating,
+  bool favorite,
+  Function(String) toggleFavorite,
+) {
+  return Card(
+    elevation: 6,
+    shadowColor: Colors.blue.withOpacity(0.3),
+    shape: RoundedRectangleBorder(
+      borderRadius: BorderRadius.circular(16),
+    ),
+    child: InkWell(
+      onTap: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => ServiceProviderFullProfile(
+              serviceId: serviceId,
+            ),
+          ),
+        );
+      },
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Expanded(
-            flex: 3,
             child: Stack(
-              fit: StackFit.expand,
               children: [
                 ClipRRect(
-                  borderRadius: BorderRadius.vertical(
+                  borderRadius: const BorderRadius.vertical(
                     top: Radius.circular(16),
                   ),
                   child: Image.asset(
                     imagePath,
                     fit: BoxFit.cover,
+                    width: double.infinity,
                   ),
                 ),
                 Positioned(
-                  top: 8,
-                  right: 8,
-                  child: IconButton(
-                    icon: Icon(
-                      favorite ? Icons.favorite : Icons.favorite_border,
-                      color: favorite ? Colors.red : Colors.grey,
-                    ),
-                    onPressed: () {
+                  top: 10,
+                  right: 10,
+                  child: GestureDetector(
+                    onTap: () {
                       toggleFavorite(serviceId);
                     },
+                    child: Container(
+                      padding: const EdgeInsets.all(4),
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: Colors.white.withOpacity(0.8),
+                      ),
+                      child: Icon(
+                        favorite ? Icons.favorite : Icons.favorite_border,
+                        color: favorite ? Colors.red : Colors.grey,
+                      ),
+                    ),
                   ),
                 ),
               ],
             ),
           ),
-          Expanded(
-            flex: 3,
-            child: Padding(
-              padding: const EdgeInsets.all(8.0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(
-                    serviceName,
-                    style: GoogleFonts.poppins(
-                      fontSize: 14,
-                      fontWeight: FontWeight.bold,
-                    ),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
+          Padding(
+            padding: const EdgeInsets.all(8.0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  serviceName,
+                  style: GoogleFonts.poppins(
+                    fontSize: 14,
+                    fontWeight: FontWeight.bold,
                   ),
-                  SizedBox(height: 2),
-                  Text(
-                    'Provider: $providerName',
-                    style: GoogleFonts.poppins(
-                      fontSize: 12,
-                      color: Colors.grey[600],
-                    ),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                Text(
+                  'Provider: $providerName',
+                  style: GoogleFonts.poppins(
+                    fontSize: 12,
+                    color: Colors.grey[600],
                   ),
-                  SizedBox(height: 4),
-                  _buildStarRating(rating),
-                ],
-              ),
+                  maxLines: 1,
+                ),
+                Row(
+                  children: [
+                    Icon(Icons.star, size: 16, color: Colors.amber),
+                    const SizedBox(width: 4),
+                    Text(
+                      rating.toStringAsFixed(1),
+                      style: GoogleFonts.poppins(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ],
+                ),
+              ],
             ),
           ),
         ],
       ),
-    );
-  }
+    ),
+  );
+}
 
   Widget _buildStarRating(double rating) {
     int fullStars = rating.floor();

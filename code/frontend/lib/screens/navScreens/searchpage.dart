@@ -1,3 +1,5 @@
+import 'dart:math';
+
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:hanini_frontend/localization/app_localization.dart';
@@ -34,7 +36,7 @@ class _SearchPageState extends State<SearchPage> {
   List<Map<String, dynamic>> filteredServices = [];
   List<String> likedServiceIds = [];
   TextEditingController _searchController = TextEditingController();
-
+  
   @override
   void initState() {
     super.initState();
@@ -69,15 +71,57 @@ class _SearchPageState extends State<SearchPage> {
     });
   }
 
-  void _filterServices() {
+ void _filterServices() {
     setState(() {
-      filteredServices = services
-          .where((service) => service['name']!
-              .toLowerCase()
-              .contains(_searchController.text.toLowerCase()))
-          .toList();
+      filteredServices = services.where((service) {
+        final searchTerm = _searchController.text.toLowerCase().trim();
+        final serviceName = service['name']!.toLowerCase();
+        
+        // Exact match
+        if (serviceName.contains(searchTerm)) {
+          return true;
+        }
+        
+        // Fuzzy match using Levenshtein distance
+        return _calculateLevenshteinDistance(serviceName, searchTerm) <= 2;
+      }).toList();
     });
   }
+
+  // Levenshtein distance algorithm to calculate string similarity
+  int _calculateLevenshteinDistance(String s1, String s2) {
+    // Create a matrix of zeros with length of both input strings
+    List<List<int>> distances = List.generate(
+      s1.length + 1, 
+      (i) => List.generate(s2.length + 1, (j) => 0)
+    );
+    
+    // Initialize first row and column
+    for (int i = 0; i <= s1.length; i++) {
+      distances[i][0] = i;
+    }
+    for (int j = 0; j <= s2.length; j++) {
+      distances[0][j] = j;
+    }
+    
+    // Calculate Levenshtein distance
+    for (int i = 1; i <= s1.length; i++) {
+      for (int j = 1; j <= s2.length; j++) {
+        int cost = (s1[i - 1] == s2[j - 1]) ? 0 : 1;
+        
+        distances[i][j] = min(
+          min(
+            distances[i - 1][j] + 1,     // Deletion
+            distances[i][j - 1] + 1      // Insertion
+          ),
+          distances[i - 1][j - 1] + cost // Substitution
+        );
+      }
+    }
+    
+    return distances[s1.length][s2.length];
+  }
+
 
   @override
   Widget build(BuildContext context) {
