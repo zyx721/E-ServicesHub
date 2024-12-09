@@ -117,20 +117,28 @@ class _NavbarPageState extends State<NavbarPage> {
       body: screens[
           selectedIndex], // Switch between screens based on the selected index
       bottomNavigationBar: NavigationBar(
-        selectedIndex: selectedIndex,
-        onDestinationSelected: (int index) {
-          setState(() {
-            selectedIndex = index; // Update selectedIndex on tap
-          });
-        },
-        destinations: const [
-          NavigationDestination(icon: Icon(Iconsax.home), label: 'Home'),
-          NavigationDestination(
-              icon: Icon(Iconsax.search_normal), label: 'Search'),
-          NavigationDestination(icon: Icon(Iconsax.save_2), label: 'Favorites'),
-          NavigationDestination(icon: Icon(Iconsax.user), label: 'Profile'),
-        ],
-      ),
+  selectedIndex: selectedIndex,
+  onDestinationSelected: (int index) {
+    setState(() {
+      selectedIndex = index; // Update selectedIndex on tap
+    });
+  },
+  destinations: [
+    NavigationDestination(
+        icon: Icon(Iconsax.home),
+        label: appLocalizations.home),
+    NavigationDestination(
+        icon: Icon(Iconsax.search_normal),
+        label: appLocalizations.search),
+    NavigationDestination(
+        icon: Icon(Iconsax.save_2),
+        label: appLocalizations.favorites),
+    NavigationDestination(
+        icon: Icon(Iconsax.user),
+        label: appLocalizations.profile),
+  ],
+),
+
     );
   }
 
