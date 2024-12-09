@@ -82,9 +82,9 @@ flutter:
     - assets/images/ads/first_page.png
     - assets/images/ads/second_page.png
     - assets/images/ads/third_page.png
+    - assets/images/portfolio/
     - assets/animation/animation1.json
     - assets/animation/animation2.json
     - assets/animation/animation3.json
     - assets/animation/animation4.json
     - assets/animation/animation5.json
-    - assets/images/portfolio/
