@@ -64,6 +64,7 @@ flutter:
     - assets/images/service12.png
     - assets/images/service13.png
     - assets/images/service14.png
+    - assets/images/default_profile.png
     
     - assets/images/onboarding3_b.png
     - assets/images/google_logo.png

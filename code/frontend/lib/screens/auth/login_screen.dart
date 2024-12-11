@@ -165,95 +165,95 @@ class _LoginScreenState extends State<LoginScreen>
   }
 
   Future<void> _handleGoogleSignIn() async {
-    try {
-      // Initialize GoogleSignIn instance
-      final GoogleSignIn googleSignIn = GoogleSignIn();
+  try {
+    // Initialize GoogleSignIn instance
+    final GoogleSignIn googleSignIn = GoogleSignIn();
 
-      // Attempt to sign in with Google
-      final GoogleSignInAccount? googleUser = await googleSignIn.signIn();
+    // Attempt to sign in with Google
+    final GoogleSignInAccount? googleUser = await googleSignIn.signIn();
 
-      if (googleUser != null) {
-        try {
-          // Proceed with Google Authentication
-          final GoogleSignInAuthentication googleAuth =
-              await googleUser.authentication;
-          final AuthCredential credential = GoogleAuthProvider.credential(
-            accessToken: googleAuth.accessToken,
-            idToken: googleAuth.idToken,
-          );
-
-          // Sign in to Firebase using the Google credentials
-          final UserCredential userCredential =
-              await FirebaseAuth.instance.signInWithCredential(credential);
-          final User? user = userCredential.user;
-
-          if (user != null) {
-            // Save user data to Firestore
-            await FirebaseFirestore.instance
-                .collection('users')
-                .doc(user.uid)
-                .set({
-              'uid': user.uid,
-              'name': user.displayName ?? 'No Name',
-              'email': user.email ?? 'No Email',
-              'createdAt': DateTime.now(),
-              'photoURL': user.photoURL ?? '',
-            });
-
-            // Show success message and navigate
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text('Welcome ${user.displayName ?? user.email}'),
-                backgroundColor: Colors.green,
-              ),
-            );
-            Navigator.pushNamed(context, '/navbar'); // Navigate to home screen
-          } else {
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
-                content: Text('Sign-In failed. Please try again.'),
-                backgroundColor: Colors.red,
-              ),
-            );
-          }
-        } on FirebaseAuthException catch (e) {
-          // Handle Firebase-specific errors
-          if (e.code == 'account-exists-with-different-credential') {
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
-                content: Text('Account exists with different credentials.'),
-                backgroundColor: Colors.red,
-              ),
-            );
-          } else {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text('Authentication error: ${e.message}'),
-                backgroundColor: Colors.red,
-              ),
-            );
-          }
-        }
-      } else {
-        // Handle case where Google Sign-In was canceled
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Google Sign-In was canceled.'),
-            backgroundColor: Colors.orange,
-          ),
+    if (googleUser != null) {
+      try {
+        // Proceed with Google Authentication
+        final GoogleSignInAuthentication googleAuth =
+            await googleUser.authentication;
+        final AuthCredential credential = GoogleAuthProvider.credential(
+          accessToken: googleAuth.accessToken,
+          idToken: googleAuth.idToken,
         );
+
+        // Sign in to Firebase using the Google credentials
+        final UserCredential userCredential =
+            await FirebaseAuth.instance.signInWithCredential(credential);
+        final User? user = userCredential.user;
+
+        if (user != null) {
+          // Save or update user data in Firestore
+          await FirebaseFirestore.instance
+              .collection('users')
+              .doc(user.uid)
+              .set({
+            'uid': user.uid,
+            'name': user.displayName ?? 'No Name',
+            'email': user.email ?? 'No Email',
+            'createdAt': DateTime.now(),
+            'photoURL': user.photoURL ?? '',
+          }, SetOptions(merge: true)); // Merge with existing data
+
+          // Show success message and navigate
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Welcome ${user.displayName ?? user.email}'),
+              backgroundColor: Colors.green,
+            ),
+          );
+          Navigator.pushNamed(context, '/navbar'); // Navigate to home screen
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Sign-In failed. Please try again.'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+      } on FirebaseAuthException catch (e) {
+        // Handle Firebase-specific errors
+        if (e.code == 'account-exists-with-different-credential') {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Account exists with different credentials.'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Authentication error: ${e.message}'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
       }
-    } catch (error) {
-      // Handle general errors
+    } else {
+      // Handle case where Google Sign-In was canceled
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Error during sign-in: ${error.toString()}'),
-          backgroundColor: Colors.red,
+        const SnackBar(
+          content: Text('Google Sign-In was canceled.'),
+          backgroundColor: Colors.orange,
         ),
       );
-      print('Error during Google Sign-In: $error');
     }
+  } catch (error) {
+    // Handle general errors
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('Error during sign-in: ${error.toString()}'),
+        backgroundColor: Colors.red,
+      ),
+    );
+    print('Error during Google Sign-In: $error');
   }
+}
 
   @override
   Widget build(BuildContext context) {

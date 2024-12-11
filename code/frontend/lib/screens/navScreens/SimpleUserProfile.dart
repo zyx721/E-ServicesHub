@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:hanini_frontend/screens/become_provider_screen/onboarding2.dart';
 
 class SimpleUserProfile extends StatefulWidget {
@@ -9,32 +11,88 @@ class SimpleUserProfile extends StatefulWidget {
 }
 
 class _SimpleUserProfileState extends State<SimpleUserProfile> {
-  final double profileHeight = 150; // Increased the size of the profile picture
-  final TextEditingController nameController =
-      TextEditingController(text: 'Benmati Ziad');
-  final TextEditingController aboutController = TextEditingController(
-      text:
-          'I am a regular user interested in browsing services and booking providers for my needs.');
+  final double profileHeight = 150;
+  final FirebaseAuth _auth = FirebaseAuth.instance;
+  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
-  String aboutMe = 'I am a regular user interested in browsing services and booking providers for my needs.';
-  String userName = 'Benmati Ziad';
-
+  String userName = '';
+  String userEmail = '';
+  String userPhotoUrl = '';
+  String aboutMe = '';
   bool isEditMode = false;
+  bool isLoading = true;
+
+  final TextEditingController nameController = TextEditingController();
+  final TextEditingController aboutController = TextEditingController();
+
+  @override
+  void initState() {
+    super.initState();
+    fetchUserData();
+  }
+
+  Future<void> fetchUserData() async {
+    try {
+      final User? user = _auth.currentUser;
+      if (user != null) {
+        final DocumentSnapshot userDoc =
+            await _firestore.collection('users').doc(user.uid).get();
+
+        if (userDoc.exists) {
+          final data = userDoc.data() as Map<String, dynamic>;
+          setState(() {
+            userName = data['name'] ?? 'Anonymous';
+            userEmail = data['email'] ?? 'No email';
+            userPhotoUrl = data['photoURL'] ?? '';
+            aboutMe = data['aboutMe'] ?? 'Tell us about yourself';
+            nameController.text = userName;
+            aboutController.text = aboutMe;
+            isLoading = false;
+          });
+        }
+      }
+    } catch (e) {
+      debugPrint('Error fetching user data: $e');
+    }
+  }
+
+Future<void> saveUserData() async {
+  try {
+    final User? user = _auth.currentUser;
+    if (user != null) {
+      // Update Firestore
+      await _firestore.collection('users').doc(user.uid).update({
+        'name': userName,
+        'aboutMe': aboutMe,
+      });
+
+      // Update FirebaseAuth user profile
+      await user.updateDisplayName(userName);
+      await user.reload(); // Refresh the current user
+      debugPrint('User data updated successfully');
+    }
+  } catch (e) {
+    debugPrint('Error saving user data: $e');
+  }
+}
+
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: ListView(
-        padding: EdgeInsets.zero,
-        children: [
-          const SizedBox(height: 50), // Added space at the top
-          buildTop(),
-          const SizedBox(height: 30), // More space below the profile picture
-          buildProfileInfo(),
-          const SizedBox(height: 60), // Button moved further down
-          buildBecomeProviderButton(),
-        ],
-      ),
+      body: isLoading
+          ? const Center(child: CircularProgressIndicator())
+          : ListView(
+              padding: EdgeInsets.zero,
+              children: [
+                const SizedBox(height: 50),
+                buildTop(),
+                const SizedBox(height: 30),
+                buildProfileInfo(),
+                const SizedBox(height: 60),
+                buildBecomeProviderButton(),
+              ],
+            ),
       floatingActionButton: FloatingActionButton(
         onPressed: toggleEditMode,
         child: Icon(isEditMode ? Icons.check : Icons.edit),
@@ -49,12 +107,12 @@ class _SimpleUserProfileState extends State<SimpleUserProfile> {
         // Save changes
         userName = nameController.text;
         aboutMe = aboutController.text;
+        saveUserData();
       }
       isEditMode = !isEditMode;
     });
   }
 
-  // Top Profile Section
   Widget buildTop() {
     return Column(
       children: [
@@ -74,30 +132,13 @@ class _SimpleUserProfileState extends State<SimpleUserProfile> {
                 ],
               ),
               child: CircleAvatar(
-                radius: profileHeight / 2, // Increased radius for a larger avatar
+                radius: profileHeight / 2,
                 backgroundColor: Colors.grey.shade200,
-                backgroundImage:
-                    const AssetImage('assets/images/profile_picture.png'),
+                backgroundImage: userPhotoUrl.isNotEmpty
+                    ? NetworkImage(userPhotoUrl) as ImageProvider
+                    : const AssetImage('assets/images/default_profile.png'),
               ),
             ),
-            if (isEditMode)
-              GestureDetector(
-                onTap: () {
-                  pickNewProfilePicture();
-                },
-                child: Container(
-                  padding: const EdgeInsets.all(6),
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    color: Colors.blue,
-                  ),
-                  child: const Icon(
-                    Icons.camera_alt,
-                    size: 20,
-                    color: Colors.white,
-                  ),
-                ),
-              ),
           ],
         ),
         const SizedBox(height: 16),
@@ -119,14 +160,13 @@ class _SimpleUserProfileState extends State<SimpleUserProfile> {
               ),
         const SizedBox(height: 6),
         Text(
-          'benmatiziad5@gmail.com',
+          userEmail,
           style: TextStyle(fontSize: 16, color: Colors.grey.shade700),
         ),
       ],
     );
   }
 
-  // Main Profile Information
   Widget buildProfileInfo() {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -154,7 +194,8 @@ class _SimpleUserProfileState extends State<SimpleUserProfile> {
                     )
                   : Text(
                       aboutMe,
-                      style: TextStyle(fontSize: 14, color: Colors.grey.shade700),
+                      style:
+                          TextStyle(fontSize: 14, color: Colors.grey.shade700),
                       textAlign: TextAlign.justify,
                     ),
             ],
@@ -164,12 +205,10 @@ class _SimpleUserProfileState extends State<SimpleUserProfile> {
     );
   }
 
-  // Modern "Become a Provider" Button
   Widget buildBecomeProviderButton() {
     return Center(
       child: InkWell(
         onTap: () {
-          // Navigate to OnboardingScreen2
           Navigator.push(
             context,
             MaterialPageRoute(builder: (context) => OnboardingScreen2()),
@@ -209,10 +248,5 @@ class _SimpleUserProfileState extends State<SimpleUserProfile> {
         ),
       ),
     );
-  }
-
-  // Placeholder methods
-  void pickNewProfilePicture() {
-    debugPrint('Profile picture update triggered!');
   }
 }

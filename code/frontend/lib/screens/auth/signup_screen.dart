@@ -171,58 +171,95 @@ class _SignupScreenState extends State<SignupScreen>
   }
 
   Future<void> _handleGoogleSignIn() async {
-    try {
-      // Trigger the Google Authentication flow
-      final GoogleSignInAccount? googleUser = await _googleSignIn.signIn();
+  try {
+    // Initialize GoogleSignIn instance
+    final GoogleSignIn googleSignIn = GoogleSignIn();
 
-      if (googleUser == null) {
-        // The user canceled the sign-in
-        print('Google Sign-In aborted by user');
-        return;
-      }
+    // Attempt to sign in with Google
+    final GoogleSignInAccount? googleUser = await googleSignIn.signIn();
 
-      // Obtain the auth details from the request
-      final GoogleSignInAuthentication googleAuth =
-          await googleUser.authentication;
+    if (googleUser != null) {
+      try {
+        // Proceed with Google Authentication
+        final GoogleSignInAuthentication googleAuth =
+            await googleUser.authentication;
+        final AuthCredential credential = GoogleAuthProvider.credential(
+          accessToken: googleAuth.accessToken,
+          idToken: googleAuth.idToken,
+        );
 
-      // Create a new credential using the token
-      final AuthCredential credential = GoogleAuthProvider.credential(
-        accessToken: googleAuth.accessToken,
-        idToken: googleAuth.idToken,
-      );
+        // Sign in to Firebase using the Google credentials
+        final UserCredential userCredential =
+            await FirebaseAuth.instance.signInWithCredential(credential);
+        final User? user = userCredential.user;
 
-      // Sign in to Firebase with the Google credential
-      final UserCredential userCredential =
-          await _auth.signInWithCredential(credential);
-
-      // Save the user data to Firestore
-      final User? user = userCredential.user;
-      if (user != null) {
-        final DocumentReference userDoc =
-            _firestore.collection('users').doc(user.uid);
-
-        // Check if the user document already exists
-        final DocumentSnapshot docSnapshot = await userDoc.get();
-        if (!docSnapshot.exists) {
-          // Create a new document if it doesn't exist
-          await userDoc.set({
+        if (user != null) {
+          // Save or update user data in Firestore
+          await FirebaseFirestore.instance
+              .collection('users')
+              .doc(user.uid)
+              .set({
             'uid': user.uid,
-            'name': user.displayName,
-            'email': user.email,
-            'photoUrl': user.photoURL,
-            'signInMethod': 'google',
-            'createdAt': FieldValue.serverTimestamp(),
-          });
-          print('New user data saved to Firestore');
+            'name': user.displayName ?? 'No Name',
+            'email': user.email ?? 'No Email',
+            'createdAt': DateTime.now(),
+            'photoURL': user.photoURL ?? '',
+          }, SetOptions(merge: true)); // Merge with existing data
+
+          // Show success message and navigate
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Welcome ${user.displayName ?? user.email}'),
+              backgroundColor: Colors.green,
+            ),
+          );
+          Navigator.pushNamed(context, '/navbar'); // Navigate to home screen
         } else {
-          print('User already exists in Firestore');
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Sign-In failed. Please try again.'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+      } on FirebaseAuthException catch (e) {
+        // Handle Firebase-specific errors
+        if (e.code == 'account-exists-with-different-credential') {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Account exists with different credentials.'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Authentication error: ${e.message}'),
+              backgroundColor: Colors.red,
+            ),
+          );
         }
       }
-    } catch (e) {
-      print('Error during Google Sign-In: $e');
+    } else {
+      // Handle case where Google Sign-In was canceled
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Google Sign-In was canceled.'),
+          backgroundColor: Colors.orange,
+        ),
+      );
     }
+  } catch (error) {
+    // Handle general errors
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('Error during sign-in: ${error.toString()}'),
+        backgroundColor: Colors.red,
+      ),
+    );
+    print('Error during Google Sign-In: $error');
   }
-
+}
   @override
   Widget build(BuildContext context) {
     return Scaffold(
