@@ -411,54 +411,187 @@ class _ServiceProviderProfileState extends State<ServiceProviderProfile2> {
     });
   }
 
-  Widget _buildPortfolioImagesSection() {
-    return Column(
-      children: [
-        ElevatedButton.icon(
+ Widget _buildPortfolioImagesSection() {
+  return Column(
+    crossAxisAlignment: CrossAxisAlignment.start,
+    children: [
+      // Section title with description
+      Text(
+        'Portfolio Images',
+        style: GoogleFonts.poppins(
+          fontSize: 18,
+          fontWeight: FontWeight.bold,
+          color: Colors.black87,
+        ),
+      ),
+      Text(
+        'Showcase your best work and projects',
+        style: GoogleFonts.poppins(
+          fontSize: 12,
+          color: Colors.grey[600],
+        ),
+      ),
+      const SizedBox(height: 15),
+
+      // Add Portfolio Images Button
+      Center(
+        child: ElevatedButton.icon(
           onPressed: _pickPortfolioImages,
-          icon: Icon(Icons.add_photo_alternate),
-          label: Text('Add Portfolio Images', style: GoogleFonts.poppins()),
+          icon: Icon(Icons.add_photo_alternate_outlined),
+          label: Text(
+            'Add Portfolio Images', 
+            style: GoogleFonts.poppins(
+              fontWeight: FontWeight.w600
+            )
+          ),
+          style: ElevatedButton.styleFrom(
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+            backgroundColor: Colors.blue[600],
+          ),
+        ),
+      ),
+      const SizedBox(height: 15),
+
+      // Portfolio Images Display
+      _portfolioImages.isEmpty 
+        ? _buildEmptyPortfolioPlaceholder()
+        : _buildPortfolioImagesList(),
+    ],
+  );
+}
+
+// Empty Portfolio Placeholder
+Widget _buildEmptyPortfolioPlaceholder() {
+  return Container(
+    width: double.infinity,
+    height: 180,
+    decoration: BoxDecoration(
+      color: Colors.grey[200],
+      borderRadius: BorderRadius.circular(12),
+      border: Border.all(color: Colors.grey[300]!, width: 2),
+      // Optional: Add a subtle gradient
+      gradient: LinearGradient(
+        begin: Alignment.topLeft,
+        end: Alignment.bottomRight,
+        colors: [
+          Colors.white.withOpacity(0.8),
+          Colors.grey[100]!.withOpacity(0.5)
+        ],
+      ),
+    ),
+    child: Column(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        Icon(
+          Icons.photo_library_outlined, 
+          size: 80, 
+          color: Colors.grey[500]
         ),
         const SizedBox(height: 10),
-        SizedBox(
-          height: 120,
-          child: ListView.separated(
-            scrollDirection: Axis.horizontal,
-            itemCount: _portfolioImages.length,
-            separatorBuilder: (context, index) => const SizedBox(width: 10),
-            itemBuilder: (context, index) {
-              return Stack(
-                children: [
-                  ClipRRect(
-                    borderRadius: BorderRadius.circular(10),
-                    child: Image.file(
-                      _portfolioImages[index],
-                      width: 120,
-                      height: 120,
-                      fit: BoxFit.cover,
-                    ),
-                  ),
-                  Positioned(
-                    top: 5,
-                    right: 5,
-                    child: CircleAvatar(
-                      radius: 15,
-                      backgroundColor: Colors.red.withOpacity(0.7),
-                      child: IconButton(
-                        icon: Icon(Icons.close, size: 15, color: Colors.white),
-                        onPressed: () => _removePortfolioImage(index),
-                      ),
-                    ),
-                  ),
-                ],
-              );
-            },
+        Text(
+          'No Portfolio Images Added',
+          style: GoogleFonts.poppins(
+            fontSize: 16,
+            color: Colors.grey[700],
+            fontWeight: FontWeight.w500
+          ),
+        ),
+        const SizedBox(height: 5),
+        Text(
+          'Tap "Add Portfolio Images" to get started',
+          style: GoogleFonts.poppins(
+            fontSize: 12,
+            color: Colors.grey[600]
           ),
         ),
       ],
-    );
-  }
+    ),
+  );
+}
 
+// Portfolio Images List
+Widget _buildPortfolioImagesList() {
+  return SizedBox(
+    height: 180,
+    child: ListView.separated(
+      scrollDirection: Axis.horizontal,
+      itemCount: _portfolioImages.length + 1, // +1 for "Add More" button
+      separatorBuilder: (context, index) => const SizedBox(width: 10),
+      itemBuilder: (context, index) {
+        // Last item is always "Add More" button
+        if (index == _portfolioImages.length) {
+          return GestureDetector(
+            onTap: _pickPortfolioImages,
+            child: Container(
+              width: 120,
+              decoration: BoxDecoration(
+                color: Colors.grey[200],
+                borderRadius: BorderRadius.circular(10),
+                border: Border.all(color: Colors.blue, width: 2),
+              ),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(Icons.add_photo_alternate, color: Colors.blue[700]),
+                  Text(
+                    'Add More',
+                    style: GoogleFonts.poppins(
+                      color: Colors.blue[700],
+                      fontWeight: FontWeight.w600
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          );
+        }
+
+        // Portfolio Image Item
+        return Stack(
+          children: [
+            // Image Container
+            Container(
+              width: 120,
+              height: 180,
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(10),
+                image: DecorationImage(
+                  image: FileImage(_portfolioImages[index]),
+                  fit: BoxFit.cover,
+                ),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.1),
+                    spreadRadius: 1,
+                    blurRadius: 3,
+                  ),
+                ],
+              ),
+            ),
+            
+            // Delete Button
+            Positioned(
+              top: 10,
+              right: 10,
+              child: Container(
+                decoration: BoxDecoration(
+                  color: Colors.red.withOpacity(0.7),
+                  shape: BoxShape.circle,
+                ),
+                child: IconButton(
+                  icon: Icon(Icons.delete, color: Colors.white, size: 20),
+                  padding: EdgeInsets.zero,
+                  constraints: BoxConstraints(),
+                  onPressed: () => _removePortfolioImage(index),
+                ),
+              ),
+            ),
+          ],
+        );
+      },
+    ),
+  );
+}
   Future<void> _pickPortfolioImages() async {
     final pickedFiles = await _picker.pickMultiImage();
     setState(() {
