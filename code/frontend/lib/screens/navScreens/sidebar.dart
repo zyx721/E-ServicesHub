@@ -17,9 +17,6 @@ Widget Sidebar(BuildContext context, AppLocalizations appLocalizations) {
       // Reset the logged-in status
       await prefs.setBool('isLoggedIn', false);
 
-      // Set the user role to 'client' upon logout
-      await prefs.setString('userRole', UserRole.client.toString());
-
       // Navigate to the login screen
       Navigator.pushReplacementNamed(context, '/login');
     } catch (e) {

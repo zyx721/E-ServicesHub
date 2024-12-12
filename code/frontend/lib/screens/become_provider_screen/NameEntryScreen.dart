@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 class NameEntryScreen extends StatefulWidget {
   @override
@@ -30,6 +32,62 @@ class _NameEntryScreenState extends State<NameEntryScreen> {
 
   // To track selected services
   final Set<String> _selectedChoices = {};
+
+  void _saveProviderInfo() async {
+    final String firstName = _firstNameController.text.trim();
+    final String lastName = _lastNameController.text.trim();
+
+    if (firstName.isEmpty || lastName.isEmpty) {
+      _showErrorDialog("First Name and Last Name are required.");
+      return;
+    }
+
+    if (_selectedChoices.length != 2) {
+      _showErrorDialog("Please select exactly two work choices.");
+      return;
+    }
+
+    try {
+      // Get the current user's UID
+      final User? user = FirebaseAuth.instance.currentUser;
+      if (user == null) {
+        _showErrorDialog("User not authenticated.");
+        return;
+      }
+
+      // Reference Firestore document
+      final DocumentReference userDoc =
+          FirebaseFirestore.instance.collection('users').doc(user.uid);
+
+      // Update Firestore with the new information
+      await userDoc.update({
+        'firstName': firstName,
+        'lastName': lastName,
+        'selectedWorkChoices': _selectedChoices.toList(),
+      });
+
+      // Navigate to verification screen
+      Navigator.pushNamed(context, '/verification');
+    } catch (e) {
+      _showErrorDialog("Failed to save data: $e");
+    }
+  }
+
+  void _showErrorDialog(String message) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text("Error"),
+        content: Text(message),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text("OK"),
+          ),
+        ],
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -68,9 +126,13 @@ class _NameEntryScreenState extends State<NameEntryScreen> {
                 return GestureDetector(
                   onTap: () {
                     setState(() {
-                      isSelected
-                          ? _selectedChoices.remove(choice)
-                          : _selectedChoices.add(choice);
+                      if (isSelected) {
+                        _selectedChoices.remove(choice);
+                      } else if (_selectedChoices.length < 2) {
+                        _selectedChoices.add(choice);
+                      } else {
+                        _showErrorDialog("You can only select two choices.");
+                      }
                     });
                   },
                   child: Container(
@@ -87,7 +149,8 @@ class _NameEntryScreenState extends State<NameEntryScreen> {
                       choice,
                       style: TextStyle(
                         color: isSelected ? Colors.white : Colors.black,
-                        fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
+                        fontWeight:
+                            isSelected ? FontWeight.w600 : FontWeight.w400,
                       ),
                     ),
                   ),
@@ -98,17 +161,7 @@ class _NameEntryScreenState extends State<NameEntryScreen> {
 
             // Continue Button
             GestureDetector(
-              onTap: () {
-                // Proceed to the next page, passing the data
-                String firstName = _firstNameController.text;
-                String lastName = _lastNameController.text;
-                print("First Name: $firstName");
-                print("Last Name: $lastName");
-                print("Selected Services: $_selectedChoices");
-
-                // Navigate to the next screen
-                Navigator.pushNamed(context, '/verification');
-              },
+              onTap: _saveProviderInfo,
               child: Container(
                 padding: EdgeInsets.symmetric(horizontal: 50, vertical: 16),
                 decoration: BoxDecoration(
@@ -138,22 +191,7 @@ class _NameEntryScreenState extends State<NameEntryScreen> {
                   ),
                 ),
               ),
-            ),
-            SizedBox(height: 20),
-
-            // Skip Option
-            TextButton(
-              onPressed: () {
-                Navigator.pushNamed(context, '/verification');
-              },
-              child: Text(
-                "Skip for Now",
-                style: TextStyle(
-                  fontSize: 14,
-                  color: Colors.grey[700],
-                ),
-              ),
-            ),
+            ),  
           ],
         ),
       ),

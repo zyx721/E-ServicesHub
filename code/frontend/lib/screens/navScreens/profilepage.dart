@@ -1,9 +1,11 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
-import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:path/path.dart' as path;
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 class ServiceProviderProfile2 extends StatefulWidget {
   const ServiceProviderProfile2({Key? key}) : super(key: key);
@@ -14,14 +16,51 @@ class ServiceProviderProfile2 extends StatefulWidget {
 }
 
 class _ServiceProviderProfileState extends State<ServiceProviderProfile2> {
-  final double profileHeight = 120;
-  String hourlyRate = '2500 DZD/hr';
-  String aboutMe =
-      'I am a professional Flutter developer with over 4 years of experience building intuitive, cross-platform mobile applications.';
-  List<String> portfolioImages = [];
+  final double profileHeight = 150;
+  final FirebaseAuth _auth = FirebaseAuth.instance;
+  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
+  List<String> portfolioImages = [];
+  List<dynamic> skills = [];
+  List<dynamic> certifications = [];
+  List<dynamic> workExperience = [];
+  String profession = '';
+  String userName = '';
+  String userEmail = '';
+  String userPhotoUrl = '';
+  String aboutMe = '';
+  String hourlyRate = '';
   bool isEditMode = false;
   bool isVerified = true;
+  bool isLoading = true;
+
+  Future<void> fetchUserData() async {
+    try {
+      final User? user = _auth.currentUser;
+      if (user != null) {
+        final DocumentSnapshot userDoc =
+            await _firestore.collection('users').doc(user.uid).get();
+
+        if (userDoc.exists) {
+          final data = userDoc.data() as Map<String, dynamic>;
+          setState(() {
+            userName = data['name'] ?? 'Anonymous';
+            userEmail = data['email'] ?? 'No email';
+            userPhotoUrl = data['photoURL'] ?? '';
+            aboutMe = data['aboutMe'] ?? 'Tell us about yourself';
+            hourlyRate = data['basicInfo']['hourlyRate'] ?? '';
+            profession = data['basicInfo']['profession'] ?? '';
+            skills = data['skills'];
+            certifications = data['certifications'];
+            workExperience = data['workExperience'];
+            isLoading = false;
+          });
+        }
+      }
+    } catch (e) {
+      debugPrint('Error fetching user data: $e');
+    }
+  }
 
   final TextEditingController hourlyRateController = TextEditingController();
   final TextEditingController aboutMeController = TextEditingController();
@@ -29,8 +68,7 @@ class _ServiceProviderProfileState extends State<ServiceProviderProfile2> {
   @override
   void initState() {
     super.initState();
-    hourlyRateController.text = hourlyRate;
-    aboutMeController.text = aboutMe;
+    fetchUserData();
     _loadPortfolioImages();
   }
 
@@ -111,20 +149,26 @@ class _ServiceProviderProfileState extends State<ServiceProviderProfile2> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Set Up Profile'),
-      ),
-      body: ListView(
-        padding: EdgeInsets.zero,
-        children: [
-          buildTop(),
-          const SizedBox(height: 16),
-          buildProfileInfo(),
-          const Divider(thickness: 1, height: 32),
-          buildPortfolioSection(),
-          const Divider(thickness: 1, height: 32),
-        ],
-      ),
+      body: isLoading
+          ? const Center(child: CircularProgressIndicator())
+          : ListView(
+              padding: EdgeInsets.zero,
+              children: [
+                buildTop(),
+                buildProfileInfo(),
+                const SizedBox(height: 20),
+                _buildSectionTitle('Skills'),
+                _buildSkillsSection(),
+                const SizedBox(height: 20),
+                _buildSectionTitle('Work Experience'),
+                _buildWorkExperienceSection(),
+                const SizedBox(height: 20),
+                buildPortfolioSection(),
+                const SizedBox(height: 20),
+                _buildSectionTitle('Certifications'),
+                _buildCertificationsSection(),
+              ],
+            ),
       floatingActionButton: isEditMode
           ? ElevatedButton(
               onPressed: toggleEditMode,
@@ -140,68 +184,57 @@ class _ServiceProviderProfileState extends State<ServiceProviderProfile2> {
   }
 
   Widget buildTop() {
-    return Column(
-      children: [
-        const SizedBox(height: 40),
-        Stack(
-          alignment: Alignment.bottomRight,
-          children: [
-            CircleAvatar(
-              radius: profileHeight / 2,
-              backgroundColor: Colors.grey.shade200,
-              backgroundImage:
-                  const AssetImage('assets/images/profile_picture.png'),
-            ),
-            if (isEditMode)
-              GestureDetector(
-                onTap: () {
-                  pickNewProfilePicture();
-                },
-                child: Container(
-                  padding: const EdgeInsets.all(6),
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    color: Colors.blue,
-                  ),
-                  child: const Icon(
-                    Icons.camera_alt,
-                    size: 20,
-                    color: Colors.white,
+    return Center(
+      child: Column(
+        children: [
+          const SizedBox(height: 40),
+          Stack(
+            alignment: Alignment.bottomRight,
+            children: [
+              CircleAvatar(
+                radius: profileHeight / 2,
+                backgroundColor: Colors.grey.shade200,
+                backgroundImage: userPhotoUrl.isNotEmpty
+                    ? NetworkImage(userPhotoUrl) as ImageProvider
+                    : const AssetImage('assets/images/default_profile.png'),
+              ),
+              if (isEditMode)
+                GestureDetector(
+                  onTap: () {
+                    pickNewProfilePicture();
+                  },
+                  child: Container(
+                    padding: const EdgeInsets.all(6),
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: Colors.blue,
+                    ),
+                    child: const Icon(
+                      Icons.camera_alt,
+                      size: 20,
+                      color: Colors.white,
+                    ),
                   ),
                 ),
-              ),
-          ],
-        ),
-        const SizedBox(height: 20),
-        Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Text(
-              'Benmati Ziad',
-              style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
-            ),
-            if (isVerified)
-              const Padding(
-                padding: EdgeInsets.only(left: 8.0),
-                child: Icon(
-                  Icons.check_circle_outline,
-                  color: Colors.blue,
-                  size: 20,
-                ),
-              ),
-          ],
-        ),
-        const SizedBox(height: 4),
-        Text(
-          'Flutter Developer',
-          style: TextStyle(fontSize: 16, color: Colors.grey.shade700),
-        ),
-        const SizedBox(height: 8),
-        Text(
-          'benmatiziad5@gmail.com',
-          style: TextStyle(fontSize: 14, color: Colors.grey.shade600),
-        ),
-      ],
+            ],
+          ),
+          const SizedBox(height: 20),
+          Text(
+            userName,
+            style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            profession,
+            style: TextStyle(fontSize: 16, color: Colors.grey.shade700),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            userEmail,
+            style: TextStyle(fontSize: 14, color: Colors.grey.shade600),
+          ),
+        ],
+      ),
     );
   }
 
@@ -210,13 +243,14 @@ class _ServiceProviderProfileState extends State<ServiceProviderProfile2> {
       padding: const EdgeInsets.symmetric(horizontal: 16),
       child: Column(
         children: [
+          const SizedBox(height: 20),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              buildStat('Projects', '24'),
-              buildStat('Rating', _buildStarRating(4.5)),
+              buildStat('Projects', '0'),
+              buildStat('Rating', _buildStarRating(0)),
               buildStat('Hourly Rate',
-                  isEditMode ? buildHourlyRateEditor() : hourlyRate),
+                  isEditMode ? buildHourlyRateEditor() : '$hourlyRate DZD'),
             ],
           ),
           const SizedBox(height: 24),
@@ -247,6 +281,128 @@ class _ServiceProviderProfileState extends State<ServiceProviderProfile2> {
       ),
     );
   }
+
+  Widget _buildSectionTitle(String title) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 16.0),
+      child: Text(
+        title,
+        style: GoogleFonts.poppins(
+          fontSize: 20,
+          fontWeight: FontWeight.bold,
+          color: Colors.black87,
+        ),
+      ),
+    );
+  }
+
+Widget _buildSkillsSection() {
+  return Padding(
+    padding: const EdgeInsets.symmetric(horizontal: 16.0),
+    child: Wrap(
+      spacing: 8,
+      runSpacing: 8,
+      alignment: WrapAlignment.start,
+      children: skills
+          .map((skill) => Chip(
+                label: Text(skill, style: GoogleFonts.poppins()),
+                backgroundColor: Colors.blue.shade50,
+              ))
+          .toList(),
+    ),
+  );
+}
+
+Widget _buildWorkExperienceSection() {
+  return Padding(
+    padding: const EdgeInsets.symmetric(horizontal: 16.0),
+    child: Column(
+      children: workExperience
+          .map((exp) => ListTile(
+                contentPadding: EdgeInsets.zero,
+                title: Text(
+                  exp['company'],
+                  style: GoogleFonts.poppins(fontWeight: FontWeight.w600),
+                ),
+                subtitle: Text(
+                  '${exp['position']} | ${exp['duration']}',
+                  style: GoogleFonts.poppins(),
+                ),
+              ))
+          .toList(),
+    ),
+  );
+}
+
+Widget buildPortfolioSection() {
+  return Padding(
+    padding: const EdgeInsets.symmetric(horizontal: 16),
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text(
+          'Portfolio',
+          style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+        ),
+        const SizedBox(height: 8),
+        portfolioImages.isNotEmpty
+            ? GridView.builder(
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                  crossAxisCount: 3,
+                  crossAxisSpacing: 8,
+                  mainAxisSpacing: 8,
+                ),
+                itemCount: portfolioImages.length,
+                itemBuilder: (context, index) {
+                  return GestureDetector(
+                    onTap: () {
+                      // Show image in full screen
+                    },
+                    child: Image.file(
+                      File(portfolioImages[index]),
+                      fit: BoxFit.cover,
+                    ),
+                  );
+                })
+            : const Center(child: Text('No portfolio images available')),
+        const SizedBox(height: 16),
+        ElevatedButton(
+          onPressed: pickNewPortfolioImage,
+          child: const Text('Add Portfolio Image'),
+        ),
+      ],
+    ),
+  );
+}
+
+Widget _buildCertificationsSection() {
+  return Padding(
+    padding: const EdgeInsets.symmetric(horizontal: 16.0),
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: certifications
+          .map((cert) => Padding(
+                padding: const EdgeInsets.symmetric(vertical: 4.0),
+                child: Row(
+                  children: [
+                    Icon(Icons.verified, color: Colors.green, size: 20),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        cert,
+                        style: GoogleFonts.poppins(),
+                      ),
+                    ),
+                  ],
+                ),
+              ))
+          .toList(),
+    ),
+  );
+}
+
 
   Widget buildHourlyRateEditor() {
     return SizedBox(
@@ -295,57 +451,14 @@ class _ServiceProviderProfileState extends State<ServiceProviderProfile2> {
     );
   }
 
-  Widget buildPortfolioSection() {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Text(
-            'Portfolio',
-            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-          ),
-          const SizedBox(height: 8),
-          portfolioImages.isNotEmpty
-              ? GridView.builder(
-                  shrinkWrap: true,
-                  physics: const NeverScrollableScrollPhysics(),
-                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                    crossAxisCount: 3,
-                    crossAxisSpacing: 8,
-                    mainAxisSpacing: 8,
-                  ),
-                  itemCount: portfolioImages.length,
-                  itemBuilder: (context, index) {
-                    return GestureDetector(
-                      onTap: () {
-                        // Show image in full screen
-                      },
-                      child: Image.file(
-                        File(portfolioImages[index]),
-                        fit: BoxFit.cover,
-                      ),
-                    );
-                  })
-              : const Center(child: Text('No portfolio images available')),
-          const SizedBox(height: 16),
-          ElevatedButton(
-            onPressed: pickNewPortfolioImage,
-            child: const Text('Add Portfolio Image'),
-          ),
-        ],
-      ),
-    );
-  }
-
-  // Pick a new profile picture (similar to portfolio image picker)
+  
   Future<void> pickNewProfilePicture() async {
     final ImagePicker picker = ImagePicker();
     final XFile? pickedFile =
         await picker.pickImage(source: ImageSource.gallery);
     if (pickedFile != null) {
       setState(() {
-        // Update the profile picture with the picked file.
+        userPhotoUrl = pickedFile.path; // You can upload it to Firebase here
       });
     }
   }

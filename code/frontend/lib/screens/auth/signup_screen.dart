@@ -6,6 +6,7 @@ import 'terms_and_conditions_page.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:shared_preferences/shared_preferences.dart'; // Import SharedPreferences
 
 class SignupScreen extends StatefulWidget {
   const SignupScreen({Key? key}) : super(key: key);
@@ -61,7 +62,10 @@ class _SignupScreenState extends State<SignupScreen>
                 duration: const Duration(seconds: 5),
               ),
             );
+            
 
+            final prefs = await SharedPreferences.getInstance();
+            await prefs.setBool('isLoggedIn', true);
             // Navigate to home page after successful signup
             Navigator.pushNamed(context, '/navbar');
           } else {
@@ -213,7 +217,11 @@ class _SignupScreenState extends State<SignupScreen>
               backgroundColor: Colors.green,
             ),
           );
+
+          final prefs = await SharedPreferences.getInstance();
+          await prefs.setBool('isLoggedIn', true);
           Navigator.pushNamed(context, '/navbar'); // Navigate to home screen
+
         } else {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(

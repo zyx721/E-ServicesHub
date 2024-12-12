@@ -4,6 +4,7 @@ import 'package:hanini_frontend/localization/app_localization.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:shared_preferences/shared_preferences.dart'; // Import SharedPreferences
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({Key? key}) : super(key: key);
@@ -62,8 +63,10 @@ class _LoginScreenState extends State<LoginScreen>
               backgroundColor: Colors.green,
             ),
           );
-          // Navigate to home page after successful login
-          Navigator.pushNamed(context, '/navbar');
+           final prefs = await SharedPreferences.getInstance();
+            await prefs.setBool('isLoggedIn', true);
+            // Navigate to home page after successful signup
+            Navigator.pushNamed(context, '/navbar');
         } else {
           // Show error SnackBar if no user is found
           ScaffoldMessenger.of(context).showSnackBar(
@@ -207,6 +210,8 @@ class _LoginScreenState extends State<LoginScreen>
               backgroundColor: Colors.green,
             ),
           );
+          final prefs = await SharedPreferences.getInstance();
+            await prefs.setBool('isLoggedIn', true);
           Navigator.pushNamed(context, '/navbar'); // Navigate to home screen
         } else {
           ScaffoldMessenger.of(context).showSnackBar(
