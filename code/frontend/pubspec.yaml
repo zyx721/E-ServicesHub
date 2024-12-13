@@ -33,6 +33,7 @@ dependencies:
   google_sign_in: ^5.4.2 
   cloud_firestore: ^5.5.0
   localization: ^2.1.1
+  geolocator: ^9.0.2  # For GPS functionality
 
 
 dev_dependencies:
@@ -84,9 +85,9 @@ flutter:
     - assets/images/ads/first_page.png
     - assets/images/ads/second_page.png
     - assets/images/ads/third_page.png
+    - assets/images/portfolio/
     - assets/animation/animation1.json
     - assets/animation/animation2.json
     - assets/animation/animation3.json
     - assets/animation/animation4.json
     - assets/animation/animation5.json
-    - assets/images/portfolio/

@@ -462,10 +462,31 @@ class _ServiceProviderProfileState extends State<ServiceProviderProfile2> {
     });
   }
 
-  Widget _buildPortfolioImagesSection() {
-    return Column(
-      children: [
-        ElevatedButton.icon(
+ Widget _buildPortfolioImagesSection() {
+  return Column(
+    crossAxisAlignment: CrossAxisAlignment.start,
+    children: [
+      // Section title with description
+      Text(
+        'Portfolio Images',
+        style: GoogleFonts.poppins(
+          fontSize: 18,
+          fontWeight: FontWeight.bold,
+          color: Colors.black87,
+        ),
+      ),
+      Text(
+        'Showcase your best work and projects',
+        style: GoogleFonts.poppins(
+          fontSize: 12,
+          color: Colors.grey[600],
+        ),
+      ),
+      const SizedBox(height: 15),
+
+      // Add Portfolio Images Button
+      Center(
+        child: ElevatedButton.icon(
           onPressed: _pickPortfolioImages,
           icon: Icon(Icons.add_photo_alternate),
           label: Text(

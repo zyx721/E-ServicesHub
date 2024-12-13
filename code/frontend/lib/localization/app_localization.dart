@@ -34,6 +34,41 @@ class AppLocalizations {
             : (isFrench ? "Service inconnu" : "Unknown Service");
     }
   }
+String get home => isArabic ? "الرئيسية" : (isFrench ? "Accueil" : "Home");
+  String get search => isArabic ? "بحث" : (isFrench ? "Rechercher" : "Search");
+  String get favorites =>
+      isArabic ? "المفضلة" : (isFrench ? "Favoris" : "Favorites");
+  String get profile =>
+      isArabic ? "الملف الشخصي" : (isFrench ? "Profil" : "Profile");
+
+  // Sidebar Translations
+  String get settings =>
+      isArabic ? "الإعدادات" : (isFrench ? "Paramètres" : "Settings");
+  String get logout =>
+      isArabic ? "تسجيل الخروج" : (isFrench ? "Se déconnecter" : "Logout");
+  String get language =>
+      isArabic ? "اللغة" : (isFrench ? "Langue" : "Language");
+
+  // Notifications
+  String get notifications =>
+      isArabic ? "الإشعارات" : (isFrench ? "Notifications" : "Notifications");
+
+  // Common Buttons
+  String get save => isArabic ? "حفظ" : (isFrench ? "Enregistrer" : "Save");
+  String get cancel =>
+      isArabic ? "إلغاء" : (isFrench ? "Annuler" : "Cancel");
+
+  // Error Messages
+  String get error =>
+      isArabic ? "حدث خطأ" : (isFrench ? "Une erreur est survenue" : "An error occurred");
+  String get noInternet =>
+      isArabic ? "لا يوجد اتصال بالإنترنت" : (isFrench ? "Pas de connexion Internet" : "No Internet connection");
+
+  // Profile Page
+  String get editProfile =>
+      isArabic ? "تعديل الملف الشخصي" : (isFrench ? "Modifier le profil" : "Edit Profile");
+  String get contactSupport =>
+      isArabic ? "اتصل بالدعم" : (isFrench ? "Contacter le support" : "Contact Support");
 
   // Password recovery translations
   String get enterValidEmail => isArabic
@@ -209,14 +244,7 @@ class AppLocalizations {
     : (isFrench ? "Services principaux" : "Top Services");
 
   String get menu => isArabic ? "القائمة" : (isFrench ? "Menu" : "Menu");
-  String get profile =>
-      isArabic ? "الملف الشخصي" : (isFrench ? "Profil" : "Profile");
-  String get settings =>
-      isArabic ? "الإعدادات" : (isFrench ? "Paramètres" : "Settings");
-  String get language =>
-      isArabic ? "اللغة" : (isFrench ? "Langue" : "Language");
-  String get logout =>
-      isArabic ? "تسجيل الخروج" : (isFrench ? "Se déconnecter" : "Logout");
+
   String get provider =>
       isArabic ? "المزود" : (isFrench ? "Fournisseur" : "Provider");
 
@@ -233,7 +261,6 @@ class AppLocalizations {
       ? "اختر اللغة"
       : (isFrench ? "Sélectionner la langue" : "Select Language");
 
-  String get cancel => isArabic ? "إلغاء" : (isFrench ? "Annuler" : "Cancel");
 
   String get services =>
       isArabic ? "إلغاء" : (isFrench ? "service" : "service");
@@ -244,8 +271,6 @@ class AppLocalizations {
   String get appName =>
       isArabic ? "إلغاء" : (isFrench ? "mon profile" : "my Profil");
 
-  String get home =>
-      isArabic ? "إلغاء" : (isFrench ? "mon profile" : "my Profil");
 
   String get sponsoredServices => isArabic ? "إلغاء" : (isFrench ? "mon profile" : "Sponsored Services");
 
