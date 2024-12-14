@@ -29,8 +29,8 @@ class NavbarPage extends StatefulWidget {
 
 class _NavbarPageState extends State<NavbarPage> {
   int selectedIndex = 0;
-  late List<Widget> screens;
-
+  List<Widget> screens = [];
+  bool isLoading = true;
 
   @override
   void initState() {
@@ -39,20 +39,59 @@ class _NavbarPageState extends State<NavbarPage> {
     _updateScreens();
     _initializeScreens();
   }
-  void _updateScreens() {
-    setState(() {
-      screens = [
-        HomePage(),
-        SearchPage(),
-        FavoritesPage(),
-        // Conditional profile screen based on current role
-        _currentUserRole == UserRole.client
-            ? SimpleUserProfile()
-            : ServiceProviderProfile2(),
-      ];
-    });
+
+  Future<void> _initializeScreens() async {
+    try {
+      final isProvider = await _checkIfUserIsProvider();
+      setState(() {
+        screens = [
+          HomePage(),
+          SearchPage(),
+          FavoritesPage(),
+          isProvider ? ServiceProviderProfile2() : SimpleUserProfile(),
+        ];
+        isLoading = false;
+      });
+    } catch (e) {
+      // Handle error (e.g., show a message or log it)
+      print('Error fetching user data: $e');
+      setState(() {
+        isLoading = false;
+      });
+    }
   }
-  // Language change logic
+
+  final FirebaseAuth _auth = FirebaseAuth.instance;
+  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+
+Future<bool> _checkIfUserIsProvider() async {
+  final User? user = _auth.currentUser;
+  
+  // Check if the user is logged in
+  if (user != null) {
+    try {
+      final DocumentSnapshot userDoc =
+            await _firestore.collection('users').doc(user.uid).get();
+
+      // Check if the document exists and return the 'isProvider' field
+      if (userDoc.exists) {
+        final data = userDoc.data() as Map<String, dynamic>;
+        return data['isProvider'] ?? false;
+      } else {
+        throw Exception("User not found in Firestore");
+      }
+    } catch (e) {
+      // Log error or handle it
+      print("Error while fetching user: $e");
+      throw Exception("Failed to fetch user data");
+    }
+  } else {
+    // Handle the case where no user is signed in
+    throw Exception("No user is currently signed in");
+  }
+}
+
+
   void _changeLanguage(String languageCode) {
     Locale newLocale;
     switch (languageCode) {
@@ -66,13 +105,6 @@ class _NavbarPageState extends State<NavbarPage> {
         newLocale = Locale('en', '');
     }
     MyApp.of(context)?.changeLanguage(newLocale);
-  }
-
-  // Handle logout functionality
-  Future<void> handleLogout() async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setBool('isLoggedIn', false); // Reset login state
-    Navigator.pushReplacementNamed(context, '/login'); // Or '/onboarding'
   }
 
   @override
@@ -292,7 +324,6 @@ actions: [
     );
   }
 
-  // Helper function to build the language selection menu
   PopupMenuItem<String> _buildLanguageMenuItem(
       String languageCode, String languageName, String flagPath) {
     return PopupMenuItem<String>(
