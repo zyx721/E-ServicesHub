@@ -20,6 +20,7 @@ import 'package:hanini_frontend/screens/navScreens/notificationspage.dart'; // R
 class NavbarPage extends StatefulWidget {
 
 
+  const NavbarPage({Key? key, required this.userRole}) : super(key: key);
   const NavbarPage({Key? key}) : super(key: key);
 
   @override
@@ -28,67 +29,30 @@ class NavbarPage extends StatefulWidget {
 
 class _NavbarPageState extends State<NavbarPage> {
   int selectedIndex = 0;
-  List<Widget> screens = [];
-  bool isLoading = true;
+  late List<Widget> screens;
+
 
   @override
   void initState() {
     super.initState();
+    _currentUserRole = widget.userRole;
+    _updateScreens();
     _initializeScreens();
   }
-
-  Future<void> _initializeScreens() async {
-    try {
-      final isProvider = await _checkIfUserIsProvider();
-      setState(() {
-        screens = [
-          HomePage(),
-          SearchPage(),
-          FavoritesPage(),
-          isProvider ? ServiceProviderProfile2() : SimpleUserProfile(),
-        ];
-        isLoading = false;
-      });
-    } catch (e) {
-      // Handle error (e.g., show a message or log it)
-      print('Error fetching user data: $e');
-      setState(() {
-        isLoading = false;
-      });
-    }
+  void _updateScreens() {
+    setState(() {
+      screens = [
+        HomePage(),
+        SearchPage(),
+        FavoritesPage(),
+        // Conditional profile screen based on current role
+        _currentUserRole == UserRole.client
+            ? SimpleUserProfile()
+            : ServiceProviderProfile2(),
+      ];
+    });
   }
-
-  final FirebaseAuth _auth = FirebaseAuth.instance;
-  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
-
-Future<bool> _checkIfUserIsProvider() async {
-  final User? user = _auth.currentUser;
-  
-  // Check if the user is logged in
-  if (user != null) {
-    try {
-      final DocumentSnapshot userDoc =
-            await _firestore.collection('users').doc(user.uid).get();
-
-      // Check if the document exists and return the 'isProvider' field
-      if (userDoc.exists) {
-        final data = userDoc.data() as Map<String, dynamic>;
-        return data['isProvider'] ?? false;
-      } else {
-        throw Exception("User not found in Firestore");
-      }
-    } catch (e) {
-      // Log error or handle it
-      print("Error while fetching user: $e");
-      throw Exception("Failed to fetch user data");
-    }
-  } else {
-    // Handle the case where no user is signed in
-    throw Exception("No user is currently signed in");
-  }
-}
-
-
+  // Language change logic
   void _changeLanguage(String languageCode) {
     Locale newLocale;
     switch (languageCode) {
@@ -104,10 +68,85 @@ Future<bool> _checkIfUserIsProvider() async {
     MyApp.of(context)?.changeLanguage(newLocale);
   }
 
+  // Handle logout functionality
+  Future<void> handleLogout() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool('isLoggedIn', false); // Reset login state
+    Navigator.pushReplacementNamed(context, '/login'); // Or '/onboarding'
+  }
+
   @override
   Widget build(BuildContext context) {
     final AppLocalizations appLocalizations = AppLocalizations.of(context)!;
 
+    return Scaffold(
+      appBar: PreferredSize(
+        preferredSize: Size.fromHeight(64.0), // Set height for the AppBar
+        child: Container(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              colors: [
+                Color(0xFF3949AB), // Indigo 600
+                Color(0xFF1E88E5), // Blue 600
+              ],
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+            ),
+          ),
+          child: AppBar(
+            title: Text(
+              appLocalizations.appTitle,
+              style: GoogleFonts.poppins(
+                fontSize: 22,
+                fontWeight: FontWeight.w600,
+                color: Colors.white,
+              ),
+            ),
+            backgroundColor: Colors.transparent, // Transparent to show gradient
+            elevation: 0,
+            actions: [
+              IconButton(
+                icon: Icon(
+                  Icons.notifications_outlined,
+                  color: Colors.white,
+                  size: 28,
+                ),
+                onPressed: () {
+                  // Handle notifications
+                },
+              ),
+              _buildLanguageDropdown(),
+            ],
+          ),
+        ),
+      ),
+      drawer: Sidebar(context, appLocalizations),
+      body: screens[
+          selectedIndex], // Switch between screens based on the selected index
+      bottomNavigationBar: NavigationBar(
+  selectedIndex: selectedIndex,
+  onDestinationSelected: (int index) {
+    setState(() {
+      selectedIndex = index; // Update selectedIndex on tap
+    });
+  },
+  destinations: [
+    NavigationDestination(
+        icon: Icon(Iconsax.home),
+        label: appLocalizations.home),
+    NavigationDestination(
+        icon: Icon(Iconsax.search_normal),
+        label: appLocalizations.search),
+    NavigationDestination(
+        icon: Icon(Iconsax.save_2),
+        label: appLocalizations.favorites),
+    NavigationDestination(
+        icon: Icon(Iconsax.user),
+        label: appLocalizations.profile),
+  ],
+),
+
+    );
     return isLoading
         ? Center(child: CircularProgressIndicator())
         : PopScope(
@@ -224,6 +263,7 @@ actions: [
         );
   }
 
+  // Language Dropdown for switching languages
   Widget _buildLanguageDropdown() {
     final localizations = AppLocalizations.of(context);
     if (localizations == null) {
@@ -252,6 +292,7 @@ actions: [
     );
   }
 
+  // Helper function to build the language selection menu
   PopupMenuItem<String> _buildLanguageMenuItem(
       String languageCode, String languageName, String flagPath) {
     return PopupMenuItem<String>(

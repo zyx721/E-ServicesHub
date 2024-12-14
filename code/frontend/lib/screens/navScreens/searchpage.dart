@@ -237,6 +237,17 @@ class _SearchPageState extends State<SearchPage> {
                           child: Icon(Icons.broken_image, size: 50, color: Colors.grey),
                         );
                       },
+                      child: Container(
+                        padding: const EdgeInsets.all(4),
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: Colors.white.withOpacity(0.8),
+                        ),
+                        child: Icon(
+                          favorite ? Icons.favorite : Icons.favorite_border,
+                          color: favorite ? Colors.red : Colors.grey,
+                        ),
+                      ),
                     ),
                   ),
                 ),
