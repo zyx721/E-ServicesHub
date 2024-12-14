@@ -145,7 +145,6 @@ class _ServiceProviderProfileState extends State<ServiceProviderProfile2> {
             _buildCertificationsSection(),
             const SizedBox(height: 20),
 
-            _buildSectionTitle('Portfolio Images'),
             _buildPortfolioImagesSection(),
             const SizedBox(height: 20),
 
@@ -493,7 +492,7 @@ class _ServiceProviderProfileState extends State<ServiceProviderProfile2> {
             'Add Portfolio Images',
             style: GoogleFonts.poppins(),
           ),
-        ),
+        )),
         const SizedBox(height: 10),
         Wrap(
           spacing: 8,

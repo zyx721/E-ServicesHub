@@ -286,10 +286,6 @@ class _LoginScreenState extends State<LoginScreen>
                 children: [
                   // Wrap the logo with GestureDetector to detect taps
                   GestureDetector(
-                    onTap: () {
-                      // Navigate to the navbar when logo is clicked
-                      Navigator.pushNamed(context, '/navbar');
-                    },
                     child: FadeTransition(
                       opacity: _fadeAnimation,
                       child: ScaleTransition(
