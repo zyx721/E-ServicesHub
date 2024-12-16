@@ -6,8 +6,6 @@ import 'package:hanini_frontend/localization/app_localization.dart';
 import 'package:hanini_frontend/screens/navScreens/service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-// Import the new ServiceProviderFullProfile screen
-
 class SearchPage extends StatefulWidget {
   const SearchPage({Key? key}) : super(key: key);
 
@@ -16,23 +14,7 @@ class SearchPage extends StatefulWidget {
 }
 
 class _SearchPageState extends State<SearchPage> {
-  final List<Map<String, dynamic>> services = [
-    {'id': 'service_001', 'name': 'Painter', 'image': 'assets/images/service1.png', 'provider': 'ziad', 'rating': 4.0},
-    {'id': 'service_002', 'name': 'Plumber', 'image': 'assets/images/service2.png', 'provider': 'anas', 'rating': 4.2},
-    {'id': 'service_003', 'name': 'Big House Plumbing', 'image': 'assets/images/service3.png', 'provider': 'raouf', 'rating': 4.5},
-    {'id': 'service_004', 'name': 'Electrical Engineer', 'image': 'assets/images/service4.png', 'provider': 'mouh', 'rating': 4.1},
-    {'id': 'service_005', 'name': 'Floor Cleaning', 'image': 'assets/images/service5.png', 'provider': 'fares', 'rating': 3.9},
-    {'id': 'service_006', 'name': 'Carpentry', 'image': 'assets/images/service6.png', 'provider': 'ziad', 'rating': 4.0},
-    {'id': 'service_007', 'name': 'Makeup Artist', 'image': 'assets/images/service7.png', 'provider': 'anas', 'rating': 4.5},
-    {'id': 'service_008', 'name': 'Private Tutor', 'image': 'assets/images/service8.png', 'provider': 'raouf', 'rating': 4.3},
-    {'id': 'service_009', 'name': 'Workout Coach', 'image': 'assets/images/service9.png', 'provider': 'mouh', 'rating': 4.4},
-    {'id': 'service_010', 'name': 'Therapy for Mental Help', 'image': 'assets/images/service10.png', 'provider': 'fares', 'rating': 4.2},
-    {'id': 'service_011', 'name': 'Locksmith', 'image': 'assets/images/service11.png', 'provider': 'ziad', 'rating': 3.8},
-    {'id': 'service_012', 'name': 'Guardian', 'image': 'assets/images/service12.png', 'provider': 'anas', 'rating': 4.1},
-    {'id': 'service_013', 'name': 'Chef', 'image': 'assets/images/service13.png', 'provider': 'raouf', 'rating': 4.6},
-    {'id': 'service_014', 'name': 'Solar Panel Installation', 'image': 'assets/images/service14.png', 'provider': 'mouh', 'rating': 4.5},
-  ];
-
+  List<Map<String, dynamic>> services = [];
   List<Map<String, dynamic>> filteredServices = [];
   List<String> likedServiceIds = [];
   TextEditingController _searchController = TextEditingController();
@@ -40,8 +22,6 @@ class _SearchPageState extends State<SearchPage> {
   @override
   void initState() {
     super.initState();
-    filteredServices = services;
-
     _searchController.addListener(() {
       _filterServices();
     });
@@ -71,7 +51,7 @@ class _SearchPageState extends State<SearchPage> {
     });
   }
 
- void _filterServices() {
+  void _filterServices() {
     setState(() {
       filteredServices = services.where((service) {
         final searchTerm = _searchController.text.toLowerCase().trim();
@@ -122,10 +102,116 @@ class _SearchPageState extends State<SearchPage> {
     return distances[s1.length][s2.length];
   }
 
-
   @override
   Widget build(BuildContext context) {
     final AppLocalizations appLocalizations = AppLocalizations.of(context)!;
+
+    // Initialize services dynamically within build()
+    services = [
+      {
+        'id': 'service_001',
+        'name': appLocalizations.service(5),
+        'image': 'assets/images/service1.png',
+        'provider': 'ziad',
+        'rating': 4.0
+      },
+      {
+        'id': 'service_002',
+        'name': appLocalizations.service(1),
+        'image': 'assets/images/service2.png',
+        'provider': 'anas',
+        'rating': 4.2
+      },
+      {
+        'id': 'service_003',
+        'name': appLocalizations.service(1),
+        'image': 'assets/images/service3.png',
+        'provider': 'raouf',
+        'rating': 4.5
+      },
+      {
+        'id': 'service_004',
+        'name': appLocalizations.service(2),
+        'image': 'assets/images/service4.png',
+        'provider': 'mouh',
+        'rating': 4.1
+      },
+      {
+        'id': 'service_005',
+        'name': appLocalizations.service(5),
+        'image': 'assets/images/service5.png',
+        'provider': 'fares',
+        'rating': 3.9
+      },
+      {
+        'id': 'service_006',
+        'name': appLocalizations.service(3),
+        'image': 'assets/images/service6.png',
+        'provider': 'ziad',
+        'rating': 4.0
+      },
+      {
+        'id': 'service_007',
+        'name': appLocalizations.service(7),
+        'image': 'assets/images/service7.png',
+        'provider': 'anas',
+        'rating': 4.5
+      },
+      {
+        'id': 'service_008',
+        'name': appLocalizations.service(8),
+        'image': 'assets/images/service8.png',
+        'provider': 'raouf',
+        'rating': 4.3
+      },
+      {
+        'id': 'service_009',
+        'name': appLocalizations.service(9),
+        'image': 'assets/images/service9.png',
+        'provider': 'mouh',
+        'rating': 4.4
+      },
+      {
+        'id': 'service_010',
+        'name': appLocalizations.service(10),
+        'image': 'assets/images/service10.png',
+        'provider': 'fares',
+        'rating': 4.2
+      },
+      {
+        'id': 'service_011',
+        'name': appLocalizations.service(11),
+        'image': 'assets/images/service11.png',
+        'provider': 'ziad',
+        'rating': 3.8
+      },
+      {
+        'id': 'service_012',
+        'name': appLocalizations.service(12),
+        'image': 'assets/images/service12.png',
+        'provider': 'anas',
+        'rating': 4.1
+      },
+      {
+        'id': 'service_013',
+        'name': appLocalizations.service(13),
+        'image': 'assets/images/service13.png',
+        'provider': 'raouf',
+        'rating': 4.6
+      },
+      {
+        'id': 'service_014',
+        'name': appLocalizations.service(14),
+        'image': 'assets/images/service14.png',
+        'provider': 'mouh',
+        'rating': 4.5
+      },
+    ];
+
+    // Update filtered services if not yet initialized
+    if (filteredServices.isEmpty) {
+      filteredServices = services;
+    }
 
     return Scaffold(
       body: Padding(
