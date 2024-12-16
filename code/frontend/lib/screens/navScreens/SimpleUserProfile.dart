@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:hanini_frontend/localization/app_localization.dart';
 import 'package:hanini_frontend/screens/become_provider_screen/onboarding2.dart';
 
 class SimpleUserProfile extends StatefulWidget {
@@ -56,29 +57,30 @@ class _SimpleUserProfileState extends State<SimpleUserProfile> {
     }
   }
 
-Future<void> saveUserData() async {
-  try {
-    final User? user = _auth.currentUser;
-    if (user != null) {
-      // Update Firestore
-      await _firestore.collection('users').doc(user.uid).update({
-        'name': userName,
-        'aboutMe': aboutMe,
-      });
+  Future<void> saveUserData() async {
+    try {
+      final User? user = _auth.currentUser;
+      if (user != null) {
+        // Update Firestore
+        await _firestore.collection('users').doc(user.uid).update({
+          'name': userName,
+          'aboutMe': aboutMe,
+        });
 
-      // Update FirebaseAuth user profile
-      await user.updateDisplayName(userName);
-      await user.reload(); // Refresh the current user
-      debugPrint('User data updated successfully');
+        // Update FirebaseAuth user profile
+        await user.updateDisplayName(userName);
+        await user.reload(); // Refresh the current user
+        debugPrint('User data updated successfully');
+      }
+    } catch (e) {
+      debugPrint('Error saving user data: $e');
     }
-  } catch (e) {
-    debugPrint('Error saving user data: $e');
   }
-}
-
 
   @override
   Widget build(BuildContext context) {
+    final AppLocalizations? localization = AppLocalizations.of(context); // Get localization
+
     return Scaffold(
       body: isLoading
           ? const Center(child: CircularProgressIndicator())
@@ -86,17 +88,17 @@ Future<void> saveUserData() async {
               padding: EdgeInsets.zero,
               children: [
                 const SizedBox(height: 50),
-                buildTop(),
+                buildTop(localization!),
                 const SizedBox(height: 30),
-                buildProfileInfo(),
+                buildProfileInfo(localization),
                 const SizedBox(height: 60),
-                buildBecomeProviderButton(),
+                buildBecomeProviderButton(localization),
               ],
             ),
       floatingActionButton: FloatingActionButton(
         onPressed: toggleEditMode,
         child: Icon(isEditMode ? Icons.check : Icons.edit),
-        tooltip: isEditMode ? 'Save Changes' : 'Edit Profile',
+        tooltip: isEditMode ? localization?.save : localization?.editProfile, // Use localization
       ),
     );
   }
@@ -113,7 +115,7 @@ Future<void> saveUserData() async {
     });
   }
 
-  Widget buildTop() {
+  Widget buildTop(AppLocalizations localization) {
     return Column(
       children: [
         Stack(
@@ -147,9 +149,9 @@ Future<void> saveUserData() async {
                 padding: const EdgeInsets.symmetric(horizontal: 16),
                 child: TextField(
                   controller: nameController,
-                  decoration: const InputDecoration(
+                  decoration: InputDecoration(
                     border: OutlineInputBorder(),
-                    labelText: 'Name',
+                    labelText: localization.name, // Use localization
                   ),
                 ),
               )
@@ -167,7 +169,7 @@ Future<void> saveUserData() async {
     );
   }
 
-  Widget buildProfileInfo() {
+  Widget buildProfileInfo(AppLocalizations localization) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16),
       child: Card(
@@ -178,18 +180,18 @@ Future<void> saveUserData() async {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text(
-                'About Me',
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+              Text(
+                localization.aboutMe, // Use localization
+                style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
               ),
               const SizedBox(height: 8),
               isEditMode
                   ? TextField(
                       controller: aboutController,
                       maxLines: 4,
-                      decoration: const InputDecoration(
+                      decoration: InputDecoration(
                         border: OutlineInputBorder(),
-                        hintText: 'Write about yourself...',
+                        hintText: localization.aboutMe, // Use localization
                       ),
                     )
                   : Text(
@@ -205,7 +207,7 @@ Future<void> saveUserData() async {
     );
   }
 
-  Widget buildBecomeProviderButton() {
+  Widget buildBecomeProviderButton(AppLocalizations localization) {
     return Center(
       child: InkWell(
         onTap: () {
@@ -235,10 +237,10 @@ Future<void> saveUserData() async {
               ),
             ],
           ),
-          child: const Center(
+          child: Center(
             child: Text(
-              'Become a Provider',
-              style: TextStyle(
+              localization.becomeProviderButton, // Use localization
+              style: const TextStyle(
                 color: Colors.white,
                 fontSize: 18,
                 fontWeight: FontWeight.bold,
