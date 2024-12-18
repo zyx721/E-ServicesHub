@@ -372,7 +372,7 @@ Widget _buildAdsSlider(List<String> adImages) {
                                             ),
                                             maxLines: 1,
                                           ),
-                                          _buildStarRating(service['rating']),
+                                          _buildStarRating(service['rating'].toDouble()),
                                         ],
                                       ),
                                     ),

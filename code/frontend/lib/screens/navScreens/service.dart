@@ -6,6 +6,7 @@ import 'package:path/path.dart' as path;
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:flutter_rating_bar/flutter_rating_bar.dart';
 
 class ServiceProviderFullProfile extends StatefulWidget {
   final String providerId;
@@ -126,156 +127,422 @@ class _ServiceProviderFullProfileState extends State<ServiceProviderFullProfile>
     Navigator.pop(context); // Navigate back to the previous screen or navbar
   }
 
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
+@override
+Widget build(BuildContext context) {
+  return DefaultTabController(
+    length: 2, // Number of tabs
+    child: Scaffold(
       body: isLoading
           ? const Center(child: CircularProgressIndicator())
-          : ListView(
-              padding: EdgeInsets.zero,
+          : Column(
               children: [
-                buildTop(),
-                buildProfileInfo(),
+                buildTopProfileInfo(),
                 const SizedBox(height: 20),
-                _buildSectionTitle('Skills'),
-                _buildSkillsSection(),
-                const SizedBox(height: 20),
-                _buildSectionTitle('Work Experience'),
-                _buildWorkExperienceSection(),
-                const SizedBox(height: 20),
-                buildPortfolioSection(),
-                const SizedBox(height: 20),
-                _buildSectionTitle('Certifications'),
-                _buildCertificationsSection(),
-                const SizedBox(height: 20),
-                const SizedBox(height: 20),
-                _buildContactButton(),
+                TabBar(
+                  labelColor: Colors.black,
+                  unselectedLabelColor: Colors.grey,
+                  indicatorColor: Colors.blue,
+                  tabs: const [
+                    Tab(text: 'Profile'),
+                    Tab(text: 'Reviews'),
+                  ],
+                ),
+                Expanded(
+                  child: TabBarView(
+                    children: [
+                      SingleChildScrollView(
+                        child: Column(
+                          children: [
+                            buildProfileTab(), // Profile content
+                          ],
+                        ),
+                      ),
+                      buildReviewsTab(), // Reviews content
+                    ],
+                  ),
+                ),
               ],
             ),
-      floatingActionButton: isEditMode
-          ? ElevatedButton(
-              onPressed: toggleEditMode,
-              child: const Text('Save'),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.blue,
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 40, vertical: 12),
-              ),
-            )
-          : null, // Hide the button when not in edit mode
-    );
-  }
+    ),
+  );
+}
 
-  Widget buildTop() {
-    return Center(
-      child: Column(
+Widget buildReviewsTab() {
+  return FutureBuilder<DocumentSnapshot>(
+    future: _firestore.collection('users').doc(widget.providerId).get(),
+    builder: (context, snapshot) {
+      if (snapshot.connectionState == ConnectionState.waiting) {
+        return const Center(child: CircularProgressIndicator());
+      }
+
+      if (snapshot.hasError) {
+        return Center(
+          child: Text(
+            'Error fetching reviews. Please try again later.',
+            style: GoogleFonts.poppins(fontSize: 16, color: Colors.red),
+          ),
+        );
+      }
+
+      if (!snapshot.hasData || !snapshot.data!.exists) {
+        return Center(
+          child: Text(
+            'No reviews available.',
+            style: GoogleFonts.poppins(fontSize: 16, fontStyle: FontStyle.italic),
+          ),
+        );
+      }
+
+      final providerData = snapshot.data!.data() as Map<String, dynamic>;
+      final reviews = providerData['reviews'] ?? [];
+
+      return Column(
         children: [
-          const SizedBox(height: 40),
-          Stack(
-            alignment: Alignment.bottomRight,
-            children: [
-              CircleAvatar(
-                radius: profileHeight / 2,
-                backgroundColor: Colors.grey.shade200,
-                backgroundImage: userPhotoUrl.isNotEmpty
-                    ? NetworkImage(userPhotoUrl) as ImageProvider
-                    : const AssetImage('assets/images/default_profile.png'),
-              ),
-              if (isEditMode)
-                GestureDetector(
-                  onTap: () {
-                    pickNewProfilePicture();
-                  },
-                  child: Container(
-                    padding: const EdgeInsets.all(6),
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      color: Colors.blue,
+          Expanded(
+            child: reviews.isEmpty
+                ? Center(
+                    child: Text(
+                      'No reviews available.',
+                      style: GoogleFonts.poppins(
+                          fontSize: 16, fontStyle: FontStyle.italic),
                     ),
-                    child: const Icon(
-                      Icons.camera_alt,
-                      size: 20,
-                      color: Colors.white,
-                    ),
+                  )
+                : ListView.builder(
+                    padding: const EdgeInsets.all(16.0),
+                    itemCount: reviews.length,
+                    itemBuilder: (context, index) {
+                      final review = reviews[index] as Map<String, dynamic>;
+                      final comment = review['comment'] ?? 'No comment provided';
+                      final commenterId = review['id_commentor'] ?? 'Unknown';
+                      final rating = review['rating']?.toDouble() ?? 0.0;
+
+                      return FutureBuilder<DocumentSnapshot>(
+                        future: _firestore.collection('users').doc(commenterId).get(),
+                        builder: (context, commenterSnapshot) {
+                          if (commenterSnapshot.connectionState ==
+                              ConnectionState.waiting) {
+                            return const Center(child: CircularProgressIndicator());
+                          }
+
+                          final commenterData =
+                              commenterSnapshot.data?.data() as Map<String, dynamic>? ?? {};
+                          final commenterName = commenterData['name'] ?? 'Anonymous';
+                          final commenterPhoto =
+                              commenterData['photoURL'] ?? '';
+
+                          return Card(
+                            margin: const EdgeInsets.symmetric(vertical: 8),
+                            child: Padding(
+                              padding: const EdgeInsets.all(12.0),
+                              child: Row(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  CircleAvatar(
+                                    radius: 20,
+                                    backgroundImage: commenterPhoto.isNotEmpty
+                                        ? NetworkImage(commenterPhoto)
+                                        : const AssetImage(
+                                                'assets/images/default_profile.png')
+                                            as ImageProvider,
+                                  ),
+                                  const SizedBox(width: 12),
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        Text(
+                                          commenterName,
+                                          style: GoogleFonts.poppins(
+                                              fontWeight: FontWeight.w600),
+                                        ),
+                                        const SizedBox(height: 4),
+                                        _buildStarRating(rating),
+                                        const SizedBox(height: 8),
+                                        Text(
+                                          comment,
+                                          style: GoogleFonts.poppins(
+                                              color: Colors.grey[700]),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          );
+                        },
+                      );
+                    },
                   ),
-                ),
-            ],
           ),
-          const SizedBox(height: 20),
-          Text(
-            userName,
-            style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
-          ),
-          const SizedBox(height: 4),
-          Text(
-            profession,
-            style: TextStyle(fontSize: 16, color: Colors.grey.shade700),
-          ),
-        ],
+GestureDetector(
+  onTap: _showAddReviewDialog,
+  child: Container(
+    padding: EdgeInsets.all(10), // Optional padding for touchable area
+    decoration: BoxDecoration(
+      color: Colors.blue, // Button color
+    ),
+    child: Center(
+      child: Text(
+        'Add Review',
+        style: GoogleFonts.poppins(
+          color: Colors.white, // Text color
+        ),
       ),
-    );
-  }
+    ),
+  ),
+),
 
-  Widget buildProfileInfo() {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16),
-      child: Column(
-        children: [
-          const SizedBox(height: 20),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              buildStat('Projects', '0'),
-              buildStat('Rating', _buildStarRating(rating)),
-              buildStat('Hourly Rate',
-                  isEditMode ? buildHourlyRateEditor() : '$hourlyRate DZD'),
-            ],
-          ),
-          const SizedBox(height: 24),
-          Align(
-            alignment: Alignment.centerLeft,
-            child: const Text(
-              'About Me',
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+        ],
+      );
+    },
+  );
+}
+
+
+
+void _showAddReviewDialog() {
+  final TextEditingController commentController = TextEditingController();
+  double newRating = 3.0; // Default rating
+
+  showDialog(
+    context: context,
+    builder: (context) {
+      return LayoutBuilder(
+        builder: (context, constraints) {
+          return AlertDialog(
+            title: Text('Add a Review', style: GoogleFonts.poppins()),
+            content: SingleChildScrollView(
+              child: ConstrainedBox(
+                constraints: BoxConstraints(
+                  maxHeight: constraints.maxHeight * 0.6, // Use 60% of available height
+                ),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    TextField(
+                      controller: commentController,
+                      decoration: const InputDecoration(
+                        labelText: 'Comment',
+                        border: OutlineInputBorder(),
+                      ),
+                      maxLines: 3, // Limit TextField height
+                    ),
+                    const SizedBox(height: 16),
+                    RatingBar.builder(
+                      initialRating: newRating,
+                      minRating: 0.5,
+                      direction: Axis.horizontal,
+                      allowHalfRating: true,
+                      itemCount: 5,
+                      itemPadding: const EdgeInsets.symmetric(horizontal: 2.5),
+                      itemBuilder: (context, _) => const Icon(
+                        Icons.star,
+                        color: Colors.amber,
+                      ),
+                      onRatingUpdate: (rating) {
+                        newRating = rating;
+                      },
+                    ),
+                  ],
+                ),
+              ),
             ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: Text('Cancel', style: GoogleFonts.poppins()),
+              ),
+              ElevatedButton(
+                onPressed: () async {
+                  if (commentController.text.trim().isEmpty) return;
+
+                  final user = FirebaseAuth.instance.currentUser;
+                  if (user == null) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('You must be logged in to add a review')),
+                    );
+                    return;
+                  }
+
+                  final review = {
+                    'comment': commentController.text.trim(),
+                    'rating': newRating,
+                    'id_commentor': user.uid,
+                  };
+
+                  try {
+                    // Add the new review
+                    final providerRef = _firestore.collection('users').doc(widget.providerId);
+                    await providerRef.update({
+                      'reviews': FieldValue.arrayUnion([review]),
+                    });
+
+                    // Fetch all reviews to calculate the new average rating
+                    final providerDoc = await providerRef.get();
+                    final providerData = providerDoc.data() as Map<String, dynamic>;
+                    final reviews = providerData['reviews'] as List<dynamic> ?? [];
+
+                    double totalRating = 0.0;
+                    for (var rev in reviews) {
+                      totalRating += (rev['rating'] as num).toDouble();
+                    }
+                    final newAverageRating = totalRating / reviews.length;
+
+                    // Update the provider's overall rating
+                    await providerRef.update({
+                      'rating': newAverageRating,
+                    });
+
+                    Navigator.pop(context);
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('Review added successfully!')),
+                    );
+
+                    setState(() {}); // Refresh the UI
+                  } catch (e) {
+                    debugPrint('Error adding review: $e');
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('Failed to add review. Please try again.')),
+                    );
+                  }
+                },
+                child: Text('Submit', style: GoogleFonts.poppins()),
+              ),
+            ],
+          );
+        },
+      );
+    },
+  );
+}
+Widget buildProfileTab() {
+  return  // Make sure everything is scrollable
+    Column(
+      children: [
+         const SizedBox(height: 20),
+        buildAboutMeSection(),
+        const SizedBox(height: 20),
+        _buildSectionTitle('Skills'),
+        _buildSkillsSection(),
+        const SizedBox(height: 20),
+        _buildSectionTitle('Work Experience'),
+        _buildWorkExperienceSection(),
+        const SizedBox(height: 20),
+        buildPortfolioSection(),
+        const SizedBox(height: 20),
+        _buildSectionTitle('Certifications'),
+        _buildCertificationsSection(),
+        const SizedBox(height: 20),
+        const SizedBox(height: 20),
+        _buildContactButton(),
+      ],
+    );
+}
+
+
+
+Widget buildTopProfileInfo() {
+  return Column(
+    crossAxisAlignment: CrossAxisAlignment.center,
+    children: [
+      const SizedBox(height: 40),
+      Stack(
+        alignment: Alignment.bottomRight,
+        children: [
+          CircleAvatar(
+            radius: profileHeight / 2,
+            backgroundColor: Colors.grey.shade200,
+            backgroundImage: userPhotoUrl.isNotEmpty
+                ? NetworkImage(userPhotoUrl) as ImageProvider
+                : const AssetImage('assets/images/default_profile.png'),
           ),
-          const SizedBox(height: 8),
-          isEditMode
-              ? TextField(
-                  controller: aboutMeController,
-                  onChanged: (value) => aboutMe = value,
-                  maxLines: 4,
-                  decoration: const InputDecoration(
-                    border: OutlineInputBorder(),
-                    hintText: 'Write about yourself...',
-                  ),
-                )
-              : Text(
-                  aboutMe,
-                  style: TextStyle(fontSize: 14, color: Colors.grey.shade700),
-                  textAlign: TextAlign.justify,
-                ),
         ],
       ),
-    );
+      const SizedBox(height: 20),
+      Text(
+        userName,
+        style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+      ),
+      const SizedBox(height: 4),
+      Text(
+        profession,
+        style: TextStyle(fontSize: 16, color: Colors.grey.shade700),
+      ),
+      const SizedBox(height: 20),
+      Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceAround, // Center items evenly
+          children: [
+            buildStat('Projects', '0'),
+            buildStat('Rating', _buildStarRating(rating)),
+            buildStat('Hourly Rate', isEditMode ? buildHourlyRateEditor() : '$hourlyRate DZD',
+            ),
+          ],
+        ),
+      ),
+    ],
+  );
+}
+
+
+
+
+  Column buildAboutMeSection() {
+    return Column(
+          children: [
+            _buildSectionTitle('About Me'),
+            const SizedBox(height: 8),
+             Text(
+                    aboutMe,
+                    style: TextStyle(fontSize: 14, color: Colors.grey.shade700),
+                    textAlign: TextAlign.justify,
+                  ),
+          ],
+        );
   }
 
   Widget _buildSkillsSection() {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16.0),
-      child: Wrap(
-        spacing: 8,
-        runSpacing: 8,
-        alignment: WrapAlignment.start,
-        children: skills
-            .map((skill) => Chip(
-                  label: Text(skill, style: GoogleFonts.poppins()),
-                  backgroundColor: Colors.blue.shade50,
-                ))
-            .toList(),
+  return Padding(
+    padding: const EdgeInsets.symmetric(horizontal: 16.0),
+    child: Align(
+      alignment: Alignment.topLeft,
+      child: Column( 
+        children: [
+          if (skills.isNotEmpty)
+            Wrap(  
+              spacing: 8.0,
+              runSpacing: 4.0,
+              children: skills
+                  .map(
+                    (skill) => Padding(
+                      padding: const EdgeInsets.all(4.0),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 8.0),
+                        decoration: BoxDecoration(
+                          color: Colors.blue.shade50,
+                          borderRadius: BorderRadius.circular(16.0),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Text(skill, style: GoogleFonts.poppins()),
+                          ],
+                        ),
+                      ),
+                    ),
+                  )
+                  .toList(),
+            )
+          else
+            const Center(child: Text('No skills available')),
+        ],
       ),
-    );
-  }
+    ),
+  );
+}
 
   Widget _buildWorkExperienceSection() {
     return Padding(
@@ -384,7 +651,6 @@ class _ServiceProviderFullProfileState extends State<ServiceProviderFullProfile>
             style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
           ),
         if (value is Widget) value,
-        const SizedBox(height: 4),
         Text(
           title,
           style: TextStyle(fontSize: 14, color: Colors.grey.shade600),
@@ -422,8 +688,10 @@ class _ServiceProviderFullProfileState extends State<ServiceProviderFullProfile>
   }
 
     Widget _buildSectionTitle(String title) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 16.0),
+  return Padding(
+    padding: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 16.0),
+    child: Align(
+      alignment: Alignment.centerLeft,  // Align title to the start
       child: Text(
         title,
         style: GoogleFonts.poppins(
@@ -432,54 +700,9 @@ class _ServiceProviderFullProfileState extends State<ServiceProviderFullProfile>
           color: Colors.black87,
         ),
       ),
-    );
-  }
-
-  // Widget _buildReviewsSection() {
-  //   return Column(
-  //     children: (_providerData['reviews'] as List<Map<String, dynamic>>)
-  //         .map((review) => Card(
-  //               margin: const EdgeInsets.symmetric(vertical: 8),
-  //               child: Padding(
-  //                 padding: const EdgeInsets.all(12.0),
-  //                 child: Column(
-  //                   crossAxisAlignment: CrossAxisAlignment.start,
-  //                   children: [
-  //                     Row(
-  //                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
-  //                       children: [
-  //                         Text(
-  //                           review['name'],
-  //                           style: GoogleFonts.poppins(
-  //                             fontWeight: FontWeight.w600,
-  //                           ),
-  //                         ),
-  //                         Row(
-  //                           children: List.generate(
-  //                             review['rating'].toInt(),
-  //                             (index) => const Icon(
-  //                               Icons.star,
-  //                               color: Colors.amber,
-  //                               size: 16,
-  //                             ),
-  //                           ),
-  //                         ),
-  //                       ],
-  //                     ),
-  //                     const SizedBox(height: 8),
-  //                     Text(
-  //                       review['comment'],
-  //                       style: GoogleFonts.poppins(
-  //                         color: Colors.grey[700],
-  //                       ),
-  //                     ),
-  //                   ],
-  //                 ),
-  //               ),
-  //             ))
-  //         .toList(),
-  //   );
-  // }
+    ),
+  );
+}
 
   Widget _buildContactButton() {
     return Center(

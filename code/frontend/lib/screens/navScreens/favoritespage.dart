@@ -220,7 +220,7 @@ class _FavoritesPageState extends State<FavoritesPage> {
                         maxLines: 1,
                       ),
                       const SizedBox(height: 4),
-                      _buildStarRating(service['rating']),
+                      _buildStarRating(service['rating'].toDouble()),
                     ],
                   ),
                 ),
