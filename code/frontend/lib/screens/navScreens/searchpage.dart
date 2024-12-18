@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:hanini_frontend/screens/navScreens/service.dart';
 
 class SearchPage extends StatefulWidget {
   const SearchPage({Key? key}) : super(key: key);
@@ -177,7 +178,7 @@ class _SearchPageState extends State<SearchPage> {
                 itemBuilder: (context, index) {
                   final service = filteredServices[index];
                   final isFavorite = likedServiceIds.contains(service['uid']);
-                  return _buildServiceItem(service, isFavorite);
+                  return _buildServiceItem(service, isFavorite,service['uid']);
                 },
               ),
             ),
@@ -200,10 +201,15 @@ class _SearchPageState extends State<SearchPage> {
     );
   }
 
-  Widget _buildServiceItem(Map<String, dynamic> service, bool isFavorite) {
+  Widget _buildServiceItem(Map<String, dynamic> service, bool isFavorite,String serviceId) {
     return GestureDetector(
       onTap: () {
-        // Replace with your navigation logic
+            Navigator.push(
+      context, 
+      MaterialPageRoute(
+        builder: (context) => ServiceProviderFullProfile(providerId: serviceId, ),
+      ),
+    );
       },
       child: Card(
         shape: RoundedRectangleBorder(
