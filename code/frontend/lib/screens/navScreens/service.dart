@@ -103,29 +103,7 @@ class _ServiceProviderFullProfileState extends State<ServiceProviderFullProfile>
     });
   }
 
-  // Pick a new portfolio image and save it to local storage
-  Future<void> pickNewPortfolioImage() async {
-    final ImagePicker picker = ImagePicker();
-    final XFile? pickedFile =
-        await picker.pickImage(source: ImageSource.gallery);
-    if (pickedFile != null) {
-      final directory = await getApplicationDocumentsDirectory();
-      final fileName = path.basename(pickedFile.path);
-      final newDirPath =
-          '${directory.path}/saved_images'; // Path for saving images
-      final newFile = File('$newDirPath/$fileName');
 
-      // Ensure the directory exists
-      Directory(newDirPath).createSync();
-
-      // Copy the image to the app's local directory
-      await File(pickedFile.path).copy(newFile.path);
-
-      setState(() {
-        portfolioImages.add(newFile.path); // Add new image to the list
-      });
-    }
-  }
 
   // Toggle edit mode and save changes
   void toggleEditMode() {
@@ -353,11 +331,7 @@ class _ServiceProviderFullProfileState extends State<ServiceProviderFullProfile>
                     );
                   })
               : const Center(child: Text('No portfolio images available')),
-          const SizedBox(height: 16),
-          ElevatedButton(
-            onPressed: pickNewPortfolioImage,
-            child: const Text('Add Portfolio Image'),
-          ),
+          
         ],
       ),
     );

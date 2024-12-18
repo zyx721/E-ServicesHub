@@ -587,10 +587,12 @@ Widget buildPortfolioSection() {
                 })
             : const Center(child: Text('No portfolio images available')),
         const SizedBox(height: 16),
-        ElevatedButton(
-          onPressed: pickNewPortfolioImage,
-          child: const Text('Add Portfolio Image'),
-        ),
+        isEditMode
+          ? ElevatedButton(
+              onPressed: pickNewPortfolioImage,
+              child: const Text('Add Portfolio Image'),
+            )
+          : const SizedBox.shrink(),
       ],
     ),
   );
