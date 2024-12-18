@@ -33,6 +33,7 @@ class _ServiceProviderProfileState extends State<ServiceProviderProfile2> {
   bool isEditMode = false;
   bool isVerified = true;
   bool isLoading = true;
+  double rating =0.0;
 
   final TextEditingController nameController = TextEditingController();
   final TextEditingController hourlyRateController = TextEditingController();
@@ -59,6 +60,9 @@ class _ServiceProviderProfileState extends State<ServiceProviderProfile2> {
             skills = data['skills'];
             certifications = data['certifications'];
             workExperience = data['workExperience'];
+            rating = (data['rating'] ?? 0.0).toDouble();
+
+
             nameController.text = userName;
             aboutMeController.text = aboutMe;
             hourlyRateController.text = hourlyRate;
@@ -301,7 +305,7 @@ Widget build(BuildContext context) {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               buildStat('Projects', '0'),
-              buildStat('Rating', _buildStarRating(0)),
+              buildStat('Rating', _buildStarRating(rating)),
               buildStat('Hourly Rate',
                   isEditMode ? buildHourlyRateEditor() : '$hourlyRate DZD'),
             ],
@@ -715,22 +719,30 @@ Widget _buildCertificationsSection() {
     );
   }
 
-  Widget _buildStarRating(double rating) {
-    int fullStars = rating.floor();
-    int halfStars = (rating - fullStars) >= 0.5 ? 1 : 0;
-
-    return Row(
-      children: List.generate(5, (index) {
-        if (index < fullStars) {
-          return const Icon(Icons.star, color: Colors.yellow, size: 16);
-        } else if (index < fullStars + halfStars) {
-          return const Icon(Icons.star_half, color: Colors.yellow, size: 16);
-        } else {
-          return const Icon(Icons.star_border, color: Colors.yellow, size: 16);
-        }
-      }),
-    );
+Widget _buildStarRating(double? rating) {
+  if (rating == null || rating < 0.0) {
+    rating = 0.0; // Default value for invalid or missing rating
   }
+
+  int fullStars = rating.floor();
+  bool hasHalfStar = (rating - fullStars) >= 0.5;
+
+  return Row(
+    mainAxisSize: MainAxisSize.min, // To prevent expanding
+    children: List.generate(5, (index) {
+      if (index < fullStars) {
+        // Full star
+        return const Icon(Icons.star, color: Colors.yellow, size: 16);
+      } else if (hasHalfStar && index == fullStars) {
+        // Half star
+        return const Icon(Icons.star_half, color: Colors.yellow, size: 16);
+      } else {
+        // Empty star
+        return const Icon(Icons.star_border, color: Colors.yellow, size: 16);
+      }
+    }),
+  );
+}
 
   
   Future<void> pickNewProfilePicture() async {

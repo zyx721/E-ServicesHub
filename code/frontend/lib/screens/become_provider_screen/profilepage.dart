@@ -87,7 +87,7 @@ class _ServiceProviderProfileState extends State<ServiceProviderProfile2> {
     try {
       // Update the Firestore document with the profile data
       await userDoc.update(profileData);
-
+      await userDoc.update({'rating': 0.0,});
       await userDoc.update({'isProvider': true,});
       await userDoc.update({'aboutMe': _descriptionController.text,});
 

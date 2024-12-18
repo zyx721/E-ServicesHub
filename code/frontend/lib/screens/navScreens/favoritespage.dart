@@ -2,7 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:hanini_frontend/localization/app_localization.dart';
 import 'package:hanini_frontend/screens/navScreens/service.dart';
-import 'package:shared_preferences/shared_preferences.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 class FavoritesPage extends StatefulWidget {
   const FavoritesPage({Key? key}) : super(key: key);
@@ -12,148 +13,102 @@ class FavoritesPage extends StatefulWidget {
 }
 
 class _FavoritesPageState extends State<FavoritesPage> {
-  // Full list of all services
-  final List<Map<String, dynamic>> allServices = [
-    {
-      'id': 'service_001',
-      'name': 'Painter',
-      'image': 'assets/images/service1.png',
-      'provider': 'ziad',
-      'rating': 4.5,
-    },
-    {
-      'id': 'service_002',
-      'name': 'Plumber',
-      'image': 'assets/images/service2.png',
-      'provider': 'anas',
-      'rating': 4.0,
-    },
-    {
-      'id': 'service_003',
-      'name': 'Big House Plumbing',
-      'image': 'assets/images/service3.png',
-      'provider': 'raouf',
-      'rating': 4.5,
-    },
-    {
-      'id': 'service_004',
-      'name': 'Electrical Engineer',
-      'image': 'assets/images/service4.png',
-      'provider': 'fares',
-      'rating': 5.0,
-    },
-    {
-      'id': 'service_005',
-      'name': 'Floor Cleaning',
-      'image': 'assets/images/service5.png',
-      'provider': 'Provider 5',
-      'rating': 4.2,
-    },
-    {
-      'id': 'service_005',
-      'name': 'Floor Cleaning',
-      'image': 'assets/images/service5.png',
-      'provider': 'Provider 5',
-      'rating': 4.2,
-    },
-    {
-      'id': 'service_007',
-      'name': 'Makeup Artist',
-      'image': 'assets/images/service7.png',
-      'provider': 'anas',
-      'rating': 4.5
-    },
-    {
-      'id': 'service_008',
-      'name': 'Private Tutor',
-      'image': 'assets/images/service8.png',
-      'provider': 'raouf',
-      'rating': 4.3
-    },
-    {
-      'id': 'service_009',
-      'name': 'Workout Coach',
-      'image': 'assets/images/service9.png',
-      'provider': 'mouh',
-      'rating': 4.4
-    },
-    {
-      'id': 'service_010',
-      'name': 'Therapy for Mental Help',
-      'image': 'assets/images/service10.png',
-      'provider': 'fares',
-      'rating': 4.2
-    },
-    {
-      'id': 'service_011',
-      'name': 'Locksmith',
-      'image': 'assets/images/service11.png',
-      'provider': 'ziad',
-      'rating': 3.8
-    },
-    {
-      'id': 'service_012',
-      'name': 'Guardian',
-      'image': 'assets/images/service12.png',
-      'provider': 'anas',
-      'rating': 4.1
-    },
-    {
-      'id': 'service_013',
-      'name': 'Chef',
-      'image': 'assets/images/service13.png',
-      'provider': 'raouf',
-      'rating': 4.6
-    },
-    {
-      'id': 'service_014',
-      'name': 'Solar Panel Installation',
-      'image': 'assets/images/service14.png',
-      'provider': 'mouh',
-      'rating': 4.5
-    },
-  ];
-
-  // List to store liked service IDs
-  List<String> likedServiceIds = [];
+  List<String> favoriteIds = [];
+  List<Map<String, dynamic>> favoriteServices = [];
 
   @override
   void initState() {
     super.initState();
-    _loadLikedServices();
+    _loadFavoritesFromFirebase();
   }
 
-  // Load liked services from SharedPreferences
-  Future<void> _loadLikedServices() async {
-    final prefs = await SharedPreferences.getInstance();
-    setState(() {
-      likedServiceIds = prefs.getStringList('likedServiceIds') ?? [];
-    });
-  }
+  Future<void> _loadFavoritesFromFirebase() async {
+    final userId = FirebaseAuth.instance.currentUser?.uid;
+    if (userId == null) return;
 
-  // Save liked services to SharedPreferences
-  Future<void> _saveLikedServices() async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setStringList('likedServiceIds', likedServiceIds);
-  }
+    try {
+      // Fetch favorite IDs from the Firebase collection
+      final userDoc = await FirebaseFirestore.instance
+          .collection('users')
+          .doc(userId)
+          .get();
 
-  // Get liked services
-  List<Map<String, dynamic>> get likedServices {
-    return allServices
-        .where((service) => likedServiceIds.contains(service['id']))
-        .toList();
-  }
+      if (userDoc.exists) {
+        final data = userDoc.data();
+        final ids = List<String>.from(data?['favorites'] ?? []);
 
-  void toggleFavorite(String serviceId) {
-    setState(() {
-      if (likedServiceIds.contains(serviceId)) {
-        likedServiceIds.remove(serviceId);
-      } else {
-        likedServiceIds.add(serviceId);
+        setState(() {
+          favoriteIds = ids;
+        });
+
+        // Load service details for each favorite ID
+        await _loadServiceDetails();
       }
-      _saveLikedServices();
-    });
+    } catch (e) {
+      debugPrint('Error loading favorites: $e');
+    }
   }
+
+  Future<void> _loadServiceDetails() async {
+    try {
+      final serviceSnapshots = await FirebaseFirestore.instance
+          .collection('users')
+          .where(FieldPath.documentId, whereIn: favoriteIds)
+          .get();
+
+      setState(() {
+        favoriteServices = serviceSnapshots.docs
+            .map((doc) => {'uid': doc.id, ...doc.data() as Map<String, dynamic>})
+            .toList();
+      });
+    } catch (e) {
+      debugPrint('Error loading service details: $e');
+    }
+  }
+
+  void toggleFavorite(Map<String, dynamic> service) async {
+  final userId = FirebaseAuth.instance.currentUser?.uid;
+  if (userId == null) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text('Please log in to add favorites')),
+    );
+    return;
+  }
+
+  try {
+    final userDocRef = FirebaseFirestore.instance.collection('users').doc(userId);
+    final serviceId = service['uid']; // Ensure you use the correct 'id'
+
+    final isCurrentlyFavorite = favoriteIds.contains(serviceId);
+
+    if (isCurrentlyFavorite) {
+      // Remove from favorites
+      await userDocRef.update({
+        'favorites': FieldValue.arrayRemove([serviceId]),
+      });
+
+      setState(() {
+        favoriteIds.remove(serviceId);
+        favoriteServices.removeWhere((s) => s['uid'] == serviceId);
+      });
+    } else {
+      // Add to favorites
+      await userDocRef.update({
+        'favorites': FieldValue.arrayUnion([serviceId]),
+      });
+
+      setState(() {
+        favoriteIds.add(serviceId);
+        favoriteServices.add(service);
+      });
+    }
+  } catch (e) {
+    debugPrint('Error updating favorites: $e');
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text('Failed to update favorites. Please try again!')),
+    );
+  }
+}
 
   @override
   Widget build(BuildContext context) {
@@ -167,7 +122,7 @@ class _FavoritesPageState extends State<FavoritesPage> {
           children: [
             const SizedBox(height: 20),
             Expanded(
-              child: likedServices.isEmpty
+              child: favoriteServices.isEmpty
                   ? Center(
                       child: Text(
                         'No favorite services yet',
@@ -178,7 +133,7 @@ class _FavoritesPageState extends State<FavoritesPage> {
                       ),
                     )
                   : GridView.builder(
-                      itemCount: likedServices.length,
+                      itemCount: favoriteServices.length,
                       gridDelegate:
                           const SliverGridDelegateWithFixedCrossAxisCount(
                         crossAxisCount: 2,
@@ -187,16 +142,8 @@ class _FavoritesPageState extends State<FavoritesPage> {
                         childAspectRatio: 0.8,
                       ),
                       itemBuilder: (context, index) {
-                        final service = likedServices[index];
-                        return _buildServiceItem(
-                          context,
-                          service['id']!,
-                          service['name']!,
-                          service['image']!,
-                          service['provider']!,
-                          service['rating']!,
-                          appLocalizations,
-                        );
+                        final service = favoriteServices[index];
+                        return _buildServiceCard(context, service);
                       },
                     ),
             ),
@@ -206,29 +153,23 @@ class _FavoritesPageState extends State<FavoritesPage> {
     );
   }
 
-  Widget _buildServiceItem(
-    BuildContext context,
-    String serviceId,
-    String serviceName,
-    String imagePath,
-    String providerName,
-    double rating,
-    AppLocalizations localizations,
-  ) {
+    Widget _buildServiceCard(BuildContext context, Map<String, dynamic> service) {
+    final isFavorite = favoriteIds.contains(service['uid']); // Use 'uid'
+
     return GestureDetector(
       onTap: () {
-        // Navigate to ServiceProviderFullProfile when service is tapped
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (context) => ServiceProviderFullProfile(
-              serviceId: serviceId,
-            ),
-          ),
-        );
-      },
+  // Navigate to FullProfilePage with the selected service's ID
+  Navigator.push(
+    context,
+    MaterialPageRoute(
+      builder: (context) => ServiceProviderFullProfile(
+        providerId: service['uid'], // Use 'uid' from the service map
+      ),
+    ),
+  );
+},
+
       child: Card(
-        elevation: 4,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(16),
         ),
@@ -238,67 +179,49 @@ class _FavoritesPageState extends State<FavoritesPage> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Expanded(
-                  flex: 3,
-                  child: Stack(
-                    fit: StackFit.expand,
-                    children: [
-                      ClipRRect(
-                        borderRadius: const BorderRadius.vertical(
-                          top: Radius.circular(16),
-                        ),
-                        child: Image.asset(
-                          imagePath,
-                          fit: BoxFit.cover,
-                        ),
-                      ),
-                      Positioned.fill(
-                        child: Container(
-                          decoration: BoxDecoration(
-                            gradient: LinearGradient(
-                              colors: [
-                                Colors.transparent,
-                                Colors.black.withOpacity(0.4),
-                              ],
-                              begin: Alignment.topCenter,
-                              end: Alignment.bottomCenter,
-                            ),
-                          ),
-                        ),
-                      ),
-                    ],
+                  child: ClipRRect(
+                    borderRadius: const BorderRadius.vertical(
+                      top: Radius.circular(16),
+                    ),
+                    child: Image.network(
+                      service['photoURL'] ?? '',
+                      fit: BoxFit.cover,
+                      width: double.infinity,
+                      errorBuilder: (context, error, stackTrace) {
+                        return const Center(
+                          child: Icon(Icons.broken_image,
+                              size: 50, color: Colors.grey),
+                        );
+                      },
+                    ),
                   ),
                 ),
-                Expanded(
-                  flex: 3,
-                  child: Padding(
-                    padding: const EdgeInsets.all(8.0),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Text(
-                          serviceName,
-                          style: GoogleFonts.poppins(
-                            fontSize: 14,
-                            fontWeight: FontWeight.bold,
-                          ),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
+                Padding(
+                  padding: const EdgeInsets.all(8.0),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        service['basicInfo']['profession'] ?? 'N/A',
+                        style: GoogleFonts.poppins(
+                          fontSize: 14,
+                          fontWeight: FontWeight.bold,
                         ),
-                        const SizedBox(height: 2),
-                        Text(
-                          '${localizations.provider}: $providerName',
-                          style: GoogleFonts.poppins(
-                            fontSize: 12,
-                            color: Colors.grey[600],
-                          ),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        service['name'] ?? 'Unknown',
+                        style: GoogleFonts.poppins(
+                          fontSize: 12,
+                          color: Colors.grey[600],
                         ),
-                        const SizedBox(height: 4),
-                        _buildStarRating(rating),
-                      ],
-                    ),
+                        maxLines: 1,
+                      ),
+                      const SizedBox(height: 4),
+                      _buildStarRating(service['rating']),
+                    ],
                   ),
                 ),
               ],
@@ -307,11 +230,11 @@ class _FavoritesPageState extends State<FavoritesPage> {
               top: 8,
               right: 8,
               child: IconButton(
-                icon: const Icon(
-                  Icons.favorite,
-                  color: Colors.red,
+                icon: Icon(
+                  isFavorite ? Icons.favorite : Icons.favorite_border,
+                  color: isFavorite ? Colors.red : Colors.grey,
                 ),
-                onPressed: () => toggleFavorite(serviceId),
+                onPressed: () => toggleFavorite(service),
               ),
             ),
           ],
@@ -337,5 +260,3 @@ class _FavoritesPageState extends State<FavoritesPage> {
     );
   }
 }
-
-
