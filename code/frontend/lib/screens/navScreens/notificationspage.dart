@@ -315,13 +315,6 @@ class _ReviewsTabState extends State<ReviewsTab> {
               const SizedBox(height: 6),
               _buildStarRating(rating),
               const SizedBox(height: 8),
-              Text(
-                comment,
-                style: GoogleFonts.poppins(
-                  color: Colors.grey[700],
-                  fontSize: 13,
-                ),
-              ),
               ],
               ),
 
@@ -358,6 +351,13 @@ class _ReviewsTabState extends State<ReviewsTab> {
                     ],
                   ),
                 ],
+              ),
+                Text(
+                comment,
+                style: GoogleFonts.poppins(
+                  color: Colors.grey[700],
+                  fontSize: 13,
+                ),
               ),
             ],
           ),
