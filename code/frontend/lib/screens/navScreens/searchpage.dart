@@ -45,32 +45,37 @@ class _SearchPageState extends State<SearchPage> {
     }
   }
 
-  Future<void> _loadServicesFromFirestore() async {
-    try {
-      QuerySnapshot snapshot = await FirebaseFirestore.instance
-          .collection('users')
-          .where('isProvider', isEqualTo: true)
-          .get();
+ Future<void> _loadServicesFromFirestore() async {
+  try {
+    final currentUserId = FirebaseAuth.instance.currentUser?.uid;
+    if (currentUserId == null) return;
 
-      final fetchedServices = snapshot.docs.map((doc) {
-        final data = doc.data() as Map<String, dynamic>?;
-        return {
-          'uid': doc.id,
-          'name': data?['name'] ?? 'Unknown',
-          'profession': data?['basicInfo']?['profession'] ?? 'Not specified',
-          'photoURL': data?['photoURL'] ?? '',
-          'rating': (data?['rating'] is num) ? (data?['rating'] as num).toDouble() : 0.0,
-        };
-      }).toList();
+    QuerySnapshot snapshot = await FirebaseFirestore.instance
+        .collection('users')
+        .where('isProvider', isEqualTo: true)
+        .get();
 
-      setState(() {
-        services = fetchedServices;
-        filteredServices = services;
-      });
-    } catch (e) {
-      debugPrint("Error fetching services: $e");
-    }
+    final fetchedServices = snapshot.docs
+        .where((doc) => doc.id != currentUserId) // Exclude current user
+        .map((doc) {
+      final data = doc.data() as Map<String, dynamic>?;
+      return {
+        'uid': doc.id,
+        'name': data?['name'] ?? 'Unknown',
+        'profession': data?['basicInfo']?['profession'] ?? 'Not specified',
+        'photoURL': data?['photoURL'] ?? '',
+        'rating': (data?['rating'] is num) ? (data?['rating'] as num).toDouble() : 0.0,
+      };
+    }).toList();
+
+    setState(() {
+      services = fetchedServices;
+      filteredServices = services;
+    });
+  } catch (e) {
+    debugPrint("Error fetching services: $e");
   }
+}
 
   void toggleFavorite(Map<String, dynamic> service) async {
     final userId = FirebaseAuth.instance.currentUser?.uid;

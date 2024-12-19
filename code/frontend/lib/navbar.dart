@@ -13,19 +13,20 @@ import 'package:hanini_frontend/localization/app_localization.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:hanini_frontend/screens/navScreens/notificationspage.dart'; // Replace with actual file path
+
 
 
 class NavbarPage extends StatefulWidget {
-  final UserRole userRole;
 
-  const NavbarPage({Key? key, required this.userRole}) : super(key: key);
+
+  const NavbarPage({Key? key}) : super(key: key);
 
   @override
   State<NavbarPage> createState() => _NavbarPageState();
 }
 
 class _NavbarPageState extends State<NavbarPage> {
-  late UserRole _currentUserRole;
   int selectedIndex = 0;
   List<Widget> screens = [];
   bool isLoading = true;
@@ -33,7 +34,6 @@ class _NavbarPageState extends State<NavbarPage> {
   @override
   void initState() {
     super.initState();
-    _currentUserRole = widget.userRole;
     _initializeScreens();
   }
 
@@ -137,17 +137,68 @@ Future<bool> _checkIfUserIsProvider() async {
                     ),
                     backgroundColor: Colors.transparent,
                     elevation: 0,
-                    actions: [
-                      IconButton(
-                        icon: Icon(
-                          Icons.notifications_outlined,
-                          color: Colors.white,
-                          size: 28,
-                        ),
-                        onPressed: () {},
-                      ),
-                      _buildLanguageDropdown(),
-                    ],
+actions: [
+  Stack(
+    alignment: Alignment.center,
+    children: [
+      IconButton(
+        icon: const Icon(
+          Icons.notifications_outlined,
+          color: Colors.white,
+          size: 28,
+        ),
+        onPressed: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => NotificationsPage(userId: _auth.currentUser?.uid ?? ''),
+            ),
+          );
+        },
+      ),
+      Positioned(
+        right: 4, // Adjust position to align badge properly
+        top: 8,
+        child: StreamBuilder<DocumentSnapshot>(
+          stream: FirebaseFirestore.instance
+              .collection('users')
+              .doc(_auth.currentUser?.uid ?? '')
+              .snapshots(),
+          builder: (context, snapshot) {
+            if (!snapshot.hasData || snapshot.data == null) {
+              return const SizedBox(); // Show nothing if no data
+            }
+            final data = snapshot.data!.data() as Map<String, dynamic>;
+            final unreadCount = data['newCommentsCount'] ?? 0;
+
+            if (unreadCount == 0) {
+              return const SizedBox(); // Show nothing if no unread comments
+            }
+
+            return Container(
+              padding: const EdgeInsets.all(5),
+              decoration: BoxDecoration(
+                color: Colors.red,
+                shape: BoxShape.circle,
+              ),
+              child: Text(
+                '$unreadCount',
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 12,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            );
+          },
+        ),
+      ),
+    ],
+  ),
+  _buildLanguageDropdown(),
+],
+
+
                   ),
                 ),
               ),

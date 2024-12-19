@@ -7,6 +7,8 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter_rating_bar/flutter_rating_bar.dart';
+import 'package:intl/intl.dart';
+
 
 class ServiceProviderFullProfile extends StatefulWidget {
   final String providerId;
@@ -215,6 +217,14 @@ Widget buildReviewsTab() {
                       final comment = review['comment'] ?? 'No comment provided';
                       final commenterId = review['id_commentor'] ?? 'Unknown';
                       final rating = review['rating']?.toDouble() ?? 0.0;
+                      final timestamp = review['timestamp'] ?? '';
+
+                      // Parse and format the timestamp
+                      final formattedTimestamp = timestamp.isNotEmpty
+                          ? DateFormat('MMM d, yyyy • h:mm a').format(
+                              DateTime.parse(timestamp),
+                            )
+                          : 'Unknown time';
 
                       return FutureBuilder<DocumentSnapshot>(
                         future: _firestore.collection('users').doc(commenterId).get(),
@@ -248,13 +258,25 @@ Widget buildReviewsTab() {
                                   const SizedBox(width: 12),
                                   Expanded(
                                     child: Column(
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.start,
+                                      crossAxisAlignment: CrossAxisAlignment.start,
                                       children: [
-                                        Text(
-                                          commenterName,
-                                          style: GoogleFonts.poppins(
-                                              fontWeight: FontWeight.w600),
+                                        Row(
+                                          mainAxisAlignment:
+                                              MainAxisAlignment.spaceBetween,
+                                          children: [
+                                            Text(
+                                              commenterName,
+                                              style: GoogleFonts.poppins(
+                                                  fontWeight: FontWeight.w600),
+                                            ),
+                                            Text(
+                                              formattedTimestamp,
+                                              style: GoogleFonts.poppins(
+                                                fontSize: 12,
+                                                color: Colors.grey[500],
+                                              ),
+                                            ),
+                                          ],
                                         ),
                                         const SizedBox(height: 4),
                                         _buildStarRating(rating),
@@ -276,24 +298,23 @@ Widget buildReviewsTab() {
                     },
                   ),
           ),
-GestureDetector(
-  onTap: _showAddReviewDialog,
-  child: Container(
-    padding: EdgeInsets.all(10), // Optional padding for touchable area
-    decoration: BoxDecoration(
-      color: Colors.blue, // Button color
-    ),
-    child: Center(
-      child: Text(
-        'Add Review',
-        style: GoogleFonts.poppins(
-          color: Colors.white, // Text color
-        ),
-      ),
-    ),
-  ),
-),
-
+          GestureDetector(
+            onTap: _showAddReviewDialog,
+            child: Container(
+              padding: const EdgeInsets.all(10), // Optional padding for touchable area
+              decoration: BoxDecoration(
+                color: Colors.blue, // Button color
+              ),
+              child: Center(
+                child: Text(
+                  'Add Review',
+                  style: GoogleFonts.poppins(
+                    color: Colors.white, // Text color
+                  ),
+                ),
+              ),
+            ),
+          ),
         ],
       );
     },
@@ -370,13 +391,17 @@ void _showAddReviewDialog() {
                     'comment': commentController.text.trim(),
                     'rating': newRating,
                     'id_commentor': user.uid,
+                    'timestamp': DateTime.now().toIso8601String(), // Store as ISO 8601 string
                   };
 
                   try {
-                    // Add the new review
+                    // Reference to the provider's document
                     final providerRef = _firestore.collection('users').doc(widget.providerId);
+
+                    // Add the new review
                     await providerRef.update({
                       'reviews': FieldValue.arrayUnion([review]),
+                      'newCommentsCount': FieldValue.increment(1), // Increment new comments count
                     });
 
                     // Fetch all reviews to calculate the new average rating

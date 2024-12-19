@@ -100,39 +100,52 @@ class _HomePageState extends State<HomePage> {
   }
 
   Future<void> _fetchServices() async {
-    if (_isFetching) return;
-    setState(() => _isFetching = true);
+  if (_isFetching) return;
+  setState(() => _isFetching = true);
 
-    try {
-      Query query = FirebaseFirestore.instance
-          .collection('users')
-          .where('isProvider', isEqualTo: true)
-          .limit(_pageSize);
+  try {
+    // Fetch services only for providers, excluding the current user
+    Query query = FirebaseFirestore.instance
+        .collection('users')
+        .where('isProvider', isEqualTo: true)
+        .limit(_pageSize);
 
-      // Start after the last document if it exists
-      if (_lastDocument != null) {
-        query = query.startAfterDocument(_lastDocument!);
-      }
-
-      final QuerySnapshot snapshot = await query.get();
-
-      if (snapshot.docs.isNotEmpty) {
-        setState(() {
-          _lastDocument = snapshot.docs.last;
-          services.addAll(snapshot.docs.map((doc) {
-            return {
-              ...doc.data() as Map<String, dynamic>,
-              'docId': doc.id,
-            };
-          }).toList());
-        });
-      }
-    } catch (e) {
-      debugPrint('Error fetching services: $e');
-    } finally {
-      setState(() => _isFetching = false);
+    // Start after the last document if it exists
+    if (_lastDocument != null) {
+      query = query.startAfterDocument(_lastDocument!);
     }
+
+    final QuerySnapshot snapshot = await query.get();
+
+    if (snapshot.docs.isNotEmpty) {
+      setState(() {
+        _lastDocument = snapshot.docs.last;
+
+        services.addAll(
+          snapshot.docs
+              .map((doc) {
+                final service = doc.data() as Map<String, dynamic>;
+                final serviceId = doc.id;
+                // Exclude the current user from the list of services
+                if (serviceId != currentUserId) {
+                  return {
+                    ...service,
+                    'docId': serviceId,
+                  };
+                } else {
+                  return null;
+                }
+              })
+              .whereType<Map<String, dynamic>>(), // Use `whereType` to filter non-null values
+        );
+      });
+    }
+  } catch (e) {
+    debugPrint('Error fetching services: $e');
+  } finally {
+    setState(() => _isFetching = false);
   }
+}
 
 
   Future<void> toggleFavorite(Map<String, dynamic> service) async {

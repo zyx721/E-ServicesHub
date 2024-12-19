@@ -21,9 +21,9 @@ void main() async {
 
   final initialRoute =
       await _determineInitialRoute(); // Determine initial route
-  UserRole userRole = await _retrieveUserRole();
+  
   runApp(
-      MyApp(cameras: cameras, userRole: userRole, initialRoute: initialRoute));
+      MyApp(cameras: cameras, initialRoute: initialRoute));
 }
 
 Future<String> _determineInitialRoute() async {
@@ -49,13 +49,11 @@ Future<UserRole> _retrieveUserRole() async {
 
 class MyApp extends StatefulWidget {
   final List<CameraDescription> cameras;
-  final UserRole userRole;
   final String initialRoute;
 
   const MyApp({
     Key? key,
     required this.cameras,
-    required this.userRole,
     required this.initialRoute,
   }) : super(key: key);
 
@@ -108,7 +106,7 @@ class _MyAppState extends State<MyApp> {
       '/': (context) => OnboardingScreen(),
       '/login': (context) => const LoginScreen(),
       '/signup': (context) => const SignupScreen(),
-      '/navbar': (context) => NavbarPage(userRole: widget.userRole),
+      '/navbar': (context) => NavbarPage(),
       '/name_entry': (context) => NameEntryScreen(),
       '/verification': (context) => RealTimeDetection(cameras: widget.cameras),
       '/settings': (context) => SettingsScreen(),
