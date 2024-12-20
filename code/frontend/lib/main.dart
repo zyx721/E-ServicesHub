@@ -9,6 +9,7 @@ import 'package:hanini_frontend/screens/become_provider_screen/NameEntryScreen.d
 import 'package:hanini_frontend/screens/onboarding/onboarding_screen.dart';
 import 'package:hanini_frontend/screens/verification/id_verification_screen.dart';
 import 'localization/app_localization.dart';
+import 'package:flutter/services.dart'; // Import SystemChrome
 import 'package:firebase_core/firebase_core.dart';
 import 'package:shared_preferences/shared_preferences.dart'; // Import SharedPreferences
 import 'navbar.dart';
@@ -17,7 +18,10 @@ void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   final cameras = await availableCameras();
   await Firebase.initializeApp(); // Initialize Firebase
-
+   SystemChrome.setPreferredOrientations([
+    DeviceOrientation.portraitUp,
+    DeviceOrientation.portraitDown,
+  ]);
   final initialRoute =
       await _determineInitialRoute(); // Determine initial route
   
