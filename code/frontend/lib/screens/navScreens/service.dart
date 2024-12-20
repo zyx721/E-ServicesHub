@@ -8,6 +8,8 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter_rating_bar/flutter_rating_bar.dart';
 import 'package:intl/intl.dart';
+import 'package:uuid/uuid.dart';
+import 'package:flutter/services.dart';
 
 
 class ServiceProviderFullProfile extends StatefulWidget {
@@ -22,6 +24,8 @@ class ServiceProviderFullProfile extends StatefulWidget {
 class _ServiceProviderFullProfileState extends State<ServiceProviderFullProfile> {
   final double profileHeight = 150;
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+  final String currentUserId = FirebaseAuth.instance.currentUser!.uid;
+
 
   List<String> portfolioImages = [];
   List<dynamic> skills = [];
@@ -779,16 +783,173 @@ Widget buildTopProfileInfo() {
               ),
             ),
             const SizedBox(height: 20),
-            ElevatedButton(
-              onPressed: () => Navigator.pop(context),
-              child: Text(
-                'Close',
-                style: GoogleFonts.poppins(),
-              ),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                ElevatedButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: Text(
+                    'Close',
+                    style: GoogleFonts.poppins(),
+                  ),
+                ),
+
+ ElevatedButton(
+  style: ElevatedButton.styleFrom(backgroundColor: Colors.blue),
+  onPressed: () {
+    _showContactDialog(widget.providerId, currentUserId); // Call your dialog function here
+  },
+  child: Text(
+    'Send Direct Listing',
+    style: GoogleFonts.poppins(),
+  ),
+),
+
+              ],
             ),
           ],
         ),
       ),
     );
   }
+
+  void _showContactDialog(String recipientUid, String senderUid) {
+  final _formKey = GlobalKey<FormState>();
+  String mainTitle = '';
+  String description = '';
+  String pay = '';
+  String location = '';
+
+  showDialog(
+    context: context,
+    builder: (context) => AlertDialog(
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(20),
+      ),
+      content: SingleChildScrollView(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              'Send Direct Job Listing',
+              style: GoogleFonts.poppins(
+                fontSize: 20,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+
+
+const SizedBox(height: 20),
+Form(
+  key: _formKey,
+  child: Column(
+    children: [
+      TextFormField(
+        decoration: const InputDecoration(labelText: 'Main Title'),
+        validator: (value) =>
+            value!.isEmpty ? 'Please enter a title' : null,
+        onSaved: (value) => mainTitle = value!,
+      ),
+      TextFormField(
+        decoration: const InputDecoration(labelText: 'Description'),
+        validator: (value) =>
+            value!.isEmpty ? 'Please enter a description' : null,
+        onSaved: (value) => description = value!,
+      ),
+      TextFormField(
+        decoration: const InputDecoration(labelText: 'Pay'),
+        keyboardType: TextInputType.number,
+        inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+        validator: (value) =>
+            value!.isEmpty ? 'Please enter the pay' : null,
+        onSaved: (value) => pay = value!,
+      ),
+      TextFormField(
+        decoration: const InputDecoration(labelText: 'Location'),
+        validator: (value) =>
+            value!.isEmpty ? 'Please enter a location' : null,
+        onSaved: (value) => location = value!,
+      ),
+    ],
+  ),
+),
+
+            const SizedBox(height: 20),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                ElevatedButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: Text(
+                    'Close',
+                    style: GoogleFonts.poppins(),
+                  ),
+                ),
+                ElevatedButton(
+                  onPressed: () async {
+                    if (_formKey.currentState!.validate()) {
+                      _formKey.currentState!.save();
+
+                      final uniqueId = Uuid().v4(); // Generate a unique ID
+
+
+                      // Save data to Firestore
+                      await FirebaseFirestore.instance
+                          .collection('users')
+                          .doc(senderUid)
+                          .update({
+                            'Listing_(sent)': FieldValue.arrayUnion([{
+                              'id': uniqueId, 
+                              'mainTitle': mainTitle,
+                              'description': description,
+                              'pay': pay,
+                              'location': location,
+                              'status':'pending',
+                              'timestamp': DateTime.now().toIso8601String(),
+                              'receiverUid': recipientUid,
+                            }]),
+                          });
+
+                      await FirebaseFirestore.instance
+                          .collection('users')
+                          .doc(recipientUid)
+                          .update({
+                            'Listing_(received)': FieldValue.arrayUnion([{
+                              'id': uniqueId, 
+                              'mainTitle': mainTitle,
+                              'description': description,
+                              'pay': pay,
+                              'location': location,
+                              'status':'Pending',
+                              'timestamp': DateTime.now().toIso8601String(),
+                              'senderUid': senderUid,
+                            }]),
+                          });
+
+                      // Close the dialog
+                      Navigator.pop(context);
+
+                      // Show a success message
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(content: Text('Job listing sent successfully!')),
+                      );
+                    }
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color.fromARGB(255, 52, 141, 237),
+                  ),
+                  child: Text(
+                    'Send Listing',
+                    style: GoogleFonts.poppins(),
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    ),
+  );
+}
+
 }
