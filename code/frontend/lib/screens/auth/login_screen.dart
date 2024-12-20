@@ -169,39 +169,55 @@ class _LoginScreenState extends State<LoginScreen>
 
   Future<void> _handleGoogleSignIn() async {
   try {
-    // Initialize GoogleSignIn instance
     final GoogleSignIn googleSignIn = GoogleSignIn();
-
-    // Attempt to sign in with Google
     final GoogleSignInAccount? googleUser = await googleSignIn.signIn();
 
     if (googleUser != null) {
       try {
-        // Proceed with Google Authentication
-        final GoogleSignInAuthentication googleAuth =
-            await googleUser.authentication;
+        final GoogleSignInAuthentication googleAuth = await googleUser.authentication;
         final AuthCredential credential = GoogleAuthProvider.credential(
           accessToken: googleAuth.accessToken,
           idToken: googleAuth.idToken,
         );
 
-        // Sign in to Firebase using the Google credentials
         final UserCredential userCredential =
             await FirebaseAuth.instance.signInWithCredential(credential);
         final User? user = userCredential.user;
 
         if (user != null) {
-          // Save or update user data in Firestore
+          // First, check if the user document already exists
+          final userDoc = await FirebaseFirestore.instance
+              .collection('users')
+              .doc(user.uid)
+              .get();
+
+          // Prepare the user data
+          Map<String, dynamic> userData = {
+            'uid': user.uid,
+            'email': user.email ?? 'No Email',
+            'lastSignIn': DateTime.now(),
+          };
+
+          // Only update name if it's not already set
+          if (!userDoc.exists || userDoc.data()?['name'] == null) {
+            userData['name'] = user.displayName ?? 'No Name';
+          }
+
+         if (!userDoc.exists || userDoc.data()?['photoURL'] == null || 
+    (userDoc.data()?['photoURL']?.isEmpty ?? true && user.photoURL != null && user.photoURL!.isNotEmpty)) {
+  userData['photoURL'] = user.photoURL ?? '';
+}
+
+          // If document doesn't exist, add createdAt
+          if (!userDoc.exists) {
+            userData['createdAt'] = DateTime.now();
+          }
+
+          // Update the document with merge
           await FirebaseFirestore.instance
               .collection('users')
               .doc(user.uid)
-              .set({
-            'uid': user.uid,
-            'name': user.displayName ?? 'No Name',
-            'email': user.email ?? 'No Email',
-            'createdAt': DateTime.now(),
-            'photoURL': user.photoURL ?? '',
-          }, SetOptions(merge: true)); // Merge with existing data
+              .set(userData, SetOptions(merge: true));
 
           // Show success message and navigate
           ScaffoldMessenger.of(context).showSnackBar(
@@ -210,9 +226,10 @@ class _LoginScreenState extends State<LoginScreen>
               backgroundColor: Colors.green,
             ),
           );
+          
           final prefs = await SharedPreferences.getInstance();
-            await prefs.setBool('isLoggedIn', true);
-          Navigator.pushNamed(context, '/navbar'); // Navigate to home screen
+          await prefs.setBool('isLoggedIn', true);
+          Navigator.pushNamed(context, '/navbar');
         } else {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
@@ -222,7 +239,6 @@ class _LoginScreenState extends State<LoginScreen>
           );
         }
       } on FirebaseAuthException catch (e) {
-        // Handle Firebase-specific errors
         if (e.code == 'account-exists-with-different-credential') {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
@@ -240,7 +256,6 @@ class _LoginScreenState extends State<LoginScreen>
         }
       }
     } else {
-      // Handle case where Google Sign-In was canceled
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Google Sign-In was canceled.'),
@@ -249,7 +264,6 @@ class _LoginScreenState extends State<LoginScreen>
       );
     }
   } catch (error) {
-    // Handle general errors
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text('Error during sign-in: ${error.toString()}'),
@@ -259,7 +273,6 @@ class _LoginScreenState extends State<LoginScreen>
     print('Error during Google Sign-In: $error');
   }
 }
-
   @override
   Widget build(BuildContext context) {
     final localizations =

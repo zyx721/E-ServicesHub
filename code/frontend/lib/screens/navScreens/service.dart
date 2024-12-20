@@ -62,6 +62,7 @@ class _ServiceProviderFullProfileState extends State<ServiceProviderFullProfile>
           skills = data['skills'];
           certifications = data['certifications'];
           workExperience = data['workExperience'];
+          portfolioImages = List<String>.from(data['portfolioImages'] ?? []);
           rating = (data['rating'] ?? 0.0).toDouble();
           isLoading = false;
         });
@@ -78,7 +79,7 @@ class _ServiceProviderFullProfileState extends State<ServiceProviderFullProfile>
   void initState() {
     super.initState();
     fetchProviderData();
-    _loadPortfolioImages();
+
   }
 
   @override
@@ -88,27 +89,6 @@ class _ServiceProviderFullProfileState extends State<ServiceProviderFullProfile>
     super.dispose();
   }
 
-  // Load saved portfolio images from local storage
-  Future<void> _loadPortfolioImages() async {
-    final directory = await getApplicationDocumentsDirectory();
-    final dirPath =
-        directory.path + '/saved_images'; // Change to your desired directory
-    final directoryExists = Directory(dirPath).existsSync();
-
-    if (!directoryExists) {
-      Directory(dirPath).createSync();
-    }
-
-    final List<FileSystemEntity> files = Directory(dirPath).listSync();
-
-    setState(() {
-      portfolioImages = files
-          .where((file) =>
-              file.path.endsWith('.jpg') || file.path.endsWith('.png'))
-          .map((file) => file.path)
-          .toList();
-    });
-  }
 
 
 
@@ -595,43 +575,47 @@ Widget buildTopProfileInfo() {
   }
 
   Widget buildPortfolioSection() {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Text(
-            'Portfolio',
-            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-          ),
-          const SizedBox(height: 8),
-          portfolioImages.isNotEmpty
-              ? GridView.builder(
-                  shrinkWrap: true,
-                  physics: const NeverScrollableScrollPhysics(),
-                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                    crossAxisCount: 3,
-                    crossAxisSpacing: 8,
-                    mainAxisSpacing: 8,
-                  ),
-                  itemCount: portfolioImages.length,
-                  itemBuilder: (context, index) {
-                    return GestureDetector(
-                      onTap: () {
-                        // Show image in full screen
-                      },
-                      child: Image.file(
-                        File(portfolioImages[index]),
-                        fit: BoxFit.cover,
+  return Padding(
+    padding: const EdgeInsets.symmetric(horizontal: 16),
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text(
+          'Portfolio',
+          style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+        ),
+        const SizedBox(height: 8),
+        portfolioImages.isNotEmpty
+            ? SingleChildScrollView(
+                scrollDirection: Axis.horizontal,
+                child: Row(
+                  children: portfolioImages.map((imageUrl) {
+                    return Padding(
+                      padding: const EdgeInsets.only(right: 8),
+                      child: Stack(
+                        children: [
+                          GestureDetector(
+                            onTap: () {
+                              // Show image in full screen
+                            },
+                            child: Image.network(
+                              imageUrl,
+                              width: 100, // Fixed width for consistency
+                              height: 100, // Fixed height for consistency
+                              fit: BoxFit.cover,
+                            ),
+                          ),
+                        ],
                       ),
                     );
-                  })
-              : const Center(child: Text('No portfolio images available')),
-          
-        ],
-      ),
-    );
-  }
+                  }).toList(),
+                ),
+              )
+            : const Center(child: Text('No portfolio images available')),
+      ],
+    ),
+  );
+}
 
   Widget _buildCertificationsSection() {
     return Padding(

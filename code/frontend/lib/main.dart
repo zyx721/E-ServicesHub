@@ -11,7 +11,6 @@ import 'package:hanini_frontend/screens/verification/id_verification_screen.dart
 import 'localization/app_localization.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:shared_preferences/shared_preferences.dart'; // Import SharedPreferences
-import 'user_role.dart';
 import 'navbar.dart';
 
 void main() async {
@@ -42,10 +41,6 @@ Future<String> _determineInitialRoute() async {
   return '/login'; // Default to login if not logged in
 }
 
-Future<UserRole> _retrieveUserRole() async {
-  // Replace with actual user role retrieval logic
-  return UserRole.client;
-}
 
 class MyApp extends StatefulWidget {
   final List<CameraDescription> cameras;
