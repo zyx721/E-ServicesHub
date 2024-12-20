@@ -5,6 +5,7 @@ import 'package:hanini_frontend/screens/become_provider_screen/profilepage.dart'
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:lottie/lottie.dart'; // Import the Lottie package
+import 'package:hanini_frontend/localization/app_localization.dart';
 
 class FaceCompareScreen extends StatefulWidget {
   @override
@@ -88,7 +89,8 @@ class _FaceCompareScreenState extends State<FaceCompareScreen> {
   Future<Map<String, dynamic>?> _submitFaceImage(String imagePath) async {
     final request = http.MultipartRequest(
       'POST',
-      Uri.parse('https://polite-schools-ask.loca.lt/compare-face/'),
+      Uri.parse(
+          'https://polite-schools-ask.loca.lt/compare-face/'), // Ensure this URL is correct
     );
 
     try {
@@ -99,7 +101,8 @@ class _FaceCompareScreenState extends State<FaceCompareScreen> {
       if (response.statusCode == 200) {
         return json.decode(responseData.body);
       } else {
-        print("Failed to submit face image: ${response.statusCode}");
+        print(
+            "Failed to submit face image: ${response.statusCode} - ${responseData.body}");
         return null;
       }
     } catch (e) {
@@ -128,19 +131,19 @@ class _FaceCompareScreenState extends State<FaceCompareScreen> {
   }
 
   void _showSupportDialog() {
+    final AppLocalizations appLocalizations = AppLocalizations.of(context)!;
     showDialog(
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
-          title: Text('Support'),
-          content: Text(
-              'Please ensure your face is clearly visible within the oval guide and look directly at the camera. Keep your face centered and maintain a neutral expression.'),
+          title: Text(appLocalizations.support),
+          content: Text(appLocalizations.faceVerificationSupportMessage),
           actions: <Widget>[
             TextButton(
               onPressed: () {
                 Navigator.of(context).pop();
               },
-              child: Text('OK'),
+              child: Text(appLocalizations.ok),
             ),
           ],
         );
@@ -156,6 +159,8 @@ class _FaceCompareScreenState extends State<FaceCompareScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final AppLocalizations appLocalizations = AppLocalizations.of(context)!;
+
     return Scaffold(
       appBar: PreferredSize(
         preferredSize: Size.fromHeight(64.0),
@@ -181,7 +186,7 @@ class _FaceCompareScreenState extends State<FaceCompareScreen> {
             backgroundColor: Colors.transparent,
             elevation: 0,
             title: Text(
-              'Face Verification',
+              appLocalizations.faceVerification,
               style: TextStyle(
                 fontSize: 22,
                 fontWeight: FontWeight.w600,
@@ -284,7 +289,7 @@ class _FaceCompareScreenState extends State<FaceCompareScreen> {
                                   ),
                                 )
                               : Text(
-                                  'Verify Face',
+                                  appLocalizations.verifyFace,
                                   style: TextStyle(
                                     color: Colors.white,
                                     fontSize: 18,

@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:hanini_frontend/localization/app_localization.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:path/path.dart' as path;
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -457,6 +458,8 @@ Widget buildPortfolioSection() {
 
   @override
 Widget build(BuildContext context) {
+  final localizations = AppLocalizations.of(context); // Get localization instance
+
   return Scaffold(
     body: isLoading
         ? const Center(child: CircularProgressIndicator())
@@ -465,19 +468,19 @@ Widget build(BuildContext context) {
               ListView(
                 padding: EdgeInsets.zero,
                 children: [
-                  buildTop(),
-                  buildProfileInfo(),
+                  buildTop(localizations!),
+                  buildProfileInfo(localizations),
                   const SizedBox(height: 20),
-                  _buildSectionTitle('Skills'),
-                  _buildSkillsSection(),
+                  _buildSectionTitle(localizations!.skills),
+                  _buildSkillsSection(localizations),
                   const SizedBox(height: 20),
-                  _buildSectionTitle('Work Experience'),
-                  _buildWorkExperienceSection(),
+                  _buildSectionTitle(localizations.workExperience),
+                  _buildWorkExperienceSection(localizations),
                   const SizedBox(height: 20),
-                  buildPortfolioSection(),
+                  buildPortfolioSection(localizations),
                   const SizedBox(height: 20),
-                  _buildSectionTitle('Certifications'),
-                  _buildCertificationsSection(),
+                  _buildSectionTitle(localizations.certifications),
+                  _buildCertificationsSection(localizations),
                 ],
               ),
               Positioned(
@@ -486,7 +489,7 @@ Widget build(BuildContext context) {
                 child: FloatingActionButton(
                   onPressed: toggleEditMode,
                   child: Icon(isEditMode ? Icons.check : Icons.edit),
-                  tooltip: isEditMode ? 'Save Changes' : 'Edit Profile',
+                  tooltip: isEditMode ? localizations.save : localizations.editProfile,
                   backgroundColor: const Color.fromARGB(255, 43, 133, 207),
                 ),
               ),
@@ -496,7 +499,7 @@ Widget build(BuildContext context) {
   );
 }
 
-  Widget buildTop() {
+  Widget buildTop(AppLocalizations localizations) {
     return Center(
       child: Column(
         children: [
@@ -537,9 +540,9 @@ Widget build(BuildContext context) {
                 padding: const EdgeInsets.symmetric(horizontal: 16),
                 child: TextField(
                   controller: nameController,
-                  decoration: const InputDecoration(
-                    border: OutlineInputBorder(),
-                    labelText: 'Name',
+                  decoration: InputDecoration(
+                    border: const OutlineInputBorder(),
+                    labelText: localizations.name,
                   ),
                 ),
               )
@@ -562,7 +565,7 @@ Widget build(BuildContext context) {
     );
   }
 
-  Widget buildProfileInfo() {
+  Widget buildProfileInfo(AppLocalizations localizations) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16),
       child: Column(
@@ -571,18 +574,18 @@ Widget build(BuildContext context) {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              buildStat('Projects', '0'),
-              buildStat('Rating', _buildStarRating(rating)),
-              buildStat('Hourly Rate',
+              buildStat(localizations.projects, '0'),
+              buildStat(localizations.rating, _buildStarRating(rating)),
+              buildStat(localizations.hourlyRate,
                   isEditMode ? buildHourlyRateEditor() : '$hourlyRate DZD'),
             ],
           ),
           const SizedBox(height: 24),
           Align(
             alignment: Alignment.centerLeft,
-            child: const Text(
-              'About Me',
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+            child: Text(
+              localizations.aboutMe,
+              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
             ),
           ),
           const SizedBox(height: 8),
@@ -591,9 +594,9 @@ Widget build(BuildContext context) {
                   controller: aboutMeController,
                   onChanged: (value) => aboutMe = value,
                   maxLines: 4,
-                  decoration: const InputDecoration(
-                    border: OutlineInputBorder(),
-                    hintText: 'Write about yourself...',
+                  decoration: InputDecoration(
+                    border: const OutlineInputBorder(),
+                    hintText: localizations.writeAboutYourself,
                   ),
                 )
               : Text(
@@ -643,7 +646,7 @@ void removeSkill(int index ) {
   });
 }
 
-Widget _buildSkillsSection() {
+Widget _buildSkillsSection(AppLocalizations localizations) {
   return Padding(
     padding: const EdgeInsets.symmetric(horizontal: 16.0),
     child: Column(
@@ -656,9 +659,9 @@ Widget _buildSkillsSection() {
               Expanded(
                 child: TextField(
                   controller: skillController,
-                  decoration: const InputDecoration(
-                    labelText: 'Add Skill',
-                    border: OutlineInputBorder(),
+                  decoration: InputDecoration(
+                    labelText: localizations.addSkill,
+                    border: const OutlineInputBorder(),
                   ),
                 ),
               ),
@@ -709,13 +712,13 @@ Widget _buildSkillsSection() {
                 .toList(),
           )
         else
-          const Center(child: Text('No skills available')),
+          Center(child: Text(localizations.noSkillsAvailable)),
       ],
     ),
   );
 }
 
-Widget _buildWorkExperienceSection() {
+Widget _buildWorkExperienceSection(AppLocalizations localizations) {
   final TextEditingController companyController = TextEditingController();
   final TextEditingController positionController = TextEditingController();
   final TextEditingController durationController = TextEditingController();
@@ -756,31 +759,31 @@ Widget _buildWorkExperienceSection() {
             children: [
               TextField(
                 controller: companyController,
-                decoration: const InputDecoration(
-                  labelText: 'Company Name',
-                  border: OutlineInputBorder(),
+                decoration: InputDecoration(
+                  labelText: localizations.companyName,
+                  border: const OutlineInputBorder(),
                 ),
               ),
               const SizedBox(height: 8),
               TextField(
                 controller: positionController,
-                decoration: const InputDecoration(
-                  labelText: 'Position',
-                  border: OutlineInputBorder(),
+                decoration: InputDecoration(
+                  labelText: localizations.position,
+                  border: const OutlineInputBorder(),
                 ),
               ),
               const SizedBox(height: 8),
               TextField(
                 controller: durationController,
-                decoration: const InputDecoration(
-                  labelText: 'Duration (e.g., Jan 2020 - Dec 2022)',
-                  border: OutlineInputBorder(),
+                decoration: InputDecoration(
+                  labelText: localizations.duration,
+                  border: const OutlineInputBorder(),
                 ),
               ),
               const SizedBox(height: 8),
               ElevatedButton(
                 onPressed: addWorkExperience,
-                child: const Text('Add Work Experience'),
+                child: Text(localizations.addWorkExperience),
               ),
               const SizedBox(height: 16),
             ],
@@ -812,9 +815,52 @@ Widget _buildWorkExperienceSection() {
             },
           )
         else
-          const Center(
-            child: Text('No work experience available'),
-          ),
+          Center(child: Text(localizations.noWorkExperienceAvailable)),
+      ],
+    ),
+  );
+}
+
+Widget buildPortfolioSection() {
+  return Padding(
+    padding: const EdgeInsets.symmetric(horizontal: 16),
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text(
+          'Portfolio',
+          style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+        ),
+        const SizedBox(height: 8),
+        portfolioImages.isNotEmpty
+            ? GridView.builder(
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                  crossAxisCount: 3,
+                  crossAxisSpacing: 8,
+                  mainAxisSpacing: 8,
+                ),
+                itemCount: portfolioImages.length,
+                itemBuilder: (context, index) {
+                  return GestureDetector(
+                    onTap: () {
+                      // Show image in full screen
+                    },
+                    child: Image.file(
+                      File(portfolioImages[index]),
+                      fit: BoxFit.cover,
+                    ),
+                  );
+                })
+            : const Center(child: Text('No portfolio images available')),
+        const SizedBox(height: 16),
+        isEditMode
+          ? ElevatedButton(
+              onPressed: pickNewPortfolioImage,
+              child: const Text('Add Portfolio Image'),
+            )
+          : const SizedBox.shrink(),
       ],
     ),
   );
@@ -843,7 +889,7 @@ void removeCertification(int index) {
 }
 
 
-Widget _buildCertificationsSection() {
+Widget _buildCertificationsSection(AppLocalizations localizations) {
   return Padding(
     padding: const EdgeInsets.symmetric(horizontal: 16.0),
     child: Column(
@@ -856,9 +902,9 @@ Widget _buildCertificationsSection() {
               Expanded(
                 child: TextField(
                   controller: certificationController,
-                  decoration: const InputDecoration(
-                    labelText: 'Add Certification',
-                    border: OutlineInputBorder(),
+                  decoration: InputDecoration(
+                    labelText: localizations.addCertification,
+                    border: const OutlineInputBorder(),
                   ),
                 ),
               ),
@@ -884,7 +930,7 @@ Widget _buildCertificationsSection() {
                     padding: const EdgeInsets.symmetric(vertical: 4.0),
                     child: Row(
                       children: [
-                        Icon(Icons.verified, color: Colors.green, size: 20),
+                        const Icon(Icons.verified, color: Colors.green, size: 20),
                         const SizedBox(width: 8),
                         Expanded(
                           child: Text(
@@ -906,7 +952,7 @@ Widget _buildCertificationsSection() {
                 .toList(),
           )
         else
-          const Center(child: Text('No certifications available')),
+          Center(child: Text(localizations.noCertificationsAvailable)),
       ],
     ),
   );

@@ -58,7 +58,8 @@ class _FavoritesPageState extends State<FavoritesPage> {
 
       setState(() {
         favoriteServices = serviceSnapshots.docs
-            .map((doc) => {'uid': doc.id, ...doc.data() as Map<String, dynamic>})
+            .map(
+                (doc) => {'uid': doc.id, ...doc.data() as Map<String, dynamic>})
             .toList();
       });
     } catch (e) {
@@ -67,48 +68,50 @@ class _FavoritesPageState extends State<FavoritesPage> {
   }
 
   void toggleFavorite(Map<String, dynamic> service) async {
-  final userId = FirebaseAuth.instance.currentUser?.uid;
-  if (userId == null) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('Please log in to add favorites')),
-    );
-    return;
-  }
-
-  try {
-    final userDocRef = FirebaseFirestore.instance.collection('users').doc(userId);
-    final serviceId = service['uid']; // Ensure you use the correct 'id'
-
-    final isCurrentlyFavorite = favoriteIds.contains(serviceId);
-
-    if (isCurrentlyFavorite) {
-      // Remove from favorites
-      await userDocRef.update({
-        'favorites': FieldValue.arrayRemove([serviceId]),
-      });
-
-      setState(() {
-        favoriteIds.remove(serviceId);
-        favoriteServices.removeWhere((s) => s['uid'] == serviceId);
-      });
-    } else {
-      // Add to favorites
-      await userDocRef.update({
-        'favorites': FieldValue.arrayUnion([serviceId]),
-      });
-
-      setState(() {
-        favoriteIds.add(serviceId);
-        favoriteServices.add(service);
-      });
+    final userId = FirebaseAuth.instance.currentUser?.uid;
+    if (userId == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Please log in to add favorites')),
+      );
+      return;
     }
-  } catch (e) {
-    debugPrint('Error updating favorites: $e');
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('Failed to update favorites. Please try again!')),
-    );
+
+    try {
+      final userDocRef =
+          FirebaseFirestore.instance.collection('users').doc(userId);
+      final serviceId = service['uid']; // Ensure you use the correct 'id'
+
+      final isCurrentlyFavorite = favoriteIds.contains(serviceId);
+
+      if (isCurrentlyFavorite) {
+        // Remove from favorites
+        await userDocRef.update({
+          'favorites': FieldValue.arrayRemove([serviceId]),
+        });
+
+        setState(() {
+          favoriteIds.remove(serviceId);
+          favoriteServices.removeWhere((s) => s['uid'] == serviceId);
+        });
+      } else {
+        // Add to favorites
+        await userDocRef.update({
+          'favorites': FieldValue.arrayUnion([serviceId]),
+        });
+
+        setState(() {
+          favoriteIds.add(serviceId);
+          favoriteServices.add(service);
+        });
+      }
+    } catch (e) {
+      debugPrint('Error updating favorites: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+            content: Text('Failed to update favorites. Please try again!')),
+      );
+    }
   }
-}
 
   @override
   Widget build(BuildContext context) {
@@ -125,7 +128,7 @@ class _FavoritesPageState extends State<FavoritesPage> {
               child: favoriteServices.isEmpty
                   ? Center(
                       child: Text(
-                        'No favorite services yet',
+                        appLocalizations.noFavoriteServicesYet,
                         style: GoogleFonts.poppins(
                           fontSize: 16,
                           color: Colors.grey,
@@ -153,22 +156,21 @@ class _FavoritesPageState extends State<FavoritesPage> {
     );
   }
 
-    Widget _buildServiceCard(BuildContext context, Map<String, dynamic> service) {
+  Widget _buildServiceCard(BuildContext context, Map<String, dynamic> service) {
     final isFavorite = favoriteIds.contains(service['uid']); // Use 'uid'
 
     return GestureDetector(
       onTap: () {
-  // Navigate to FullProfilePage with the selected service's ID
-  Navigator.push(
-    context,
-    MaterialPageRoute(
-      builder: (context) => ServiceProviderFullProfile(
-        providerId: service['uid'], // Use 'uid' from the service map
-      ),
-    ),
-  );
-},
-
+        // Navigate to FullProfilePage with the selected service's ID
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => ServiceProviderFullProfile(
+              providerId: service['uid'], // Use 'uid' from the service map
+            ),
+          ),
+        );
+      },
       child: Card(
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(16),

@@ -81,10 +81,10 @@ class AppLocalizations {
   // Notifications
   String get notifications =>
       isArabic ? "الإشعارات" : (isFrench ? "Notifications" : "Notifications");
-String get becomeProviderButton => isArabic
-    ? "أصبح مقدم الخدمة"
-    : (isFrench ? "Devenir fournisseur" : "Become a Provider");
-    
+  String get becomeProviderButton => isArabic
+      ? "أصبح مقدم الخدمة"
+      : (isFrench ? "Devenir fournisseur" : "Become a Provider");
+
   // Common Buttons
   String get save => isArabic ? "حفظ" : (isFrench ? "Enregistrer" : "Save");
   String get cancel => isArabic ? "إلغاء" : (isFrench ? "Annuler" : "Cancel");
@@ -100,6 +100,126 @@ String get becomeProviderButton => isArabic
       ? "اكتب عن نفسك"
       : (isFrench ? "Écrivez sur vous" : "Write about yourself");
 
+  // New localization for no favorite services
+  String get noFavoriteServicesYet => isArabic
+      ? "لا توجد خدمات مفضلة بعد"
+      : (isFrench
+          ? "Aucun service favori pour le moment"
+          : "No favorite services yet");
+
+  // New localization for NameEntryScreen
+  String get firstName =>
+      isArabic ? "الاسم الأول" : (isFrench ? "Prénom" : "First Name");
+  String get lastName =>
+      isArabic ? "الاسم الأخير" : (isFrench ? "Nom de famille" : "Last Name");
+  String get selectYourServices => isArabic
+      ? "اختر خدماتك:"
+      : (isFrench ? "Sélectionnez vos services:" : "Select Your Services:");
+  String get selectTwoChoices => isArabic
+      ? "يمكنك اختيار خيارين فقط."
+      : (isFrench
+          ? "Vous ne pouvez sélectionner que deux choix."
+          : "You can only select two choices.");
+  String get continueButton =>
+      isArabic ? "استمر" : (isFrench ? "Continuer" : "Continue");
+  String get firstNameLastNameRequired => isArabic
+      ? "الاسم الأول واسم العائلة مطلوبان."
+      : (isFrench
+          ? "Le prénom et le nom de famille sont obligatoires."
+          : "First Name and Last Name are required.");
+  String get selectTwoWorkChoices => isArabic
+      ? "يرجى اختيار خيارين بالضبط."
+      : (isFrench
+          ? "Veuillez sélectionner exactement deux choix de travail."
+          : "Please select exactly two work choices.");
+  String get enterYourDetails => isArabic
+      ? "أدخل تفاصيلك"
+      : (isFrench ? "Entrez vos coordonnées" : "Enter Your Details");
+  String get ok => isArabic ? "حسنا" : (isFrench ? "D'accord" : "OK");
+
+  // New localization for OnboardingScreen2
+  String get verifyYourIdentity => isArabic
+      ? "تحقق من هويتك"
+      : (isFrench ? "Vérifiez votre identité" : "Verify Your Identity");
+  String get verifyIdentityDescription => isArabic
+      ? "لأمانك، نحتاج إلى تأكيد هويتك. هذا يضمن تجربة موثوقة وآمنة للجميع."
+      : (isFrench
+          ? "Pour votre sécurité, nous devons confirmer votre identité. Cela garantit une expérience fiable et sécurisée pour tout le monde."
+          : "For your security, we need to confirm your identity. This ensures a trusted and secure experience for everyone.");
+
+  // New localization for work choices
+  String get houseCleaning => isArabic
+      ? "تنظيف المنزل"
+      : (isFrench ? "Nettoyage de la maison" : "House Cleaning");
+  String get electricity =>
+      isArabic ? "كهرباء" : (isFrench ? "Électricité" : "Electricity");
+  String get plumbing =>
+      isArabic ? "سباكة" : (isFrench ? "Plomberie" : "Plumbing");
+  String get gardening =>
+      isArabic ? "البستنة" : (isFrench ? "Jardinage" : "Gardening");
+  String get painting =>
+      isArabic ? "دهان" : (isFrench ? "Peinture" : "Painting");
+  String get carpentry =>
+      isArabic ? "نجارة" : (isFrench ? "Menuiserie" : "Carpentry");
+  String get pestControl => isArabic
+      ? "مكافحة الآفات"
+      : (isFrench ? "Lutte antiparasitaire" : "Pest Control");
+  String get acRepair => isArabic
+      ? "إصلاح مكيف الهواء"
+      : (isFrench ? "Réparation de climatiseur" : "AC Repair");
+  String get vehicleRepair => isArabic
+      ? "إصلاح المركبات"
+      : (isFrench ? "Réparation de véhicules" : "Vehicle Repair");
+  String get applianceInstallation => isArabic
+      ? "تركيب الأجهزة"
+      : (isFrench ? "Installation d'appareils" : "Appliance Installation");
+  String get itSupport => isArabic
+      ? "دعم تكنولوجيا المعلومات"
+      : (isFrench ? "Support informatique" : "IT Support");
+  String get homeSecurity => isArabic
+      ? "أمن المنزل"
+      : (isFrench ? "Sécurité à domicile" : "Home Security");
+  String get interiorDesign => isArabic
+      ? "تصميم داخلي"
+      : (isFrench ? "Design d'intérieur" : "Interior Design");
+  String get windowCleaning => isArabic
+      ? "تنظيف النوافذ"
+      : (isFrench ? "Nettoyage de fenêtres" : "Window Cleaning");
+  String get furnitureAssembly => isArabic
+      ? "تجميع الأثاث"
+      : (isFrench ? "Assemblage de meubles" : "Furniture Assembly");
+
+  // New localization for id_verification_screen
+  String get realTimeDetection => isArabic
+      ? "الكشف في الوقت الحقيقي"
+      : (isFrench ? "Détection en temps réel" : "Real-Time Detection");
+  String get support => isArabic ? "الدعم" : (isFrench ? "Soutien" : "Support");
+  String get supportMessage => isArabic
+      ? "إذا لم يتم اكتشاف بطاقتك، يرجى التأكد من أنها محاذية بشكل صحيح وحاول مرة أخرى."
+      : (isFrench
+          ? "Si votre carte n'a pas été détectée, assurez-vous أن'elle est correctement alignée et réessayez."
+          : "If your card was not detected, please make sure it is aligned correctly and try again.");
+  String get stopDetection => isArabic
+      ? "إيقاف الكشف"
+      : (isFrench ? "Arrêter la détection" : "Stop Detection");
+  String get startDetection => isArabic
+      ? "بدء الكشف"
+      : (isFrench ? "Commencer la détection" : "Start Detection");
+  String get skip => isArabic ? "تخطي" : (isFrench ? "Sauter" : "Skip");
+
+  // New localization for face_verification_screen
+  String get faceVerification => isArabic
+      ? "التحقق من الوجه"
+      : (isFrench ? "Vérification du visage" : "Face Verification");
+  String get faceVerificationSupportMessage => isArabic
+      ? "يرجى التأكد من أن وجهك مرئي بوضوح داخل الدليل البيضاوي وانظر مباشرة إلى الكاميرا. حافظ على وجهك في المنتصف واحتفظ بتعبير محايد."
+      : (isFrench
+          ? "Veuillez vous assurer que votre visage est clairement visible dans le guide ovale et regardez directement la caméra. Gardez votre visage centré et maintenez une expression neutre."
+          : "Please ensure your face is clearly visible within the oval guide and look directly at the camera. Keep your face centered and maintain a neutral expression.");
+  String get verifyFace => isArabic
+      ? "تحقق من الوجه"
+      : (isFrench ? "Vérifier le visage" : "Verify Face");
+
   // Profile Page
   String get editProfile => isArabic
       ? "تعديل الملف الشخصي"
@@ -107,6 +227,27 @@ String get becomeProviderButton => isArabic
   String get contactSupport => isArabic
       ? "اتصل بالدعم"
       : (isFrench ? "Contacter le support" : "Contact Support");
+  String get name => isArabic ? "الاسم" : (isFrench ? "Nom" : "Name");
+  String get projects => isArabic ? "المشاريع" : (isFrench ? "Projets" : "Projects");
+  String get rating => isArabic ? "التقييم" : (isFrench ? "Évaluation" : "Rating");
+  String get hourlyRate => isArabic ? "سعر الساعة" : (isFrench ? "Taux horaire" : "Hourly Rate");
+  String get aboutMeLabel => isArabic ? "عني" : (isFrench ? "À propos de moi" : "About Me");
+  String get writeAboutYourself => isArabic ? "اكتب عن نفسك" : (isFrench ? "Écrivez sur vous" : "Write about yourself");
+  String get skills => isArabic ? "المهارات" : (isFrench ? "Compétences" : "Skills");
+  String get addSkill => isArabic ? "أضف مهارة" : (isFrench ? "Ajouter une compétence" : "Add Skill");
+  String get noSkillsAvailable => isArabic ? "لا توجد مهارات متاحة" : (isFrench ? "Aucune compétence disponible" : "No skills available");
+  String get workExperience => isArabic ? "الخبرة العملية" : (isFrench ? "Expérience professionnelle" : "Work Experience");
+  String get companyName => isArabic ? "اسم الشركة" : (isFrench ? "Nom de l'entreprise" : "Company Name");
+  String get position => isArabic ? "المنصب" : (isFrench ? "Poste" : "Position");
+  String get duration => isArabic ? "المدة" : (isFrench ? "Durée" : "Duration");
+  String get addWorkExperience => isArabic ? "أضف خبرة عمل" : (isFrench ? "Ajouter une expérience professionnelle" : "Add Work Experience");
+  String get noWorkExperienceAvailable => isArabic ? "لا توجد خبرة عمل متاحة" : (isFrench ? "Aucune expérience professionnelle disponible" : "No work experience available");
+  String get portfolio => isArabic ? "المعرض" : (isFrench ? "Portfolio" : "Portfolio");
+  String get noPortfolioImagesAvailable => isArabic ? "لا توجد صور في المعرض" : (isFrench ? "Aucune image dans le portfolio" : "No portfolio images available");
+  String get addPortfolioImage => isArabic ? "أضف صورة إلى المعرض" : (isFrench ? "Ajouter une image au portfolio" : "Add Portfolio Image");
+  String get certifications => isArabic ? "الشهادات" : (isFrench ? "Certifications" : "Certifications");
+  String get addCertification => isArabic ? "أضف شهادة" : (isFrench ? "Ajouter une certification" : "Add Certification");
+  String get noCertificationsAvailable => isArabic ? "لا توجد شهادات متاحة" : (isFrench ? "Aucune certification disponible" : "No certifications available");
 
   // Password recovery translations
   String get enterValidEmail => isArabic
@@ -314,7 +455,6 @@ String get becomeProviderButton => isArabic
   String get homePage =>
       isArabic ? "إلغاء" : (isFrench ? "mon profile" : "home page");
 
-  get name => null;
 
   // Static method to access the instance
   static AppLocalizations? of(BuildContext context) {

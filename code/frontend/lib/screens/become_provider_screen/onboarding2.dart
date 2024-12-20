@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:lottie/lottie.dart';
+import 'package:hanini_frontend/localization/app_localization.dart';
 
 class OnboardingScreen2 extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
+    final AppLocalizations appLocalizations = AppLocalizations.of(context)!;
+
     return Scaffold(
       body: Column(
         mainAxisAlignment: MainAxisAlignment.center,
@@ -19,7 +22,7 @@ class OnboardingScreen2 extends StatelessWidget {
 
           // Title
           Text(
-            "Verify Your Identity",
+            appLocalizations.verifyYourIdentity,
             style: TextStyle(
               fontSize: 28,
               fontWeight: FontWeight.bold,
@@ -33,8 +36,7 @@ class OnboardingScreen2 extends StatelessWidget {
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 24.0),
             child: Text(
-              "For your security, we need to confirm your identity. "
-              "This ensures a trusted and secure experience for everyone.",
+              appLocalizations.verifyIdentityDescription,
               style: TextStyle(
                 fontSize: 16,
                 color: Colors.grey[600],
@@ -72,7 +74,7 @@ class OnboardingScreen2 extends StatelessWidget {
                 ],
               ),
               child: Text(
-                "Continue",
+                appLocalizations.continueButton,
                 style: TextStyle(
                   fontSize: 18,
                   fontWeight: FontWeight.w600,

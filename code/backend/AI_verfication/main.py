@@ -201,5 +201,4 @@ async def compare_face(file: UploadFile = File(...)):
 # To run the server, use:
 # uvicorn main:app --host 0.0.0.0 --port 8000 --reload 
 
-# To run the server, use:
-# uvicorn main:app --host 0.0.0.0 --port 8000 --reload
+# lt --port 8000 --subdomain polite-schools-ask
