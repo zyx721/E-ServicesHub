@@ -5,6 +5,7 @@ import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'dart:io';
 import 'face_verification_screen.dart'; // Replace with your actual face comparison screen import
+import 'package:hanini_frontend/localization/app_localization.dart';
 
 class RealTimeDetection extends StatefulWidget {
   final List<CameraDescription> cameras;
@@ -137,19 +138,19 @@ class _RealTimeDetectionState extends State<RealTimeDetection> {
   }
 
   void _showSupportDialog() {
+    final AppLocalizations appLocalizations = AppLocalizations.of(context)!;
     showDialog(
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
-          title: Text('Support'),
-          content: Text(
-              'If your card was not detected, please make sure it is aligned correctly and try again.'),
+          title: Text(appLocalizations.support),
+          content: Text(appLocalizations.supportMessage),
           actions: <Widget>[
             TextButton(
               onPressed: () {
                 Navigator.of(context).pop();
               },
-              child: Text('OK'),
+              child: Text(appLocalizations.ok),
             ),
           ],
         );
@@ -159,6 +160,8 @@ class _RealTimeDetectionState extends State<RealTimeDetection> {
 
   @override
   Widget build(BuildContext context) {
+    final AppLocalizations appLocalizations = AppLocalizations.of(context)!;
+
     return Scaffold(
       appBar: PreferredSize(
         preferredSize: Size.fromHeight(64.0),
@@ -184,7 +187,7 @@ class _RealTimeDetectionState extends State<RealTimeDetection> {
             backgroundColor: Colors.transparent,
             elevation: 0,
             title: Text(
-              'Real-Time Detection', // Use appropriate title
+              appLocalizations.realTimeDetection,
               style: TextStyle(
                 fontSize: 22,
                 fontWeight: FontWeight.w600,
@@ -269,7 +272,9 @@ class _RealTimeDetectionState extends State<RealTimeDetection> {
                           ),
                           SizedBox(width: 10),
                           Text(
-                            _isDetecting ? 'Stop Detection' : 'Start Detection',
+                            _isDetecting
+                                ? appLocalizations.stopDetection
+                                : appLocalizations.startDetection,
                             style: TextStyle(
                               color: Colors.white,
                               fontSize: 18,
@@ -343,7 +348,7 @@ class _RealTimeDetectionState extends State<RealTimeDetection> {
                         ),
                       );
                     },
-                    child: Text('Skip'),
+                    child: Text(appLocalizations.skip),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Colors.orange,
                       padding:

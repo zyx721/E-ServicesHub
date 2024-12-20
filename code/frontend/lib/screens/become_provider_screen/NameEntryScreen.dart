@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:hanini_frontend/localization/app_localization.dart';
 
 class NameEntryScreen extends StatefulWidget {
   @override
@@ -12,23 +13,26 @@ class _NameEntryScreenState extends State<NameEntryScreen> {
   final TextEditingController _lastNameController = TextEditingController();
 
   // List of service categories
-  final List<String> _workChoices = [
-    "House Cleaning",
-    "Electricity",
-    "Plumbing",
-    "Gardening",
-    "Painting",
-    "Carpentry",
-    "Pest Control",
-    "AC Repair",
-    "Vehicle Repair",
-    "Appliance Installation",
-    "IT Support",
-    "Home Security",
-    "Interior Design",
-    "Window Cleaning",
-    "Furniture Assembly",
-  ];
+  List<String> get _workChoices {
+    final AppLocalizations appLocalizations = AppLocalizations.of(context)!;
+    return [
+      appLocalizations.houseCleaning,
+      appLocalizations.electricity,
+      appLocalizations.plumbing,
+      appLocalizations.gardening,
+      appLocalizations.painting,
+      appLocalizations.carpentry,
+      appLocalizations.pestControl,
+      appLocalizations.acRepair,
+      appLocalizations.vehicleRepair,
+      appLocalizations.applianceInstallation,
+      appLocalizations.itSupport,
+      appLocalizations.homeSecurity,
+      appLocalizations.interiorDesign,
+      appLocalizations.windowCleaning,
+      appLocalizations.furnitureAssembly,
+    ];
+  }
 
   // To track selected services
   final Set<String> _selectedChoices = {};
@@ -38,12 +42,12 @@ class _NameEntryScreenState extends State<NameEntryScreen> {
     final String lastName = _lastNameController.text.trim();
 
     if (firstName.isEmpty || lastName.isEmpty) {
-      _showErrorDialog("First Name and Last Name are required.");
+      _showErrorDialog(AppLocalizations.of(context)!.firstNameLastNameRequired);
       return;
     }
 
     if (_selectedChoices.length != 2) {
-      _showErrorDialog("Please select exactly two work choices.");
+      _showErrorDialog(AppLocalizations.of(context)!.selectTwoWorkChoices);
       return;
     }
 
@@ -77,12 +81,12 @@ class _NameEntryScreenState extends State<NameEntryScreen> {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: Text("Error"),
+        title: Text(AppLocalizations.of(context)!.error),
         content: Text(message),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: Text("OK"),
+            child: Text(AppLocalizations.of(context)!.ok),
           ),
         ],
       ),
@@ -91,8 +95,10 @@ class _NameEntryScreenState extends State<NameEntryScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final AppLocalizations appLocalizations = AppLocalizations.of(context)!;
+
     return Scaffold(
-      appBar: AppBar(title: Text('Enter Your Details')),
+      appBar: AppBar(title: Text(appLocalizations.enterYourDetails)),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16.0),
         child: Column(
@@ -101,20 +107,21 @@ class _NameEntryScreenState extends State<NameEntryScreen> {
             // First Name TextField
             TextField(
               controller: _firstNameController,
-              decoration: InputDecoration(labelText: 'First Name'),
+              decoration:
+                  InputDecoration(labelText: appLocalizations.firstName),
             ),
             SizedBox(height: 20),
 
             // Last Name TextField
             TextField(
               controller: _lastNameController,
-              decoration: InputDecoration(labelText: 'Last Name'),
+              decoration: InputDecoration(labelText: appLocalizations.lastName),
             ),
             SizedBox(height: 30),
 
             // Work Choice Grid
             Text(
-              "Select Your Services:",
+              appLocalizations.selectYourServices,
               style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
             ),
             SizedBox(height: 10),
@@ -131,7 +138,7 @@ class _NameEntryScreenState extends State<NameEntryScreen> {
                       } else if (_selectedChoices.length < 2) {
                         _selectedChoices.add(choice);
                       } else {
-                        _showErrorDialog("You can only select two choices.");
+                        _showErrorDialog(appLocalizations.selectTwoChoices);
                       }
                     });
                   },
@@ -183,7 +190,7 @@ class _NameEntryScreenState extends State<NameEntryScreen> {
                   ],
                 ),
                 child: Text(
-                  "Continue",
+                  appLocalizations.continueButton,
                   style: TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.w600,
@@ -191,7 +198,7 @@ class _NameEntryScreenState extends State<NameEntryScreen> {
                   ),
                 ),
               ),
-            ),  
+            ),
           ],
         ),
       ),
