@@ -1,6 +1,5 @@
 import 'package:camera/camera.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart'; // Import for locking orientation
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:hanini_frontend/screens/SettingsScreen/SettingsScreen.dart';
 import 'package:hanini_frontend/screens/auth/forgot_password_screen.dart';
@@ -17,12 +16,6 @@ import 'navbar.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-
-  // Lock orientation to portrait mode
-  await SystemChrome.setPreferredOrientations([
-    DeviceOrientation.portraitUp,
-  ]);
-
   final cameras = await availableCameras();
   await Firebase.initializeApp(); // Initialize Firebase
    SystemChrome.setPreferredOrientations([

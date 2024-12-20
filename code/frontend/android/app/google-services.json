@@ -39,14 +39,6 @@
           }
         },
         {
-          "client_id": "733920147635-rsaqgne37cevsnnvivd5b717fgqmh8fj.apps.googleusercontent.com",
-          "client_type": 1,
-          "android_info": {
-            "package_name": "com.Nit.Hanini",
-            "certificate_hash": "303399b0a7327b2b6b1f582173d6a5fce8d8b271"
-          }
-        },
-        {
           "client_id": "733920147635-oo5ntbeokk91snik5hjkrojr9v0l715i.apps.googleusercontent.com",
           "client_type": 3
         }
