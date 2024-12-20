@@ -19,6 +19,7 @@ import 'package:hanini_frontend/screens/navScreens/notificationspage.dart'; // R
 class NavbarPage extends StatefulWidget {
 
 
+  const NavbarPage({Key? key, required this.userRole}) : super(key: key);
   const NavbarPage({Key? key}) : super(key: key);
 
   @override
@@ -33,6 +34,8 @@ class _NavbarPageState extends State<NavbarPage> {
   @override
   void initState() {
     super.initState();
+    _currentUserRole = widget.userRole;
+    _updateScreens();
     _initializeScreens();
   }
 
@@ -107,6 +110,74 @@ Future<bool> _checkIfUserIsProvider() async {
   Widget build(BuildContext context) {
     final AppLocalizations appLocalizations = AppLocalizations.of(context)!;
 
+    return Scaffold(
+      appBar: PreferredSize(
+        preferredSize: Size.fromHeight(64.0), // Set height for the AppBar
+        child: Container(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              colors: [
+                Color(0xFF3949AB), // Indigo 600
+                Color(0xFF1E88E5), // Blue 600
+              ],
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+            ),
+          ),
+          child: AppBar(
+            title: Text(
+              appLocalizations.appTitle,
+              style: GoogleFonts.poppins(
+                fontSize: 22,
+                fontWeight: FontWeight.w600,
+                color: Colors.white,
+              ),
+            ),
+            backgroundColor: Colors.transparent, // Transparent to show gradient
+            elevation: 0,
+            actions: [
+              IconButton(
+                icon: Icon(
+                  Icons.notifications_outlined,
+                  color: Colors.white,
+                  size: 28,
+                ),
+                onPressed: () {
+                  // Handle notifications
+                },
+              ),
+              _buildLanguageDropdown(),
+            ],
+          ),
+        ),
+      ),
+      drawer: Sidebar(context, appLocalizations),
+      body: screens[
+          selectedIndex], // Switch between screens based on the selected index
+      bottomNavigationBar: NavigationBar(
+  selectedIndex: selectedIndex,
+  onDestinationSelected: (int index) {
+    setState(() {
+      selectedIndex = index; // Update selectedIndex on tap
+    });
+  },
+  destinations: [
+    NavigationDestination(
+        icon: Icon(Iconsax.home),
+        label: appLocalizations.home),
+    NavigationDestination(
+        icon: Icon(Iconsax.search_normal),
+        label: appLocalizations.search),
+    NavigationDestination(
+        icon: Icon(Iconsax.save_2),
+        label: appLocalizations.favorites),
+    NavigationDestination(
+        icon: Icon(Iconsax.user),
+        label: appLocalizations.profile),
+  ],
+),
+
+    );
     return isLoading
         ? Center(child: CircularProgressIndicator())
         : PopScope(
@@ -223,6 +294,7 @@ actions: [
         );
   }
 
+  // Language Dropdown for switching languages
   Widget _buildLanguageDropdown() {
     final localizations = AppLocalizations.of(context);
     if (localizations == null) {
