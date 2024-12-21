@@ -3,6 +3,91 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:hanini_frontend/localization/app_localization.dart';
 import 'package:hanini_frontend/screens/become_provider_screen/onboarding2.dart';
+import 'package:image_picker/image_picker.dart';
+import 'package:googleapis/drive/v3.dart' as drive;
+import 'package:flutter/services.dart' show rootBundle;
+import 'dart:io';
+import 'package:path/path.dart' as path;
+import 'package:googleapis_auth/auth_io.dart';
+
+
+
+class GoogleDriveService {
+  static const String _folderID = "1b517UTgjLJfsjyH2dByEPYZDg4cgwssQ"; // Your folder ID
+
+  Future<drive.DriveApi> getDriveApi() async {
+    try {
+      // Load credentials from assets
+      final String credentials = await rootBundle.loadString(
+        'assets/credentials/service_account.json'
+      );
+      
+      final accountCredentials = ServiceAccountCredentials.fromJson(credentials);
+      final client = await clientViaServiceAccount(
+        accountCredentials,
+        [drive.DriveApi.driveScope],
+      );
+      
+      return drive.DriveApi(client);
+    } catch (e) {
+      throw Exception('Failed to initialize Drive API: $e');
+    }
+  }
+
+  Future<String> uploadFile(File file) async {
+    try {
+      final driveApi = await getDriveApi();
+      final fileName = path.basename(file.path);
+
+      // Prepare drive file metadata
+      var driveFile = drive.File()
+        ..name = fileName
+        ..parents = [_folderID];
+
+      // Upload file
+      final response = await driveApi.files.create(
+        driveFile,
+        uploadMedia: drive.Media(file.openRead(), file.lengthSync()),
+      );
+
+      final fileId = response.id;
+      if (fileId == null) {
+        throw Exception('Failed to get file ID after upload');
+      }
+
+      // Set file permissions to public
+      final permission = drive.Permission()
+        ..role = "reader"
+        ..type = "anyone";
+      await driveApi.permissions.create(permission, fileId);
+
+      // Return the public URL
+      return "https://drive.google.com/uc?id=$fileId";
+    } catch (e) {
+      throw Exception('Failed to upload file: $e');
+    }
+  }
+
+  Future<void> deleteFile(String fileUrl) async {
+    try {
+      final driveApi = await getDriveApi();
+      
+      // Extract file ID from URL
+      final uri = Uri.parse(fileUrl);
+      final fileId = uri.queryParameters['id'];
+      
+      if (fileId == null) {
+        throw Exception('Invalid file URL');
+      }
+
+      // Delete the file
+      await driveApi.files.delete(fileId);
+    } catch (e) {
+      throw Exception('Failed to delete file: $e');
+    }
+  }
+}
+
 
 class SimpleUserProfile extends StatefulWidget {
   const SimpleUserProfile({Key? key}) : super(key: key);
@@ -12,6 +97,7 @@ class SimpleUserProfile extends StatefulWidget {
 }
 
 class _SimpleUserProfileState extends State<SimpleUserProfile> {
+  final _driveService = GoogleDriveService();
   final double profileHeight = 150;
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
@@ -77,6 +163,8 @@ class _SimpleUserProfileState extends State<SimpleUserProfile> {
     }
   }
 
+  
+
   @override
   Widget build(BuildContext context) {
     final AppLocalizations? localization = AppLocalizations.of(context); // Get localization
@@ -84,22 +172,31 @@ class _SimpleUserProfileState extends State<SimpleUserProfile> {
     return Scaffold(
       body: isLoading
           ? const Center(child: CircularProgressIndicator())
-          : ListView(
-              padding: EdgeInsets.zero,
-              children: [
-                const SizedBox(height: 50),
-                buildTop(localization!),
-                const SizedBox(height: 30),
-                buildProfileInfo(localization),
-                const SizedBox(height: 60),
-                buildBecomeProviderButton(localization),
-              ],
-            ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: toggleEditMode,
-        child: Icon(isEditMode ? Icons.check : Icons.edit),
-        tooltip: isEditMode ? localization?.save : localization?.editProfile, // Use localization
-      ),
+          : Stack(
+            children: [
+              ListView(
+                  padding: EdgeInsets.zero,
+                  children: [
+                    const SizedBox(height: 50),
+                    buildTop(localization!),
+                    const SizedBox(height: 30),
+                    buildProfileInfo(localization),
+                    const SizedBox(height: 60),
+                    buildBecomeProviderButton(localization),
+                  ],
+                ),
+                              Positioned(
+                top: 40, // Adjust this value to fine-tune the position
+                right: 16, // Adjust this value to fine-tune the position
+                child: FloatingActionButton(
+                  onPressed: toggleEditMode,
+                  child: Icon(isEditMode ? Icons.check : Icons.edit),
+                  backgroundColor: const Color.fromARGB(255, 43, 133, 207),
+                ),
+              ),
+            ],
+          ),
+
     );
   }
 
@@ -115,34 +212,102 @@ class _SimpleUserProfileState extends State<SimpleUserProfile> {
     });
   }
 
+
+
+Future<void> pickNewProfilePicture() async {
+  try {
+    final ImagePicker picker = ImagePicker();
+    final XFile? pickedFile = await picker.pickImage(source: ImageSource.gallery);
+    
+    if (pickedFile == null) return;
+
+    // Show loading indicator
+    if (mounted) {
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (BuildContext context) {
+          return const Center(child: CircularProgressIndicator());
+        },
+      );
+    }
+
+    // Upload new image to Drive
+    final file = File(pickedFile.path);
+    final fileUrl = await _driveService.uploadFile(file);
+
+    // Get current user
+    final User? user = _auth.currentUser;
+    if (user == null) throw Exception('No user logged in');
+
+    // Delete old photo from Drive if it exists
+    if (userPhotoUrl.startsWith('https://drive.google.com')) {
+      try {
+        await _driveService.deleteFile(userPhotoUrl);
+      } catch (e) {
+        debugPrint('Error deleting old profile picture: $e');
+      }
+    }
+
+    // Update Firestore and local state
+    await _firestore.collection('users').doc(user.uid).update({
+      'photoURL': fileUrl,
+    });
+
+    setState(() {
+      userPhotoUrl = fileUrl;
+    });
+
+    // Close loading indicator
+    if (mounted) {
+      Navigator.of(context).pop();
+    }
+
+  } catch (e) {
+    debugPrint('Error updating profile picture: $e');
+    if (mounted) {
+      Navigator.of(context).pop(); // Close loading indicator
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Failed to update profile picture')),
+      );
+    }
+  }
+}
+
+
   Widget buildTop(AppLocalizations localization) {
     return Column(
       children: [
         Stack(
-          alignment: Alignment.bottomRight,
-          children: [
-            Container(
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.2),
-                    blurRadius: 15,
-                    spreadRadius: 5,
-                    offset: const Offset(0, 5),
-                  ),
-                ],
-              ),
-              child: CircleAvatar(
+            alignment: Alignment.bottomRight,
+            children: [
+              CircleAvatar(
                 radius: profileHeight / 2,
                 backgroundColor: Colors.grey.shade200,
                 backgroundImage: userPhotoUrl.isNotEmpty
                     ? NetworkImage(userPhotoUrl) as ImageProvider
                     : const AssetImage('assets/images/default_profile.png'),
               ),
-            ),
-          ],
-        ),
+              if (isEditMode)
+                GestureDetector(
+                  onTap: () {
+                    pickNewProfilePicture();
+                  },
+                  child: Container(
+                    padding: const EdgeInsets.all(6),
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: Colors.blue,
+                    ),
+                    child: const Icon(
+                      Icons.camera_alt,
+                      size: 20,
+                      color: Colors.white,
+                    ),
+                  ),
+                ),
+            ],
+          ),
         const SizedBox(height: 16),
         isEditMode
             ? Padding(

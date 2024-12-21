@@ -173,19 +173,6 @@ class _ServiceProviderProfileState extends State<ServiceProviderProfile2> {
   }
 
 
-
-   Future<drive.DriveApi> getDriveApi() async {
-    final serviceAccountFile = File('assets/credentials/sunny-passage-444710-n0-401a2eef3d8b.json');
-    final credentials = serviceAccountFile.readAsStringSync();
-    final accountCredentials = ServiceAccountCredentials.fromJson(credentials);
-    final client = await clientViaServiceAccount(
-      accountCredentials,
-      [drive.DriveApi.driveScope],
-    );
-    return drive.DriveApi(client);
-  }
-    
-
     Future<void> deletePortfolioImage(String imageUrl) async {
     try {
       // Show confirmation dialog
@@ -471,13 +458,13 @@ Widget build(BuildContext context) {
                   buildTop(localizations!),
                   buildProfileInfo(localizations),
                   const SizedBox(height: 20),
-                  _buildSectionTitle(localizations!.skills),
+                  _buildSectionTitle(localizations.skills),
                   _buildSkillsSection(localizations),
                   const SizedBox(height: 20),
                   _buildSectionTitle(localizations.workExperience),
                   _buildWorkExperienceSection(localizations),
                   const SizedBox(height: 20),
-                  buildPortfolioSection(localizations),
+                  buildPortfolioSection(),// A message to ziyed: you forgot to do the localization part for the portfolio -Fares
                   const SizedBox(height: 20),
                   _buildSectionTitle(localizations.certifications),
                   _buildCertificationsSection(localizations),
@@ -820,52 +807,6 @@ Widget _buildWorkExperienceSection(AppLocalizations localizations) {
     ),
   );
 }
-
-Widget buildPortfolioSection() {
-  return Padding(
-    padding: const EdgeInsets.symmetric(horizontal: 16),
-    child: Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const Text(
-          'Portfolio',
-          style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-        ),
-        const SizedBox(height: 8),
-        portfolioImages.isNotEmpty
-            ? GridView.builder(
-                shrinkWrap: true,
-                physics: const NeverScrollableScrollPhysics(),
-                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                  crossAxisCount: 3,
-                  crossAxisSpacing: 8,
-                  mainAxisSpacing: 8,
-                ),
-                itemCount: portfolioImages.length,
-                itemBuilder: (context, index) {
-                  return GestureDetector(
-                    onTap: () {
-                      // Show image in full screen
-                    },
-                    child: Image.file(
-                      File(portfolioImages[index]),
-                      fit: BoxFit.cover,
-                    ),
-                  );
-                })
-            : const Center(child: Text('No portfolio images available')),
-        const SizedBox(height: 16),
-        isEditMode
-          ? ElevatedButton(
-              onPressed: pickNewPortfolioImage,
-              child: const Text('Add Portfolio Image'),
-            )
-          : const SizedBox.shrink(),
-      ],
-    ),
-  );
-}
-
 
 void addCertification(String certification) {
   if (certification.isNotEmpty) {

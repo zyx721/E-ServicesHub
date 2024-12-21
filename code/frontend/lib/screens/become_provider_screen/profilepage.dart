@@ -5,6 +5,88 @@ import 'package:image_picker/image_picker.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'dart:io';
+import 'package:image_picker/image_picker.dart';
+import 'package:googleapis/drive/v3.dart' as drive;
+import 'package:flutter/services.dart' show rootBundle;
+import 'package:path/path.dart' as path;
+import 'package:googleapis_auth/auth_io.dart';
+
+class GoogleDriveService {
+  static const String _folderID = "1b517UTgjLJfsjyH2dByEPYZDg4cgwssQ"; // Your folder ID
+
+  Future<drive.DriveApi> getDriveApi() async {
+    try {
+      // Load credentials from assets
+      final String credentials = await rootBundle.loadString(
+        'assets/credentials/service_account.json'
+      );
+      
+      final accountCredentials = ServiceAccountCredentials.fromJson(credentials);
+      final client = await clientViaServiceAccount(
+        accountCredentials,
+        [drive.DriveApi.driveScope],
+      );
+      
+      return drive.DriveApi(client);
+    } catch (e) {
+      throw Exception('Failed to initialize Drive API: $e');
+    }
+  }
+
+  Future<String> uploadFile(File file) async {
+    try {
+      final driveApi = await getDriveApi();
+      final fileName = path.basename(file.path);
+
+      // Prepare drive file metadata
+      var driveFile = drive.File()
+        ..name = fileName
+        ..parents = [_folderID];
+
+      // Upload file
+      final response = await driveApi.files.create(
+        driveFile,
+        uploadMedia: drive.Media(file.openRead(), file.lengthSync()),
+      );
+
+      final fileId = response.id;
+      if (fileId == null) {
+        throw Exception('Failed to get file ID after upload');
+      }
+
+      // Set file permissions to public
+      final permission = drive.Permission()
+        ..role = "reader"
+        ..type = "anyone";
+      await driveApi.permissions.create(permission, fileId);
+
+      // Return the public URL
+      return "https://drive.google.com/uc?id=$fileId";
+    } catch (e) {
+      throw Exception('Failed to upload file: $e');
+    }
+  }
+
+  Future<void> deleteFile(String fileUrl) async {
+    try {
+      final driveApi = await getDriveApi();
+      
+      // Extract file ID from URL
+      final uri = Uri.parse(fileUrl);
+      final fileId = uri.queryParameters['id'];
+      
+      if (fileId == null) {
+        throw Exception('Invalid file URL');
+      }
+
+      // Delete the file
+      await driveApi.files.delete(fileId);
+    } catch (e) {
+      throw Exception('Failed to delete file: $e');
+    }
+  }
+}
+
 
 class ServiceProviderProfile2 extends StatefulWidget {
   const ServiceProviderProfile2({Key? key}) : super(key: key);
@@ -14,9 +96,12 @@ class ServiceProviderProfile2 extends StatefulWidget {
 }
 
 class _ServiceProviderProfileState extends State<ServiceProviderProfile2> {
-
-
+  final _driveService = GoogleDriveService();
   final _formKey = GlobalKey<FormState>();
+
+    // Track temporary uploads that haven't been saved to profile yet
+  List<String> _temporaryUploads = [];
+  List<String> portfolioImages = [];
 
   // Profile basic info
   final TextEditingController _professionController = TextEditingController();
@@ -29,8 +114,6 @@ class _ServiceProviderProfileState extends State<ServiceProviderProfile2> {
   List<String> _skills = [];
   List<String> _certifications = [];
   List<Map<String, String>> _workExperience = [];
-  List<File> _portfolioImages = [];
-
   // Controllers for dynamic inputs
   final TextEditingController _skillController = TextEditingController();
   final TextEditingController _certificationController = TextEditingController();
@@ -38,78 +121,186 @@ class _ServiceProviderProfileState extends State<ServiceProviderProfile2> {
   final TextEditingController _positionController = TextEditingController();
   final TextEditingController _durationController = TextEditingController();
 
-  // Image picker
-  final ImagePicker _picker = ImagePicker();
-  File? _profileImage;
 
-  Future<void> _saveProfile() async {
-  if (_formKey.currentState!.validate()) {
-    // Validate that at least some lists have entries
-    if (_skills.isEmpty || _certifications.isEmpty || _workExperience.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Please add at least one skill, certification, and work experience')),
-      );
-      return;
-    }
 
-    // Get the current authenticated user
-    User? user = FirebaseAuth.instance.currentUser;
-    if (user == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('User is not authenticated')),
-      );
-      return;
-    }
+  String userPhotoUrl = '';
 
-    // Reference to Firestore document
-    final DocumentReference userDoc = FirebaseFirestore.instance.collection('users').doc(user.uid);
-
-    // Prepare the profile data
-    Map<String, dynamic> profileData = {
-      'basicInfo': {
-        'profession': _professionController.text,
-        'phone': _phoneController.text,
-        'address': _addressController.text,
-        'hourlyRate': _hourlyRateController.text,
-      },
-      'skills': _skills,
-      'certifications': _certifications,
-      'workExperience': _workExperience,
-      'portfolioImages': _portfolioImages.map((file) => file.path).toList(),
-    };
-
-    // Save profile image path if exists
-    if (_profileImage != null) {
-      profileData['profileImage'] = _profileImage!.path;
-    }
-
+  
+  Future<void> fetchUserData() async {
     try {
-      // Update the Firestore document with the profile data
-      await userDoc.update(profileData);
-      await userDoc.update({'rating': 0.0,});
-      await userDoc.update({'isProvider': true,});
-      await userDoc.update({'aboutMe': _descriptionController.text,});
+      final User? user = _auth.currentUser;
+      if (user != null) {
+        final DocumentSnapshot userDoc =
+            await _firestore.collection('users').doc(user.uid).get();
 
-      // Optional: Navigate to the NavbarPage with provider role
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(
-          builder: (context) => NavbarPage(),
-        ),
-      );
-
-      // Show success message
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Profile updated successfully!')),
-      );
+        if (userDoc.exists) {
+          final data = userDoc.data() as Map<String, dynamic>;
+          setState(() {
+            userPhotoUrl = data['photoURL'] ?? '';
+          });
+        }
+      }
     } catch (e) {
-      // Handle any errors during Firestore update
+      debugPrint('Error fetching user data: $e');
+    }
+  }
+
+  
+
+ @override
+  void dispose() {
+    // Cleanup temporary uploads when widget is disposed
+    _cleanupTemporaryUploads();
+    super.dispose();
+  }
+
+
+  Future<void> _cleanupTemporaryUploads() async {
+    for (String fileUrl in _temporaryUploads) {
+      try {
+        await _driveService.deleteFile(fileUrl);
+      } catch (e) {
+        debugPrint('Error cleaning up temporary upload: $e');
+      }
+    }
+  }
+
+  Future<void> uploadToGoogleDrive(File file) async {
+    try {
+      final fileUrl = await _driveService.uploadFile(file);
+      
+      setState(() {
+        _temporaryUploads.add(fileUrl); // Track as temporary upload
+        portfolioImages.add(fileUrl);
+      });
+
+      debugPrint('File uploaded temporarily: $fileUrl');
+    } catch (e) {
+      debugPrint('Error uploading to Google Drive: $e');
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error updating profile: $e')),
+        const SnackBar(content: Text('Failed to upload image')),
       );
     }
   }
-}
+
+  Future<void> deletePortfolioImage(String imageUrl) async {
+    try {
+      final bool? confirm = await showDialog<bool>(
+        context: context,
+        builder: (BuildContext context) {
+          return AlertDialog(
+            title: const Text('Delete Image'),
+            content: const Text('Are you sure you want to delete this image?'),
+            actions: <Widget>[
+              TextButton(
+                onPressed: () => Navigator.of(context).pop(false),
+                child: const Text('Cancel'),
+              ),
+              TextButton(
+                onPressed: () => Navigator.of(context).pop(true),
+                child: const Text('Delete'),
+              ),
+            ],
+          );
+        },
+      );
+
+      if (confirm != true) return;
+
+      await _driveService.deleteFile(imageUrl);
+
+      setState(() {
+        portfolioImages.remove(imageUrl);
+        _temporaryUploads.remove(imageUrl); // Remove from temporary tracking
+      });
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Image deleted successfully')),
+      );
+    } catch (e) {
+      debugPrint('Error deleting portfolio image: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Failed to delete image')),
+      );
+    }
+  }
+
+  Future<void> _saveProfile() async {
+    if (_formKey.currentState!.validate()) {
+      if (_skills.isEmpty || _certifications.isEmpty || _workExperience.isEmpty) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Please add at least one skill, certification, and work experience')),
+        );
+        return;
+      }
+
+      User? user = FirebaseAuth.instance.currentUser;
+      if (user == null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('User is not authenticated')),
+        );
+        return;
+      }
+
+      try {
+        // Show loading indicator
+        showDialog(
+          context: context,
+          barrierDismissible: false,
+          builder: (BuildContext context) {
+            return const Center(child: CircularProgressIndicator());
+          },
+        );
+
+        final DocumentReference userDoc = FirebaseFirestore.instance.collection('users').doc(user.uid);
+
+        // Prepare the profile data
+        Map<String, dynamic> profileData = {
+          'basicInfo': {
+            'profession': _professionController.text,
+            'phone': _phoneController.text,
+            'address': _addressController.text,
+            'hourlyRate': _hourlyRateController.text,
+          },
+          'skills': _skills,
+          'certifications': _certifications,
+          'workExperience': _workExperience,
+          'portfolioImages': portfolioImages, // Save all current portfolio images
+          'rating': 0.0,
+          'isProvider': true,
+          'aboutMe': _descriptionController.text,
+        };
+
+        // Update the Firestore document
+        await userDoc.update(profileData);
+        
+        // Clear temporary uploads list since they're now saved
+        _temporaryUploads.clear();
+
+        // Close loading indicator
+        Navigator.of(context).pop();
+
+        // Navigate to the NavbarPage
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(
+            builder: (context) => NavbarPage(),
+          ),
+        );
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Profile updated successfully!')),
+        );
+      } catch (e) {
+        // Close loading indicator
+        Navigator.of(context).pop();
+        
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error updating profile: $e')),
+        );
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -144,7 +335,7 @@ class _ServiceProviderProfileState extends State<ServiceProviderProfile2> {
             _buildCertificationsSection(),
             const SizedBox(height: 20),
 
-            _buildPortfolioImagesSection(),
+            buildPortfolioSection(),
             const SizedBox(height: 20),
 
             ElevatedButton(
@@ -182,28 +373,97 @@ class _ServiceProviderProfileState extends State<ServiceProviderProfile2> {
 
   Widget _buildProfileImageUpload() {
     return Center(
-      child: GestureDetector(
-        onTap: _pickProfileImage,
-        child: CircleAvatar(
-          radius: 60,
-          backgroundColor: Colors.grey[200],
-          backgroundImage: _profileImage != null ? FileImage(_profileImage!) : null,
-          child: _profileImage == null 
-            ? Icon(Icons.camera_alt, color: Colors.grey[800], size: 40)
-            : null,
-        ),
-      ),
+      child: Stack(
+              children: [
+                CircleAvatar(
+                  radius: 60,
+                  backgroundColor: Colors.grey.shade200,
+                  backgroundImage: userPhotoUrl.isNotEmpty
+                      ? NetworkImage(userPhotoUrl) as ImageProvider
+                      : const AssetImage('assets/images/default_profile.png'),
+                ),
+                  GestureDetector(
+                    onTap: () {
+                      pickNewProfilePicture();
+                    },
+                    child: Container(
+                      padding: const EdgeInsets.all(6),
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: Colors.blue,
+                      ),
+                      child: const Icon(
+                        Icons.camera_alt,
+                        size: 20,
+                        color: Colors.white,
+                      ),
+                    ),
+                  ),
+              ],
+            ),
     );
   }
 
-  Future<void> _pickProfileImage() async {
-    final pickedFile = await _picker.pickImage(source: ImageSource.gallery);
-    if (pickedFile != null) {
-      setState(() {
-        _profileImage = File(pickedFile.path);
-      });
+Future<void> pickNewProfilePicture() async {
+  try {
+    final ImagePicker picker = ImagePicker();
+    final XFile? pickedFile = await picker.pickImage(source: ImageSource.gallery);
+    
+    if (pickedFile == null) return;
+
+    // Show loading indicator
+    if (mounted) {
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (BuildContext context) {
+          return const Center(child: CircularProgressIndicator());
+        },
+      );
+    }
+
+    // Upload new image to Drive
+    final file = File(pickedFile.path);
+    final fileUrl = await _driveService.uploadFile(file);
+
+    // Get current user
+    final User? user = _auth.currentUser;
+    if (user == null) throw Exception('No user logged in');
+
+    // Delete old photo from Drive if it exists
+    if (userPhotoUrl.startsWith('https://drive.google.com')) {
+      try {
+        await _driveService.deleteFile(userPhotoUrl);
+      } catch (e) {
+        debugPrint('Error deleting old profile picture: $e');
+      }
+    }
+
+    // Update Firestore and local state
+    await _firestore.collection('users').doc(user.uid).update({
+      'photoURL': fileUrl,
+    });
+
+    setState(() {
+      userPhotoUrl = fileUrl;
+    });
+
+    // Close loading indicator
+    if (mounted) {
+      Navigator.of(context).pop();
+    }
+
+  } catch (e) {
+    debugPrint('Error updating profile picture: $e');
+    if (mounted) {
+      Navigator.of(context).pop(); // Close loading indicator
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Failed to update profile picture')),
+      );
     }
   }
+}
+
 
   Widget _buildBasicInfoFields() {
     return Column(
@@ -460,78 +720,157 @@ class _ServiceProviderProfileState extends State<ServiceProviderProfile2> {
     });
   }
 
- Widget _buildPortfolioImagesSection() {
-  return Column(
-    crossAxisAlignment: CrossAxisAlignment.start,
-    children: [
-      // Section title with description
-      Text(
-        'Portfolio Images',
-        style: GoogleFonts.poppins(
-          fontSize: 18,
-          fontWeight: FontWeight.bold,
-          color: Colors.black87,
-        ),
-      ),
-      Text(
-        'Showcase your best work and projects',
-        style: GoogleFonts.poppins(
-          fontSize: 12,
-          color: Colors.grey[600],
-        ),
-      ),
-      const SizedBox(height: 15),
 
-      // Add Portfolio Images Button
-      Center(
-        child: ElevatedButton.icon(
-          onPressed: _pickPortfolioImages,
-          icon: Icon(Icons.add_photo_alternate),
-          label: Text(
-            'Add Portfolio Images',
-            style: GoogleFonts.poppins(),
-          ),
-        )),
-        const SizedBox(height: 10),
-        Wrap(
-          spacing: 8,
-          runSpacing: 8,
-          children: _portfolioImages.map((image) {
-            return Stack(
-              alignment: Alignment.topRight,
-              children: [
-                Image.file(
-                  image,
-                  width: 100,
-                  height: 100,
-                  fit: BoxFit.cover,
-                ),
-                IconButton(
-                  icon: Icon(Icons.delete, color: Colors.red),
-                  onPressed: () => _removePortfolioImage(image),
-                ),
-              ],
-            );
-          }).toList(),
-        ),
-      ],
-    );
-  }
 
-  Future<void> _pickPortfolioImages() async {
-    final pickedFiles = await _picker.pickMultiImage();
-    if (pickedFiles != null) {
-      setState(() {
-        _portfolioImages.addAll(pickedFiles.map((file) => File(file.path)));
-      });
+  final FirebaseAuth _auth = FirebaseAuth.instance;
+  
+  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+
+
+
+  Future<void> pickNewPortfolioImage() async {
+    final ImagePicker picker = ImagePicker();
+    final XFile? pickedFile =
+        await picker.pickImage(source: ImageSource.gallery);
+
+    if (pickedFile != null) {
+      final file = File(pickedFile.path);
+      await uploadToGoogleDrive(file);
     }
   }
+  
 
-  void _removePortfolioImage(File image) {
-    setState(() {
-      _portfolioImages.remove(image);
-    });
-  }
+   // Add these to your class state variables
+bool isAddingImage = false;
+Set<String> deletingImages = {};
+
+Widget buildPortfolioSection() {
+  return Padding(
+    padding: const EdgeInsets.symmetric(horizontal: 16),
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text(
+          'Portfolio',
+          style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+        ),
+        const SizedBox(height: 8),
+        portfolioImages.isNotEmpty
+            ? SingleChildScrollView(
+                scrollDirection: Axis.horizontal,
+                child: Row(
+                  children: portfolioImages.map((imageUrl) {
+                    final isDeleting = deletingImages.contains(imageUrl);
+                    
+                    return Padding(
+                      padding: const EdgeInsets.only(right: 8),
+                      child: Stack(
+                        children: [
+                          GestureDetector(
+                            onTap: () {
+                              // Show image in full screen
+                            },
+                            child: Image.network(
+                              imageUrl,
+                              width: 100,
+                              height: 100,
+                              fit: BoxFit.cover,
+                              loadingBuilder: (BuildContext context, Widget child,
+                                  ImageChunkEvent? loadingProgress) {
+                                if (loadingProgress == null) {
+                                  return child;
+                                }
+                                return Center(
+                                  child: CircularProgressIndicator(
+                                    value: loadingProgress.expectedTotalBytes != null
+                                        ? loadingProgress.cumulativeBytesLoaded /
+                                            loadingProgress.expectedTotalBytes!
+                                        : null,
+                                  ),
+                                );
+                              },
+                            ),
+                          ),
+                          if (isDeleting)
+                            Container(
+                              width: 100,
+                              height: 100,
+                              color: Colors.black.withOpacity(0.5),
+                              child: const Center(
+                                child: CircularProgressIndicator(
+                                  color: Colors.white,
+                                ),
+                              ),
+                            ),
+                          if (!isDeleting)
+                            Positioned(
+                              top: 4,
+                              right: 4,
+                              child: Container(
+                                decoration: BoxDecoration(
+                                  color: Colors.black.withOpacity(0.5),
+                                  shape: BoxShape.circle,
+                                ),
+                                child: IconButton(
+                                  icon: const Icon(Icons.delete, color: Colors.white),
+                                  iconSize: 20,
+                                  padding: EdgeInsets.zero,
+                                  constraints: const BoxConstraints(
+                                    minWidth: 32,
+                                    minHeight: 32,
+                                  ),
+                                  onPressed: () async {
+                                    setState(() {
+                                      deletingImages.add(imageUrl);
+                                    });
+                                    await deletePortfolioImage(imageUrl);
+                                    setState(() {
+                                      deletingImages.remove(imageUrl);
+                                    });
+                                  },
+                                ),
+                              ),
+                            ),
+                        ],
+                      ),
+                    );
+                  }).toList(),
+                ),
+              )
+            : const Center(child: Text('No portfolio images available')),
+        const SizedBox(height: 16),
+        
+          ElevatedButton(
+            onPressed: isAddingImage 
+              ? null 
+              : () async {
+                  setState(() {
+                    isAddingImage = true;
+                  });
+                  try {
+                    await pickNewPortfolioImage();
+                  } finally {
+                    setState(() {
+                      isAddingImage = false;
+                    });
+                  }
+                },
+            child: isAddingImage
+              ? const SizedBox(
+                  height: 20,
+                  width: 20,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                  ),
+                )
+              : const Text('Add Portfolio Image'),
+          ),
+      ],
+    ),
+  );
+}
+
+
 
 
 }
