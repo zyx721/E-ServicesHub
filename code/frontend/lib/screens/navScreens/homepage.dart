@@ -6,6 +6,8 @@ import 'package:url_launcher/url_launcher.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:hanini_frontend/screens/navScreens/service.dart';
+import 'package:hanini_frontend/models/colors.dart';
+import 'package:hanini_frontend/models/servicesWeHave.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({Key? key}) : super(key: key);
@@ -100,53 +102,52 @@ class _HomePageState extends State<HomePage> {
   }
 
   Future<void> _fetchServices() async {
-  if (_isFetching) return;
-  setState(() => _isFetching = true);
+    if (_isFetching) return;
+    setState(() => _isFetching = true);
 
-  try {
-    // Fetch services only for providers, excluding the current user
-    Query query = FirebaseFirestore.instance
-        .collection('users')
-        .where('isProvider', isEqualTo: true)
-        .limit(_pageSize);
+    try {
+      // Fetch services only for providers, excluding the current user
+      Query query = FirebaseFirestore.instance
+          .collection('users')
+          .where('isProvider', isEqualTo: true)
+          .limit(_pageSize);
 
-    // Start after the last document if it exists
-    if (_lastDocument != null) {
-      query = query.startAfterDocument(_lastDocument!);
+      // Start after the last document if it exists
+      if (_lastDocument != null) {
+        query = query.startAfterDocument(_lastDocument!);
+      }
+
+      final QuerySnapshot snapshot = await query.get();
+
+      if (snapshot.docs.isNotEmpty) {
+        setState(() {
+          _lastDocument = snapshot.docs.last;
+
+          services.addAll(
+            snapshot.docs.map((doc) {
+              final service = doc.data() as Map<String, dynamic>;
+              final serviceId = doc.id;
+              // Exclude the current user from the list of services
+              if (serviceId != currentUserId) {
+                return {
+                  ...service,
+                  'docId': serviceId,
+                };
+              } else {
+                return null;
+              }
+            }).whereType<
+                Map<String,
+                    dynamic>>(), // Use `whereType` to filter non-null values
+          );
+        });
+      }
+    } catch (e) {
+      debugPrint('Error fetching services: $e');
+    } finally {
+      setState(() => _isFetching = false);
     }
-
-    final QuerySnapshot snapshot = await query.get();
-
-    if (snapshot.docs.isNotEmpty) {
-      setState(() {
-        _lastDocument = snapshot.docs.last;
-
-        services.addAll(
-          snapshot.docs
-              .map((doc) {
-                final service = doc.data() as Map<String, dynamic>;
-                final serviceId = doc.id;
-                // Exclude the current user from the list of services
-                if (serviceId != currentUserId) {
-                  return {
-                    ...service,
-                    'docId': serviceId,
-                  };
-                } else {
-                  return null;
-                }
-              })
-              .whereType<Map<String, dynamic>>(), // Use `whereType` to filter non-null values
-        );
-      });
-    }
-  } catch (e) {
-    debugPrint('Error fetching services: $e');
-  } finally {
-    setState(() => _isFetching = false);
   }
-}
-
 
   Future<void> toggleFavorite(Map<String, dynamic> service) async {
     if (currentUserId == null) {
@@ -158,9 +159,8 @@ class _HomePageState extends State<HomePage> {
     }
 
     try {
-      final userDoc = FirebaseFirestore.instance
-          .collection('users')
-          .doc(currentUserId);
+      final userDoc =
+          FirebaseFirestore.instance.collection('users').doc(currentUserId);
 
       final serviceId = service['docId'] ?? service['uid'];
 
@@ -189,8 +189,8 @@ class _HomePageState extends State<HomePage> {
     }
   }
 
-
-Widget _buildAdsSlider(List<String> adImages) {
+  // Ads Slider Widget
+  Widget _buildAdsSlider(List<String> adImages) {
     final List<String> adLinks = [
       'https://www.economic-dz.com',
       'https://www.aegiscare.in',
@@ -251,6 +251,166 @@ Widget _buildAdsSlider(List<String> adImages) {
     );
   }
 
+  // Top Services Header Widget
+  Widget _buildTopServicesHeader() {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Text(
+          'Top Services',
+          style: GoogleFonts.poppins(
+            color: AppColors.mainColor,
+            fontSize: 20,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        const Icon(Icons.more_horiz, color: AppColors.mainColor),
+      ],
+    );
+  }
+
+  // Grid of Services Widget
+  Widget _buildServicesGrid() {
+    return Expanded(
+      child: GridView.builder(
+        controller: _scrollController,
+        itemCount: services.length + (_isFetching ? 1 : 0),
+        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+          crossAxisCount: 2,
+          mainAxisSpacing: 20,
+          crossAxisSpacing: 20,
+          childAspectRatio: 0.9,
+        ),
+        itemBuilder: (context, index) {
+          if (index >= services.length) {
+            return Center(child: CircularProgressIndicator());
+          }
+
+          final service = services[index];
+          final serviceId = service['docId'] ?? service['uid'];
+          final isFavorite = favoriteServices.contains(serviceId);
+
+          return GestureDetector(
+            onTap: () {
+              // Navigate to FullProfilePage with the selected service's ID
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) =>
+                      ServiceProviderFullProfile(
+                        providerId: serviceId,
+                      ),
+                ),
+              );
+            },
+            child: Card(
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(16),
+              ),
+              child: Stack(
+                children: [
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Expanded(
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.vertical(
+                            top: Radius.circular(16),
+                          ),
+                          child: Image.network(
+                            service['photoURL'] ?? '',
+                            fit: BoxFit.cover,
+                            width: double.infinity,
+                            errorBuilder:
+                                (context, error, stackTrace) {
+                              return Center(
+                                child: Icon(Icons.broken_image,
+                                    size: 50, color: Colors.grey),
+                              );
+                            },
+                          ),
+                        ),
+                      ),
+                      Container(
+                        decoration: BoxDecoration(
+                          color: AppColors.tempColor,
+                          borderRadius: BorderRadius.vertical(
+                            bottom: Radius.circular(16),
+                          ),
+                        ),
+                        child: Padding(
+                          padding: const EdgeInsets.all(8.0),
+                          child: Column(
+                            crossAxisAlignment:
+                                CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                service['basicInfo']
+                                    ['profession'] ??
+                                    'N/A',
+                                style: GoogleFonts.poppins(
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                              Text(
+                                service['name'] ?? 'Unknown',
+                                style: GoogleFonts.poppins(
+                                  fontSize: 12,
+                                  color: AppColors.mainColor,
+                                ),
+                                maxLines: 1,
+                              ),
+                              _buildStarRating(
+                                  service['rating'].toDouble()),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  Positioned(
+                    top: 8,
+                    right: 8,
+                    child: IconButton(
+                      icon: Icon(
+                        isFavorite
+                            ? Icons.favorite
+                            : Icons.favorite_border,
+                        color:
+                            isFavorite ? Colors.red : Colors.grey,
+                      ),
+                      onPressed: () => toggleFavorite(service),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          );
+        },
+      ),
+    );
+  }
+
+  Widget _buildStarRating(double rating) {
+  int fullStars = rating.floor();
+  int halfStars = (rating % 1 >= 0.5) ? 1 : 0;
+  int emptyStars = 5 - fullStars - halfStars;
+
+  return Row(
+    children: [
+      for (int i = 0; i < fullStars; i++)
+        const Icon(Icons.star, color: Colors.amber, size: 20),
+      for (int i = 0; i < halfStars; i++)
+        const Icon(Icons.star_half, color: Colors.amber, size: 20),
+      for (int i = 0; i < emptyStars; i++)
+        const Icon(Icons.star_border, color: Colors.grey, size: 20),
+    ],
+  );
+}
+
 
   void _onScroll() {
     if (_scrollController.position.pixels >=
@@ -260,29 +420,122 @@ Widget _buildAdsSlider(List<String> adImages) {
     }
   }
 
-    Widget _buildStarRating(double rating) {
-    int fullStars = rating.floor();
-    int halfStars = (rating % 1 >= 0.5) ? 1 : 0;
-    int emptyStars = 5 - fullStars - halfStars;
 
+  // Top Services Header Widget
+  Widget _buildTopPopularHeader() {
     return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        for (int i = 0; i < fullStars; i++)
-          const Icon(Icons.star, color: Colors.amber, size: 20),
-        for (int i = 0; i < halfStars; i++)
-          const Icon(Icons.star_half, color: Colors.amber, size: 20),
-        for (int i = 0; i < emptyStars; i++)
-          const Icon(Icons.star_border, color: Colors.grey, size: 20),
+        Text(
+          'Popular Services',
+          style: GoogleFonts.poppins(
+            color: AppColors.mainColor,
+            fontSize: 20,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        const Icon(Icons.more_horiz, color: AppColors.mainColor),
       ],
     );
   }
 
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      body: _isLoading
-          ? Center(child: CircularProgressIndicator())
-          : Padding(
+
+Column _servicesSection() {
+  return Column(
+    crossAxisAlignment: CrossAxisAlignment.start,
+    children: [
+      Container(
+        height: 150,
+        child: ListView.separated(
+          itemBuilder: (context, index) {
+            return Container(
+              width: 110,
+              decoration: BoxDecoration(
+                color: PopularServicesModel.getPopularServices()[index]
+                    .color
+                    .withOpacity(0.1),
+                borderRadius: BorderRadius.circular(20),
+              ),
+              child: Padding(
+                padding: const EdgeInsets.all(8.0),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                  children: [
+                    // SvgPicture.asset(
+                    //   PopularServicesModel.getPopularServices()[index].iconPath,
+                    // ),
+                    Expanded(
+                      child: Center(
+                        child: Text(
+                          PopularServicesModel.getPopularServices()[index].name,
+                          textAlign: TextAlign.center, // Center text alignment
+                          maxLines: 2, // Allow up to 2 lines for longer text
+                          overflow: TextOverflow.ellipsis, // Handle overflow with ellipsis
+                          style: const TextStyle(
+                            fontWeight: FontWeight.w500,
+                            color: AppColors.mainColor,
+                            fontSize: 16,
+                          ),
+                        ),
+                      ),
+                    ),
+                    Container(
+                      height: 35,
+                      width: 80,
+                      decoration: BoxDecoration(
+                        gradient: const LinearGradient(
+                          colors: [
+                            Color(0xff9DCEFF),
+                            Color(0xff92A3FD),
+                          ],
+                        ),
+                        borderRadius: BorderRadius.circular(50),
+                      ),
+                      child: const Center(
+                        child: Text(
+                          'Search',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontWeight: FontWeight.w600,
+                            fontSize: 12,
+                          ),
+                        ),
+                      ),
+                    ),
+                    SizedBox(height: 10,),
+                    Text(
+                      '${PopularServicesModel.getPopularServices()[index].availableProviders} Providers',
+                      textAlign: TextAlign.center,
+                      style: const TextStyle(
+                        color: Color(0xff7B6F72),
+                        fontSize: 13,
+                        fontWeight: FontWeight.w400,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            );
+          },
+          separatorBuilder: (context, index) => const SizedBox(
+            width: 25,
+          ),
+          itemCount: PopularServicesModel.getPopularServices().length,
+          scrollDirection: Axis.horizontal,
+          padding: const EdgeInsets.only(left: 10, right: 10),
+        ),
+      ),
+    ],
+  );
+}
+
+@override
+Widget build(BuildContext context) {
+  return Scaffold(
+    body: _isLoading
+        ? Center(child: CircularProgressIndicator())
+        : SingleChildScrollView(  // Wrap Column in SingleChildScrollView
+            child: Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
               child: Column(
                 children: [
@@ -293,127 +546,23 @@ Widget _buildAdsSlider(List<String> adImages) {
                     'assets/images/ads/third_page.png',
                   ]),
                   const SizedBox(height: 20),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text(
-                        'Top Services',
-                        style: GoogleFonts.poppins(
-                          fontSize: 20,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      const Icon(Icons.more_horiz, color: Colors.grey),
-                    ],
-                  ),
+                  _buildTopPopularHeader(),
+                  const SizedBox(height: 20),
+                  _servicesSection(),
+                  const SizedBox(height: 20),
+                  // Top Services Header
+                  _buildTopServicesHeader(),
                   const SizedBox(height: 10),
-                  Expanded(
-                    child: GridView.builder(
-                      controller: _scrollController,
-                      itemCount: services.length + (_isFetching ? 1 : 0),
-                      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                        crossAxisCount: 2,
-                        mainAxisSpacing: 20,
-                        crossAxisSpacing: 20,
-                        childAspectRatio: 0.9,
-                      ),
-                      itemBuilder: (context, index) {
-                        if (index >= services.length) {
-                          return Center(child: CircularProgressIndicator());
-                        }
-
-                        final service = services[index];
-                        final serviceId = service['docId'] ?? service['uid'];
-                        final isFavorite = favoriteServices.contains(serviceId);
-
-                        return GestureDetector(
-    onTap: () {
-    // Navigate to FullProfilePage with the selected service's ID
-    Navigator.push(
-      context, 
-      MaterialPageRoute(
-        builder: (context) => ServiceProviderFullProfile(providerId: serviceId, ),
-      ),
-    );
-  },
-                          child: Card(
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(16),
-                            ),
-                            child: Stack(
-                              children: [
-                                Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Expanded(
-                                      child: ClipRRect(
-                                        borderRadius: BorderRadius.vertical(
-                                          top: Radius.circular(16),
-                                        ),
-                                        child: Image.network(
-                                          service['photoURL'] ?? '',
-                                          fit: BoxFit.cover,
-                                          width: double.infinity,
-                                          errorBuilder: (context, error, stackTrace) {
-                                            return Center(
-                                              child: Icon(Icons.broken_image,
-                                                  size: 50, color: Colors.grey),
-                                            );
-                                          },
-                                        ),
-                                      ),
-                                    ),
-                                    Padding(
-                                      padding: const EdgeInsets.all(8.0),
-                                      child: Column(
-                                        crossAxisAlignment: CrossAxisAlignment.start,
-                                        children: [
-                                          Text(
-                                            service['basicInfo']['profession'] ?? 'N/A',
-                                            style: GoogleFonts.poppins(
-                                              fontSize: 14,
-                                              fontWeight: FontWeight.bold,
-                                            ),
-                                            maxLines: 1,
-                                            overflow: TextOverflow.ellipsis,
-                                          ),
-                                          Text(
-                                            service['name'] ?? 'Unknown',
-                                            style: GoogleFonts.poppins(
-                                              fontSize: 12,
-                                              color: Colors.grey[600],
-                                            ),
-                                            maxLines: 1,
-                                          ),
-                                          _buildStarRating(service['rating'].toDouble()),
-                                        ],
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                                Positioned(
-                                  top: 8,
-                                  right: 8,
-                                  child: IconButton(
-                                    icon: Icon(
-                                      isFavorite
-                                          ? Icons.favorite
-                                          : Icons.favorite_border,
-                                      color: isFavorite ? Colors.red : Colors.grey,
-                                    ),
-                                    onPressed: () => toggleFavorite(service),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        );
-                      },
-                    ),
+                  // Services Grid (no Expanded here)
+                  Container(
+                    height: 400, // Set a fixed height or adjust according to the content
+                    child: _buildServicesGrid(),
                   ),
                 ],
               ),
             ),
-    );
-  }
+          ),
+    backgroundColor: const Color.fromARGB(255, 255, 255, 255),
+  );
+}
 }

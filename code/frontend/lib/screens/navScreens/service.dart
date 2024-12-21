@@ -463,14 +463,12 @@ Widget buildProfileTab() {
         const SizedBox(height: 20),
         _buildSectionTitle('Certifications'),
         _buildCertificationsSection(),
-        const SizedBox(height: 20),
-        const SizedBox(height: 20),
+        const SizedBox(height: 40),
         _buildContactButton(),
+        const SizedBox(height: 40),
       ],
     );
 }
-
-
 
 Widget buildTopProfileInfo() {
   return Column(
@@ -515,9 +513,6 @@ Widget buildTopProfileInfo() {
     ],
   );
 }
-
-
-
 
   Column buildAboutMeSection() {
     return Column(
@@ -744,6 +739,7 @@ Widget buildTopProfileInfo() {
         ),
         style: ElevatedButton.styleFrom(
           padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+          
         ),
       ),
     );

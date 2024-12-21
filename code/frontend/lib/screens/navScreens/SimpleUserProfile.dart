@@ -84,7 +84,9 @@ class _SimpleUserProfileState extends State<SimpleUserProfile> {
     return Scaffold(
       body: isLoading
           ? const Center(child: CircularProgressIndicator())
-          : ListView(
+          : Stack(
+            children: [
+            ListView(
               padding: EdgeInsets.zero,
               children: [
                 const SizedBox(height: 50),
@@ -93,12 +95,22 @@ class _SimpleUserProfileState extends State<SimpleUserProfile> {
                 buildProfileInfo(localization),
                 const SizedBox(height: 60),
                 buildBecomeProviderButton(localization),
+                const SizedBox(height: 40),
               ],
             ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: toggleEditMode,
-        child: Icon(isEditMode ? Icons.check : Icons.edit),
-        tooltip: isEditMode ? localization?.save : localization?.editProfile, // Use localization
+            Positioned(
+              bottom: 40, // Adjust this value to fine-tune the position
+              right: 16, // Adjust this value to fine-tune the position
+              child: FloatingActionButton(
+                onPressed: toggleEditMode,
+                backgroundColor: const Color.fromARGB(255, 43, 133, 207),
+                child: Icon(isEditMode ? Icons.check : Icons.edit),
+                tooltip: isEditMode
+                    ? localization?.save
+                    : localization?.editProfile, // Use localization
+              ),
+            ),// Use localization
+        ]
       ),
     );
   }

@@ -15,8 +15,6 @@ class ServiceProviderProfile2 extends StatefulWidget {
 }
 
 class _ServiceProviderProfileState extends State<ServiceProviderProfile2> {
-
-
   final _formKey = GlobalKey<FormState>();
 
   // Profile basic info
@@ -34,7 +32,8 @@ class _ServiceProviderProfileState extends State<ServiceProviderProfile2> {
 
   // Controllers for dynamic inputs
   final TextEditingController _skillController = TextEditingController();
-  final TextEditingController _certificationController = TextEditingController();
+  final TextEditingController _certificationController =
+      TextEditingController();
   final TextEditingController _companyController = TextEditingController();
   final TextEditingController _positionController = TextEditingController();
   final TextEditingController _durationController = TextEditingController();
@@ -44,73 +43,84 @@ class _ServiceProviderProfileState extends State<ServiceProviderProfile2> {
   File? _profileImage;
 
   Future<void> _saveProfile() async {
-  if (_formKey.currentState!.validate()) {
-    // Validate that at least some lists have entries
-    if (_skills.isEmpty || _certifications.isEmpty || _workExperience.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Please add at least one skill, certification, and work experience')),
-      );
-      return;
-    }
+    if (_formKey.currentState!.validate()) {
+      // Validate that at least some lists have entries
+      if (_skills.isEmpty ||
+          _certifications.isEmpty ||
+          _workExperience.isEmpty) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+              content: Text(
+                  'Please add at least one skill, certification, and work experience')),
+        );
+        return;
+      }
 
-    // Get the current authenticated user
-    User? user = FirebaseAuth.instance.currentUser;
-    if (user == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('User is not authenticated')),
-      );
-      return;
-    }
+      // Get the current authenticated user
+      User? user = FirebaseAuth.instance.currentUser;
+      if (user == null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('User is not authenticated')),
+        );
+        return;
+      }
 
-    // Reference to Firestore document
-    final DocumentReference userDoc = FirebaseFirestore.instance.collection('users').doc(user.uid);
+      // Reference to Firestore document
+      final DocumentReference userDoc =
+          FirebaseFirestore.instance.collection('users').doc(user.uid);
 
-    // Prepare the profile data
-    Map<String, dynamic> profileData = {
-      'basicInfo': {
-        'profession': _professionController.text,
-        'phone': _phoneController.text,
-        'address': _addressController.text,
-        'hourlyRate': _hourlyRateController.text,
-      },
-      'skills': _skills,
-      'certifications': _certifications,
-      'workExperience': _workExperience,
-      'portfolioImages': _portfolioImages.map((file) => file.path).toList(),
-    };
+      // Prepare the profile data
+      Map<String, dynamic> profileData = {
+        'basicInfo': {
+          'profession': _professionController.text,
+          'phone': _phoneController.text,
+          'address': _addressController.text,
+          'hourlyRate': _hourlyRateController.text,
+        },
+        'skills': _skills,
+        'certifications': _certifications,
+        'workExperience': _workExperience,
+        'portfolioImages': _portfolioImages.map((file) => file.path).toList(),
+      };
 
-    // Save profile image path if exists
-    if (_profileImage != null) {
-      profileData['profileImage'] = _profileImage!.path;
-    }
+      // Save profile image path if exists
+      if (_profileImage != null) {
+        profileData['profileImage'] = _profileImage!.path;
+      }
 
-    try {
-      // Update the Firestore document with the profile data
-      await userDoc.update(profileData);
-      await userDoc.update({'rating': 0.0,});
-      await userDoc.update({'isProvider': true,});
-      await userDoc.update({'aboutMe': _descriptionController.text,});
+      try {
+        // Update the Firestore document with the profile data
+        await userDoc.update(profileData);
+        await userDoc.update({
+          'rating': 0.0,
+        });
+        await userDoc.update({
+          'isProvider': true,
+        });
+        await userDoc.update({
+          'aboutMe': _descriptionController.text,
+        });
 
-      // Optional: Navigate to the NavbarPage with provider role
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(
-          builder: (context) => NavbarPage(),
-        ),
-      );
+        // Optional: Navigate to the NavbarPage with provider role
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(
+            builder: (context) => NavbarPage(),
+          ),
+        );
 
-      // Show success message
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Profile updated successfully!')),
-      );
-    } catch (e) {
-      // Handle any errors during Firestore update
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error updating profile: $e')),
-      );
+        // Show success message
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Profile updated successfully!')),
+        );
+      } catch (e) {
+        // Handle any errors during Firestore update
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error updating profile: $e')),
+        );
+      }
     }
   }
-}
 
   @override
   Widget build(BuildContext context) {
@@ -128,26 +138,20 @@ class _ServiceProviderProfileState extends State<ServiceProviderProfile2> {
           children: [
             _buildProfileImageUpload(),
             const SizedBox(height: 20),
-
             _buildSectionTitle('Basic Information'),
             _buildBasicInfoFields(),
             const SizedBox(height: 20),
-
             _buildSectionTitle('Skills'),
             _buildSkillsSection(),
             const SizedBox(height: 20),
-
             _buildSectionTitle('Work Experience'),
             _buildWorkExperienceSection(),
             const SizedBox(height: 20),
-
             _buildSectionTitle('Certifications'),
             _buildCertificationsSection(),
             const SizedBox(height: 20),
-
             _buildPortfolioImagesSection(),
             const SizedBox(height: 20),
-
             ElevatedButton(
               onPressed: _saveProfile,
               style: ElevatedButton.styleFrom(
@@ -161,6 +165,9 @@ class _ServiceProviderProfileState extends State<ServiceProviderProfile2> {
                 ),
               ),
             ),
+            const SizedBox(
+              height: 20,
+            )
           ],
         ),
       ),
@@ -188,10 +195,11 @@ class _ServiceProviderProfileState extends State<ServiceProviderProfile2> {
         child: CircleAvatar(
           radius: 60,
           backgroundColor: Colors.grey[200],
-          backgroundImage: _profileImage != null ? FileImage(_profileImage!) : null,
-          child: _profileImage == null 
-            ? Icon(Icons.camera_alt, color: Colors.grey[800], size: 40)
-            : null,
+          backgroundImage:
+              _profileImage != null ? FileImage(_profileImage!) : null,
+          child: _profileImage == null
+              ? Icon(Icons.camera_alt, color: Colors.grey[800], size: 40)
+              : null,
         ),
       ),
     );
@@ -216,7 +224,8 @@ class _ServiceProviderProfileState extends State<ServiceProviderProfile2> {
             border: OutlineInputBorder(),
             labelStyle: GoogleFonts.poppins(),
           ),
-          validator: (value) => value!.isEmpty ? 'Please enter your profession' : null,
+          validator: (value) =>
+              value!.isEmpty ? 'Please enter your profession' : null,
         ),
         const SizedBox(height: 10),
         TextFormField(
@@ -226,9 +235,8 @@ class _ServiceProviderProfileState extends State<ServiceProviderProfile2> {
             border: OutlineInputBorder(),
             labelStyle: GoogleFonts.poppins(),
           ),
-          validator: (value) => value!.isEmpty 
-            ? 'Please enter your phone number' 
-            : null,
+          validator: (value) =>
+              value!.isEmpty ? 'Please enter your phone number' : null,
         ),
         const SizedBox(height: 10),
         TextFormField(
@@ -238,9 +246,8 @@ class _ServiceProviderProfileState extends State<ServiceProviderProfile2> {
             border: OutlineInputBorder(),
             labelStyle: GoogleFonts.poppins(),
           ),
-          validator: (value) => value!.isEmpty 
-            ? 'Please enter your address' 
-            : null,
+          validator: (value) =>
+              value!.isEmpty ? 'Please enter your address' : null,
         ),
         const SizedBox(height: 10),
         TextFormField(
@@ -251,9 +258,8 @@ class _ServiceProviderProfileState extends State<ServiceProviderProfile2> {
             border: OutlineInputBorder(),
             labelStyle: GoogleFonts.poppins(),
           ),
-          validator: (value) => value!.isEmpty 
-            ? 'Please enter your hourly rate' 
-            : null,
+          validator: (value) =>
+              value!.isEmpty ? 'Please enter your hourly rate' : null,
         ),
         const SizedBox(height: 10),
         TextFormField(
@@ -264,9 +270,8 @@ class _ServiceProviderProfileState extends State<ServiceProviderProfile2> {
             border: OutlineInputBorder(),
             labelStyle: GoogleFonts.poppins(),
           ),
-          validator: (value) => value!.isEmpty 
-            ? 'Please provide a brief description' 
-            : null,
+          validator: (value) =>
+              value!.isEmpty ? 'Please provide a brief description' : null,
         ),
       ],
     );
@@ -297,11 +302,13 @@ class _ServiceProviderProfileState extends State<ServiceProviderProfile2> {
         Wrap(
           spacing: 8,
           runSpacing: 8,
-          children: _skills.map((skill) => Chip(
-            label: Text(skill, style: GoogleFonts.poppins()),
-            deleteIcon: Icon(Icons.close),
-            onDeleted: () => _removeSkill(skill),
-          )).toList(),
+          children: _skills
+              .map((skill) => Chip(
+                    label: Text(skill, style: GoogleFonts.poppins()),
+                    deleteIcon: Icon(Icons.close),
+                    onDeleted: () => _removeSkill(skill),
+                  ))
+              .toList(),
         ),
       ],
     );
@@ -334,7 +341,7 @@ class _ServiceProviderProfileState extends State<ServiceProviderProfile2> {
           ),
         ),
         const SizedBox(height: 10),
-                TextField(
+        TextField(
           controller: _positionController,
           decoration: InputDecoration(
             labelText: 'Position',
@@ -372,8 +379,10 @@ class _ServiceProviderProfileState extends State<ServiceProviderProfile2> {
                 subtitle: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text('Position: ${experience['position'] ?? ''}', style: GoogleFonts.poppins()),
-                    Text('Duration: ${experience['duration'] ?? ''}', style: GoogleFonts.poppins()),
+                    Text('Position: ${experience['position'] ?? ''}',
+                        style: GoogleFonts.poppins()),
+                    Text('Duration: ${experience['duration'] ?? ''}',
+                        style: GoogleFonts.poppins()),
                   ],
                 ),
                 trailing: IconButton(
@@ -436,11 +445,13 @@ class _ServiceProviderProfileState extends State<ServiceProviderProfile2> {
         Wrap(
           spacing: 8,
           runSpacing: 8,
-          children: _certifications.map((certification) => Chip(
-            label: Text(certification, style: GoogleFonts.poppins()),
-            deleteIcon: Icon(Icons.close),
-            onDeleted: () => _removeCertification(certification),
-          )).toList(),
+          children: _certifications
+              .map((certification) => Chip(
+                    label: Text(certification, style: GoogleFonts.poppins()),
+                    deleteIcon: Icon(Icons.close),
+                    onDeleted: () => _removeCertification(certification),
+                  ))
+              .toList(),
         ),
       ],
     );
@@ -461,31 +472,31 @@ class _ServiceProviderProfileState extends State<ServiceProviderProfile2> {
     });
   }
 
- Widget _buildPortfolioImagesSection() {
-  return Column(
-    crossAxisAlignment: CrossAxisAlignment.start,
-    children: [
-      // Section title with description
-      Text(
-        'Portfolio Images',
-        style: GoogleFonts.poppins(
-          fontSize: 18,
-          fontWeight: FontWeight.bold,
-          color: Colors.black87,
+  Widget _buildPortfolioImagesSection() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // Section title with description
+        Text(
+          'Portfolio Images',
+          style: GoogleFonts.poppins(
+            fontSize: 18,
+            fontWeight: FontWeight.bold,
+            color: Colors.black87,
+          ),
         ),
-      ),
-      Text(
-        'Showcase your best work and projects',
-        style: GoogleFonts.poppins(
-          fontSize: 12,
-          color: Colors.grey[600],
+        Text(
+          'Showcase your best work and projects',
+          style: GoogleFonts.poppins(
+            fontSize: 12,
+            color: Colors.grey[600],
+          ),
         ),
-      ),
-      const SizedBox(height: 15),
+        const SizedBox(height: 15),
 
-      // Add Portfolio Images Button
-      Center(
-        child: ElevatedButton.icon(
+        // Add Portfolio Images Button
+        Center(
+            child: ElevatedButton.icon(
           onPressed: _pickPortfolioImages,
           icon: Icon(Icons.add_photo_alternate),
           label: Text(
@@ -533,8 +544,4 @@ class _ServiceProviderProfileState extends State<ServiceProviderProfile2> {
       _portfolioImages.remove(image);
     });
   }
-
-
 }
-
-         

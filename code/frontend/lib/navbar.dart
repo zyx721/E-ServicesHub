@@ -14,12 +14,9 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:hanini_frontend/screens/navScreens/notificationspage.dart'; // Replace with actual file path
-
-
+import 'models/colors.dart';
 
 class NavbarPage extends StatefulWidget {
-
-
   const NavbarPage({Key? key}) : super(key: key);
 
   @override
@@ -61,33 +58,32 @@ class _NavbarPageState extends State<NavbarPage> {
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
-Future<bool> _checkIfUserIsProvider() async {
-  final User? user = _auth.currentUser;
-  
-  // Check if the user is logged in
-  if (user != null) {
-    try {
-      final DocumentSnapshot userDoc =
+  Future<bool> _checkIfUserIsProvider() async {
+    final User? user = _auth.currentUser;
+
+    // Check if the user is logged in
+    if (user != null) {
+      try {
+        final DocumentSnapshot userDoc =
             await _firestore.collection('users').doc(user.uid).get();
 
-      // Check if the document exists and return the 'isProvider' field
-      if (userDoc.exists) {
-        final data = userDoc.data() as Map<String, dynamic>;
-        return data['isProvider'] ?? false;
-      } else {
-        throw Exception("User not found in Firestore");
+        // Check if the document exists and return the 'isProvider' field
+        if (userDoc.exists) {
+          final data = userDoc.data() as Map<String, dynamic>;
+          return data['isProvider'] ?? false;
+        } else {
+          throw Exception("User not found in Firestore");
+        }
+      } catch (e) {
+        // Log error or handle it
+        print("Error while fetching user: $e");
+        throw Exception("Failed to fetch user data");
       }
-    } catch (e) {
-      // Log error or handle it
-      print("Error while fetching user: $e");
-      throw Exception("Failed to fetch user data");
+    } else {
+      // Handle the case where no user is signed in
+      throw Exception("No user is currently signed in");
     }
-  } else {
-    // Handle the case where no user is signed in
-    throw Exception("No user is currently signed in");
   }
-}
-
 
   void _changeLanguage(String languageCode) {
     Locale newLocale;
@@ -111,20 +107,13 @@ Future<bool> _checkIfUserIsProvider() async {
     return isLoading
         ? Center(child: CircularProgressIndicator())
         : PopScope(
-          canPop: false,
-          child: Scaffold(
+            canPop: false,
+            child: Scaffold(
               appBar: PreferredSize(
                 preferredSize: Size.fromHeight(64.0),
                 child: Container(
                   decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      colors: [
-                        Color(0xFF3949AB),
-                        Color(0xFF1E88E5),
-                      ],
-                      begin: Alignment.topCenter,
-                      end: Alignment.bottomCenter,
-                    ),
+                        gradient: AppColors.mainGradient,
                   ),
                   child: AppBar(
                     title: Text(
@@ -134,71 +123,74 @@ Future<bool> _checkIfUserIsProvider() async {
                         fontWeight: FontWeight.w600,
                         color: Colors.white,
                       ),
+                      
                     ),
                     backgroundColor: Colors.transparent,
                     elevation: 0,
-actions: [
-  Stack(
-    alignment: Alignment.center,
-    children: [
-      IconButton(
-        icon: const Icon(
-          Icons.notifications_outlined,
-          color: Colors.white,
-          size: 28,
-        ),
-        onPressed: () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (context) => NotificationsPage(userId: _auth.currentUser?.uid ?? ''),
-            ),
-          );
-        },
-      ),
-      Positioned(
-        right: 4, // Adjust position to align badge properly
-        top: 8,
-        child: StreamBuilder<DocumentSnapshot>(
-          stream: FirebaseFirestore.instance
-              .collection('users')
-              .doc(_auth.currentUser?.uid ?? '')
-              .snapshots(),
-          builder: (context, snapshot) {
-            if (!snapshot.hasData || snapshot.data == null) {
-              return const SizedBox(); // Show nothing if no data
-            }
-            final data = snapshot.data!.data() as Map<String, dynamic>;
-            final unreadCount = data['newCommentsCount'] ?? 0;
+                    actions: [
+                      Stack(
+                        alignment: Alignment.center,
+                        children: [
+                          IconButton(
+                            icon: const Icon(
+                              Icons.notifications_outlined,
+                              color: Colors.white,
+                              size: 28,
+                            ),
+                            onPressed: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => NotificationsPage(
+                                      userId: _auth.currentUser?.uid ?? ''),
+                                ),
+                              );
+                            },
+                          ),
+                          Positioned(
+                            right: 4, // Adjust position to align badge properly
+                            top: 8,
+                            child: StreamBuilder<DocumentSnapshot>(
+                              stream: FirebaseFirestore.instance
+                                  .collection('users')
+                                  .doc(_auth.currentUser?.uid ?? '')
+                                  .snapshots(),
+                              builder: (context, snapshot) {
+                                if (!snapshot.hasData ||
+                                    snapshot.data == null) {
+                                  return const SizedBox(); // Show nothing if no data
+                                }
+                                final data = snapshot.data!.data()
+                                    as Map<String, dynamic>;
+                                final unreadCount =
+                                    data['newCommentsCount'] ?? 0;
 
-            if (unreadCount == 0) {
-              return const SizedBox(); // Show nothing if no unread comments
-            }
+                                if (unreadCount == 0) {
+                                  return const SizedBox(); // Show nothing if no unread comments
+                                }
 
-            return Container(
-              padding: const EdgeInsets.all(5),
-              decoration: BoxDecoration(
-                color: Colors.red,
-                shape: BoxShape.circle,
-              ),
-              child: Text(
-                '$unreadCount',
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 12,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-            );
-          },
-        ),
-      ),
-    ],
-  ),
-  _buildLanguageDropdown(),
-],
-
-
+                                return Container(
+                                  padding: const EdgeInsets.all(5),
+                                  decoration: BoxDecoration(
+                                    color: Colors.red,
+                                    shape: BoxShape.circle,
+                                  ),
+                                  child: Text(
+                                    '$unreadCount',
+                                    style: const TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                );
+                              },
+                            ),
+                          ),
+                        ],
+                      ),
+                      _buildLanguageDropdown(),
+                    ],
                   ),
                 ),
               ),
@@ -212,16 +204,20 @@ actions: [
                   });
                 },
                 destinations: const [
-                  NavigationDestination(icon: Icon(Iconsax.home), label: 'Home'),
                   NavigationDestination(
-                      icon: Icon(Iconsax.search_normal), label: 'Search'),
+                      icon: Icon(Iconsax.home,   color: AppColors.mainColor,), label: 'Home',),
                   NavigationDestination(
-                      icon: Icon(Iconsax.save_2), label: 'Favorites'),
-                  NavigationDestination(icon: Icon(Iconsax.user), label: 'Profile'),
+                      icon: Icon(Iconsax.search_normal,  color: AppColors.mainColor,), label: 'Search'),
+                  NavigationDestination(
+                      icon: Icon(Iconsax.save_2,   color: AppColors.mainColor,), label: 'Favorites'),
+                  NavigationDestination(
+                      icon: Icon(Iconsax.user,   color: AppColors.mainColor,), label: 'Profile'),
                 ],
+                
               ),
+
             ),
-        );
+          );
   }
 
   Widget _buildLanguageDropdown() {
