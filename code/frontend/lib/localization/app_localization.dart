@@ -291,9 +291,9 @@ class AppLocalizations {
   String get manageUsers => isArabic
       ? "إدارة المستخدمين"
       : (isFrench ? "Gérer les utilisateurs" : "Manage Users");
-  String get manageServices => isArabic
-      ? "إدارة الخدمات"
-      : (isFrench ? "Gérer les services" : "Manage Services");
+  String get manageReviews => isArabic
+      ? "إدارة المراجعات"
+      : (isFrench ? "Gérer Les Avis" : "Manage Reviews");
   String get manualVerification => isArabic
       ? "التحقق اليدوي"
       : (isFrench ? "Vérification manuelle" : "Manual Verification");

@@ -4,7 +4,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:hanini_frontend/localization/app_localization.dart';
 import 'package:hanini_frontend/screens/admin/UserManagementScreen.dart';
-import 'package:hanini_frontend/screens/admin/ServiceManagementScreen.dart';
+import 'package:hanini_frontend/screens/admin/CommentManagementScreen.dart';
 import 'package:hanini_frontend/screens/admin/ManualVerificationScreen.dart'; // Import ManualVerificationScreen
 
 class AdminProfile extends StatefulWidget {
@@ -69,18 +69,6 @@ class _AdminProfileState extends State<AdminProfile> {
                     buildAdminActions(localization),
                   ],
                 ),
-                Positioned(
-                  top: 40,
-                  right: 16,
-                  child: FloatingActionButton(
-                    onPressed: () {
-                      // Add any action for the floating button if needed
-                    },
-                    child: const Icon(Icons.settings),
-                    tooltip: localization?.settings,
-                    backgroundColor: const Color.fromARGB(255, 43, 133, 207),
-                  ),
-                ),
               ],
             ),
       resizeToAvoidBottomInset: false,
@@ -139,14 +127,14 @@ class _AdminProfileState extends State<AdminProfile> {
           ),
           const SizedBox(height: 20),
           buildActionCard(
-            localization.manageServices,
+            localization.manageReviews,
             Icons.build,
-            Colors.green,
+            Colors.amber,
             () {
               Navigator.push(
                 context,
                 MaterialPageRoute(
-                    builder: (context) => ServiceManagementScreen()),
+                    builder: (context) => CommentManagementScreen()),
               );
             },
           ),
@@ -154,7 +142,7 @@ class _AdminProfileState extends State<AdminProfile> {
           buildActionCard(
             localization.manualVerification,
             Icons.verified_user,
-            Colors.orange,
+            Colors.green,
             () {
               Navigator.push(
                 context,

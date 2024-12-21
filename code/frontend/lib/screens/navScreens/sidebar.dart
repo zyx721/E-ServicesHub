@@ -1,25 +1,50 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:hanini_frontend/localization/app_localization.dart';
-import 'package:hanini_frontend/user_role.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:google_sign_in/google_sign_in.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 Widget Sidebar(BuildContext context, AppLocalizations appLocalizations) {
   final GoogleSignIn _googleSignIn = GoogleSignIn();
 
+  Future<bool> checkIfUserIsAdmin() async {
+    final User? user = FirebaseAuth.instance.currentUser;
+    if (user != null) {
+      final DocumentSnapshot userDoc = await FirebaseFirestore.instance
+          .collection('users')
+          .doc(user.uid)
+          .get();
+      if (userDoc.exists) {
+        final data = userDoc.data() as Map<String, dynamic>;
+        return data['isAdmin'] ?? false;
+      }
+    }
+    return false;
+  }
+
   Future<void> handleLogout() async {
     final prefs = await SharedPreferences.getInstance();
     try {
-      // Sign out from Google
+      final User? currentUser = FirebaseAuth.instance.currentUser;
+      
+      if (currentUser != null) {
+        await FirebaseFirestore.instance
+            .collection('users')
+            .doc(currentUser.uid)
+            .update({
+          'isConnected': false,
+          'lastSignIn': DateTime.now(),
+        });
+      }
+
       await _googleSignIn.signOut();
-
-      // Reset the logged-in status
+      await FirebaseAuth.instance.signOut();
       await prefs.setBool('isLoggedIn', false);
-
-      // Navigate to the login screen
       Navigator.pushReplacementNamed(context, '/login');
     } catch (e) {
+      print('Logout Error: $e');
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('Logout failed: $e'),
@@ -28,6 +53,8 @@ Widget Sidebar(BuildContext context, AppLocalizations appLocalizations) {
       );
     }
   }
+
+
 
   return Drawer(
     child: Column(
@@ -39,8 +66,8 @@ Widget Sidebar(BuildContext context, AppLocalizations appLocalizations) {
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
               colors: [
-                Color(0xFF1A237E), // Deep indigo
-                Color(0xFF42A5F5), // Lighter blue
+                Color(0xFF1A237E),
+                Color(0xFF42A5F5),
               ],
             ),
           ),
@@ -58,22 +85,41 @@ Widget Sidebar(BuildContext context, AppLocalizations appLocalizations) {
           ),
         ),
         Expanded(
-          child: ListView(
-            padding: EdgeInsets.zero,
-            children: [
-              _buildSidebarItem(
-                context,
-                icon: Icons.settings,
-                title: appLocalizations.settings,
-                onTap: () => Navigator.pushNamed(context, '/settings'),
-              ),
-              _buildSidebarItem(
-                context,
-                icon: Icons.logout,
-                title: appLocalizations.logout,
-                onTap: () => _showLogoutDialog(context, handleLogout),
-              ),
-            ],
+          child: FutureBuilder<bool>(
+            future: checkIfUserIsAdmin(),
+            builder: (context, snapshot) {
+              if (snapshot.connectionState == ConnectionState.waiting) {
+                return Center(child: CircularProgressIndicator());
+              }
+
+              final isAdmin = snapshot.data ?? false;
+
+              return ListView(
+                padding: EdgeInsets.zero,
+                children: [
+                  if (isAdmin)
+                    _buildSidebarItem(
+                      context,
+                      icon: Icons.admin_panel_settings,
+                      title: 'Add Admin',
+                      onTap: () => Navigator.pushNamed(context, '/add-admin'),
+                    )
+                  else
+                    _buildSidebarItem(
+                      context,
+                      icon: Icons.settings,
+                      title: appLocalizations.settings,
+                      onTap: () => Navigator.pushNamed(context, '/settings'),
+                    ),
+                  _buildSidebarItem(
+                    context,
+                    icon: Icons.logout,
+                    title: appLocalizations.logout,
+                    onTap: () => _showLogoutDialog(context, handleLogout),
+                  ),
+                ],
+              );
+            },
           ),
         ),
       ],

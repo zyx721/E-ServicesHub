@@ -2,11 +2,90 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:hanini_frontend/localization/app_localization.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:path_provider/path_provider.dart';
 import 'package:path/path.dart' as path;
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:googleapis_auth/auth_io.dart';
+import 'package:googleapis/drive/v3.dart' as drive;
+import 'package:flutter/services.dart' show rootBundle;
+
+
+class GoogleDriveService {
+  static const String _folderID = "1b517UTgjLJfsjyH2dByEPYZDg4cgwssQ"; // Your folder ID
+
+  Future<drive.DriveApi> getDriveApi() async {
+    try {
+      // Load credentials from assets
+      final String credentials = await rootBundle.loadString(
+        'assets/credentials/service_account.json'
+      );
+      
+      final accountCredentials = ServiceAccountCredentials.fromJson(credentials);
+      final client = await clientViaServiceAccount(
+        accountCredentials,
+        [drive.DriveApi.driveScope],
+      );
+      
+      return drive.DriveApi(client);
+    } catch (e) {
+      throw Exception('Failed to initialize Drive API: $e');
+    }
+  }
+
+  Future<String> uploadFile(File file) async {
+    try {
+      final driveApi = await getDriveApi();
+      final fileName = path.basename(file.path);
+
+      // Prepare drive file metadata
+      var driveFile = drive.File()
+        ..name = fileName
+        ..parents = [_folderID];
+
+      // Upload file
+      final response = await driveApi.files.create(
+        driveFile,
+        uploadMedia: drive.Media(file.openRead(), file.lengthSync()),
+      );
+
+      final fileId = response.id;
+      if (fileId == null) {
+        throw Exception('Failed to get file ID after upload');
+      }
+
+      // Set file permissions to public
+      final permission = drive.Permission()
+        ..role = "reader"
+        ..type = "anyone";
+      await driveApi.permissions.create(permission, fileId);
+
+      // Return the public URL
+      return "https://drive.google.com/uc?id=$fileId";
+    } catch (e) {
+      throw Exception('Failed to upload file: $e');
+    }
+  }
+
+  Future<void> deleteFile(String fileUrl) async {
+    try {
+      final driveApi = await getDriveApi();
+      
+      // Extract file ID from URL
+      final uri = Uri.parse(fileUrl);
+      final fileId = uri.queryParameters['id'];
+      
+      if (fileId == null) {
+        throw Exception('Invalid file URL');
+      }
+
+      // Delete the file
+      await driveApi.files.delete(fileId);
+    } catch (e) {
+      throw Exception('Failed to delete file: $e');
+    }
+  }
+}
 
 class ServiceProviderProfile extends StatefulWidget {
   const ServiceProviderProfile({Key? key}) : super(key: key);
@@ -17,6 +96,7 @@ class ServiceProviderProfile extends StatefulWidget {
 }
 
 class _ServiceProviderProfileState extends State<ServiceProviderProfile> {
+  final _driveService = GoogleDriveService();
   final double profileHeight = 150;
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
@@ -62,8 +142,7 @@ class _ServiceProviderProfileState extends State<ServiceProviderProfile> {
             certifications = data['certifications'];
             workExperience = data['workExperience'];
             rating = (data['rating'] ?? 0.0).toDouble();
-
-
+            portfolioImages = List<String>.from(data['portfolioImages'] ?? []);
             nameController.text = userName;
             aboutMeController.text = aboutMe;
             hourlyRateController.text = hourlyRate;
@@ -83,7 +162,6 @@ class _ServiceProviderProfileState extends State<ServiceProviderProfile> {
   void initState() {
     super.initState();
     fetchUserData();
-    _loadPortfolioImages();
   }
 
   @override
@@ -94,53 +172,229 @@ class _ServiceProviderProfileState extends State<ServiceProviderProfile> {
     super.dispose();
   }
 
-  // Load saved portfolio images from local storage
-  Future<void> _loadPortfolioImages() async {
-    final directory = await getApplicationDocumentsDirectory();
-    final dirPath =
-        directory.path + '/saved_images'; // Change to your desired directory
-    final directoryExists = Directory(dirPath).existsSync();
 
-    if (!directoryExists) {
-      Directory(dirPath).createSync();
+    Future<void> deletePortfolioImage(String imageUrl) async {
+    try {
+      // Show confirmation dialog
+      final bool? confirm = await showDialog<bool>(
+        context: context,
+        builder: (BuildContext context) {
+          return AlertDialog(
+            title: const Text('Delete Image'),
+            content: const Text('Are you sure you want to delete this image?'),
+            actions: <Widget>[
+              TextButton(
+                onPressed: () => Navigator.of(context).pop(false),
+                child: const Text('Cancel'),
+              ),
+              TextButton(
+                onPressed: () => Navigator.of(context).pop(true),
+                child: const Text('Delete'),
+              ),
+            ],
+          );
+        },
+      );
+
+      if (confirm != true) return;
+
+      // Delete from Google Drive
+      await _driveService.deleteFile(imageUrl);
+
+      // Remove from Firestore
+      final user = _auth.currentUser;
+      if (user != null) {
+        await _firestore.collection('users').doc(user.uid).update({
+          'portfolioImages': FieldValue.arrayRemove([imageUrl]),
+        });
+      }
+
+      // Update state
+      setState(() {
+        portfolioImages.remove(imageUrl);
+      });
+
+      // Show success message
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Image deleted successfully')),
+        );
+      }
+    } catch (e) {
+      debugPrint('Error deleting portfolio image: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Failed to delete image')),
+        );
+      }
     }
+  }
+  
+    Future<void> uploadToGoogleDrive(File file) async {
+    try {
+      final fileUrl = await _driveService.uploadFile(file);
+      
+      // Update Firestore with the new URL
+      final user = _auth.currentUser;
+      if (user != null) {
+        await _firestore.collection('users').doc(user.uid).update({
+          'portfolioImages': FieldValue.arrayUnion([fileUrl]),
+        });
+      }
 
-    final List<FileSystemEntity> files = Directory(dirPath).listSync();
+      setState(() {
+        portfolioImages.add(fileUrl);
+      });
 
-    setState(() {
-      portfolioImages = files
-          .where((file) =>
-              file.path.endsWith('.jpg') || file.path.endsWith('.png'))
-          .map((file) => file.path)
-          .toList();
-    });
+      debugPrint('File uploaded and URL added: $fileUrl');
+    } catch (e) {
+      debugPrint('Error uploading to Google Drive: $e');
+      // Consider showing an error message to the user
+    }
   }
 
-  // Pick a new portfolio image and save it to local storage
+
   Future<void> pickNewPortfolioImage() async {
     final ImagePicker picker = ImagePicker();
     final XFile? pickedFile =
         await picker.pickImage(source: ImageSource.gallery);
+
     if (pickedFile != null) {
-      final directory = await getApplicationDocumentsDirectory();
-      final fileName = path.basename(pickedFile.path);
-      final newDirPath =
-          '${directory.path}/saved_images'; // Path for saving images
-      final newFile = File('$newDirPath/$fileName');
-
-      // Ensure the directory exists
-      Directory(newDirPath).createSync();
-
-      // Copy the image to the app's local directory
-      await File(pickedFile.path).copy(newFile.path);
-
-      setState(() {
-        portfolioImages.add(newFile.path); // Add new image to the list
-      });
+      final file = File(pickedFile.path);
+      await uploadToGoogleDrive(file);
     }
   }
 
 
+ // Add these to your class state variables
+bool isAddingImage = false;
+Set<String> deletingImages = {};
+
+Widget buildPortfolioSection() {
+  return Padding(
+    padding: const EdgeInsets.symmetric(horizontal: 16),
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text(
+          'Portfolio',
+          style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+        ),
+        const SizedBox(height: 8),
+        portfolioImages.isNotEmpty
+            ? SingleChildScrollView(
+                scrollDirection: Axis.horizontal,
+                child: Row(
+                  children: portfolioImages.map((imageUrl) {
+                    final isDeleting = deletingImages.contains(imageUrl);
+                    
+                    return Padding(
+                      padding: const EdgeInsets.only(right: 8),
+                      child: Stack(
+                        children: [
+                          GestureDetector(
+                            onTap: () {
+                              // Show image in full screen
+                            },
+                            child: Image.network(
+                              imageUrl,
+                              width: 100,
+                              height: 100,
+                              fit: BoxFit.cover,
+                              loadingBuilder: (BuildContext context, Widget child,
+                                  ImageChunkEvent? loadingProgress) {
+                                if (loadingProgress == null) {
+                                  return child;
+                                }
+                                return Center(
+                                  child: CircularProgressIndicator(
+                                    value: loadingProgress.expectedTotalBytes != null
+                                        ? loadingProgress.cumulativeBytesLoaded /
+                                            loadingProgress.expectedTotalBytes!
+                                        : null,
+                                  ),
+                                );
+                              },
+                            ),
+                          ),
+                          if (isEditMode && isDeleting)
+                            Container(
+                              width: 100,
+                              height: 100,
+                              color: Colors.black.withOpacity(0.5),
+                              child: const Center(
+                                child: CircularProgressIndicator(
+                                  color: Colors.white,
+                                ),
+                              ),
+                            ),
+                          if (isEditMode && !isDeleting)
+                            Positioned(
+                              top: 4,
+                              right: 4,
+                              child: Container(
+                                decoration: BoxDecoration(
+                                  color: Colors.black.withOpacity(0.5),
+                                  shape: BoxShape.circle,
+                                ),
+                                child: IconButton(
+                                  icon: const Icon(Icons.delete, color: Colors.white),
+                                  iconSize: 20,
+                                  padding: EdgeInsets.zero,
+                                  constraints: const BoxConstraints(
+                                    minWidth: 32,
+                                    minHeight: 32,
+                                  ),
+                                  onPressed: () async {
+                                    setState(() {
+                                      deletingImages.add(imageUrl);
+                                    });
+                                    await deletePortfolioImage(imageUrl);
+                                    setState(() {
+                                      deletingImages.remove(imageUrl);
+                                    });
+                                  },
+                                ),
+                              ),
+                            ),
+                        ],
+                      ),
+                    );
+                  }).toList(),
+                ),
+              )
+            : const Center(child: Text('No portfolio images available')),
+        const SizedBox(height: 16),
+        if (isEditMode)
+          ElevatedButton(
+            onPressed: isAddingImage 
+              ? null 
+              : () async {
+                  setState(() {
+                    isAddingImage = true;
+                  });
+                  try {
+                    await pickNewPortfolioImage();
+                  } finally {
+                    setState(() {
+                      isAddingImage = false;
+                    });
+                  }
+                },
+            child: isAddingImage
+              ? const SizedBox(
+                  height: 20,
+                  width: 20,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                  ),
+                )
+              : const Text('Add Portfolio Image'),
+          ),
+      ],
+    ),
+  );
+}
   Future<void> saveUserData() async {
   try {
     final User? user = _auth.currentUser;
@@ -204,13 +458,13 @@ Widget build(BuildContext context) {
                   buildTop(localizations!),
                   buildProfileInfo(localizations),
                   const SizedBox(height: 20),
-                  _buildSectionTitle(localizations!.skills),
+                  _buildSectionTitle(localizations.skills),
                   _buildSkillsSection(localizations),
                   const SizedBox(height: 20),
                   _buildSectionTitle(localizations.workExperience),
                   _buildWorkExperienceSection(localizations),
                   const SizedBox(height: 20),
-                  buildPortfolioSection(localizations),
+                  buildPortfolioSection(),// A message to ziyed: you forgot to do the localization part for the portfolio -Fares
                   const SizedBox(height: 20),
                   _buildSectionTitle(localizations.certifications),
                   _buildCertificationsSection(localizations),
@@ -554,52 +808,6 @@ Widget _buildWorkExperienceSection(AppLocalizations localizations) {
   );
 }
 
-Widget buildPortfolioSection(AppLocalizations localizations) {
-  return Padding(
-    padding: const EdgeInsets.symmetric(horizontal: 16),
-    child: Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          localizations.portfolio,
-          style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-        ),
-        const SizedBox(height: 8),
-        portfolioImages.isNotEmpty
-            ? GridView.builder(
-                shrinkWrap: true,
-                physics: const NeverScrollableScrollPhysics(),
-                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                  crossAxisCount: 3,
-                  crossAxisSpacing: 8,
-                  mainAxisSpacing: 8,
-                ),
-                itemCount: portfolioImages.length,
-                itemBuilder: (context, index) {
-                  return GestureDetector(
-                    onTap: () {
-                      // Show image in full screen
-                    },
-                    child: Image.file(
-                      File(portfolioImages[index]),
-                      fit: BoxFit.cover,
-                    ),
-                  );
-                })
-            : Center(child: Text(localizations.noPortfolioImagesAvailable)),
-        const SizedBox(height: 16),
-        isEditMode
-          ? ElevatedButton(
-              onPressed: pickNewPortfolioImage,
-              child: Text(localizations.addPortfolioImage),
-            )
-          : const SizedBox.shrink(),
-      ],
-    ),
-  );
-}
-
-
 void addCertification(String certification) {
   if (certification.isNotEmpty) {
     setState(() {
@@ -748,14 +956,63 @@ Widget _buildStarRating(double? rating) {
 }
 
   
-  Future<void> pickNewProfilePicture() async {
+Future<void> pickNewProfilePicture() async {
+  try {
     final ImagePicker picker = ImagePicker();
-    final XFile? pickedFile =
-        await picker.pickImage(source: ImageSource.gallery);
-    if (pickedFile != null) {
-      setState(() {
-        userPhotoUrl = pickedFile.path; // You can upload it to Firebase here
-      });
+    final XFile? pickedFile = await picker.pickImage(source: ImageSource.gallery);
+    
+    if (pickedFile == null) return;
+
+    // Show loading indicator
+    if (mounted) {
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (BuildContext context) {
+          return const Center(child: CircularProgressIndicator());
+        },
+      );
+    }
+
+    // Upload new image to Drive
+    final file = File(pickedFile.path);
+    final fileUrl = await _driveService.uploadFile(file);
+
+    // Get current user
+    final User? user = _auth.currentUser;
+    if (user == null) throw Exception('No user logged in');
+
+    // Delete old photo from Drive if it exists
+    if (userPhotoUrl.startsWith('https://drive.google.com')) {
+      try {
+        await _driveService.deleteFile(userPhotoUrl);
+      } catch (e) {
+        debugPrint('Error deleting old profile picture: $e');
+      }
+    }
+
+    // Update Firestore and local state
+    await _firestore.collection('users').doc(user.uid).update({
+      'photoURL': fileUrl,
+    });
+
+    setState(() {
+      userPhotoUrl = fileUrl;
+    });
+
+    // Close loading indicator
+    if (mounted) {
+      Navigator.of(context).pop();
+    }
+
+  } catch (e) {
+    debugPrint('Error updating profile picture: $e');
+    if (mounted) {
+      Navigator.of(context).pop(); // Close loading indicator
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Failed to update profile picture')),
+      );
     }
   }
+}
 }
