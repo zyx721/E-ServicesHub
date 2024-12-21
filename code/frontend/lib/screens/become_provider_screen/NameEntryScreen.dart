@@ -68,10 +68,14 @@ class _NameEntryScreenState extends State<NameEntryScreen> {
         'firstName': firstName,
         'lastName': lastName,
         'selectedWorkChoices': _selectedChoices.toList(),
+        'isSTEP_1': true,
       });
 
-      // Navigate to verification screen
-      Navigator.pushNamed(context, '/verification');
+       Navigator.of(context).pushNamedAndRemoveUntil(
+      '/verification', // Your navbar route
+      (Route<dynamic> route) => false, // This removes all previous routes
+    );
+      
     } catch (e) {
       _showErrorDialog("Failed to save data: $e");
     }
