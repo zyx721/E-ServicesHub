@@ -5,7 +5,7 @@ import 'dart:async';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:hanini_frontend/screens/navScreens/service.dart';
+import 'package:hanini_frontend/screens/services/service.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({Key? key}) : super(key: key);

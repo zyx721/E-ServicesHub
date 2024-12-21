@@ -8,15 +8,15 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:google_fonts/google_fonts.dart';
 
-class ServiceProviderProfile2 extends StatefulWidget {
-  const ServiceProviderProfile2({Key? key}) : super(key: key);
+class ServiceProviderProfile extends StatefulWidget {
+  const ServiceProviderProfile({Key? key}) : super(key: key);
 
   @override
-  State<ServiceProviderProfile2> createState() =>
+  State<ServiceProviderProfile> createState() =>
       _ServiceProviderProfileState();
 }
 
-class _ServiceProviderProfileState extends State<ServiceProviderProfile2> {
+class _ServiceProviderProfileState extends State<ServiceProviderProfile> {
   final double profileHeight = 150;
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;

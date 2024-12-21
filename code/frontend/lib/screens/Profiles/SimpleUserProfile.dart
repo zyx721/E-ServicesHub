@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:hanini_frontend/localization/app_localization.dart';
+import 'package:hanini_frontend/screens/Profiles/AdminProfile.dart';
 import 'package:hanini_frontend/screens/become_provider_screen/onboarding2.dart';
 
 class SimpleUserProfile extends StatefulWidget {
@@ -93,6 +94,8 @@ class _SimpleUserProfileState extends State<SimpleUserProfile> {
                 buildProfileInfo(localization),
                 const SizedBox(height: 60),
                 buildBecomeProviderButton(localization),
+                const SizedBox(height: 20),
+                buildBecomeAdminButton(), // Add the temporary button here
               ],
             ),
       floatingActionButton: FloatingActionButton(
@@ -250,5 +253,34 @@ class _SimpleUserProfileState extends State<SimpleUserProfile> {
         ),
       ),
     );
+  }
+
+  Widget buildBecomeAdminButton() {
+    return Center(
+      child: ElevatedButton(
+        onPressed: () async {
+          await makeUserAdmin();
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(builder: (context) => AdminProfile()),
+          );
+        },
+        child: Text('Become Admin'),
+      ),
+    );
+  }
+
+  Future<void> makeUserAdmin() async {
+    try {
+      final User? user = _auth.currentUser;
+      if (user != null) {
+        await _firestore.collection('users').doc(user.uid).update({
+          'isAdmin': true,
+        });
+        debugPrint('User is now an admin');
+      }
+    } catch (e) {
+      debugPrint('Error making user admin: $e');
+    }
   }
 }

@@ -7,14 +7,14 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'dart:io';
 
-class ServiceProviderProfile2 extends StatefulWidget {
-  const ServiceProviderProfile2({Key? key}) : super(key: key);
+class SetProviderProfile extends StatefulWidget {
+  const SetProviderProfile({Key? key}) : super(key: key);
 
   @override
-  _ServiceProviderProfileState createState() => _ServiceProviderProfileState();
+  _SetProviderProfileState createState() => _SetProviderProfileState();
 }
 
-class _ServiceProviderProfileState extends State<ServiceProviderProfile2> {
+class _SetProviderProfileState extends State<SetProviderProfile> {
 
 
   final _formKey = GlobalKey<FormState>();
