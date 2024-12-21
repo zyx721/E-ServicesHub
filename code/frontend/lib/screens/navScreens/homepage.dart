@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/svg.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:async';
@@ -24,6 +25,7 @@ class _HomePageState extends State<HomePage> {
   late Timer _adTimer;
 
   List<Map<String, dynamic>> services = [];
+
   Set<String> favoriteServices = {};
   String? currentUserId;
   bool _isLoading = true;
@@ -296,10 +298,9 @@ class _HomePageState extends State<HomePage> {
               Navigator.push(
                 context,
                 MaterialPageRoute(
-                  builder: (context) =>
-                      ServiceProviderFullProfile(
-                        providerId: serviceId,
-                      ),
+                  builder: (context) => ServiceProviderFullProfile(
+                    providerId: serviceId,
+                  ),
                 ),
               );
             },
@@ -321,8 +322,7 @@ class _HomePageState extends State<HomePage> {
                             service['photoURL'] ?? '',
                             fit: BoxFit.cover,
                             width: double.infinity,
-                            errorBuilder:
-                                (context, error, stackTrace) {
+                            errorBuilder: (context, error, stackTrace) {
                               return Center(
                                 child: Icon(Icons.broken_image,
                                     size: 50, color: Colors.grey),
@@ -341,13 +341,10 @@ class _HomePageState extends State<HomePage> {
                         child: Padding(
                           padding: const EdgeInsets.all(8.0),
                           child: Column(
-                            crossAxisAlignment:
-                                CrossAxisAlignment.start,
+                            crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(
-                                service['basicInfo']
-                                    ['profession'] ??
-                                    'N/A',
+                                service['basicInfo']['profession'] ?? 'N/A',
                                 style: GoogleFonts.poppins(
                                   fontSize: 14,
                                   fontWeight: FontWeight.bold,
@@ -363,8 +360,7 @@ class _HomePageState extends State<HomePage> {
                                 ),
                                 maxLines: 1,
                               ),
-                              _buildStarRating(
-                                  service['rating'].toDouble()),
+                              _buildStarRating(service['rating'].toDouble()),
                             ],
                           ),
                         ),
@@ -376,11 +372,8 @@ class _HomePageState extends State<HomePage> {
                     right: 8,
                     child: IconButton(
                       icon: Icon(
-                        isFavorite
-                            ? Icons.favorite
-                            : Icons.favorite_border,
-                        color:
-                            isFavorite ? Colors.red : Colors.grey,
+                        isFavorite ? Icons.favorite : Icons.favorite_border,
+                        color: isFavorite ? Colors.red : Colors.grey,
                       ),
                       onPressed: () => toggleFavorite(service),
                     ),
@@ -395,22 +388,21 @@ class _HomePageState extends State<HomePage> {
   }
 
   Widget _buildStarRating(double rating) {
-  int fullStars = rating.floor();
-  int halfStars = (rating % 1 >= 0.5) ? 1 : 0;
-  int emptyStars = 5 - fullStars - halfStars;
+    int fullStars = rating.floor();
+    int halfStars = (rating % 1 >= 0.5) ? 1 : 0;
+    int emptyStars = 5 - fullStars - halfStars;
 
-  return Row(
-    children: [
-      for (int i = 0; i < fullStars; i++)
-        const Icon(Icons.star, color: Colors.amber, size: 20),
-      for (int i = 0; i < halfStars; i++)
-        const Icon(Icons.star_half, color: Colors.amber, size: 20),
-      for (int i = 0; i < emptyStars; i++)
-        const Icon(Icons.star_border, color: Colors.grey, size: 20),
-    ],
-  );
-}
-
+    return Row(
+      children: [
+        for (int i = 0; i < fullStars; i++)
+          const Icon(Icons.star, color: Colors.amber, size: 20),
+        for (int i = 0; i < halfStars; i++)
+          const Icon(Icons.star_half, color: Colors.amber, size: 20),
+        for (int i = 0; i < emptyStars; i++)
+          const Icon(Icons.star_border, color: Colors.grey, size: 20),
+      ],
+    );
+  }
 
   void _onScroll() {
     if (_scrollController.position.pixels >=
@@ -420,9 +412,8 @@ class _HomePageState extends State<HomePage> {
     }
   }
 
-
   // Top Services Header Widget
-  Widget _buildTopPopularHeader() {
+  Widget _buildTopPopularHeader(BuildContext context) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
@@ -434,135 +425,239 @@ class _HomePageState extends State<HomePage> {
             fontWeight: FontWeight.bold,
           ),
         ),
-        const Icon(Icons.more_horiz, color: AppColors.mainColor),
+        GestureDetector(
+          onTap: () {
+            _showAllServices(context);
+          },
+          child: const Icon(Icons.more_horiz, color: AppColors.mainColor),
+        ),
       ],
     );
   }
 
-
-Column _servicesSection() {
-  return Column(
-    crossAxisAlignment: CrossAxisAlignment.start,
-    children: [
-      Container(
-        height: 150,
-        child: ListView.separated(
-          itemBuilder: (context, index) {
+  void _showAllServices(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (context) {
+        return DraggableScrollableSheet(
+          expand: false,
+          initialChildSize: 0.5,
+          minChildSize: 0.4,
+          maxChildSize: 0.8,
+          builder: (context, scrollController) {
             return Container(
-              width: 110,
-              decoration: BoxDecoration(
-                color: PopularServicesModel.getPopularServices()[index]
-                    .color
-                    .withOpacity(0.1),
-                borderRadius: BorderRadius.circular(20),
+              padding: const EdgeInsets.all(16.0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'All Services',
+                    style: GoogleFonts.poppins(
+                      color: AppColors.mainColor,
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  const SizedBox(height: 10),
+                  Expanded(
+                    child: GridView.builder(
+                      controller: scrollController,
+                      gridDelegate:
+                          const SliverGridDelegateWithFixedCrossAxisCount(
+                        crossAxisCount: 2,
+                        crossAxisSpacing: 10,
+                        mainAxisSpacing: 10,
+                      ),
+                      itemCount:
+                          PopularServicesModel.getPopularServices().length,
+                      itemBuilder: (context, index) {
+                        final service =
+                            PopularServicesModel.getPopularServices()[index];
+                        return Container(
+                          decoration: BoxDecoration(
+                            color: service.color.withOpacity(0.1),
+                            borderRadius: BorderRadius.circular(15),
+                          ),
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              SvgPicture.asset(
+                                service.iconPath,
+                                width: 40,
+                                height: 40,
+                              ),
+                              const SizedBox(height: 8),
+                              Text(
+                                service.name,
+                                textAlign: TextAlign.center,
+                                style: const TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  color: AppColors.mainColor,
+                                  fontSize: 14,
+                                ),
+                              ),
+                              const SizedBox(height: 4),
+                              Text(
+                                '${service.availableProviders} Providers',
+                                style: const TextStyle(
+                                  color: Color(0xff7B6F72),
+                                  fontSize: 12,
+                                ),
+                              ),
+                            ],
+                          ),
+                        );
+                      },
+                    ),
+                  ),
+                ],
               ),
+            );
+          },
+        );
+      },
+    );
+  }
+
+  Column _servicesSection() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Container(
+          height: 140,
+          child: ListView.separated(
+            itemBuilder: (context, index) {
+              final service = PopularServicesModel.getPopularServices()[index];
+              return Container(
+                width: 150,
+                decoration: BoxDecoration(
+                  color: PopularServicesModel.getPopularServices()[index]
+                      .color
+                      .withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: Padding(
+                  padding: const EdgeInsets.all(8.0),
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                    children: [
+                      SvgPicture.asset(
+                        service.iconPath,
+                        width: 35,
+                        height: 35,
+                        //color: AppColors.mainColor,
+                      ),
+                      Expanded(
+                        child: Center(
+                          child: Text(
+                            PopularServicesModel.getPopularServices()[index]
+                                .name,
+                            textAlign:
+                                TextAlign.center, // Center text alignment
+                            maxLines: 2, // Allow up to 2 lines for longer text
+                            overflow: TextOverflow
+                                .ellipsis, // Handle overflow with ellipsis
+                            style: const TextStyle(
+                              fontWeight: FontWeight.bold,
+                              color: AppColors.mainColor,
+                              fontSize: 13,
+                            ),
+                          ),
+                        ),
+                      ),
+                      Container(
+                        height: 35,
+                        width: 80,
+                        decoration: BoxDecoration(
+                          gradient: const LinearGradient(
+                            colors: [
+                              Color(0xff9DCEFF),
+                              Color(0xff92A3FD),
+                            ],
+                          ),
+                          borderRadius: BorderRadius.circular(50),
+                        ),
+                        child: const Center(
+                          child: Text(
+                            'Search',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontWeight: FontWeight.w600,
+                              fontSize: 12,
+                            ),
+                          ),
+                        ),
+                      ),
+                      SizedBox(
+                        height: 3,
+                      ),
+                      Text(
+                        '${PopularServicesModel.getPopularServices()[index].availableProviders} Providers',
+                        textAlign: TextAlign.center,
+                        style: const TextStyle(
+                          color: Color(0xff7B6F72),
+                          fontSize: 13,
+                          fontWeight: FontWeight.w400,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              );
+            },
+            separatorBuilder: (context, index) => const SizedBox(
+              width: 25,
+            ),
+            itemCount: PopularServicesModel.getPopularServices().length,
+            scrollDirection: Axis.horizontal,
+            padding: const EdgeInsets.only(left: 10, right: 10),
+          ),
+        ),
+      ],
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      body: _isLoading
+          ? Center(child: CircularProgressIndicator())
+          : SingleChildScrollView(
+              // Wrap Column in SingleChildScrollView
               child: Padding(
-                padding: const EdgeInsets.all(8.0),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
                 child: Column(
-                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                   children: [
-                    // SvgPicture.asset(
-                    //   PopularServicesModel.getPopularServices()[index].iconPath,
-                    // ),
-                    Expanded(
-                      child: Center(
-                        child: Text(
-                          PopularServicesModel.getPopularServices()[index].name,
-                          textAlign: TextAlign.center, // Center text alignment
-                          maxLines: 2, // Allow up to 2 lines for longer text
-                          overflow: TextOverflow.ellipsis, // Handle overflow with ellipsis
-                          style: const TextStyle(
-                            fontWeight: FontWeight.w500,
-                            color: AppColors.mainColor,
-                            fontSize: 16,
-                          ),
-                        ),
-                      ),
-                    ),
+                    // Ads slider at the top
+                    _buildAdsSlider([
+                      'assets/images/ads/first_page.png',
+                      'assets/images/ads/second_page.png',
+                      'assets/images/ads/third_page.png',
+                    ]),
+                    const SizedBox(height: 20),
+                    _buildTopPopularHeader(context),
+                    const SizedBox(height: 20),
+                    _servicesSection(),
+                    const SizedBox(height: 20),
+                    // Top Services Header
+                    _buildTopServicesHeader(),
+                    const SizedBox(height: 10),
+                    // Services Grid (no Expanded here)
                     Container(
-                      height: 35,
-                      width: 80,
-                      decoration: BoxDecoration(
-                        gradient: const LinearGradient(
-                          colors: [
-                            Color(0xff9DCEFF),
-                            Color(0xff92A3FD),
-                          ],
-                        ),
-                        borderRadius: BorderRadius.circular(50),
-                      ),
-                      child: const Center(
-                        child: Text(
-                          'Search',
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontWeight: FontWeight.w600,
-                            fontSize: 12,
-                          ),
-                        ),
-                      ),
-                    ),
-                    SizedBox(height: 10,),
-                    Text(
-                      '${PopularServicesModel.getPopularServices()[index].availableProviders} Providers',
-                      textAlign: TextAlign.center,
-                      style: const TextStyle(
-                        color: Color(0xff7B6F72),
-                        fontSize: 13,
-                        fontWeight: FontWeight.w400,
-                      ),
+                      height:
+                          400, // Set a fixed height or adjust according to the content
+                      child: _buildServicesGrid(),
                     ),
                   ],
                 ),
               ),
-            );
-          },
-          separatorBuilder: (context, index) => const SizedBox(
-            width: 25,
-          ),
-          itemCount: PopularServicesModel.getPopularServices().length,
-          scrollDirection: Axis.horizontal,
-          padding: const EdgeInsets.only(left: 10, right: 10),
-        ),
-      ),
-    ],
-  );
-}
-
-@override
-Widget build(BuildContext context) {
-  return Scaffold(
-    body: _isLoading
-        ? Center(child: CircularProgressIndicator())
-        : SingleChildScrollView(  // Wrap Column in SingleChildScrollView
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-              child: Column(
-                children: [
-                  // Ads slider at the top
-                  _buildAdsSlider([
-                    'assets/images/ads/first_page.png',
-                    'assets/images/ads/second_page.png',
-                    'assets/images/ads/third_page.png',
-                  ]),
-                  const SizedBox(height: 20),
-                  _buildTopPopularHeader(),
-                  const SizedBox(height: 20),
-                  _servicesSection(),
-                  const SizedBox(height: 20),
-                  // Top Services Header
-                  _buildTopServicesHeader(),
-                  const SizedBox(height: 10),
-                  // Services Grid (no Expanded here)
-                  Container(
-                    height: 400, // Set a fixed height or adjust according to the content
-                    child: _buildServicesGrid(),
-                  ),
-                ],
-              ),
             ),
-          ),
-    backgroundColor: const Color.fromARGB(255, 255, 255, 255),
-  );
-}
+      backgroundColor: const Color.fromARGB(255, 255, 255, 255),
+    );
+  }
 }
