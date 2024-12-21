@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:hanini_frontend/main.dart';
-import 'package:hanini_frontend/screens/navScreens/SimpleUserProfile.dart';
+import 'package:hanini_frontend/screens/Profiles/SimpleUserProfile.dart';
 import 'package:hanini_frontend/user_role.dart';
 import 'package:iconsax/iconsax.dart';
 import 'package:hanini_frontend/screens/navScreens/searchpage.dart';
-import 'package:hanini_frontend/screens/navScreens/profilepage.dart';
+import 'package:hanini_frontend/screens/Profiles/ServiceProviderProfile.dart';
 import 'package:hanini_frontend/screens/navScreens/favoritespage.dart';
 import 'package:hanini_frontend/screens/navScreens/sidebar.dart';
 import 'package:hanini_frontend/screens/navScreens/homepage.dart';
@@ -14,6 +14,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:hanini_frontend/screens/navScreens/notificationspage.dart'; // Replace with actual file path
+import 'package:hanini_frontend/screens/Profiles/AdminProfile.dart'; // Import AdminProfile
 
 
 
@@ -30,6 +31,7 @@ class _NavbarPageState extends State<NavbarPage> {
   int selectedIndex = 0;
   List<Widget> screens = [];
   bool isLoading = true;
+  bool isAdmin = false; // Add a flag for admin user
 
   @override
   void initState() {
@@ -40,12 +42,13 @@ class _NavbarPageState extends State<NavbarPage> {
   Future<void> _initializeScreens() async {
     try {
       final isProvider = await _checkIfUserIsProvider();
+      final isAdmin = await _checkIfUserIsAdmin(); // Check if user is admin
       setState(() {
         screens = [
           HomePage(),
           SearchPage(),
           FavoritesPage(),
-          isProvider ? ServiceProviderProfile2() : SimpleUserProfile(),
+          isAdmin ? AdminProfile() : (isProvider ? ServiceProviderProfile() : SimpleUserProfile()),
         ];
         isLoading = false;
       });
@@ -84,6 +87,27 @@ Future<bool> _checkIfUserIsProvider() async {
     }
   } else {
     // Handle the case where no user is signed in
+    throw Exception("No user is currently signed in");
+  }
+}
+
+Future<bool> _checkIfUserIsAdmin() async {
+  final User? user = _auth.currentUser;
+  if (user != null) {
+    try {
+      final DocumentSnapshot userDoc =
+          await _firestore.collection('users').doc(user.uid).get();
+      if (userDoc.exists) {
+        final data = userDoc.data() as Map<String, dynamic>;
+        return data['isAdmin'] ?? false;
+      } else {
+        throw Exception("User not found in Firestore");
+      }
+    } catch (e) {
+      print("Error while fetching user: $e");
+      throw Exception("Failed to fetch user data");
+    }
+  } else {
     throw Exception("No user is currently signed in");
   }
 }
