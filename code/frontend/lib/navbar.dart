@@ -1,9 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:hanini_frontend/main.dart';
-import 'package:hanini_frontend/screens/navScreens/SimpleUserProfile.dart';
-
 import 'package:hanini_frontend/screens/Profiles/SimpleUserProfile.dart';
-
 import 'package:iconsax/iconsax.dart';
 import 'package:hanini_frontend/screens/navScreens/searchpage.dart';
 import 'package:hanini_frontend/screens/Profiles/ServiceProviderProfile.dart';

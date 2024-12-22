@@ -891,38 +891,40 @@ Form(
                       final uniqueId = Uuid().v4(); // Generate a unique ID
 
 
-                      // Save data to Firestore
-                      await FirebaseFirestore.instance
-                          .collection('users')
-                          .doc(senderUid)
-                          .update({
-                            'Listing_(sent)': FieldValue.arrayUnion([{
-                              'id': uniqueId, 
-                              'mainTitle': mainTitle,
-                              'description': description,
-                              'pay': pay,
-                              'location': location,
-                              'status':'pending',
-                              'timestamp': DateTime.now().toIso8601String(),
-                              'receiverUid': recipientUid,
-                            }]),
-                          });
+// Save data to Firestore
+await FirebaseFirestore.instance
+    .collection('users')
+    .doc(senderUid)
+    .update({
+      'Listing_(sent)': FieldValue.arrayUnion([{
+        'id': uniqueId, 
+        'mainTitle': mainTitle,
+        'description': description,
+        'pay': pay,
+        'location': location,
+        'status': 'pending',
+        'timestamp': DateTime.now().toIso8601String(),
+        'receiverUid': recipientUid,
+        'senderUid': senderUid,  // Add this line
+      }]),
+    });
 
-                      await FirebaseFirestore.instance
-                          .collection('users')
-                          .doc(recipientUid)
-                          .update({
-                            'Listing_(received)': FieldValue.arrayUnion([{
-                              'id': uniqueId, 
-                              'mainTitle': mainTitle,
-                              'description': description,
-                              'pay': pay,
-                              'location': location,
-                              'status':'Pending',
-                              'timestamp': DateTime.now().toIso8601String(),
-                              'senderUid': senderUid,
-                            }]),
-                          });
+await FirebaseFirestore.instance
+    .collection('users')
+    .doc(recipientUid)
+    .update({
+      'Listing_(received)': FieldValue.arrayUnion([{
+        'id': uniqueId, 
+        'mainTitle': mainTitle,
+        'description': description,
+        'pay': pay,
+        'location': location,
+        'status': 'pending',  // Make status case consistent
+        'timestamp': DateTime.now().toIso8601String(),
+        'senderUid': senderUid,
+        'receiverUid': recipientUid,  // Add this line
+      }]),
+    });
 
                       // Close the dialog
                       Navigator.pop(context);
