@@ -1,8 +1,6 @@
-import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:path_provider/path_provider.dart';
-import 'package:path/path.dart' as path;
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -10,6 +8,89 @@ import 'package:flutter_rating_bar/flutter_rating_bar.dart';
 import 'package:intl/intl.dart';
 import 'package:uuid/uuid.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter/cupertino.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
+import 'package:googleapis_auth/auth_io.dart' as auth;
+
+
+class PushNotificationService {
+  static Future<String> getAccessToken() async {
+    // Load the service account JSON
+    final serviceAccountJson =
+      {
+  "type": "service_account",
+  "project_id": "hanini-2024",
+  "private_key_id": "0bee0c611b25a8ba26cf9d4c373adc6dd4740fc3",
+  "private_key": "-----BEGIN PRIVATE KEY-----\nMIIEvgIBADANBgkqhkiG9w0BAQEFAASCBKgwggSkAgEAAoIBAQDW4jI3D/s3mmuo\ndNr+bHEl5/E/P0Hw7DMENiHC3SLb367UXT66zGDTchYu65fR4WlWTllKepLbJa0u\nkLkEBHxyoVVg6rbeM4R5xPh+eRf/PKni3RM1PUqpfp1LBsYxhV0YAfYKpURL0kYw\npvdne7inBBk+qkBA6Buu+wErLSv5FwY229SXFZn70bxMaUAZIR3Ja8TpC1+rmrbv\nXUf0IYYd6fzz2/FucTp5+v1U29gyect1Detdumvl32NmiOrJBfwJurz9atRk+yXx\nV1nzLezmsa06pts05edlDc/gXF9Mj/OncdpxrNGDGYfSAq08b3a9023ySw5OYLUL\nF+33BBwfAgMBAAECggEAQLm0j3JgZNC+Qekk98L5WAYj3D21Ipk7Crc1dyk98UXQ\ntwX5ObILLlWsieiL+/uuS4FhEvaV2q3gGukb2bJyO+MNwRoiCA8zhaxHf20BRe/j\nakLWINC79w782RcKxurZbjxU/MLoLgCCBPCeEA0rwx8QbZhBr2tav1u67+L03lu8\nInYwcEdGEXb7U7OGFl+7WKbxE+SOlSUteYHfZe+xVGnWAy6tQeMlcKMPXM/IciGr\njTEu1wCCPxSFJTraLDwn9BNCZsPC96NApEHGLgHp1jTV4AFPCXjeTWR5Hd5LKxi/\nY0Fx8+8ti9PyfHoMTK+uyetpXIK7WOy+00kBs23FqQKBgQD1WiuDTOO5pq7ItLpO\na2/demZT0OMz2PItZI66uv/sOWYZjarTdVPP2OHe0/hXph1z4hMfR+BHQZ0pmG7T\nqE4YFx7HcguvpuGcFkg/54SJ5/x1YIPKX2/9i+dj7lEqkUKbMholhvrP8waA2OzE\n2waNnAzXqcr66lvMpCl4lPO2lwKBgQDgNYYMfLQWDO24MgvqkRSL3QAkKYutTvFb\n540lvtHlDikeLXdankymMFh2b7rS54NceLChnKVuLvoMSitYi4pFqRoy8ubT1BJW\nZcMbyT/+4og3nT+kChfxHrv1Ze3pAun59w9Qrh5vGwrVbcENhMFKKmdMkO1FNnXg\nqoY083o/uQKBgGWyu4iQLXB9m8NLzlHFDLhUDOg/FH4gNboFDXhvHLewzxZWd3Fx\nF412y6EOYckK7PhkxCJaK6e9lcRxD7ch80TfCH4JUri7RpbpUYdTkseK5kVM/TO8\nPXJuNDpixTgMv/wOV3IosfvSM2bjA7lRRDUccuJN2foJfIWloh7+Nsr/AoGBANPM\nG+4t2xy9Z87JkBIsrOEWiuyeRnEYEs5DpUVTxgl/3/2+63Gx+iw/nUF8eFqFEsVG\nyWxRgsDcJZ94bQv+/Uai4LniVYUjX5M4HCBic06/BfirVhQK6OUAqIO/nwevlgFo\njpIjeWJxhEFrpaO0lbcO6Xgdq9XnBWGPFKpumjwZAoGBALkDoP9E9odcKYWPfCc1\nYCgBvXJuazOBxT9XODHiJLvyBrpsc19yD+/jMIoWNmDgu7jDFNvBAF6tv8D2Vvvj\nOl4RxBFzliaH/CZpQ7t4nvTARpl+/T65PRjw+vKFij2MY7gcSsFd2lEHGOey0Urr\nahSHKtMcX7oEb79n9gGqNkrj\n-----END PRIVATE KEY-----\n",
+  "client_email": "fares-500@hanini-2024.iam.gserviceaccount.com",
+  "client_id": "110821790280687676540",
+  "auth_uri": "https://accounts.google.com/o/oauth2/auth",
+  "token_uri": "https://oauth2.googleapis.com/token",
+  "auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs",
+  "client_x509_cert_url": "https://www.googleapis.com/robot/v1/metadata/x509/fares-500%40hanini-2024.iam.gserviceaccount.com",
+  "universe_domain": "googleapis.com"
+};
+
+
+        
+
+    // Define the required scopes
+    List<String> scopes = [
+      "https://www.googleapis.com/auth/firebase.database",
+      "https://www.googleapis.com/auth/firebase.messaging"
+    ];
+
+    // Create a client using the service account credentials
+    final auth.ServiceAccountCredentials credentials =
+        auth.ServiceAccountCredentials.fromJson(serviceAccountJson);
+
+    final auth.AuthClient client =
+        await auth.clientViaServiceAccount(credentials, scopes);
+
+    // Retrieve the access token
+    final String accessToken = client.credentials.accessToken.data;
+
+    // Close the client to avoid resource leaks
+    client.close();
+
+    return accessToken;
+  }
+
+  static Future<void> sendNotification(
+      String deviceToken, String title, String body, Map<String, dynamic> data) async {
+    final String serverKey = await getAccessToken();
+    String endpointFirebaseCloudMessaging =
+        'https://fcm.googleapis.com/v1/projects/hanini-2024/messages:send';
+
+    final Map<String, dynamic> message = {
+      'message': {
+        'token': deviceToken,
+        'notification': {
+          'title': title,
+          'body': body,
+        },
+        'data': data,
+      }
+    };
+
+    final http.Response response = await http.post(
+      Uri.parse(endpointFirebaseCloudMessaging),
+      headers: <String, String>{
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer $serverKey',
+      },
+      body: jsonEncode(message),
+    );
+
+    if (response.statusCode == 200) {
+      print('Notification sent successfully');
+    } else {
+      print('Failed to send notification');
+      print('Response: ${response.body}');
+    }
+  }
+}
 
 
 class ServiceProviderFullProfile extends StatefulWidget {
@@ -282,23 +363,26 @@ Widget buildReviewsTab() {
                     },
                   ),
           ),
-          GestureDetector(
-            onTap: _showAddReviewDialog,
-            child: Container(
-              padding: const EdgeInsets.all(10), // Optional padding for touchable area
-              decoration: BoxDecoration(
-                color: Colors.blue, // Button color
-              ),
-              child: Center(
-                child: Text(
-                  'Add Review',
-                  style: GoogleFonts.poppins(
-                    color: Colors.white, // Text color
-                  ),
-                ),
-              ),
-            ),
-          ),
+GestureDetector(
+  onTap: () {
+    _showAddReviewDialog(context, widget.providerId, _firestore);
+  },
+  child: Container(
+    padding: const EdgeInsets.all(10), // Optional padding for touchable area
+    decoration: BoxDecoration(
+      color: Colors.blue, // Button color
+    ),
+    child: Center(
+      child: Text(
+        'Add Review',
+        style: GoogleFonts.poppins(
+          color: Colors.white, // Text color
+        ),
+      ),
+    ),
+  ),
+),
+
         ],
       );
     },
@@ -307,9 +391,11 @@ Widget buildReviewsTab() {
 
 
 
-void _showAddReviewDialog() {
+
+
+void _showAddReviewDialog(BuildContext context, String providerId, FirebaseFirestore firestore) {
   final TextEditingController commentController = TextEditingController();
-  double newRating = 3.0; // Default rating
+  double newRating = 3.0;
 
   showDialog(
     context: context,
@@ -321,7 +407,7 @@ void _showAddReviewDialog() {
             content: SingleChildScrollView(
               child: ConstrainedBox(
                 constraints: BoxConstraints(
-                  maxHeight: constraints.maxHeight * 0.6, // Use 60% of available height
+                  maxHeight: constraints.maxHeight * 0.6,
                 ),
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
@@ -332,7 +418,7 @@ void _showAddReviewDialog() {
                         labelText: 'Comment',
                         border: OutlineInputBorder(),
                       ),
-                      maxLines: 3, // Limit TextField height
+                      maxLines: 3,
                     ),
                     const SizedBox(height: 16),
                     RatingBar.builder(
@@ -375,20 +461,17 @@ void _showAddReviewDialog() {
                     'comment': commentController.text.trim(),
                     'rating': newRating,
                     'id_commentor': user.uid,
-                    'timestamp': DateTime.now().toIso8601String(), // Store as ISO 8601 string
+                    'timestamp': DateTime.now().toIso8601String(),
                   };
 
                   try {
-                    // Reference to the provider's document
-                    final providerRef = _firestore.collection('users').doc(widget.providerId);
+                    final providerRef = firestore.collection('users').doc(providerId);
 
-                    // Add the new review
                     await providerRef.update({
                       'reviews': FieldValue.arrayUnion([review]),
-                      'newCommentsCount': FieldValue.increment(1), // Increment new comments count
+                      'newCommentsCount': FieldValue.increment(1),
                     });
 
-                    // Fetch all reviews to calculate the new average rating
                     final providerDoc = await providerRef.get();
                     final providerData = providerDoc.data() as Map<String, dynamic>;
                     final reviews = providerData['reviews'] as List<dynamic> ?? [];
@@ -399,17 +482,25 @@ void _showAddReviewDialog() {
                     }
                     final newAverageRating = totalRating / reviews.length;
 
-                    // Update the provider's overall rating
                     await providerRef.update({
                       'rating': newAverageRating,
                     });
+
+                    final String deviceToken = providerData['deviceToken'];
+
+                    if (deviceToken != null && deviceToken.isNotEmpty) {
+                      await PushNotificationService.sendNotification(
+                        deviceToken,
+                        'New Review Received',
+                        'You have a new review on your profile',
+                        {'providerId': providerId},
+                      );
+                    }
 
                     Navigator.pop(context);
                     ScaffoldMessenger.of(context).showSnackBar(
                       const SnackBar(content: Text('Review added successfully!')),
                     );
-
-                    setState(() {}); // Refresh the UI
                   } catch (e) {
                     debugPrint('Error adding review: $e');
                     ScaffoldMessenger.of(context).showSnackBar(
@@ -426,6 +517,7 @@ void _showAddReviewDialog() {
     },
   );
 }
+
 Widget buildProfileTab() {
   return  // Make sure everything is scrollable
     Column(
