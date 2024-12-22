@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:hanini_frontend/main.dart';
 import 'package:hanini_frontend/screens/navScreens/SimpleUserProfile.dart';
+
+import 'package:hanini_frontend/screens/Profiles/SimpleUserProfile.dart';
+
 import 'package:iconsax/iconsax.dart';
 import 'package:hanini_frontend/screens/navScreens/searchpage.dart';
-import 'package:hanini_frontend/screens/navScreens/profilepage.dart';
+import 'package:hanini_frontend/screens/Profiles/ServiceProviderProfile.dart';
 import 'package:hanini_frontend/screens/navScreens/favoritespage.dart';
 import 'package:hanini_frontend/screens/navScreens/sidebar.dart';
 import 'package:hanini_frontend/screens/navScreens/homepage.dart';
@@ -13,6 +16,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:hanini_frontend/screens/navScreens/notificationspage.dart'; // Replace with actual file path
+import 'package:hanini_frontend/screens/Profiles/AdminProfile.dart'; // Import AdminProfile
 
 
 
@@ -29,6 +33,7 @@ class _NavbarPageState extends State<NavbarPage> {
   int selectedIndex = 0;
   List<Widget> screens = [];
   bool isLoading = true;
+  bool isAdmin = false;
 
   @override
   void initState() {
@@ -36,28 +41,8 @@ class _NavbarPageState extends State<NavbarPage> {
     _initializeScreens();
   }
 
-  Future<void> _initializeScreens() async {
-    try {
-      final isProvider = await _checkIfUserIsProvider();
-      setState(() {
-        screens = [
-          HomePage(),
-          SearchPage(),
-          FavoritesPage(),
-          isProvider ? ServiceProviderProfile2() : SimpleUserProfile(),
-        ];
-        isLoading = false;
-      });
-    } catch (e) {
-      // Handle error (e.g., show a message or log it)
-      print('Error fetching user data: $e');
-      setState(() {
-        isLoading = false;
-      });
-    }
-  }
 
-  final FirebaseAuth _auth = FirebaseAuth.instance;
+    final FirebaseAuth _auth = FirebaseAuth.instance;
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
 Future<bool> _checkIfUserIsProvider() async {
@@ -87,20 +72,56 @@ Future<bool> _checkIfUserIsProvider() async {
   }
 }
 
-
-  void _changeLanguage(String languageCode) {
-    Locale newLocale;
-    switch (languageCode) {
-      case 'ar':
-        newLocale = Locale('ar', '');
-        break;
-      case 'fr':
-        newLocale = Locale('fr', '');
-        break;
-      default:
-        newLocale = Locale('en', '');
+Future<bool> _checkIfUserIsAdmin() async {
+  final User? user = _auth.currentUser;
+  if (user != null) {
+    try {
+      final DocumentSnapshot userDoc =
+          await _firestore.collection('users').doc(user.uid).get();
+      if (userDoc.exists) {
+        final data = userDoc.data() as Map<String, dynamic>;
+        return data['isAdmin'] ?? false;
+      } else {
+        throw Exception("User not found in Firestore");
+      }
+    } catch (e) {
+      print("Error while fetching user: $e");
+      throw Exception("Failed to fetch user data");
     }
-    MyApp.of(context)?.changeLanguage(newLocale);
+  } else {
+    throw Exception("No user is currently signed in");
+  }
+}
+
+  Future<void> _initializeScreens() async {
+    try {
+      final isProvider = await _checkIfUserIsProvider();
+      final isAdminUser = await _checkIfUserIsAdmin();
+      setState(() {
+        isAdmin = isAdminUser;
+        screens = isAdminUser 
+          ? [
+              SearchPage(),
+              AdminProfile(),
+            ]
+          : [
+              HomePage(),
+              SearchPage(),
+              FavoritesPage(),
+              isProvider ? ServiceProviderProfile() : SimpleUserProfile(),
+            ];
+        // Reset selected index if it's out of bounds for admin
+        if (isAdminUser && selectedIndex > 1) {
+          selectedIndex = 0;
+        }
+        isLoading = false;
+      });
+    } catch (e) {
+      print('Error fetching user data: $e');
+      setState(() {
+        isLoading = false;
+      });
+    }
   }
 
   @override
@@ -136,68 +157,11 @@ Future<bool> _checkIfUserIsProvider() async {
                     ),
                     backgroundColor: Colors.transparent,
                     elevation: 0,
-actions: [
-  Stack(
-    alignment: Alignment.center,
-    children: [
-      IconButton(
-        icon: const Icon(
-          Icons.notifications_outlined,
-          color: Colors.white,
-          size: 28,
-        ),
-        onPressed: () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (context) => NotificationsPage(userId: _auth.currentUser?.uid ?? ''),
-            ),
-          );
-        },
-      ),
-      Positioned(
-        right: 4, // Adjust position to align badge properly
-        top: 8,
-        child: StreamBuilder<DocumentSnapshot>(
-          stream: FirebaseFirestore.instance
-              .collection('users')
-              .doc(_auth.currentUser?.uid ?? '')
-              .snapshots(),
-          builder: (context, snapshot) {
-            if (!snapshot.hasData || snapshot.data == null) {
-              return const SizedBox(); // Show nothing if no data
-            }
-            final data = snapshot.data!.data() as Map<String, dynamic>;
-            final unreadCount = data['newCommentsCount'] ?? 0;
-
-            if (unreadCount == 0) {
-              return const SizedBox(); // Show nothing if no unread comments
-            }
-
-            return Container(
-              padding: const EdgeInsets.all(5),
-              decoration: BoxDecoration(
-                color: Colors.red,
-                shape: BoxShape.circle,
-              ),
-              child: Text(
-                '$unreadCount',
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 12,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-            );
-          },
-        ),
-      ),
-    ],
-  ),
-  _buildLanguageDropdown(),
-],
-
-
+                    actions: [
+                      // Only show notification bell for non-admin users
+                      if (!isAdmin) _buildNotificationBell(),
+                      _buildLanguageDropdown(),
+                    ],
                   ),
                 ),
               ),
@@ -210,20 +174,30 @@ actions: [
                     selectedIndex = index;
                   });
                 },
-                destinations: const [
-                  NavigationDestination(icon: Icon(Iconsax.home), label: 'Home'),
-                  NavigationDestination(
-                      icon: Icon(Iconsax.search_normal), label: 'Search'),
-                  NavigationDestination(
-                      icon: Icon(Iconsax.save_2), label: 'Favorites'),
-                  NavigationDestination(icon: Icon(Iconsax.user), label: 'Profile'),
-                ],
+                destinations: isAdmin 
+                  ? const [
+                      NavigationDestination(
+                          icon: Icon(Iconsax.search_normal), label: 'Search'),
+                      NavigationDestination(
+                          icon: Icon(Iconsax.user), label: 'Profile'),
+                    ]
+                  : const [
+                      NavigationDestination(
+                          icon: Icon(Iconsax.home), label: 'Home'),
+                      NavigationDestination(
+                          icon: Icon(Iconsax.search_normal), label: 'Search'),
+                      NavigationDestination(
+                          icon: Icon(Iconsax.save_2), label: 'Favorites'),
+                      NavigationDestination(
+                          icon: Icon(Iconsax.user), label: 'Profile'),
+                    ],
               ),
             ),
         );
   }
 
-  Widget _buildLanguageDropdown() {
+
+    Widget _buildLanguageDropdown() {
     final localizations = AppLocalizations.of(context);
     if (localizations == null) {
       return Padding(
@@ -262,6 +236,83 @@ actions: [
           Text(languageName),
         ],
       ),
+    );
+  }
+
+
+    void _changeLanguage(String languageCode) {
+    Locale newLocale;
+    switch (languageCode) {
+      case 'ar':
+        newLocale = Locale('ar', '');
+        break;
+      case 'fr':
+        newLocale = Locale('fr', '');
+        break;
+      default:
+        newLocale = Locale('en', '');
+    }
+    MyApp.of(context)?.changeLanguage(newLocale);
+  }
+
+  Widget _buildNotificationBell() {
+    return Stack(
+      alignment: Alignment.center,
+      children: [
+        IconButton(
+          icon: const Icon(
+            Icons.notifications_outlined,
+            color: Colors.white,
+            size: 28,
+          ),
+          onPressed: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => NotificationsPage(
+                    userId: _auth.currentUser?.uid ?? ''),
+              ),
+            );
+          },
+        ),
+        Positioned(
+          right: 4,
+          top: 8,
+          child: StreamBuilder<DocumentSnapshot>(
+            stream: FirebaseFirestore.instance
+                .collection('users')
+                .doc(_auth.currentUser?.uid ?? '')
+                .snapshots(),
+            builder: (context, snapshot) {
+              if (!snapshot.hasData || snapshot.data == null) {
+                return const SizedBox();
+              }
+              final data = snapshot.data!.data() as Map<String, dynamic>;
+              final unreadCount = data['newCommentsCount'] ?? 0;
+
+              if (unreadCount == 0) {
+                return const SizedBox();
+              }
+
+              return Container(
+                padding: const EdgeInsets.all(5),
+                decoration: BoxDecoration(
+                  color: Colors.red,
+                  shape: BoxShape.circle,
+                ),
+                child: Text(
+                  '$unreadCount',
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 12,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              );
+            },
+          ),
+        ),
+      ],
     );
   }
 }

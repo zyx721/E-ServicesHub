@@ -55,6 +55,15 @@ class _LoginScreenState extends State<LoginScreen>
         final User? user = userCredential.user;
 
         if (user != null) {
+          // Update lastSignIn and isConnected in Firestore
+          await FirebaseFirestore.instance
+              .collection('users')
+              .doc(user.uid)
+              .set({
+            'lastSignIn': DateTime.now(),
+            'isConnected': true,
+          }, SetOptions(merge: true));
+
           print('Login Successful. User: ${user.email}');
           // Show success SnackBar
           ScaffoldMessenger.of(context).showSnackBar(
@@ -63,10 +72,10 @@ class _LoginScreenState extends State<LoginScreen>
               backgroundColor: Colors.green,
             ),
           );
-           final prefs = await SharedPreferences.getInstance();
-            await prefs.setBool('isLoggedIn', true);
-            // Navigate to home page after successful signup
-            Navigator.pushNamed(context, '/navbar');
+          final prefs = await SharedPreferences.getInstance();
+          await prefs.setBool('isLoggedIn', true);
+          // Navigate to home page after successful signup
+          Navigator.pushNamed(context, '/navbar');
         } else {
           // Show error SnackBar if no user is found
           ScaffoldMessenger.of(context).showSnackBar(
@@ -167,7 +176,7 @@ class _LoginScreenState extends State<LoginScreen>
     super.dispose();
   }
 
-  Future<void> _handleGoogleSignIn() async {
+Future<void> _handleGoogleSignIn() async {
   try {
     final GoogleSignIn googleSignIn = GoogleSignIn();
     final GoogleSignInAccount? googleUser = await googleSignIn.signIn();
@@ -196,6 +205,7 @@ class _LoginScreenState extends State<LoginScreen>
             'uid': user.uid,
             'email': user.email ?? 'No Email',
             'lastSignIn': DateTime.now(),
+            'isConnected': true,  // Add the isConnected field
           };
 
           // Only update name if it's not already set
@@ -203,10 +213,10 @@ class _LoginScreenState extends State<LoginScreen>
             userData['name'] = user.displayName ?? 'No Name';
           }
 
-         if (!userDoc.exists || userDoc.data()?['photoURL'] == null || 
-    (userDoc.data()?['photoURL']?.isEmpty ?? true && user.photoURL != null && user.photoURL!.isNotEmpty)) {
-  userData['photoURL'] = user.photoURL ?? '';
-}
+          if (!userDoc.exists || userDoc.data()?['photoURL'] == null || 
+              (userDoc.data()?['photoURL']?.isEmpty ?? true && user.photoURL != null && user.photoURL!.isNotEmpty)) {
+            userData['photoURL'] = user.photoURL ?? '';
+          }
 
           // If document doesn't exist, add createdAt
           if (!userDoc.exists) {

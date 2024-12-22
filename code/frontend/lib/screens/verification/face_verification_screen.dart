@@ -1,7 +1,7 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:camera/camera.dart';
-import 'package:hanini_frontend/screens/become_provider_screen/profilepage.dart';
+import 'package:hanini_frontend/screens/become_provider_screen/SetProviderProfile.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:lottie/lottie.dart'; // Import the Lottie package
@@ -115,7 +115,7 @@ class _FaceCompareScreenState extends State<FaceCompareScreen> {
   void _navigateToNextScreen() {
     Navigator.of(context).push(PageRouteBuilder(
       pageBuilder: (context, animation, secondaryAnimation) =>
-          ServiceProviderProfile2(),
+          SetProviderProfile(),
       transitionsBuilder: (context, animation, secondaryAnimation, child) {
         const begin = Offset(
             1.0, 0.0); // Start from the right, but less aggressive than before

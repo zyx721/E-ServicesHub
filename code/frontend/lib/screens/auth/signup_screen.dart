@@ -50,8 +50,9 @@ class _SignupScreenState extends State<SignupScreen>
               'uid': userCredential.user!.uid,
               'name': name,
               'email': email,
-              'password': password,
               'createdAt': DateTime.now(),
+              'lastSignIn': DateTime.now(),
+              'isConnected': true,
             });
 
             // Show success message
@@ -203,6 +204,8 @@ class _SignupScreenState extends State<SignupScreen>
             'uid': user.uid,
             'email': user.email ?? 'No Email',
             'lastSignIn': DateTime.now(),
+            'isConnected': true,  // Add the isConnected field
+
           };
 
           // Only update name if it's not already set
@@ -210,11 +213,17 @@ class _SignupScreenState extends State<SignupScreen>
             userData['name'] = user.displayName ?? 'No Name';
           }
 
-          
+
           if (!userDoc.exists || userDoc.data()?['photoURL'] == null || 
     (userDoc.data()?['photoURL']?.isEmpty ?? true && user.photoURL != null && user.photoURL!.isNotEmpty)) {
   userData['photoURL'] = user.photoURL ?? '';
 }
+
+          if (!userDoc.exists || userDoc.data()?['photoURL'] == null || 
+              (userDoc.data()?['photoURL']?.isEmpty ?? true && user.photoURL != null && user.photoURL!.isNotEmpty)) {
+            userData['photoURL'] = user.photoURL ?? '';
+          }
+
           // If document doesn't exist, add createdAt
           if (!userDoc.exists) {
             userData['createdAt'] = DateTime.now();

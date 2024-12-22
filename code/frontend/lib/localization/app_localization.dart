@@ -228,26 +228,75 @@ class AppLocalizations {
       ? "اتصل بالدعم"
       : (isFrench ? "Contacter le support" : "Contact Support");
   String get name => isArabic ? "الاسم" : (isFrench ? "Nom" : "Name");
-  String get projects => isArabic ? "المشاريع" : (isFrench ? "Projets" : "Projects");
-  String get rating => isArabic ? "التقييم" : (isFrench ? "Évaluation" : "Rating");
-  String get hourlyRate => isArabic ? "سعر الساعة" : (isFrench ? "Taux horaire" : "Hourly Rate");
-  String get aboutMeLabel => isArabic ? "عني" : (isFrench ? "À propos de moi" : "About Me");
-  String get writeAboutYourself => isArabic ? "اكتب عن نفسك" : (isFrench ? "Écrivez sur vous" : "Write about yourself");
-  String get skills => isArabic ? "المهارات" : (isFrench ? "Compétences" : "Skills");
-  String get addSkill => isArabic ? "أضف مهارة" : (isFrench ? "Ajouter une compétence" : "Add Skill");
-  String get noSkillsAvailable => isArabic ? "لا توجد مهارات متاحة" : (isFrench ? "Aucune compétence disponible" : "No skills available");
-  String get workExperience => isArabic ? "الخبرة العملية" : (isFrench ? "Expérience professionnelle" : "Work Experience");
-  String get companyName => isArabic ? "اسم الشركة" : (isFrench ? "Nom de l'entreprise" : "Company Name");
-  String get position => isArabic ? "المنصب" : (isFrench ? "Poste" : "Position");
+  String get projects =>
+      isArabic ? "المشاريع" : (isFrench ? "Projets" : "Projects");
+  String get rating =>
+      isArabic ? "التقييم" : (isFrench ? "Évaluation" : "Rating");
+  String get hourlyRate =>
+      isArabic ? "سعر الساعة" : (isFrench ? "Taux horaire" : "Hourly Rate");
+  String get aboutMeLabel =>
+      isArabic ? "عني" : (isFrench ? "À propos de moi" : "About Me");
+  String get writeAboutYourself => isArabic
+      ? "اكتب عن نفسك"
+      : (isFrench ? "Écrivez sur vous" : "Write about yourself");
+  String get skills =>
+      isArabic ? "المهارات" : (isFrench ? "Compétences" : "Skills");
+  String get addSkill => isArabic
+      ? "أضف مهارة"
+      : (isFrench ? "Ajouter une compétence" : "Add Skill");
+  String get noSkillsAvailable => isArabic
+      ? "لا توجد مهارات متاحة"
+      : (isFrench ? "Aucune compétence disponible" : "No skills available");
+  String get workExperience => isArabic
+      ? "الخبرة العملية"
+      : (isFrench ? "Expérience professionnelle" : "Work Experience");
+  String get companyName => isArabic
+      ? "اسم الشركة"
+      : (isFrench ? "Nom de l'entreprise" : "Company Name");
+  String get position =>
+      isArabic ? "المنصب" : (isFrench ? "Poste" : "Position");
   String get duration => isArabic ? "المدة" : (isFrench ? "Durée" : "Duration");
-  String get addWorkExperience => isArabic ? "أضف خبرة عمل" : (isFrench ? "Ajouter une expérience professionnelle" : "Add Work Experience");
-  String get noWorkExperienceAvailable => isArabic ? "لا توجد خبرة عمل متاحة" : (isFrench ? "Aucune expérience professionnelle disponible" : "No work experience available");
-  String get portfolio => isArabic ? "المعرض" : (isFrench ? "Portfolio" : "Portfolio");
-  String get noPortfolioImagesAvailable => isArabic ? "لا توجد صور في المعرض" : (isFrench ? "Aucune image dans le portfolio" : "No portfolio images available");
-  String get addPortfolioImage => isArabic ? "أضف صورة إلى المعرض" : (isFrench ? "Ajouter une image au portfolio" : "Add Portfolio Image");
-  String get certifications => isArabic ? "الشهادات" : (isFrench ? "Certifications" : "Certifications");
-  String get addCertification => isArabic ? "أضف شهادة" : (isFrench ? "Ajouter une certification" : "Add Certification");
-  String get noCertificationsAvailable => isArabic ? "لا توجد شهادات متاحة" : (isFrench ? "Aucune certification disponible" : "No certifications available");
+  String get addWorkExperience => isArabic
+      ? "أضف خبرة عمل"
+      : (isFrench
+          ? "Ajouter une expérience professionnelle"
+          : "Add Work Experience");
+  String get noWorkExperienceAvailable => isArabic
+      ? "لا توجد خبرة عمل متاحة"
+      : (isFrench
+          ? "Aucune expérience professionnelle disponible"
+          : "No work experience available");
+  String get portfolio =>
+      isArabic ? "المعرض" : (isFrench ? "Portfolio" : "Portfolio");
+  String get noPortfolioImagesAvailable => isArabic
+      ? "لا توجد صور في المعرض"
+      : (isFrench
+          ? "Aucune image dans le portfolio"
+          : "No portfolio images available");
+  String get addPortfolioImage => isArabic
+      ? "أضف صورة إلى المعرض"
+      : (isFrench ? "Ajouter une image au portfolio" : "Add Portfolio Image");
+  String get certifications =>
+      isArabic ? "الشهادات" : (isFrench ? "Certifications" : "Certifications");
+  String get addCertification => isArabic
+      ? "أضف شهادة"
+      : (isFrench ? "Ajouter une certification" : "Add Certification");
+  String get noCertificationsAvailable => isArabic
+      ? "لا توجد شهادات متاحة"
+      : (isFrench
+          ? "Aucune certification disponible"
+          : "No certifications available");
+
+  // Admin Profile
+  String get manageUsers => isArabic
+      ? "إدارة المستخدمين"
+      : (isFrench ? "Gérer les utilisateurs" : "Manage Users");
+  String get manageReviews => isArabic
+      ? "إدارة المراجعات"
+      : (isFrench ? "Gérer Les Avis" : "Manage Reviews");
+  String get manualVerification => isArabic
+      ? "التحقق اليدوي"
+      : (isFrench ? "Vérification manuelle" : "Manual Verification");
 
   // Password recovery translations
   String get enterValidEmail => isArabic
@@ -454,7 +503,6 @@ class AppLocalizations {
 
   String get homePage =>
       isArabic ? "إلغاء" : (isFrench ? "mon profile" : "home page");
-
 
   // Static method to access the instance
   static AppLocalizations? of(BuildContext context) {

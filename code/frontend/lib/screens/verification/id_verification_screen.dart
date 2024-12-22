@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:camera/camera.dart';
-import 'package:hanini_frontend/screens/become_provider_screen/profilepage.dart';
+import 'package:hanini_frontend/screens/become_provider_screen/SetProviderProfile.dart';
+import 'package:hanini_frontend/screens/verification/manual_verification_screen.dart'; // Import ManualVerificationScreen
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'dart:io';
@@ -151,6 +152,18 @@ class _RealTimeDetectionState extends State<RealTimeDetection> {
                 Navigator.of(context).pop();
               },
               child: Text(appLocalizations.ok),
+            ),
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => ManualVerificationScreen(),
+                  ),
+                );
+              },
+              child: Text('Manual Verification'),
             ),
           ],
         );
@@ -344,7 +357,7 @@ class _RealTimeDetectionState extends State<RealTimeDetection> {
                       Navigator.push(
                         context,
                         MaterialPageRoute(
-                          builder: (context) => ServiceProviderProfile2(),
+                          builder: (context) => SetProviderProfile(),
                         ),
                       );
                     },
