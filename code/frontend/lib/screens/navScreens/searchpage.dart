@@ -17,6 +17,28 @@ class _SearchPageState extends State<SearchPage> {
   List<Map<String, dynamic>> filteredServices = [];
   List<String> likedServiceIds = [];
   final TextEditingController _searchController = TextEditingController();
+  double _minRating = 0.0;
+  bool _isRatingFilterApplied = false;
+  RangeValues _priceRange = const RangeValues(0, 19999); // Set default max value to 19999
+  bool _isPriceFilterApplied = false;
+  List<String> _selectedWorkChoices = [];
+  final List<String> _allWorkChoices = [
+    'House Cleaning',
+    'Electricity',
+    'Plumbing',
+    'Gardening',
+    'Painting',
+    'Carpentry',
+    'Pest Control',
+    'AC Repair',
+    'Vehicle Repair',
+    'Appliance Installation',
+    'IT Support',
+    'Home Security',
+    'Interior Design',
+    'Window Cleaning',
+    'Furniture Assembly',
+  ];
 
   @override
   void initState() {
@@ -59,12 +81,21 @@ class _SearchPageState extends State<SearchPage> {
         .where((doc) => doc.id != currentUserId) // Exclude current user
         .map((doc) {
       final data = doc.data() as Map<String, dynamic>?;
+      final basicInfo = data?['basicInfo'] as Map<String, dynamic>?;
+      final price = basicInfo?['hourlyRate'] != null
+          ? (basicInfo?['hourlyRate'] is num
+              ? (basicInfo?['hourlyRate'] as num).toDouble()
+              : double.tryParse(basicInfo?['hourlyRate']?.toString() ?? '') ?? 0.0)
+          : 0.0;
+      debugPrint('Service: ${data?['name']}, Price: $price'); // Debug statement
       return {
         'uid': doc.id,
         'name': data?['name'] ?? 'Unknown',
-        'profession': data?['basicInfo']?['profession'] ?? 'Not specified',
+        'profession': basicInfo?['profession'] ?? 'Not specified',
         'photoURL': data?['photoURL'] ?? '',
         'rating': (data?['rating'] is num) ? (data?['rating'] as num).toDouble() : 0.0,
+        'price': price, // Ensure price is fetched correctly
+        'selectedWorkChoices': data?['selectedWorkChoices'] ?? [], // Add selectedWorkChoices
       };
     }).toList();
 
@@ -119,8 +150,14 @@ class _SearchPageState extends State<SearchPage> {
       final searchTerm = _searchController.text.toLowerCase().trim();
       filteredServices = services.where((service) {
         final serviceName = service['profession'].toLowerCase();
-        return serviceName.contains(searchTerm) ||
+        final matchesSearchTerm = serviceName.contains(searchTerm) ||
             _calculateLevenshteinDistance(serviceName, searchTerm) <= 2;
+        final matchesRating = !_isRatingFilterApplied || service['rating'] >= _minRating;
+        final matchesPrice = !_isPriceFilterApplied || (service['price'] >= _priceRange.start && (_priceRange.end == 19999 || service['price'] <= _priceRange.end));
+
+        final matchesWorkChoices = _selectedWorkChoices.isEmpty || _selectedWorkChoices.any((choice) => service['selectedWorkChoices'].contains(choice));
+        debugPrint('Service: ${service['name']}, Price: ${service['price']}, Matches Price: $matchesPrice, Matches Work Choices: $matchesWorkChoices'); // Debug statement
+        return matchesSearchTerm && matchesRating && matchesPrice && matchesWorkChoices;
       }).toList();
     });
   }
@@ -161,6 +198,118 @@ class _SearchPageState extends State<SearchPage> {
     );
   }
 
+  void _showFilterDialog() {
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text('Filter Services'),
+          content: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                StatefulBuilder(
+                  builder: (context, setState) {
+                    return Column(
+                      children: [
+                        const Text('Minimum Rating'),
+                        Slider(
+                          value: _minRating,
+                          min: 0,
+                          max: 5,
+                          divisions: 10,
+                          label: _minRating.toString(),
+                          onChanged: (value) {
+                            setState(() {
+                              _minRating = value;
+                            });
+                          },
+                        ),
+                        Text('Minimum Rating: ${_minRating.toStringAsFixed(1)}'),
+                        const SizedBox(height: 20),
+                        const Text('Price Range (DZD)'),
+                        RangeSlider(
+                          values: _priceRange,
+                          min: 0,
+                          max: 19999,
+                          divisions: 1000,
+                          labels: RangeLabels(
+                            _priceRange.start.toStringAsFixed(0),
+                            _priceRange.end == 19999 ? '∞' : _priceRange.end.toStringAsFixed(0),
+                          ),
+                          onChanged: (RangeValues values) {
+                            setState(() {
+                              _priceRange = values;
+                            });
+                          },
+                        ),
+                        Text('Price Range: ${_priceRange.start.toStringAsFixed(0)} - ${_priceRange.end == 19999 ? '∞' : _priceRange.end.toStringAsFixed(0)} DZD'),
+                        const SizedBox(height: 20),
+                        const Text('Work Domains'),
+                        Container(
+                          height: 150, // Fixed height for scrollable container
+                          child: SingleChildScrollView(
+                            child: Wrap(
+                              spacing: 8.0,
+                              runSpacing: 4.0,
+                              children: _allWorkChoices.map((choice) {
+                                final isSelected = _selectedWorkChoices.contains(choice);
+                                return FilterChip(
+                                  label: Text(choice),
+                                  selected: isSelected,
+                                  onSelected: (selected) {
+                                    setState(() {
+                                      if (selected) {
+                                        _selectedWorkChoices.add(choice);
+                                      } else {
+                                        _selectedWorkChoices.remove(choice);
+                                      }
+                                    });
+                                  },
+                                );
+                              }).toList(),
+                            ),
+                          ),
+                        ),
+                      ],
+                    );
+                  },
+                ),
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                setState(() {
+                  _minRating = 0.0;
+                  _priceRange = const RangeValues(0, 19999);
+                  _selectedWorkChoices.clear();
+                  _isRatingFilterApplied = false;
+                  _isPriceFilterApplied = false;
+                  _filterServices();
+                });
+                Navigator.of(context).pop();
+              },
+              child: const Text('Clear Filters'),
+            ),
+            TextButton(
+              onPressed: () {
+                setState(() {
+                  _isRatingFilterApplied = _minRating > 0.0;
+                  _isPriceFilterApplied = _priceRange.start > 0 || _priceRange.end < 19999;
+                  _filterServices();
+                });
+                Navigator.of(context).pop();
+              },
+              child: const Text('Apply Filters'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -170,6 +319,8 @@ class _SearchPageState extends State<SearchPage> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             _buildSearchBar(),
+            const SizedBox(height: 20),
+            _buildAppliedFilters(),
             const SizedBox(height: 20),
             Expanded(
               child: GridView.builder(
@@ -194,15 +345,68 @@ class _SearchPageState extends State<SearchPage> {
   }
 
   Widget _buildSearchBar() {
-    return TextField(
-      controller: _searchController,
-      decoration: InputDecoration(
-        hintText: "Search services...",
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(30),
+    return Row(
+      children: [
+        Expanded(
+          child: TextField(
+            controller: _searchController,
+            decoration: InputDecoration(
+              hintText: "Search services...",
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(30),
+              ),
+              prefixIcon: const Icon(Icons.search, color: Colors.blue),
+              suffixIcon: IconButton(
+                icon: const Icon(Icons.filter_list, color: Colors.blue),
+                onPressed: _showFilterDialog,
+              ),
+            ),
+          ),
         ),
-        prefixIcon: const Icon(Icons.search, color: Colors.blue),
-      ),
+      ],
+    );
+  }
+
+  Widget _buildAppliedFilters() {
+    List<Widget> filters = [];
+    if (_isRatingFilterApplied && _minRating > 0.0) {
+      filters.add(_buildFilterChip('Min Rating: ${_minRating.toStringAsFixed(1)}', () {
+        setState(() {
+          _minRating = 0.0;
+          _isRatingFilterApplied = false;
+          _filterServices();
+        });
+      }));
+    }
+    if (_isPriceFilterApplied && (_priceRange.start > 0 || _priceRange.end < 19999)) {
+      filters.add(_buildFilterChip('Price: ${_priceRange.start.toStringAsFixed(0)} - ${_priceRange.end == 19999 ? '∞' : _priceRange.end.toStringAsFixed(0)} DZD', () {
+        setState(() {
+          _priceRange = const RangeValues(0, 19999);
+          _isPriceFilterApplied = false;
+          _filterServices();
+        });
+      }));
+    }
+    if (_selectedWorkChoices.isNotEmpty) {
+      filters.addAll(_selectedWorkChoices.map((choice) => _buildFilterChip(choice, () {
+        setState(() {
+          _selectedWorkChoices.remove(choice);
+          _filterServices();
+        });
+      })).toList());
+    }
+    return Wrap(
+      spacing: 8.0,
+      children: filters,
+    );
+  }
+
+  Widget _buildFilterChip(String label, VoidCallback onDeleted) {
+    return Chip(
+      label: Text(label),
+      onDeleted: onDeleted,
+      deleteIcon: const Icon(Icons.close),
+      backgroundColor: Colors.blue.shade100,
     );
   }
 
@@ -263,6 +467,13 @@ class _SearchPageState extends State<SearchPage> {
                         maxLines: 1,
                       ),
                       _buildStarRating(service['rating']),
+                      Text(
+                        'Price: \DZD ${service['price'].toStringAsFixed(2)}',
+                        style: GoogleFonts.poppins(
+                          fontSize: 12,
+                          color: Colors.grey[600],
+                        ),
+                      ),
                     ],
                   ),
                 ),

@@ -31,6 +31,7 @@ class _ServiceProviderFullProfileState extends State<ServiceProviderFullProfile>
   List<dynamic> skills = [];
   List<dynamic> certifications = [];
   List<dynamic> workExperience = [];
+  List<dynamic> selectedWorkChoices = [];
   String profession = '';
   String userName = '';
   String userEmail = '';
@@ -62,6 +63,7 @@ class _ServiceProviderFullProfileState extends State<ServiceProviderFullProfile>
           skills = data['skills'];
           certifications = data['certifications'];
           workExperience = data['workExperience'];
+          selectedWorkChoices = data['selectedWorkChoices'] ?? [];
           rating = (data['rating'] ?? 0.0).toDouble();
           isLoading = false;
         });
@@ -458,6 +460,9 @@ Widget buildProfileTab() {
         const SizedBox(height: 20),
         _buildSectionTitle('Work Experience'),
         _buildWorkExperienceSection(),
+        const SizedBox(height: 20),
+        _buildSectionTitle('Work Domains'),
+        _buildWorkDomainsSection(),
         const SizedBox(height: 20),
         buildPortfolioSection(),
         const SizedBox(height: 20),
@@ -951,5 +956,45 @@ Form(
     ),
   );
 }
+
+  Widget _buildWorkDomainsSection() {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16.0),
+      child: Align(
+        alignment: Alignment.topLeft,
+        child: Column(
+          children: [
+            if (selectedWorkChoices.isNotEmpty)
+              Wrap(
+                spacing: 8.0,
+                runSpacing: 4.0,
+                children: selectedWorkChoices
+                    .map(
+                      (choice) => Padding(
+                        padding: const EdgeInsets.all(4.0),
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 8.0),
+                          decoration: BoxDecoration(
+                            color: Colors.blue.shade50,
+                            borderRadius: BorderRadius.circular(16.0),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Text(choice, style: GoogleFonts.poppins()),
+                            ],
+                          ),
+                        ),
+                      ),
+                    )
+                    .toList(),
+              )
+            else
+              const Center(child: Text('No work domains available')),
+          ],
+        ),
+      ),
+    );
+  }
 
 }
