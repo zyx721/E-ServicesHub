@@ -12,44 +12,35 @@ class _NameEntryScreenState extends State<NameEntryScreen> {
   final TextEditingController _firstNameController = TextEditingController();
   final TextEditingController _lastNameController = TextEditingController();
 
-  // Stream for work choices with debug prints
-  Stream<List<String>> get _workChoicesStream {
+  // Stream for work choices with multilingual support
+  Stream<List<WorkChoice>> get _workChoicesStream {
     return FirebaseFirestore.instance
         .collection('Metadata')
         .doc('WorkChoices')
         .snapshots()
         .map((snapshot) {
-      if (!snapshot.exists) {
+      if (!snapshot.exists || !snapshot.data()!.containsKey('choices')) {
         return [];
       }
-      // Changed from 'choices' to 'WorkChoices'
-      if (!snapshot.data()!.containsKey('WorkChoices')) {
-        return [];
-      }
-      return List<String>.from(snapshot.data()!['WorkChoices']);
+
+      final List<dynamic> choices = snapshot.data()!['choices'];
+      return choices.map((choice) => WorkChoice.fromMap(choice)).toList();
     });
   }
 
-  // To track selected services
   final Set<String> _selectedChoices = {};
 
-  // Let's also try a direct fetch method for testing
-  Future<void> _testFetch() async {
-    try {
-      final doc = await FirebaseFirestore.instance
-          .collection('Metadata')
-          .doc('WorkChoices')
-          .get();
-      print("Direct fetch result: ${doc.data()}");
-    } catch (e) {
-      print("Error in direct fetch: $e");
+  String _getLocalizedWorkChoice(WorkChoice choice, BuildContext context) {
+    final locale = Localizations.localeOf(context).languageCode;
+    switch (locale) {
+      case 'ar':
+        return choice.ar;
+      case 'fr':
+        return choice.fr ??
+            choice.en; // Fallback to English if French not available
+      default:
+        return choice.en;
     }
-  }
-
-  @override
-  void initState() {
-    super.initState();
-    _testFetch(); // Test the Firebase connection
   }
 
   void _saveProviderInfo() async {
@@ -135,44 +126,43 @@ class _NameEntryScreenState extends State<NameEntryScreen> {
               style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
             ),
             SizedBox(height: 10),
-            StreamBuilder<List<String>>(
+            StreamBuilder<List<WorkChoice>>(
               stream: _workChoicesStream,
               builder: (context, snapshot) {
-                // Add more detailed error and state handling
                 if (snapshot.hasError) {
                   return Text('Error loading choices: ${snapshot.error}');
                 }
 
                 if (snapshot.connectionState == ConnectionState.waiting) {
                   return Center(
-                      child: Column(
-                    children: [
-                      CircularProgressIndicator(),
-                      SizedBox(height: 10),
-                      Text('Loading choices...')
-                    ],
-                  ));
+                    child: Column(
+                      children: [
+                        CircularProgressIndicator(),
+                        SizedBox(height: 10),
+                        Text('Loading choices...')
+                      ],
+                    ),
+                  );
                 }
 
                 final workChoices = snapshot.data ?? [];
 
                 if (workChoices.isEmpty) {
-                  return Text(
-                      'No choices available. Please check Firebase configuration.');
+                  return Text('No choices available.');
                 }
 
                 return Wrap(
                   spacing: 10,
                   runSpacing: 10,
                   children: workChoices.map((choice) {
-                    final isSelected = _selectedChoices.contains(choice);
+                    final isSelected = _selectedChoices.contains(choice.id);
                     return GestureDetector(
                       onTap: () {
                         setState(() {
                           if (isSelected) {
-                            _selectedChoices.remove(choice);
+                            _selectedChoices.remove(choice.id);
                           } else if (_selectedChoices.length < 2) {
-                            _selectedChoices.add(choice);
+                            _selectedChoices.add(choice.id);
                           } else {
                             _showErrorDialog(appLocalizations.selectTwoChoices);
                           }
@@ -193,7 +183,7 @@ class _NameEntryScreenState extends State<NameEntryScreen> {
                           ),
                         ),
                         child: Text(
-                          choice,
+                          _getLocalizedWorkChoice(choice, context),
                           style: TextStyle(
                             color: isSelected ? Colors.white : Colors.black,
                             fontWeight:
@@ -242,6 +232,30 @@ class _NameEntryScreenState extends State<NameEntryScreen> {
           ],
         ),
       ),
+    );
+  }
+}
+
+// Model class for WorkChoice
+class WorkChoice {
+  final String id;
+  final String en;
+  final String ar;
+  final String? fr;
+
+  WorkChoice({
+    required this.id,
+    required this.en,
+    required this.ar,
+    this.fr,
+  });
+
+  factory WorkChoice.fromMap(Map<String, dynamic> map) {
+    return WorkChoice(
+      id: map['id'] as String,
+      en: map['en'] as String,
+      ar: map['ar'] as String,
+      fr: map['fr'] as String?,
     );
   }
 }
