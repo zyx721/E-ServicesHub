@@ -589,6 +589,8 @@ Widget _buildTopPopularHeader(BuildContext context) {
                               MaterialPageRoute(
                                 builder: (context) => NavbarPage(
                                   initialIndex: 1, // Index for SearchPage
+                                  serviceName: service.name, // Pass the service name
+
                                 ),
                               ),
                             );
@@ -599,6 +601,7 @@ Widget _buildTopPopularHeader(BuildContext context) {
                               MaterialPageRoute(
                                 builder: (context) => const NavbarPage(
                                   initialIndex: 1,
+                                  //serviceName: service.name, // Pass the service name
                                 ),
                               ),
                             );

@@ -25,10 +25,12 @@ class _SearchPageState extends State<SearchPage> {
     _searchController.addListener(_filterServices);
     _loadServicesFromFirestore();
     _loadLikedServices();
+    
 
         // If serviceName is passed, pre-fill the search input field with it
     if (widget.serviceName != null) {
       _searchController.text = widget.serviceName!;
+      _filterServices(); 
     }
   }
 
