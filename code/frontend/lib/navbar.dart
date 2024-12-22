@@ -18,7 +18,8 @@ import 'models/colors.dart';
 
 class NavbarPage extends StatefulWidget {
   final int initialIndex;
-  const NavbarPage({Key? key, required this.initialIndex}) : super(key: key);
+  final String? serviceName;
+  const NavbarPage({Key? key, required this.initialIndex, this.serviceName}) : super(key: key);
 
   @override
   State<NavbarPage> createState() => _NavbarPageState();
@@ -26,6 +27,7 @@ class NavbarPage extends StatefulWidget {
 
 class _NavbarPageState extends State<NavbarPage> {
   late int selectedIndex;
+  String? serviceName;
   List<Widget> screens = [];
   bool isLoading = true;
 
@@ -42,7 +44,8 @@ class _NavbarPageState extends State<NavbarPage> {
       setState(() {
         screens = [
           HomePage(),
-          SearchPage(),
+          // SearchPage(),
+          SearchPage(serviceName: widget.serviceName), // Pass serviceName here
           FavoritesPage(),
           isProvider ? ServiceProviderProfile2() : SimpleUserProfile(),
         ];
@@ -86,6 +89,9 @@ class _NavbarPageState extends State<NavbarPage> {
       throw Exception("No user is currently signed in");
     }
   }
+
+  
+
 
   void _changeLanguage(String languageCode) {
     Locale newLocale;
@@ -245,10 +251,13 @@ class _NavbarPageState extends State<NavbarPage> {
             _buildLanguageMenuItem('fr', localizations.frenchLanguageName,
                 'assets/images/sfr.png'),
           ];
+          
         },
       ),
     );
   }
+
+  
 
   PopupMenuItem<String> _buildLanguageMenuItem(
       String languageCode, String languageName, String flagPath) {

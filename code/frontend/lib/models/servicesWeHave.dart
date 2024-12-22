@@ -36,7 +36,7 @@ class PopularServicesModel {
 
     popularServices.add(
       PopularServicesModel(
-        name: 'Plumbing',
+        name: 'Plumber',
         color: Colors.green, // Example color
         availableProviders: 10,
         iconPath: 'assets/services_icon/Plumbing.svg'
@@ -54,7 +54,7 @@ class PopularServicesModel {
 
         popularServices.add(
       PopularServicesModel(
-        name: 'Painting',
+        name: 'Painter',
         color: Colors.red, // Example color
         availableProviders: 5,
         iconPath: 'assets/services_icon/Painting.svg'

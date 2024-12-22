@@ -571,22 +571,26 @@ class _HomePageState extends State<HomePage> {
                           // Find the NavbarPage widget
                           final navbarPage = context.findAncestorWidgetOfExactType<NavbarPage>();
                           if (navbarPage != null) {
+                            print(service.name);
                             // Use a callback to update the navigation state
                             Navigator.pushReplacement(
                               context,
                               MaterialPageRoute(
                                 builder: (context) => NavbarPage(
                                   initialIndex: 1, // Index for SearchPage
+                                  serviceName: service.name, 
                                 ),
                               ),
                             );
                           } else {
                             // Fallback navigation if we're not inside NavbarPage
+                            print(service.name);
                             Navigator.push(
                               context,
                               MaterialPageRoute(
-                                builder: (context) => const NavbarPage(
+                                builder: (context) => NavbarPage(
                                   initialIndex: 1,
+                                  serviceName: service.name, 
                                 ),
                               ),
                             );

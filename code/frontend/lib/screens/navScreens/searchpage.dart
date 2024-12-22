@@ -6,7 +6,8 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:hanini_frontend/screens/navScreens/service.dart';
 
 class SearchPage extends StatefulWidget {
-  const SearchPage({Key? key}) : super(key: key);
+    final String? serviceName;  // Accept serviceName as a parameter
+  const SearchPage({Key? key, this.serviceName}) : super(key: key);
 
   @override
   State<SearchPage> createState() => _SearchPageState();
@@ -24,7 +25,14 @@ class _SearchPageState extends State<SearchPage> {
     _searchController.addListener(_filterServices);
     _loadServicesFromFirestore();
     _loadLikedServices();
+
+        // If serviceName is passed, pre-fill the search input field with it
+    if (widget.serviceName != null) {
+      _searchController.text = widget.serviceName!;
+    }
   }
+
+  
 
   void _loadLikedServices() async {
     final userId = FirebaseAuth.instance.currentUser?.uid;
