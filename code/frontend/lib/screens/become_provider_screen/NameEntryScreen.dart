@@ -12,30 +12,45 @@ class _NameEntryScreenState extends State<NameEntryScreen> {
   final TextEditingController _firstNameController = TextEditingController();
   final TextEditingController _lastNameController = TextEditingController();
 
-  // List of service categories
-  List<String> get _workChoices {
-    final AppLocalizations appLocalizations = AppLocalizations.of(context)!;
-    return [
-      appLocalizations.houseCleaning,
-      appLocalizations.electricity,
-      appLocalizations.plumbing,
-      appLocalizations.gardening,
-      appLocalizations.painting,
-      appLocalizations.carpentry,
-      appLocalizations.pestControl,
-      appLocalizations.acRepair,
-      appLocalizations.vehicleRepair,
-      appLocalizations.applianceInstallation,
-      appLocalizations.itSupport,
-      appLocalizations.homeSecurity,
-      appLocalizations.interiorDesign,
-      appLocalizations.windowCleaning,
-      appLocalizations.furnitureAssembly,
-    ];
+  // Stream for work choices with debug prints
+  Stream<List<String>> get _workChoicesStream {
+    return FirebaseFirestore.instance
+        .collection('Metadata')
+        .doc('WorkChoices')
+        .snapshots()
+        .map((snapshot) {
+      if (!snapshot.exists) {
+        return [];
+      }
+      // Changed from 'choices' to 'WorkChoices'
+      if (!snapshot.data()!.containsKey('WorkChoices')) {
+        return [];
+      }
+      return List<String>.from(snapshot.data()!['WorkChoices']);
+    });
   }
 
   // To track selected services
   final Set<String> _selectedChoices = {};
+
+  // Let's also try a direct fetch method for testing
+  Future<void> _testFetch() async {
+    try {
+      final doc = await FirebaseFirestore.instance
+          .collection('Metadata')
+          .doc('WorkChoices')
+          .get();
+      print("Direct fetch result: ${doc.data()}");
+    } catch (e) {
+      print("Error in direct fetch: $e");
+    }
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    _testFetch(); // Test the Firebase connection
+  }
 
   void _saveProviderInfo() async {
     final String firstName = _firstNameController.text.trim();
@@ -52,18 +67,15 @@ class _NameEntryScreenState extends State<NameEntryScreen> {
     }
 
     try {
-      // Get the current user's UID
       final User? user = FirebaseAuth.instance.currentUser;
       if (user == null) {
         _showErrorDialog("User not authenticated.");
         return;
       }
 
-      // Reference Firestore document
       final DocumentReference userDoc =
           FirebaseFirestore.instance.collection('users').doc(user.uid);
 
-      // Update Firestore with the new information
       await userDoc.update({
         'firstName': firstName,
         'lastName': lastName,
@@ -71,11 +83,10 @@ class _NameEntryScreenState extends State<NameEntryScreen> {
         'isSTEP_1': true,
       });
 
-       Navigator.of(context).pushNamedAndRemoveUntil(
-      '/verification', // Your navbar route
-      (Route<dynamic> route) => false, // This removes all previous routes
-    );
-      
+      Navigator.of(context).pushNamedAndRemoveUntil(
+        '/verification',
+        (Route<dynamic> route) => false,
+      );
     } catch (e) {
       _showErrorDialog("Failed to save data: $e");
     }
@@ -108,69 +119,94 @@ class _NameEntryScreenState extends State<NameEntryScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
-            // First Name TextField
             TextField(
               controller: _firstNameController,
               decoration:
                   InputDecoration(labelText: appLocalizations.firstName),
             ),
             SizedBox(height: 20),
-
-            // Last Name TextField
             TextField(
               controller: _lastNameController,
               decoration: InputDecoration(labelText: appLocalizations.lastName),
             ),
             SizedBox(height: 30),
-
-            // Work Choice Grid
             Text(
               appLocalizations.selectYourServices,
               style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
             ),
             SizedBox(height: 10),
-            Wrap(
-              spacing: 10,
-              runSpacing: 10,
-              children: _workChoices.map((choice) {
-                final isSelected = _selectedChoices.contains(choice);
-                return GestureDetector(
-                  onTap: () {
-                    setState(() {
-                      if (isSelected) {
-                        _selectedChoices.remove(choice);
-                      } else if (_selectedChoices.length < 2) {
-                        _selectedChoices.add(choice);
-                      } else {
-                        _showErrorDialog(appLocalizations.selectTwoChoices);
-                      }
-                    });
-                  },
-                  child: Container(
-                    padding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                    decoration: BoxDecoration(
-                      color: isSelected ? Colors.purple[300] : Colors.grey[200],
-                      borderRadius: BorderRadius.circular(20),
-                      border: Border.all(
-                        color: isSelected ? Colors.purple : Colors.grey[400]!,
-                        width: 1,
+            StreamBuilder<List<String>>(
+              stream: _workChoicesStream,
+              builder: (context, snapshot) {
+                // Add more detailed error and state handling
+                if (snapshot.hasError) {
+                  return Text('Error loading choices: ${snapshot.error}');
+                }
+
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return Center(
+                      child: Column(
+                    children: [
+                      CircularProgressIndicator(),
+                      SizedBox(height: 10),
+                      Text('Loading choices...')
+                    ],
+                  ));
+                }
+
+                final workChoices = snapshot.data ?? [];
+
+                if (workChoices.isEmpty) {
+                  return Text(
+                      'No choices available. Please check Firebase configuration.');
+                }
+
+                return Wrap(
+                  spacing: 10,
+                  runSpacing: 10,
+                  children: workChoices.map((choice) {
+                    final isSelected = _selectedChoices.contains(choice);
+                    return GestureDetector(
+                      onTap: () {
+                        setState(() {
+                          if (isSelected) {
+                            _selectedChoices.remove(choice);
+                          } else if (_selectedChoices.length < 2) {
+                            _selectedChoices.add(choice);
+                          } else {
+                            _showErrorDialog(appLocalizations.selectTwoChoices);
+                          }
+                        });
+                      },
+                      child: Container(
+                        padding:
+                            EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                        decoration: BoxDecoration(
+                          color: isSelected
+                              ? Colors.purple[300]
+                              : Colors.grey[200],
+                          borderRadius: BorderRadius.circular(20),
+                          border: Border.all(
+                            color:
+                                isSelected ? Colors.purple : Colors.grey[400]!,
+                            width: 1,
+                          ),
+                        ),
+                        child: Text(
+                          choice,
+                          style: TextStyle(
+                            color: isSelected ? Colors.white : Colors.black,
+                            fontWeight:
+                                isSelected ? FontWeight.w600 : FontWeight.w400,
+                          ),
+                        ),
                       ),
-                    ),
-                    child: Text(
-                      choice,
-                      style: TextStyle(
-                        color: isSelected ? Colors.white : Colors.black,
-                        fontWeight:
-                            isSelected ? FontWeight.w600 : FontWeight.w400,
-                      ),
-                    ),
-                  ),
+                    );
+                  }).toList(),
                 );
-              }).toList(),
+              },
             ),
             SizedBox(height: 40),
-
-            // Continue Button
             GestureDetector(
               onTap: _saveProviderInfo,
               child: Container(
@@ -178,8 +214,8 @@ class _NameEntryScreenState extends State<NameEntryScreen> {
                 decoration: BoxDecoration(
                   gradient: LinearGradient(
                     colors: [
-                      Color(0xFF6A1B9A), // Start color
-                      Color(0xFFAB47BC), // End color
+                      Color(0xFF6A1B9A),
+                      Color(0xFFAB47BC),
                     ],
                     begin: Alignment.centerLeft,
                     end: Alignment.centerRight,
