@@ -6,6 +6,10 @@ import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:lottie/lottie.dart'; // Import the Lottie package
 import 'package:hanini_frontend/localization/app_localization.dart';
+import 'package:image/image.dart' as img; // Import the image package for image processing
+import 'package:path_provider/path_provider.dart'; // Import the path_provider package for file storage
+import 'dart:io'; // Import the dart:io package for file operations
+import 'package:flutter/services.dart'; // Import the services package for rootBundle
 
 class FaceCompareScreen extends StatefulWidget {
   @override
@@ -19,6 +23,12 @@ class _FaceCompareScreenState extends State<FaceCompareScreen> {
   String _comparisonResult = "";
   Color _resultColor = Colors.black;
   bool _showAnimation = false; // Flag to trigger animation
+  bool _isSmiling = false;
+  bool _smileDetected = false;
+  XFile? _firstImage;
+  bool _isSmilingDetected = false; // Flag to indicate smile detection
+  bool _isBlinking = false;
+  bool _blinkDetected = false;
 
   @override
   void initState() {
@@ -42,9 +52,110 @@ class _FaceCompareScreenState extends State<FaceCompareScreen> {
     }
   }
 
-  Future<void> _takeAndSendPicture() async {
-    if (_isLoading) return;
+  // Run the smile detection using OpenCV's Haar Cascade classifier
+  // Placeholder function for smile detection
+  Future<void> _detectSmile(String imagePath) async {
+    // Implement smile detection logic here
+    setState(() {
+      _isSmilingDetected = true; // Assume smile is detected for now
+    });
+  }
+  Future<void> _captureWithoutSmile() async {
+    setState(() {
+      _isSmiling = false;
+      _smileDetected = false;
+    });
 
+    try {
+      final image = await _cameraController!.takePicture();
+      setState(() {
+        _firstImage = image;
+      });
+      await _detectSmile(image.path); // Detect smile in the captured image
+    } catch (e) {
+      print("Error capturing image: $e");
+    }
+  }
+
+  Future<void> _captureWithSmile() async {
+    setState(() {
+      _isSmiling = true;
+      _smileDetected = false;
+    });
+
+    // Simulate smile detection (in a real application, you would use a more sophisticated method)
+    await Future.delayed(Duration(seconds: 2));
+    try {
+      final image = await _cameraController!.takePicture();
+      setState(() {
+        _smileDetected = true;
+      });
+      await _detectSmile(image.path); // Detect smile in the captured image
+      if (_isSmilingDetected) {
+        await _submitFaceImages(_firstImage!.path, image.path);
+      } else {
+        setState(() {
+          _comparisonResult = "Smile not detected. Please try again.";
+          _resultColor = Colors.redAccent;
+        });
+      }
+    } catch (e) {
+      print("Error capturing image: $e");
+    }
+  }
+
+  Future<void> _captureWithoutBlink() async {
+    setState(() {
+      _isBlinking = false;
+      _blinkDetected = false;
+    });
+
+    try {
+      final image = await _cameraController!.takePicture();
+      setState(() {
+        _firstImage = image;
+      });
+      await _detectBlink(image.path); // Detect blink in the captured image
+    } catch (e) {
+      print("Error capturing image: $e");
+    }
+  }
+
+  Future<void> _captureWithBlink() async {
+    setState(() {
+      _isBlinking = true;
+      _blinkDetected = false;
+    });
+
+    // Simulate blink detection (in a real application, you would use a more sophisticated method)
+    await Future.delayed(Duration(seconds: 2));
+    try {
+      final image = await _cameraController!.takePicture();
+      setState(() {
+        _blinkDetected = true;
+      });
+      await _detectBlink(image.path); // Detect blink in the captured image
+      if (_blinkDetected) {
+        await _submitFaceImages(_firstImage!.path, image.path);
+      } else {
+        setState(() {
+          _comparisonResult = "Blink not detected. Please try again.";
+          _resultColor = Colors.redAccent;
+        });
+      }
+    } catch (e) {
+      print("Error capturing image: $e");
+    }
+  }
+
+  Future<void> _detectBlink(String imagePath) async {
+    // Implement blink detection logic here
+    setState(() {
+      _blinkDetected = true; // Assume blink is detected for now
+    });
+  }
+
+  Future<void> _submitFaceImages(String imagePath1, String imagePath2) async {
     setState(() {
       _isLoading = true;
       _comparisonResult = "";
@@ -52,12 +163,20 @@ class _FaceCompareScreenState extends State<FaceCompareScreen> {
     });
 
     try {
-      final image = await _cameraController!.takePicture();
-      final response = await _submitFaceImage(image.path);
+      final request = http.MultipartRequest(
+        'POST',
+        Uri.parse('https://polite-schools-ask.loca.lt/compare-face/'), // Ensure this URL is correct
+      );
 
-      if (response != null) {
+      request.files.add(await http.MultipartFile.fromPath('file1', imagePath1));
+      request.files.add(await http.MultipartFile.fromPath('file2', imagePath2));
+      final response = await request.send();
+      final responseData = await http.Response.fromStream(response);
+
+      if (response.statusCode == 200) {
+        final responseBody = json.decode(responseData.body);
         setState(() {
-          _comparisonResult = response['message'];
+          _comparisonResult = responseBody['message'];
           _resultColor = (_comparisonResult.trim() == "Faces match!")
               ? Colors.greenAccent
               : Colors.redAccent;
@@ -78,36 +197,11 @@ class _FaceCompareScreenState extends State<FaceCompareScreen> {
         });
       }
     } catch (e) {
-      print("Error capturing image: $e");
+      print("Error submitting face images: $e");
     } finally {
       setState(() {
         _isLoading = false;
       });
-    }
-  }
-
-  Future<Map<String, dynamic>?> _submitFaceImage(String imagePath) async {
-    final request = http.MultipartRequest(
-      'POST',
-      Uri.parse(
-          'https://polite-schools-ask.loca.lt/compare-face/'), // Ensure this URL is correct
-    );
-
-    try {
-      request.files.add(await http.MultipartFile.fromPath('file', imagePath));
-      final response = await request.send();
-      final responseData = await http.Response.fromStream(response);
-
-      if (response.statusCode == 200) {
-        return json.decode(responseData.body);
-      } else {
-        print(
-            "Failed to submit face image: ${response.statusCode} - ${responseData.body}");
-        return null;
-      }
-    } catch (e) {
-      print("Error submitting face image: $e");
-      return null;
     }
   }
 
@@ -255,49 +349,75 @@ class _FaceCompareScreenState extends State<FaceCompareScreen> {
                   bottom: 30,
                   left: 20,
                   right: 20,
-                  child: InkWell(
-                    onTap: _isLoading ? null : _takeAndSendPicture,
-                    child: Container(
-                      padding: EdgeInsets.symmetric(vertical: 15),
-                      decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                          colors: [
-                            Color(0xFF3949AB),
-                            Color(0xFF1E88E5),
-                          ],
-                          begin: Alignment.topCenter,
-                          end: Alignment.bottomCenter,
-                        ),
-                        borderRadius: BorderRadius.circular(30),
-                      ),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Icon(
-                            Icons.camera_alt,
-                            color: Colors.white,
+                  child: Column(
+                    children: [
+                      if (_firstImage == null)
+                        ElevatedButton(
+                          onPressed: _isLoading ? null : _captureWithoutBlink,
+                          child: Text(
+                            "Capture Without Blink",
+                            style: TextStyle(fontSize: 18),
                           ),
-                          SizedBox(width: 10),
-                          _isLoading
-                              ? SizedBox(
-                                  width: 20,
-                                  height: 20,
-                                  child: CircularProgressIndicator(
-                                    valueColor: AlwaysStoppedAnimation<Color>(
-                                        Colors.white),
-                                    strokeWidth: 2,
-                                  ),
-                                )
-                              : Text(
-                                  appLocalizations.verifyFace,
-                                  style: TextStyle(
-                                    color: Colors.white,
-                                    fontSize: 18,
-                                  ),
-                                ),
-                        ],
+                        ),
+                      if (_firstImage != null && !_blinkDetected)
+                        ElevatedButton(
+                          onPressed: _isLoading ? null : _captureWithBlink,
+                          child: Text(
+                            _isBlinking
+                                ? "Detecting Blink..."
+                                : "Please Blink",
+                            style: TextStyle(fontSize: 18),
+                          ),
+                        ),
+                      SizedBox(height: 10),
+                      InkWell(
+                        onTap: _isLoading || !_smileDetected
+                            ? null
+                            : () => _submitFaceImages(_firstImage!.path, _firstImage!.path),
+                        child: Container(
+                          padding: EdgeInsets.symmetric(vertical: 15),
+                          decoration: BoxDecoration(
+                            gradient: LinearGradient(
+                              colors: [
+                                Color(0xFF3949AB),
+                                Color(0xFF1E88E5),
+                              ],
+                              begin: Alignment.topCenter,
+                              end: Alignment.bottomCenter,
+                            ),
+                            borderRadius: BorderRadius.circular(30),
+                          ),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(
+                                Icons.camera_alt,
+                                color: Colors.white,
+                              ),
+                              SizedBox(width: 10),
+                              _isLoading
+                                  ? SizedBox(
+                                      width: 20,
+                                      height: 20,
+                                      child: CircularProgressIndicator(
+                                        valueColor:
+                                            AlwaysStoppedAnimation<Color>(
+                                                Colors.white),
+                                        strokeWidth: 2,
+                                      ),
+                                    )
+                                  : Text(
+                                      appLocalizations.verifyFace,
+                                      style: TextStyle(
+                                        color: Colors.white,
+                                        fontSize: 18,
+                                      ),
+                                    ),
+                            ],
+                          ),
+                        ),
                       ),
-                    ),
+                    ],
                   ),
                 ),
               ],

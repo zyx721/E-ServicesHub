@@ -99,3 +99,5 @@ flutter:
     - assets/animation/animation3.json
     - assets/animation/animation4.json
     - assets/animation/animation5.json
+    - assets/animation/id_aproved.json
+    - assets/animation/flip.json
