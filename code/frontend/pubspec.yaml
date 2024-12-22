@@ -39,6 +39,7 @@ dependencies:
   firebase_storage: ^12.3.7
   googleapis: ^13.2.0
   googleapis_auth: ^1.6.0
+  image: ^3.0.1
   
 
 

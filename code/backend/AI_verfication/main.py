@@ -5,12 +5,12 @@ from fastapi import FastAPI, UploadFile, File
 from fastapi.responses import JSONResponse
 from ultralytics import YOLO
 import face_recognition
-import easyocr
 from PIL import Image
-import re
 import warnings
+
 # Suppress the FutureWarning for torch.load
 warnings.filterwarnings("ignore")
+
 # Load your trained YOLO model
 model = YOLO("best.pt")
 
@@ -23,42 +23,10 @@ face_cascade = cv2.CascadeClassifier('haarcascade_frontalface_default.xml')
 extracted_face_path = 'extracted_largest_face.jpg'
 
 
-def preprocess_image(image_path):
-    img = cv2.imread(image_path, cv2.IMREAD_GRAYSCALE)
-    img = cv2.resize(img, (1280, 1280))  # Ensure consistent size
-    img = cv2.GaussianBlur(img, (5, 5), 0)  # Reduce noise
-    img = cv2.adaptiveThreshold(img, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C,
-                                cv2.THRESH_BINARY, 11, 2)  # Adaptive thresholding
-    return img
-
-def extract_id_number(image_path):
-    reader = easyocr.Reader(['en'])
-    preprocessed_img = preprocess_image(image_path)
-    results = reader.readtext(preprocessed_img)
-
-    # Compile a regex pattern to match exactly 18 digits
-    digit_pattern = re.compile(r'\b(\d{18})\b')
-
-    # Collect all detected texts
-    detected_texts = [text for (bbox, text, prob) in results]
-
-    # Join detected texts into a single string
-    combined_text = ' '.join(detected_texts)
-    print(f"Combined detected text: {combined_text}")  # For debugging
-
-    # Search for an exact match for 18 consecutive digits
-    match = digit_pattern.search(combined_text)
-
-    if match:
-        id_number = match.group(1)  # Extract the 18-digit number
-        print(f"ID number found: {id_number}")
-        return id_number
-
-    print("No valid ID number found.")
-    return None
 def check_logos(image_path):
-    results = model.predict(source=image_path, save=False, imgsz=1280, device=0)
-    logos_found = {0: False, 1: False}  # Assuming classes 0 and 1 correspond to the logos
+    # Perform logo detection using the YOLO model
+    results = model.predict(source=image_path, save=False, imgsz=640, device=0)
+    logos_found = {0: False, 1: False, 2: False}  # Assuming classes 0, 1, 2 correspond to the logos
 
     for result in results:
         boxes = result.boxes
@@ -66,7 +34,10 @@ def check_logos(image_path):
             for box in boxes:
                 class_id = box.cls.item()
                 if class_id in logos_found:
-                    logos_found[class_id] = True
+                    logos_found[class_id] = True  # Mark the logo as found
+
+    # Log the detection results for debugging purposes
+    print(f"Logos found: {logos_found}")
 
     return logos_found  # Return a dictionary indicating which logos were found
 
@@ -99,18 +70,19 @@ async def upload_image(file: UploadFile = File(...)):
     os.makedirs(upload_dir, exist_ok=True)
     file_location = f"{upload_dir}/{file.filename}"
 
-    with open(file_location, "wb") as buffer:
+    with open(file_location, "wb") as buffer: 
         shutil.copyfileobj(file.file, buffer)
 
     logos_found = check_logos(file_location)
 
-    # Check if both logos are detected
-    if not logos_found[0] or not logos_found[1]:
-        detected_logos = [k for k, v in logos_found.items() if v]
-        print(f"Invalid ID: Detected logos: {detected_logos}")
+    # Check if all three logos are detected
+    missing_logos = [k for k, v in logos_found.items() if not v]
+    
+    if missing_logos:
+        print(f"Invalid ID: Missing logos {missing_logos}")
         return JSONResponse(content={
             "message": "Invalid ID: Please retake the picture.",
-            "detected_logos": detected_logos,
+            "missing_logos": missing_logos,
             "stop_capture": False  # Indicate not to stop capturing
         })
 
@@ -119,30 +91,43 @@ async def upload_image(file: UploadFile = File(...)):
 
     print("Valid ID")
 
-    # Proceed with ID extraction only if valid ID
-    id_number = extract_id_number(file_location)
-    if not id_number:
-        print("No valid ID number found in the image.")
-        return JSONResponse(content={"message": "ID is valid but no ID number found.", "stop_capture": False})
-
-    print(f"ID number found: {id_number}")
-
-    # Proceed with face extraction if both logos are valid
+    # Proceed with face extraction after logo validation
     face_image_path = extract_face(file_location)
 
     if face_image_path:
         return JSONResponse(content={
             "message": "Face extracted.",
             "face_image_path": face_image_path,
-            "id_number": id_number,
             "stop_capture": True  # Indicate to stop capturing
         })
     else:
         return JSONResponse(content={
             "message": "ID valid but no face detected.",
-            "id_number": id_number,
             "stop_capture": True  # Indicate to stop capturing
         })
+
+
+def extract_face(image_path):
+    image = cv2.imread(image_path)
+
+    if image is None:
+        print(f"Error: Could not open or find the image at {image_path}")
+        return None
+
+    gray_image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+    faces = face_cascade.detectMultiScale(gray_image, scaleFactor=1.1, minNeighbors=5, minSize=(30, 30))
+
+    if len(faces) == 0:
+        print("No faces detected.")
+        return None
+    else:
+        largest_face = max(faces, key=lambda face: face[2] * face[3])  # Find the largest face
+        x, y, w, h = largest_face
+        face = image[y:y + h, x:x + w]
+        cv2.imwrite(extracted_face_path, face)  # Save to a specific path
+        print(f"Largest face saved to {extracted_face_path}")
+        return extracted_face_path
+
 
 
 def compare_faces(face_image_path, tolerance=0.6):
