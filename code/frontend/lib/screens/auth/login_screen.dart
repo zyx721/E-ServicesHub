@@ -5,6 +5,7 @@ import 'package:google_sign_in/google_sign_in.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:shared_preferences/shared_preferences.dart'; // Import SharedPreferences
+import 'package:firebase_messaging/firebase_messaging.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({Key? key}) : super(key: key);
@@ -22,6 +23,59 @@ class _LoginScreenState extends State<LoginScreen>
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
   final FirebaseAuth _auth = FirebaseAuth.instance;
+
+
+/// Function to generate and retrieve the device token for push notifications.
+Future<String?> generateDeviceToken() async {
+  try {
+    final FirebaseMessaging messaging = FirebaseMessaging.instance;
+
+    // Request permission for notifications (only needed for iOS and macOS)
+    NotificationSettings settings = await messaging.requestPermission(
+      alert: true,
+      badge: true,
+      sound: true,
+    );
+
+    if (settings.authorizationStatus == AuthorizationStatus.denied) {
+      debugPrint('Notification permissions denied');
+      return null;
+    }
+
+    // Get the device token
+    final String? token = await messaging.getToken();
+
+    if (token != null) {
+      debugPrint('Device token generated: $token');
+      return token;
+    } else {
+      debugPrint('Failed to generate device token');
+      return null;
+    }
+  } catch (e) {
+    debugPrint('Error generating device token: $e');
+    return null;
+  }
+}
+
+
+
+  Future<void> saveDeviceTokenToFirestore(String userId) async {
+  try {
+    final String? token = await generateDeviceToken();
+    if (token != null) {
+      await FirebaseFirestore.instance.collection('users').doc(userId).update({
+        'deviceToken': token,
+      });
+      debugPrint('Device token saved to Firestore: $token');
+    } else {
+      debugPrint('Device token generation failed');
+    }
+  } catch (e) {
+    debugPrint('Error saving device token to Firestore: $e');
+  }
+}
+
 
   Future<void> handleLogin() async {
     try {
@@ -63,6 +117,8 @@ class _LoginScreenState extends State<LoginScreen>
             'lastSignIn': DateTime.now(),
             'isConnected': true,
           }, SetOptions(merge: true));
+
+          saveDeviceTokenToFirestore(user.uid) ;
 
           print('Login Successful. User: ${user.email}');
           // Show success SnackBar
@@ -228,6 +284,9 @@ Future<void> _handleGoogleSignIn() async {
               .collection('users')
               .doc(user.uid)
               .set(userData, SetOptions(merge: true));
+
+
+              saveDeviceTokenToFirestore(user.uid) ;
 
           // Show success message and navigate
           ScaffoldMessenger.of(context).showSnackBar(

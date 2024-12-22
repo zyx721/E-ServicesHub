@@ -39,7 +39,7 @@ dependencies:
   googleapis: ^13.2.0
   googleapis_auth: ^1.6.0
   firebase_storage: ^12.3.7
-  
+  firebase_messaging: ^15.1.6
 
 
 
@@ -54,6 +54,7 @@ flutter:
   uses-material-design: true
   generate: true  # This line enables localization code generation
   assets:
+    - assets/credentials/test.json
     - assets/credentials/service_account.json
     - assets/images/onboarding1.png
     - assets/images/onboarding2.png
