@@ -8,7 +8,9 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:hanini_frontend/screens/navScreens/service.dart';
 import 'package:hanini_frontend/models/colors.dart';
+import 'package:hanini_frontend/navbar.dart';
 import 'package:hanini_frontend/screens/navScreens/searchpage.dart';
+
 import 'package:hanini_frontend/models/servicesWeHave.dart';
 
 class HomePage extends StatefulWidget {
@@ -524,109 +526,120 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-
-Column _servicesSection() {
-  return Column(
-    crossAxisAlignment: CrossAxisAlignment.start,
-    children: [
-      Container(
-        height: 140,
-        child: ListView.separated(
-          itemBuilder: (context, index) {
-            final service = PopularServicesModel.getPopularServices()[index];
-            return Container(
-              width: 150,
-              decoration: BoxDecoration(
-                color: service.color.withOpacity(0.1),
-                borderRadius: BorderRadius.circular(20),
-              ),
-              child: Padding(
-                padding: const EdgeInsets.all(8.0),
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                  children: [
-                    SvgPicture.asset(
-                      service.iconPath,
-                      width: 35,
-                      height: 35,
-                    ),
-                    Expanded(
-                      child: Center(
-                        child: Text(
-                          service.name,
-                          textAlign: TextAlign.center,
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
-                          style: const TextStyle(
-                            fontWeight: FontWeight.bold,
-                            color: AppColors.mainColor,
-                            fontSize: 13,
-                          ),
-                        ),
-                      ),
-                    ),
-                    GestureDetector(
-                      onTap: () {
-                        // Navigate to the search page when the button is clicked
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => SearchPage(), // Replace with your search page
-                          ),
-                        );
-                      },
-                      child: Container(
+ Column _servicesSection() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Container(
+          height: 140,
+          child: ListView.separated(
+            itemBuilder: (context, index) {
+              final service = PopularServicesModel.getPopularServices()[index];
+              return Container(
+                width: 150,
+                decoration: BoxDecoration(
+                  color: service.color.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: Padding(
+                  padding: const EdgeInsets.all(8.0),
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                    children: [
+                      SvgPicture.asset(
+                        service.iconPath,
+                        width: 35,
                         height: 35,
-                        width: 80,
-                        decoration: BoxDecoration(
-                          gradient: const LinearGradient(
-                            colors: [
-                              Color(0xff9DCEFF),
-                              Color(0xff92A3FD),
-                            ],
-                          ),
-                          borderRadius: BorderRadius.circular(50),
-                        ),
-                        child: const Center(
+                      ),
+                      Expanded(
+                        child: Center(
                           child: Text(
-                            'Search',
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontWeight: FontWeight.w600,
-                              fontSize: 12,
+                            service.name,
+                            textAlign: TextAlign.center,
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(
+                              fontWeight: FontWeight.bold,
+                              color: AppColors.mainColor,
+                              fontSize: 13,
                             ),
                           ),
                         ),
                       ),
-                    ),
-                    SizedBox(
-                      height: 3,
-                    ),
-                    Text(
-                      '${service.availableProviders} Providers',
-                      textAlign: TextAlign.center,
-                      style: const TextStyle(
-                        color: Color(0xff7B6F72),
-                        fontSize: 13,
-                        fontWeight: FontWeight.w400,
+                      GestureDetector(
+                        onTap: () {
+                          // Find the NavbarPage widget
+                          final navbarPage = context.findAncestorWidgetOfExactType<NavbarPage>();
+                          if (navbarPage != null) {
+                            // Use a callback to update the navigation state
+                            Navigator.pushReplacement(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => NavbarPage(
+                                  initialIndex: 1, // Index for SearchPage
+                                ),
+                              ),
+                            );
+                          } else {
+                            // Fallback navigation if we're not inside NavbarPage
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => const NavbarPage(
+                                  initialIndex: 1,
+                                ),
+                              ),
+                            );
+                          }
+                        },
+                        child: Container(
+                          height: 35,
+                          width: 80,
+                          decoration: BoxDecoration(
+                            gradient: const LinearGradient(
+                              colors: [
+                                Color(0xff9DCEFF),
+                                Color(0xff92A3FD),
+                              ],
+                            ),
+                            borderRadius: BorderRadius.circular(50),
+                          ),
+                          child: const Center(
+                            child: Text(
+                              'Search',
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontWeight: FontWeight.w600,
+                                fontSize: 12,
+                              ),
+                            ),
+                          ),
+                        ),
                       ),
-                    ),
-                  ],
+                      SizedBox(height: 3),
+                      Text(
+                        '${service.availableProviders} Providers',
+                        textAlign: TextAlign.center,
+                        style: const TextStyle(
+                          color: Color(0xff7B6F72),
+                          fontSize: 13,
+                          fontWeight: FontWeight.w400,
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
-              ),
-            );
-          },
-          separatorBuilder: (context, index) => const SizedBox(
-            width: 25,
+              );
+            },
+            separatorBuilder: (context, index) => const SizedBox(width: 25),
+            itemCount: PopularServicesModel.getPopularServices().length,
+            scrollDirection: Axis.horizontal,
+            padding: const EdgeInsets.only(left: 10, right: 10),
           ),
-          itemCount: PopularServicesModel.getPopularServices().length,
-          scrollDirection: Axis.horizontal,
-          padding: const EdgeInsets.only(left: 10, right: 10),
         ),
-      ),
-    ],
-  );
-}
+      ],
+    );
+  }
 
   @override
   Widget build(BuildContext context) {

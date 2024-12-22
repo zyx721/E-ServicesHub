@@ -17,20 +17,22 @@ import 'package:hanini_frontend/screens/navScreens/notificationspage.dart'; // R
 import 'models/colors.dart';
 
 class NavbarPage extends StatefulWidget {
-  const NavbarPage({Key? key}) : super(key: key);
+  final int initialIndex;
+  const NavbarPage({Key? key, required this.initialIndex}) : super(key: key);
 
   @override
   State<NavbarPage> createState() => _NavbarPageState();
 }
 
 class _NavbarPageState extends State<NavbarPage> {
-  int selectedIndex = 0;
+  late int selectedIndex;
   List<Widget> screens = [];
   bool isLoading = true;
 
   @override
   void initState() {
     super.initState();
+    selectedIndex = widget.initialIndex;
     _initializeScreens();
   }
 

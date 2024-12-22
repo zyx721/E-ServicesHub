@@ -105,7 +105,7 @@ class _ServiceProviderProfileState extends State<ServiceProviderProfile2> {
         Navigator.pushReplacement(
           context,
           MaterialPageRoute(
-            builder: (context) => NavbarPage(),
+            builder: (context) => NavbarPage(initialIndex: 0),
           ),
         );
 
