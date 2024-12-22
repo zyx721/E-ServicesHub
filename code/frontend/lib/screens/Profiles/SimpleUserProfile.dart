@@ -101,7 +101,9 @@ class _SimpleUserProfileState extends State<SimpleUserProfile> {
   final double profileHeight = 150;
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
-
+  bool isStep1Complete = false;
+  bool isWaiting = false;
+  bool isStep2Complete = false;
   String userName = '';
   String userEmail = '';
   String userPhotoUrl = '';
@@ -132,6 +134,9 @@ class _SimpleUserProfileState extends State<SimpleUserProfile> {
             userEmail = data['email'] ?? 'No email';
             userPhotoUrl = data['photoURL'] ?? '';
             aboutMe = data['aboutMe'] ?? 'Tell us about yourself';
+            isStep1Complete = data['isSTEP_1'] ?? false;
+            isWaiting = data['isWaiting'] ?? false;
+            isStep2Complete = data['isSTEP_2'] ?? false;
             nameController.text = userName;
             aboutController.text = aboutMe;
             isLoading = false;
@@ -372,23 +377,62 @@ Future<void> pickNewProfilePicture() async {
     );
   }
 
-  Widget buildBecomeProviderButton(AppLocalizations localization) {
+    Widget buildBecomeProviderButton(AppLocalizations localization) {
+    // Determine button text and action based on status
+    String buttonText;
+    VoidCallback? onTapAction;
+    Color startColor;
+    Color endColor;
+
+    if (isStep2Complete) {
+      buttonText = "Final Step";
+      startColor = Colors.green.shade600;
+      endColor = Colors.green.shade800;
+      onTapAction = () {
+        Navigator.pushNamed(context, '/set-up');
+      };
+    } else if (isWaiting) {
+      buttonText = "Verification In Progress...";
+      startColor = Colors.orange.shade600;
+      endColor = Colors.orange.shade800;
+      onTapAction = () {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text("Wait For Manual Verifcation"),
+            duration: const Duration(seconds: 3),
+          ),
+        );
+      };
+    } else if (isStep1Complete) {
+      buttonText = "STEP 2";
+      startColor = const Color(0xFF3949AB);
+      endColor = const Color(0xFF1E88E5);
+      onTapAction = () {
+        Navigator.pushNamed(context, '/verification');
+      };
+    } else {
+      buttonText = localization.becomeProviderButton;
+      startColor = const Color(0xFF3949AB);
+      endColor = const Color(0xFF1E88E5);
+      onTapAction = () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (context) => OnboardingScreen2()),
+        );
+      };
+    }
+
     return Center(
       child: InkWell(
-        onTap: () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(builder: (context) => OnboardingScreen2()),
-          );
-        },
+        onTap: onTapAction,
         child: Container(
           width: MediaQuery.of(context).size.width * 0.8,
           padding: const EdgeInsets.symmetric(vertical: 16),
           decoration: BoxDecoration(
-            gradient: const LinearGradient(
+            gradient: LinearGradient(
               colors: [
-                Color(0xFF3949AB),
-                Color(0xFF1E88E5),
+                startColor,
+                endColor,
               ],
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
@@ -404,7 +448,7 @@ Future<void> pickNewProfilePicture() async {
           ),
           child: Center(
             child: Text(
-              localization.becomeProviderButton, // Use localization
+              buttonText,
               style: const TextStyle(
                 color: Colors.white,
                 fontSize: 18,

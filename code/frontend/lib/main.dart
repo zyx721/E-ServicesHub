@@ -14,6 +14,8 @@ import 'package:flutter/services.dart'; // Import SystemChrome
 import 'package:firebase_core/firebase_core.dart';
 import 'package:shared_preferences/shared_preferences.dart'; // Import SharedPreferences
 import 'navbar.dart';
+import 'package:hanini_frontend/screens/become_provider_screen/SetProviderProfile.dart';
+
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -109,6 +111,7 @@ class _MyAppState extends State<MyApp> {
       '/navbar': (context) => NavbarPage(),
       '/name_entry': (context) => NameEntryScreen(),
       '/verification': (context) => RealTimeDetection(cameras: widget.cameras),
+      '/set-up':(context) => SetProviderProfile(),
       '/add-admin': (context) => Addadmin(),
       '/settings': (context) => SettingsScreen(),
       '/forgot_password': (context) => ForgotPasswordScreen(),
