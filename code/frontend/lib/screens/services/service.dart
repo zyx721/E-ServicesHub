@@ -110,6 +110,8 @@ class _ServiceProviderFullProfileState extends State<ServiceProviderFullProfile>
   bool isVerified = true;
   bool isLoading = true;
   double rating =0.0;
+  String wilaya ='';
+  String commune ='';
 
   // Fetch provider data from Firestore using providerId
   Future<void> fetchProviderData() async {
@@ -128,6 +130,8 @@ class _ServiceProviderFullProfileState extends State<ServiceProviderFullProfile>
           profession = data['basicInfo']['profession'] ?? '';
           phoneNubmber = data['basicInfo']['phone'] ?? '';
           skills = data['skills'];
+          wilaya = data['basicInfo']['wilaya'] ?? '';
+          commune = data['basicInfo']['commune'] ?? '';
           certifications = data['certifications'];
           workExperience = data['workExperience'];
           portfolioImages = List<String>.from(data['portfolioImages'] ?? []);
@@ -597,7 +601,7 @@ Widget buildTopProfileInfo() {
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceAround, // Center items evenly
           children: [
-            buildStat('Projects', '0'),
+            buildStat(commune, wilaya),
             buildStat('Rating', _buildStarRating(rating)),
             buildStat('Hourly Rate', isEditMode ? buildHourlyRateEditor() : '$hourlyRate DZD',
             ),
