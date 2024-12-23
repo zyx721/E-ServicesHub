@@ -17,23 +17,9 @@ import 'package:googleapis_auth/auth_io.dart' as auth;
 class PushNotificationService {
   static Future<String> getAccessToken() async {
     // Load the service account JSON
-    final serviceAccountJson =
-      {
-  "type": "service_account",
-  "project_id": "hanini-2024",
-  "private_key_id": "0bee0c611b25a8ba26cf9d4c373adc6dd4740fc3",
-  "private_key": "-----BEGIN PRIVATE KEY-----\nMIIEvgIBADANBgkqhkiG9w0BAQEFAASCBKgwggSkAgEAAoIBAQDW4jI3D/s3mmuo\ndNr+bHEl5/E/P0Hw7DMENiHC3SLb367UXT66zGDTchYu65fR4WlWTllKepLbJa0u\nkLkEBHxyoVVg6rbeM4R5xPh+eRf/PKni3RM1PUqpfp1LBsYxhV0YAfYKpURL0kYw\npvdne7inBBk+qkBA6Buu+wErLSv5FwY229SXFZn70bxMaUAZIR3Ja8TpC1+rmrbv\nXUf0IYYd6fzz2/FucTp5+v1U29gyect1Detdumvl32NmiOrJBfwJurz9atRk+yXx\nV1nzLezmsa06pts05edlDc/gXF9Mj/OncdpxrNGDGYfSAq08b3a9023ySw5OYLUL\nF+33BBwfAgMBAAECggEAQLm0j3JgZNC+Qekk98L5WAYj3D21Ipk7Crc1dyk98UXQ\ntwX5ObILLlWsieiL+/uuS4FhEvaV2q3gGukb2bJyO+MNwRoiCA8zhaxHf20BRe/j\nakLWINC79w782RcKxurZbjxU/MLoLgCCBPCeEA0rwx8QbZhBr2tav1u67+L03lu8\nInYwcEdGEXb7U7OGFl+7WKbxE+SOlSUteYHfZe+xVGnWAy6tQeMlcKMPXM/IciGr\njTEu1wCCPxSFJTraLDwn9BNCZsPC96NApEHGLgHp1jTV4AFPCXjeTWR5Hd5LKxi/\nY0Fx8+8ti9PyfHoMTK+uyetpXIK7WOy+00kBs23FqQKBgQD1WiuDTOO5pq7ItLpO\na2/demZT0OMz2PItZI66uv/sOWYZjarTdVPP2OHe0/hXph1z4hMfR+BHQZ0pmG7T\nqE4YFx7HcguvpuGcFkg/54SJ5/x1YIPKX2/9i+dj7lEqkUKbMholhvrP8waA2OzE\n2waNnAzXqcr66lvMpCl4lPO2lwKBgQDgNYYMfLQWDO24MgvqkRSL3QAkKYutTvFb\n540lvtHlDikeLXdankymMFh2b7rS54NceLChnKVuLvoMSitYi4pFqRoy8ubT1BJW\nZcMbyT/+4og3nT+kChfxHrv1Ze3pAun59w9Qrh5vGwrVbcENhMFKKmdMkO1FNnXg\nqoY083o/uQKBgGWyu4iQLXB9m8NLzlHFDLhUDOg/FH4gNboFDXhvHLewzxZWd3Fx\nF412y6EOYckK7PhkxCJaK6e9lcRxD7ch80TfCH4JUri7RpbpUYdTkseK5kVM/TO8\nPXJuNDpixTgMv/wOV3IosfvSM2bjA7lRRDUccuJN2foJfIWloh7+Nsr/AoGBANPM\nG+4t2xy9Z87JkBIsrOEWiuyeRnEYEs5DpUVTxgl/3/2+63Gx+iw/nUF8eFqFEsVG\nyWxRgsDcJZ94bQv+/Uai4LniVYUjX5M4HCBic06/BfirVhQK6OUAqIO/nwevlgFo\njpIjeWJxhEFrpaO0lbcO6Xgdq9XnBWGPFKpumjwZAoGBALkDoP9E9odcKYWPfCc1\nYCgBvXJuazOBxT9XODHiJLvyBrpsc19yD+/jMIoWNmDgu7jDFNvBAF6tv8D2Vvvj\nOl4RxBFzliaH/CZpQ7t4nvTARpl+/T65PRjw+vKFij2MY7gcSsFd2lEHGOey0Urr\nahSHKtMcX7oEb79n9gGqNkrj\n-----END PRIVATE KEY-----\n",
-  "client_email": "fares-500@hanini-2024.iam.gserviceaccount.com",
-  "client_id": "110821790280687676540",
-  "auth_uri": "https://accounts.google.com/o/oauth2/auth",
-  "token_uri": "https://oauth2.googleapis.com/token",
-  "auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs",
-  "client_x509_cert_url": "https://www.googleapis.com/robot/v1/metadata/x509/fares-500%40hanini-2024.iam.gserviceaccount.com",
-  "universe_domain": "googleapis.com"
-};
-
-
-        
+    final serviceAccountJson =await rootBundle.loadString(
+        'assets/credentials/test.json'
+      );
 
     // Define the required scopes
     List<String> scopes = [
@@ -887,7 +873,7 @@ Widget buildTopProfileInfo() {
  ElevatedButton(
   style: ElevatedButton.styleFrom(backgroundColor: Colors.blue),
   onPressed: () {
-    _showContactDialog(widget.providerId, currentUserId); // Call your dialog function here
+    _showContactDialog(widget.providerId, currentUserId, _firestore); // Call your dialog function here
   },
   child: Text(
     'Send Direct Listing',
@@ -903,7 +889,7 @@ Widget buildTopProfileInfo() {
     );
   }
 
-  void _showContactDialog(String recipientUid, String senderUid) {
+  void _showContactDialog(String recipientUid, String senderUid , FirebaseFirestore firestore) {
   final _formKey = GlobalKey<FormState>();
   String mainTitle = '';
   String description = '';
@@ -927,43 +913,40 @@ Widget buildTopProfileInfo() {
                 fontWeight: FontWeight.bold,
               ),
             ),
-
-
-const SizedBox(height: 20),
-Form(
-  key: _formKey,
-  child: Column(
-    children: [
-      TextFormField(
-        decoration: const InputDecoration(labelText: 'Main Title'),
-        validator: (value) =>
-            value!.isEmpty ? 'Please enter a title' : null,
-        onSaved: (value) => mainTitle = value!,
-      ),
-      TextFormField(
-        decoration: const InputDecoration(labelText: 'Description'),
-        validator: (value) =>
-            value!.isEmpty ? 'Please enter a description' : null,
-        onSaved: (value) => description = value!,
-      ),
-      TextFormField(
-        decoration: const InputDecoration(labelText: 'Pay'),
-        keyboardType: TextInputType.number,
-        inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-        validator: (value) =>
-            value!.isEmpty ? 'Please enter the pay' : null,
-        onSaved: (value) => pay = value!,
-      ),
-      TextFormField(
-        decoration: const InputDecoration(labelText: 'Location'),
-        validator: (value) =>
-            value!.isEmpty ? 'Please enter a location' : null,
-        onSaved: (value) => location = value!,
-      ),
-    ],
-  ),
-),
-
+            const SizedBox(height: 20),
+            Form(
+              key: _formKey,
+              child: Column(
+                children: [
+                  TextFormField(
+                    decoration: const InputDecoration(labelText: 'Main Title'),
+                    validator: (value) =>
+                        value!.isEmpty ? 'Please enter a title' : null,
+                    onSaved: (value) => mainTitle = value!,
+                  ),
+                  TextFormField(
+                    decoration: const InputDecoration(labelText: 'Description'),
+                    validator: (value) =>
+                        value!.isEmpty ? 'Please enter a description' : null,
+                    onSaved: (value) => description = value!,
+                  ),
+                  TextFormField(
+                    decoration: const InputDecoration(labelText: 'Pay'),
+                    keyboardType: TextInputType.number,
+                    inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                    validator: (value) =>
+                        value!.isEmpty ? 'Please enter the pay' : null,
+                    onSaved: (value) => pay = value!,
+                  ),
+                  TextFormField(
+                    decoration: const InputDecoration(labelText: 'Location'),
+                    validator: (value) =>
+                        value!.isEmpty ? 'Please enter a location' : null,
+                    onSaved: (value) => location = value!,
+                  ),
+                ],
+              ),
+            ),
             const SizedBox(height: 20),
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -979,51 +962,56 @@ Form(
                   onPressed: () async {
                     if (_formKey.currentState!.validate()) {
                       _formKey.currentState!.save();
+                      final uniqueId = Uuid().v4();
 
-                      final uniqueId = Uuid().v4(); // Generate a unique ID
+                      final jobData = {
+                        'id': uniqueId,
+                        'mainTitle': mainTitle,
+                        'description': description,
+                        'pay': pay,
+                        'location': location,
+                        'status': 'pending',
+                        'timestamp': DateTime.now().toIso8601String(),
+                        'receiverUid': recipientUid,
+                        'senderUid': senderUid,
+                      };
+
+                      // Save to sender's listings
+                      await FirebaseFirestore.instance
+                          .collection('users')
+                          .doc(senderUid)
+                          .update({
+                        'Listing_(sent)': FieldValue.arrayUnion([jobData]),
+                      });
+
+                      // Save to recipient's listings
+                      await FirebaseFirestore.instance
+                          .collection('users')
+                          .doc(recipientUid)
+                          .update({
+                        'Listing_(received)': FieldValue.arrayUnion([jobData]),
+                      });
 
 
-// Save data to Firestore
-await FirebaseFirestore.instance
-    .collection('users')
-    .doc(senderUid)
-    .update({
-      'Listing_(sent)': FieldValue.arrayUnion([{
-        'id': uniqueId, 
-        'mainTitle': mainTitle,
-        'description': description,
-        'pay': pay,
-        'location': location,
-        'status': 'pending',
-        'timestamp': DateTime.now().toIso8601String(),
-        'receiverUid': recipientUid,
-        'senderUid': senderUid,  // Add this line
-      }]),
-    });
+                final providerRef = firestore.collection('users').doc(recipientUid);
+                final providerDoc = await providerRef.get();
+                final providerData = providerDoc.data() as Map<String, dynamic>;
 
-await FirebaseFirestore.instance
-    .collection('users')
-    .doc(recipientUid)
-    .update({
-      'Listing_(received)': FieldValue.arrayUnion([{
-        'id': uniqueId, 
-        'mainTitle': mainTitle,
-        'description': description,
-        'pay': pay,
-        'location': location,
-        'status': 'pending',  // Make status case consistent
-        'timestamp': DateTime.now().toIso8601String(),
-        'senderUid': senderUid,
-        'receiverUid': recipientUid,  // Add this line
-      }]),
-    });
+                 final String deviceToken = providerData['deviceToken'];
 
-                      // Close the dialog
+                    if (deviceToken != null && deviceToken.isNotEmpty) {// Send notification
+                      await PushNotificationService.sendNotification(
+                        deviceToken,
+                        'New Job Listing',
+                        'You have received a new job listing: $mainTitle',
+                        jobData,
+                      );
+                    }
                       Navigator.pop(context);
-
-                      // Show a success message
                       ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(content: Text('Job listing sent successfully!')),
+                        SnackBar(
+                          content: Text('Job listing sent successfully!'),
+                        ),
                       );
                     }
                   },
@@ -1043,5 +1031,9 @@ await FirebaseFirestore.instance
     ),
   );
 }
+
+
+
+
 
 }
