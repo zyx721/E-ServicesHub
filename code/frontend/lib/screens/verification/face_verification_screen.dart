@@ -23,12 +23,8 @@ class _FaceCompareScreenState extends State<FaceCompareScreen> {
   String _comparisonResult = "";
   Color _resultColor = Colors.black;
   bool _showAnimation = false; // Flag to trigger animation
-  bool _isSmiling = false;
-  bool _smileDetected = false;
   XFile? _firstImage;
-  bool _isSmilingDetected = false; // Flag to indicate smile detection
-  bool _isBlinking = false;
-  bool _blinkDetected = false;
+  XFile? _secondImage;
 
   @override
   void initState() {
@@ -52,110 +48,30 @@ class _FaceCompareScreenState extends State<FaceCompareScreen> {
     }
   }
 
-  // Run the smile detection using OpenCV's Haar Cascade classifier
-  // Placeholder function for smile detection
-  Future<void> _detectSmile(String imagePath) async {
-    // Implement smile detection logic here
-    setState(() {
-      _isSmilingDetected = true; // Assume smile is detected for now
-    });
-  }
-  Future<void> _captureWithoutSmile() async {
-    setState(() {
-      _isSmiling = false;
-      _smileDetected = false;
-    });
-
+  Future<void> _captureImage(bool isFirstImage) async {
     try {
       final image = await _cameraController!.takePicture();
       setState(() {
-        _firstImage = image;
+        if (isFirstImage) {
+          _firstImage = image;
+        } else {
+          _secondImage = image;
+        }
       });
-      await _detectSmile(image.path); // Detect smile in the captured image
     } catch (e) {
       print("Error capturing image: $e");
     }
   }
 
-  Future<void> _captureWithSmile() async {
-    setState(() {
-      _isSmiling = true;
-      _smileDetected = false;
-    });
-
-    // Simulate smile detection (in a real application, you would use a more sophisticated method)
-    await Future.delayed(Duration(seconds: 2));
-    try {
-      final image = await _cameraController!.takePicture();
+  Future<void> _submitFaceImages() async {
+    if (_firstImage == null || _secondImage == null) {
       setState(() {
-        _smileDetected = true;
+        _comparisonResult = "Please capture both images.";
+        _resultColor = Colors.redAccent;
       });
-      await _detectSmile(image.path); // Detect smile in the captured image
-      if (_isSmilingDetected) {
-        await _submitFaceImages(_firstImage!.path, image.path);
-      } else {
-        setState(() {
-          _comparisonResult = "Smile not detected. Please try again.";
-          _resultColor = Colors.redAccent;
-        });
-      }
-    } catch (e) {
-      print("Error capturing image: $e");
+      return;
     }
-  }
 
-  Future<void> _captureWithoutBlink() async {
-    setState(() {
-      _isBlinking = false;
-      _blinkDetected = false;
-    });
-
-    try {
-      final image = await _cameraController!.takePicture();
-      setState(() {
-        _firstImage = image;
-      });
-      await _detectBlink(image.path); // Detect blink in the captured image
-    } catch (e) {
-      print("Error capturing image: $e");
-    }
-  }
-
-  Future<void> _captureWithBlink() async {
-    setState(() {
-      _isBlinking = true;
-      _blinkDetected = false;
-    });
-
-    // Simulate blink detection (in a real application, you would use a more sophisticated method)
-    await Future.delayed(Duration(seconds: 2));
-    try {
-      final image = await _cameraController!.takePicture();
-      setState(() {
-        _blinkDetected = true;
-      });
-      await _detectBlink(image.path); // Detect blink in the captured image
-      if (_blinkDetected) {
-        await _submitFaceImages(_firstImage!.path, image.path);
-      } else {
-        setState(() {
-          _comparisonResult = "Blink not detected. Please try again.";
-          _resultColor = Colors.redAccent;
-        });
-      }
-    } catch (e) {
-      print("Error capturing image: $e");
-    }
-  }
-
-  Future<void> _detectBlink(String imagePath) async {
-    // Implement blink detection logic here
-    setState(() {
-      _blinkDetected = true; // Assume blink is detected for now
-    });
-  }
-
-  Future<void> _submitFaceImages(String imagePath1, String imagePath2) async {
     setState(() {
       _isLoading = true;
       _comparisonResult = "";
@@ -168,8 +84,8 @@ class _FaceCompareScreenState extends State<FaceCompareScreen> {
         Uri.parse('https://polite-schools-ask.loca.lt/compare-face/'), // Ensure this URL is correct
       );
 
-      request.files.add(await http.MultipartFile.fromPath('file1', imagePath1));
-      request.files.add(await http.MultipartFile.fromPath('file2', imagePath2));
+      request.files.add(await http.MultipartFile.fromPath('file1', _firstImage!.path));
+      request.files.add(await http.MultipartFile.fromPath('file2', _secondImage!.path));
       final response = await request.send();
       final responseData = await http.Response.fromStream(response);
 
@@ -353,70 +269,62 @@ class _FaceCompareScreenState extends State<FaceCompareScreen> {
                     children: [
                       if (_firstImage == null)
                         ElevatedButton(
-                          onPressed: _isLoading ? null : _captureWithoutBlink,
+                          onPressed: _isLoading ? null : () => _captureImage(true),
                           child: Text(
-                            "Capture Without Blink",
+                            "Capture With Mouth Closed",
                             style: TextStyle(fontSize: 18),
                           ),
                         ),
-                      if (_firstImage != null && !_blinkDetected)
+                      if (_firstImage != null && _secondImage == null)
                         ElevatedButton(
-                          onPressed: _isLoading ? null : _captureWithBlink,
+                          onPressed: _isLoading ? null : () => _captureImage(false),
                           child: Text(
-                            _isBlinking
-                                ? "Detecting Blink..."
-                                : "Please Blink",
+                            "Capture With Mouth Open",
                             style: TextStyle(fontSize: 18),
                           ),
                         ),
-                      SizedBox(height: 10),
-                      InkWell(
-                        onTap: _isLoading || !_smileDetected
-                            ? null
-                            : () => _submitFaceImages(_firstImage!.path, _firstImage!.path),
-                        child: Container(
-                          padding: EdgeInsets.symmetric(vertical: 15),
-                          decoration: BoxDecoration(
-                            gradient: LinearGradient(
-                              colors: [
-                                Color(0xFF3949AB),
-                                Color(0xFF1E88E5),
-                              ],
-                              begin: Alignment.topCenter,
-                              end: Alignment.bottomCenter,
-                            ),
-                            borderRadius: BorderRadius.circular(30),
-                          ),
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Icon(
-                                Icons.camera_alt,
-                                color: Colors.white,
-                              ),
-                              SizedBox(width: 10),
-                              _isLoading
-                                  ? SizedBox(
-                                      width: 20,
-                                      height: 20,
-                                      child: CircularProgressIndicator(
-                                        valueColor:
-                                            AlwaysStoppedAnimation<Color>(
-                                                Colors.white),
-                                        strokeWidth: 2,
-                                      ),
-                                    )
-                                  : Text(
-                                      appLocalizations.verifyFace,
-                                      style: TextStyle(
-                                        color: Colors.white,
-                                        fontSize: 18,
-                                      ),
-                                    ),
-                            ],
+                      if (_firstImage != null)
+                        Padding(
+                          padding: const EdgeInsets.all(8.0),
+                          child: Image.file(
+                            File(_firstImage!.path),
+                            width: 100,
+                            height: 100,
                           ),
                         ),
-                      ),
+                      if (_secondImage != null)
+                        Padding(
+                          padding: const EdgeInsets.all(8.0),
+                          child: Image.file(
+                            File(_secondImage!.path),
+                            width: 100,
+                            height: 100,
+                          ),
+                        ),
+                      if (_firstImage != null && _secondImage != null)
+                        ElevatedButton(
+                          onPressed: _isLoading ? null : _submitFaceImages,
+                          child: Text(
+                            "Submit Images",
+                            style: TextStyle(fontSize: 18),
+                          ),
+                        ),
+                      if (_firstImage != null || _secondImage != null)
+                        ElevatedButton(
+                          onPressed: _isLoading
+                              ? null
+                              : () {
+                                  setState(() {
+                                    _firstImage = null;
+                                    _secondImage = null;
+                                    _comparisonResult = "";
+                                  });
+                                },
+                          child: Text(
+                            "Retake Images",
+                            style: TextStyle(fontSize: 18),
+                          ),
+                        ),
                     ],
                   ),
                 ),

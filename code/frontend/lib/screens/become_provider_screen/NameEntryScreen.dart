@@ -9,9 +9,6 @@ class NameEntryScreen extends StatefulWidget {
 }
 
 class _NameEntryScreenState extends State<NameEntryScreen> {
-  final TextEditingController _firstNameController = TextEditingController();
-  final TextEditingController _lastNameController = TextEditingController();
-
   // List of service categories
   List<String> get _workChoices {
     final AppLocalizations appLocalizations = AppLocalizations.of(context)!;
@@ -38,14 +35,6 @@ class _NameEntryScreenState extends State<NameEntryScreen> {
   final Set<String> _selectedChoices = {};
 
   void _saveProviderInfo() async {
-    final String firstName = _firstNameController.text.trim();
-    final String lastName = _lastNameController.text.trim();
-
-    if (firstName.isEmpty || lastName.isEmpty) {
-      _showErrorDialog(AppLocalizations.of(context)!.firstNameLastNameRequired);
-      return;
-    }
-
     if (_selectedChoices.length != 2) {
       _showErrorDialog(AppLocalizations.of(context)!.selectTwoWorkChoices);
       return;
@@ -65,17 +54,14 @@ class _NameEntryScreenState extends State<NameEntryScreen> {
 
       // Update Firestore with the new information
       await userDoc.update({
-        'firstName': firstName,
-        'lastName': lastName,
         'selectedWorkChoices': _selectedChoices.toList(),
         'isSTEP_1': true,
       });
 
-       Navigator.of(context).pushNamedAndRemoveUntil(
-      '/verification', // Your navbar route
-      (Route<dynamic> route) => false, // This removes all previous routes
-    );
-      
+      Navigator.of(context).pushNamedAndRemoveUntil(
+        '/verification', // Your navbar route
+        (Route<dynamic> route) => false, // This removes all previous routes
+      );
     } catch (e) {
       _showErrorDialog("Failed to save data: $e");
     }
@@ -108,21 +94,6 @@ class _NameEntryScreenState extends State<NameEntryScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
-            // First Name TextField
-            TextField(
-              controller: _firstNameController,
-              decoration:
-                  InputDecoration(labelText: appLocalizations.firstName),
-            ),
-            SizedBox(height: 20),
-
-            // Last Name TextField
-            TextField(
-              controller: _lastNameController,
-              decoration: InputDecoration(labelText: appLocalizations.lastName),
-            ),
-            SizedBox(height: 30),
-
             // Work Choice Grid
             Text(
               appLocalizations.selectYourServices,

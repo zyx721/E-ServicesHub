@@ -9,10 +9,12 @@ import 'face_verification_screen.dart'; // Replace with your actual face compari
 import 'package:hanini_frontend/localization/app_localization.dart';
 import 'package:flutter/services.dart';
 import 'package:lottie/lottie.dart'; // Import Lottie package
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:image/image.dart' as img; // Import the image package for image processing
 
 class RealTimeDetection extends StatefulWidget {
   final List<CameraDescription> cameras;
-
   RealTimeDetection({required this.cameras});
 
   @override
@@ -143,6 +145,7 @@ class _RealTimeDetectionState extends State<RealTimeDetection> with SingleTicker
               _showBackIdAnimation = true;
             });
             await Future.delayed(Duration(seconds: 2));
+            await _saveProviderInfo(responseBody["first_name"], responseBody["last_name"]);
             Navigator.push(
               context,
               MaterialPageRoute(builder: (context) => FaceCompareScreen()),
@@ -171,6 +174,30 @@ class _RealTimeDetectionState extends State<RealTimeDetection> with SingleTicker
         _isUploading = false;
       });
       _showError("Network error. Please check your connection.");
+    }
+  }
+
+  Future<void> _saveProviderInfo(String firstName, String lastName) async {
+    try {
+      // Get the current user's UID
+      final User? user = FirebaseAuth.instance.currentUser;
+      if (user == null) {
+        _showError("User not authenticated.");
+        return;
+      }
+
+      // Reference Firestore document
+      final DocumentReference userDoc =
+          FirebaseFirestore.instance.collection('users').doc(user.uid);
+
+      // Update Firestore with the new information
+      await userDoc.update({
+        'firstName': firstName,
+        'lastName': lastName,
+        'isSTEP_1': true,
+      });
+    } catch (e) {
+      _showError("Failed to save data: $e");
     }
   }
 
@@ -291,7 +318,7 @@ class _RealTimeDetectionState extends State<RealTimeDetection> with SingleTicker
 
   Widget _buildMessageOverlay(String message) {
     return Positioned(
-      top: MediaQuery.of(context).padding.top + 70,
+      bottom: 150,
       left: 16,
       right: 16,
       child: Container(
