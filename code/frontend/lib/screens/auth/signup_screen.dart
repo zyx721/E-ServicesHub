@@ -18,7 +18,6 @@ class SignupScreen extends StatefulWidget {
 
 class _SignupScreenState extends State<SignupScreen>
     with SingleTickerProviderStateMixin {
-  final bool _isLoading = false; // To track loading state
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
@@ -75,73 +74,83 @@ Future<String?> generateDeviceToken() async {
 }
   
 
-  void _signup() async {
+  bool _isLoading = false; // Add this state variable to track the loading state
+
+Future<void> _signup() async {
+    setState(() {
+      _isLoading = true;
+    });
+
     final String name = _nameController.text.trim();
     final String email = _emailController.text.trim();
     final String password = _passwordController.text.trim();
     final String passwordCheck = _passwordCheckController.text.trim();
 
-    if (name.isNotEmpty &&
-        email.isNotEmpty &&
-        password.isNotEmpty &&
-        passwordCheck.isNotEmpty) {
+    if (name.isNotEmpty && email.isNotEmpty && password.isNotEmpty && passwordCheck.isNotEmpty) {
       if (password == passwordCheck) {
         try {
-          // Create user with Firebase Authentication
-          final UserCredential userCredential =
-              await _auth.createUserWithEmailAndPassword(
+          final UserCredential userCredential = await _auth.createUserWithEmailAndPassword(
             email: email,
             password: password,
           );
 
-          // Check if the user is successfully created
           if (userCredential.user != null) {
-            // Save user data to Firestore
-            await _firestore
-                .collection('users')
-                .doc(userCredential.user!.uid)
-                .set({
+            // Send email verification
+            await userCredential.user!.sendEmailVerification();
+
+            await _firestore.collection('users').doc(userCredential.user!.uid).set({
               'uid': userCredential.user!.uid,
               'name': name,
               'email': email,
               'createdAt': DateTime.now(),
               'lastSignIn': DateTime.now(),
-              'isConnected': true,
+              'isConnected': false, // Set to false until email is verified
+              'isEmailVerified': false,
             });
-            
 
-            saveDeviceTokenToFirestore(userCredential.user!.uid) ;
-            // Show success message
+            // Show verification instructions
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
-                content: Text('Signup successful! Welcome $name'),
+                content: Text('Please check your email to verify your account before logging in.'),
                 backgroundColor: Colors.green,
-                duration: const Duration(seconds: 5),
+                duration: const Duration(seconds: 8),
+                action: SnackBarAction(
+                  label: 'Resend',
+                  onPressed: () async {
+                    try {
+                      await userCredential.user!.sendEmailVerification();
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text('Verification email resent!'),
+                          backgroundColor: Colors.green,
+                        ),
+                      );
+                    } catch (e) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text('Error resending verification email. Please try again later.'),
+                          backgroundColor: Colors.red,
+                        ),
+                      );
+                    }
+                  },
+                ),
               ),
             );
-            
 
-            final prefs = await SharedPreferences.getInstance();
-            await prefs.setBool('isLoggedIn', true);
-            // Navigate to home page after successful signup
-            Navigator.pushNamed(context, '/navbar');
-          } else {
-            // In case user is null, handle the error
-            throw Exception('User creation failed.');
+            // Navigate to a verification pending screen or login screen
+            Navigator.pushNamed(context, '/login');
           }
         } on FirebaseAuthException catch (e) {
-          // Handle Firebase authentication errors
           String errorMessage = 'An error occurred during signup';
           if (e.code == 'email-already-in-use') {
             errorMessage = 'This email is already in use.';
           } else if (e.code == 'weak-password') {
-            errorMessage =
-                'Password is too weak. Please choose a stronger password.';
+            errorMessage = 'Password is too weak. Please choose a stronger password.';
           } else if (e.code == 'invalid-email') {
             errorMessage = 'The email address is not valid.';
           }
 
-          // Show the error message to the user
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Text(errorMessage),
@@ -150,7 +159,6 @@ Future<String?> generateDeviceToken() async {
             ),
           );
         } catch (e) {
-          // Handle any other errors that might occur
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Text('An unexpected error occurred: $e'),
@@ -160,7 +168,6 @@ Future<String?> generateDeviceToken() async {
           );
         }
       } else {
-        // Passwords do not match
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text('Passwords do not match. Please try again.'),
@@ -170,7 +177,6 @@ Future<String?> generateDeviceToken() async {
         );
       }
     } else {
-      // Ensure all fields are filled
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('All fields are required. Please fill them in.'),
@@ -179,7 +185,34 @@ Future<String?> generateDeviceToken() async {
         ),
       );
     }
+
+    setState(() {
+      _isLoading = false;
+    });
   }
+
+
+Widget _buildSignUpButton(BuildContext context) {
+  return SlideTransition(
+    position: _slideAnimation,
+    child: ElevatedButton(
+      onPressed: _isLoading ? null : _signup,
+      style: ElevatedButton.styleFrom(
+        backgroundColor: Colors.blue,
+        foregroundColor: Colors.black,
+        padding: const EdgeInsets.symmetric(vertical: 15, horizontal: 30),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(10),
+        ),
+      ),
+      child: _isLoading
+          ? CircularProgressIndicator(
+              valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+            )
+          : Text(signupButton),
+    ),
+  );
+}
 
   bool _isChecked = false;
   final TextEditingController _phoneController = TextEditingController();
@@ -231,7 +264,58 @@ Future<String?> generateDeviceToken() async {
     super.dispose();
   }
 
- Future<void> _handleGoogleSignIn() async {
+ bool isLoading = false; // Add this state variable to track the loading state
+
+Widget _buildGoogleSignInButton() {
+  final localizations = AppLocalizations.of(context)!;
+  final buttonText = localizations.googleSignIn;
+
+  return ElevatedButton(
+    onPressed: isLoading ? null : _handleGoogleSignIn,
+    style: ElevatedButton.styleFrom(
+      backgroundColor: Colors.white,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(30.0),
+      ),
+      padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 15),
+      elevation: 6,
+    ),
+    child: isLoading 
+      ? const SizedBox(
+          width: 24,
+          height: 24,
+          child: CircularProgressIndicator(
+            strokeWidth: 2.5,
+            valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+          ),
+        )
+      : Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Image.asset(
+              'assets/images/google_logo.png',
+              height: 24,
+              width: 24,
+            ),
+            const SizedBox(width: 12),
+            Text(
+              buttonText,
+              style: GoogleFonts.poppins(
+                fontSize: 18,
+                color: const Color(0xFF1A237E),
+              ),
+            ),
+          ],
+        ),
+  );
+}
+
+
+Future<void> _handleGoogleSignIn() async {
+  setState(() {
+    isLoading = true; // Show loading indicator
+  });
+
   try {
     final GoogleSignIn googleSignIn = GoogleSignIn();
     final GoogleSignInAccount? googleUser = await googleSignIn.signIn();
@@ -249,58 +333,45 @@ Future<String?> generateDeviceToken() async {
         final User? user = userCredential.user;
 
         if (user != null) {
-          // First, check if the user document already exists
           final userDoc = await FirebaseFirestore.instance
               .collection('users')
               .doc(user.uid)
               .get();
 
-          // Prepare the user data
           Map<String, dynamic> userData = {
             'uid': user.uid,
             'email': user.email ?? 'No Email',
             'lastSignIn': DateTime.now(),
-            'isConnected': true,  // Add the isConnected field
-
+            'isConnected': true,
           };
 
-          saveDeviceTokenToFirestore(userCredential.user!.uid) ;
-
-          // Only update name if it's not already set
           if (!userDoc.exists || userDoc.data()?['name'] == null) {
             userData['name'] = user.displayName ?? 'No Name';
           }
-
-
-          if (!userDoc.exists || userDoc.data()?['photoURL'] == null || 
-    (userDoc.data()?['photoURL']?.isEmpty ?? true && user.photoURL != null && user.photoURL!.isNotEmpty)) {
-  userData['photoURL'] = user.photoURL ?? '';
-}
 
           if (!userDoc.exists || userDoc.data()?['photoURL'] == null || 
               (userDoc.data()?['photoURL']?.isEmpty ?? true && user.photoURL != null && user.photoURL!.isNotEmpty)) {
             userData['photoURL'] = user.photoURL ?? '';
           }
 
-          // If document doesn't exist, add createdAt
           if (!userDoc.exists) {
             userData['createdAt'] = DateTime.now();
           }
 
-          // Update the document with merge
           await FirebaseFirestore.instance
               .collection('users')
               .doc(user.uid)
               .set(userData, SetOptions(merge: true));
 
-          // Show success message and navigate
+          saveDeviceTokenToFirestore(user.uid);
+
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Text('Welcome ${user.displayName ?? user.email}'),
               backgroundColor: Colors.green,
             ),
           );
-          
+
           final prefs = await SharedPreferences.getInstance();
           await prefs.setBool('isLoggedIn', true);
           Navigator.pushNamed(context, '/navbar');
@@ -345,6 +416,10 @@ Future<String?> generateDeviceToken() async {
       ),
     );
     print('Error during Google Sign-In: $error');
+  } finally {
+    setState(() {
+      isLoading = false; // Hide loading indicator
+    });
   }
 }
 
@@ -729,50 +804,6 @@ Future<String?> generateDeviceToken() async {
             ),
           ),
         ],
-      ),
-    );
-  }
-
-  Widget _buildGoogleSignInButton() {
-    return SlideTransition(
-      position: _slideAnimation,
-      child: ElevatedButton(
-        onPressed: _handleGoogleSignIn,
-        style: ElevatedButton.styleFrom(
-          foregroundColor: Colors.black,
-          backgroundColor: Colors.white,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(10),
-          ),
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Image.asset('assets/images/google_logo.png', height: 24),
-            const SizedBox(width: 10),
-            Text(signInWithGoogle),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildSignUpButton(BuildContext context) {
-    return SlideTransition(
-      position: _slideAnimation,
-      child: ElevatedButton(
-        onPressed: _signup,
-        style: ElevatedButton.styleFrom(
-          backgroundColor: Colors.blue,
-          foregroundColor: Colors.black,
-          padding: const EdgeInsets.symmetric(vertical: 15, horizontal: 30),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(10),
-          ),
-        ),
-        child: _isLoading
-            ? const CircularProgressIndicator(color: Colors.white)
-            : Text(signupButton),
       ),
     );
   }

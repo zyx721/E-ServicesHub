@@ -382,24 +382,27 @@ GestureDetector(
 void _showAddReviewDialog(BuildContext context, String providerId, FirebaseFirestore firestore) {
   final TextEditingController commentController = TextEditingController();
   double newRating = 3.0;
+  bool isSubmitting = false; // Add loading state variable
 
   showDialog(
     context: context,
-    builder: (context) {
-      return LayoutBuilder(
-        builder: (context, constraints) {
+    barrierDismissible: !isSubmitting, // Prevent dismissal while submitting
+    builder: (BuildContext dialogContext) {
+      return StatefulBuilder( // Use StatefulBuilder to manage dialog state
+        builder: (context, setState) {
           return AlertDialog(
             title: Text('Add a Review', style: GoogleFonts.poppins()),
             content: SingleChildScrollView(
               child: ConstrainedBox(
                 constraints: BoxConstraints(
-                  maxHeight: constraints.maxHeight * 0.6,
+                  maxHeight: MediaQuery.of(context).size.height * 0.6,
                 ),
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     TextField(
                       controller: commentController,
+                      enabled: !isSubmitting,
                       decoration: const InputDecoration(
                         labelText: 'Comment',
                         border: OutlineInputBorder(),
@@ -413,6 +416,7 @@ void _showAddReviewDialog(BuildContext context, String providerId, FirebaseFires
                       direction: Axis.horizontal,
                       allowHalfRating: true,
                       itemCount: 5,
+                      ignoreGestures: isSubmitting,
                       itemPadding: const EdgeInsets.symmetric(horizontal: 2.5),
                       itemBuilder: (context, _) => const Icon(
                         Icons.star,
@@ -422,78 +426,105 @@ void _showAddReviewDialog(BuildContext context, String providerId, FirebaseFires
                         newRating = rating;
                       },
                     ),
+                    if (isSubmitting)
+                      Padding(
+                        padding: const EdgeInsets.only(top: 16.0),
+                        child: Column(
+                          children: [
+                            const CircularProgressIndicator(),
+                            const SizedBox(height: 8),
+                            Text(
+                              'Submitting review...',
+                              style: GoogleFonts.poppins(
+                                color: Colors.grey[600],
+                                fontSize: 12,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
                   ],
                 ),
               ),
             ),
             actions: [
               TextButton(
-                onPressed: () => Navigator.pop(context),
+                onPressed: isSubmitting ? null : () => Navigator.pop(context),
                 child: Text('Cancel', style: GoogleFonts.poppins()),
               ),
               ElevatedButton(
-                onPressed: () async {
-                  if (commentController.text.trim().isEmpty) return;
+                onPressed: isSubmitting
+                    ? null
+                    : () async {
+                        if (commentController.text.trim().isEmpty) return;
 
-                  final user = FirebaseAuth.instance.currentUser;
-                  if (user == null) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('You must be logged in to add a review')),
-                    );
-                    return;
-                  }
+                        final user = FirebaseAuth.instance.currentUser;
+                        if (user == null) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                                content: Text('You must be logged in to add a review')),
+                          );
+                          return;
+                        }
 
-                  final review = {
-                    'comment': commentController.text.trim(),
-                    'rating': newRating,
-                    'id_commentor': user.uid,
-                    'timestamp': DateTime.now().toIso8601String(),
-                  };
+                        setState(() {
+                          isSubmitting = true;
+                        });
 
-                  try {
-                    final providerRef = firestore.collection('users').doc(providerId);
+                        try {
+                          final review = {
+                            'comment': commentController.text.trim(),
+                            'rating': newRating,
+                            'id_commentor': user.uid,
+                            'timestamp': DateTime.now().toIso8601String(),
+                          };
 
-                    await providerRef.update({
-                      'reviews': FieldValue.arrayUnion([review]),
-                      'newCommentsCount': FieldValue.increment(1),
-                    });
+                          final providerRef = firestore.collection('users').doc(providerId);
 
-                    final providerDoc = await providerRef.get();
-                    final providerData = providerDoc.data() as Map<String, dynamic>;
-                    final reviews = providerData['reviews'] as List<dynamic> ?? [];
+                          await providerRef.update({
+                            'reviews': FieldValue.arrayUnion([review]),
+                            'newCommentsCount': FieldValue.increment(1),
+                          });
 
-                    double totalRating = 0.0;
-                    for (var rev in reviews) {
-                      totalRating += (rev['rating'] as num).toDouble();
-                    }
-                    final newAverageRating = totalRating / reviews.length;
+                          final providerDoc = await providerRef.get();
+                          final providerData = providerDoc.data() as Map<String, dynamic>;
+                          final reviews = providerData['reviews'] as List<dynamic> ?? [];
 
-                    await providerRef.update({
-                      'rating': newAverageRating,
-                    });
+                          double totalRating = 0.0;
+                          for (var rev in reviews) {
+                            totalRating += (rev['rating'] as num).toDouble();
+                          }
+                          final newAverageRating = totalRating / reviews.length;
 
-                    final String deviceToken = providerData['deviceToken'];
+                          await providerRef.update({
+                            'rating': newAverageRating,
+                          });
 
-                    if (deviceToken != null && deviceToken.isNotEmpty) {
-                      await PushNotificationService.sendNotification(
-                        deviceToken,
-                        'New Review Received',
-                        'You have a new review on your profile',
-                        {'providerId': providerId},
-                      );
-                    }
+                          final String deviceToken = providerData['deviceToken'];
+                          if (deviceToken.isNotEmpty) {
+                            await PushNotificationService.sendNotification(
+                              deviceToken,
+                              'New Review Received',
+                              'You have a new review on your profile',
+                              {'providerId': providerId},
+                            );
+                          }
 
-                    Navigator.pop(context);
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('Review added successfully!')),
-                    );
-                  } catch (e) {
-                    debugPrint('Error adding review: $e');
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('Failed to add review. Please try again.')),
-                    );
-                  }
-                },
+                          Navigator.pop(context);
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(content: Text('Review added successfully!')),
+                          );
+                        } catch (e) {
+                          setState(() {
+                            isSubmitting = false;
+                          });
+                          debugPrint('Error adding review: $e');
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                                content: Text('Failed to add review. Please try again.')),
+                          );
+                        }
+                      },
                 child: Text('Submit', style: GoogleFonts.poppins()),
               ),
             ],
@@ -889,150 +920,198 @@ Widget buildTopProfileInfo() {
     );
   }
 
-  void _showContactDialog(String recipientUid, String senderUid , FirebaseFirestore firestore) {
+  void _showContactDialog(String recipientUid, String senderUid, FirebaseFirestore firestore) {
   final _formKey = GlobalKey<FormState>();
   String mainTitle = '';
   String description = '';
   String pay = '';
   String location = '';
+  bool isSubmitting = false; // Add loading state variable
 
   showDialog(
     context: context,
-    builder: (context) => AlertDialog(
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(20),
-      ),
-      content: SingleChildScrollView(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(
-              'Send Direct Job Listing',
-              style: GoogleFonts.poppins(
-                fontSize: 20,
-                fontWeight: FontWeight.bold,
-              ),
+    barrierDismissible: !isSubmitting, // Prevent dismissal while submitting
+    builder: (BuildContext dialogContext) {
+      return StatefulBuilder( // Use StatefulBuilder to manage dialog state
+        builder: (context, setState) {
+          return AlertDialog(
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(20),
             ),
-            const SizedBox(height: 20),
-            Form(
-              key: _formKey,
+            content: SingleChildScrollView(
               child: Column(
+                mainAxisSize: MainAxisSize.min,
                 children: [
-                  TextFormField(
-                    decoration: const InputDecoration(labelText: 'Main Title'),
-                    validator: (value) =>
-                        value!.isEmpty ? 'Please enter a title' : null,
-                    onSaved: (value) => mainTitle = value!,
+                  Text(
+                    'Send Direct Job Listing',
+                    style: GoogleFonts.poppins(
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
-                  TextFormField(
-                    decoration: const InputDecoration(labelText: 'Description'),
-                    validator: (value) =>
-                        value!.isEmpty ? 'Please enter a description' : null,
-                    onSaved: (value) => description = value!,
+                  const SizedBox(height: 20),
+                  Form(
+                    key: _formKey,
+                    child: Column(
+                      children: [
+                        TextFormField(
+                          enabled: !isSubmitting,
+                          decoration: const InputDecoration(labelText: 'Main Title'),
+                          validator: (value) =>
+                              value!.isEmpty ? 'Please enter a title' : null,
+                          onSaved: (value) => mainTitle = value!,
+                        ),
+                        TextFormField(
+                          enabled: !isSubmitting,
+                          decoration: const InputDecoration(labelText: 'Description'),
+                          validator: (value) =>
+                              value!.isEmpty ? 'Please enter a description' : null,
+                          onSaved: (value) => description = value!,
+                        ),
+                        TextFormField(
+                          enabled: !isSubmitting,
+                          decoration: const InputDecoration(labelText: 'Pay'),
+                          keyboardType: TextInputType.number,
+                          inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                          validator: (value) =>
+                              value!.isEmpty ? 'Please enter the pay' : null,
+                          onSaved: (value) => pay = value!,
+                        ),
+                        TextFormField(
+                          enabled: !isSubmitting,
+                          decoration: const InputDecoration(labelText: 'Location'),
+                          validator: (value) =>
+                              value!.isEmpty ? 'Please enter a location' : null,
+                          onSaved: (value) => location = value!,
+                        ),
+                      ],
+                    ),
                   ),
-                  TextFormField(
-                    decoration: const InputDecoration(labelText: 'Pay'),
-                    keyboardType: TextInputType.number,
-                    inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-                    validator: (value) =>
-                        value!.isEmpty ? 'Please enter the pay' : null,
-                    onSaved: (value) => pay = value!,
-                  ),
-                  TextFormField(
-                    decoration: const InputDecoration(labelText: 'Location'),
-                    validator: (value) =>
-                        value!.isEmpty ? 'Please enter a location' : null,
-                    onSaved: (value) => location = value!,
+                  if (isSubmitting)
+                    Padding(
+                      padding: const EdgeInsets.only(top: 16.0),
+                      child: Column(
+                        children: [
+                          const CircularProgressIndicator(),
+                          const SizedBox(height: 8),
+                          Text(
+                            'Sending listing...',
+                            style: GoogleFonts.poppins(
+                              color: Colors.grey[600],
+                              fontSize: 12,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  const SizedBox(height: 20),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      ElevatedButton(
+                        onPressed: isSubmitting ? null : () => Navigator.pop(context),
+                        child: Text(
+                          'Close',
+                          style: GoogleFonts.poppins(),
+                        ),
+                      ),
+                      ElevatedButton(
+                        onPressed: isSubmitting
+                            ? null
+                            : () async {
+                                if (_formKey.currentState!.validate()) {
+                                  setState(() {
+                                    isSubmitting = true;
+                                  });
+
+                                  try {
+                                    _formKey.currentState!.save();
+                                    final uniqueId = Uuid().v4();
+
+                                    final jobData = {
+                                      'id': uniqueId,
+                                      'mainTitle': mainTitle,
+                                      'description': description,
+                                      'pay': pay,
+                                      'location': location,
+                                      'status': 'pending',
+                                      'timestamp': DateTime.now().toIso8601String(),
+                                      'receiverUid': recipientUid,
+                                      'senderUid': senderUid,
+                                    };
+
+                                    // Save to sender's listings
+                                    await FirebaseFirestore.instance
+                                        .collection('users')
+                                        .doc(senderUid)
+                                        .update({
+                                      'Listing_(sent)': FieldValue.arrayUnion([jobData]),
+                                    });
+
+                                    // Save to recipient's listings
+                                    await FirebaseFirestore.instance
+                                        .collection('users')
+                                        .doc(recipientUid)
+                                        .update({
+                                      'Listing_(received)':
+                                          FieldValue.arrayUnion([jobData]),
+                                    });
+
+                                    final providerRef =
+                                        firestore.collection('users').doc(recipientUid);
+                                    final providerDoc = await providerRef.get();
+                                    final providerData =
+                                        providerDoc.data() as Map<String, dynamic>;
+
+                                    final String deviceToken = providerData['deviceToken'];
+                                    if (deviceToken.isNotEmpty) {
+                                      await PushNotificationService.sendNotification(
+                                        deviceToken,
+                                        'New Job Listing',
+                                        'You have received a new job listing: $mainTitle',
+                                        jobData,
+                                      );
+                                    }
+
+                                    Navigator.pop(context);
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      const SnackBar(
+                                        content: Text('Job listing sent successfully!'),
+                                      ),
+                                    );
+                                  } catch (e) {
+                                    setState(() {
+                                      isSubmitting = false;
+                                    });
+                                    debugPrint('Error sending listing: $e');
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      const SnackBar(
+                                        content:
+                                            Text('Failed to send listing. Please try again.'),
+                                      ),
+                                    );
+                                  }
+                                }
+                              },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color.fromARGB(255, 52, 141, 237),
+                        ),
+                        child: Text(
+                          'Send Listing',
+                          style: GoogleFonts.poppins(),
+                        ),
+                      ),
+                    ],
                   ),
                 ],
               ),
             ),
-            const SizedBox(height: 20),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                ElevatedButton(
-                  onPressed: () => Navigator.pop(context),
-                  child: Text(
-                    'Close',
-                    style: GoogleFonts.poppins(),
-                  ),
-                ),
-                ElevatedButton(
-                  onPressed: () async {
-                    if (_formKey.currentState!.validate()) {
-                      _formKey.currentState!.save();
-                      final uniqueId = Uuid().v4();
-
-                      final jobData = {
-                        'id': uniqueId,
-                        'mainTitle': mainTitle,
-                        'description': description,
-                        'pay': pay,
-                        'location': location,
-                        'status': 'pending',
-                        'timestamp': DateTime.now().toIso8601String(),
-                        'receiverUid': recipientUid,
-                        'senderUid': senderUid,
-                      };
-
-                      // Save to sender's listings
-                      await FirebaseFirestore.instance
-                          .collection('users')
-                          .doc(senderUid)
-                          .update({
-                        'Listing_(sent)': FieldValue.arrayUnion([jobData]),
-                      });
-
-                      // Save to recipient's listings
-                      await FirebaseFirestore.instance
-                          .collection('users')
-                          .doc(recipientUid)
-                          .update({
-                        'Listing_(received)': FieldValue.arrayUnion([jobData]),
-                      });
-
-
-                final providerRef = firestore.collection('users').doc(recipientUid);
-                final providerDoc = await providerRef.get();
-                final providerData = providerDoc.data() as Map<String, dynamic>;
-
-                 final String deviceToken = providerData['deviceToken'];
-
-                    if (deviceToken != null && deviceToken.isNotEmpty) {// Send notification
-                      await PushNotificationService.sendNotification(
-                        deviceToken,
-                        'New Job Listing',
-                        'You have received a new job listing: $mainTitle',
-                        jobData,
-                      );
-                    }
-                      Navigator.pop(context);
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          content: Text('Job listing sent successfully!'),
-                        ),
-                      );
-                    }
-                  },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color.fromARGB(255, 52, 141, 237),
-                  ),
-                  child: Text(
-                    'Send Listing',
-                    style: GoogleFonts.poppins(),
-                  ),
-                ),
-              ],
-            ),
-          ],
-        ),
-      ),
-    ),
+          );
+        },
+      );
+    },
   );
 }
-
-
 
 
 

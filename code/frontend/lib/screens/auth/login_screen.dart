@@ -23,7 +23,7 @@ class _LoginScreenState extends State<LoginScreen>
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
   final FirebaseAuth _auth = FirebaseAuth.instance;
-
+  bool isLoading = false; // Declare loading state
 
 /// Function to generate and retrieve the device token for push notifications.
 Future<String?> generateDeviceToken() async {
@@ -76,128 +76,6 @@ Future<String?> generateDeviceToken() async {
   }
 }
 
-
-  Future<void> handleLogin() async {
-    try {
-      final email = _emailController.text.trim();
-      final password = _passwordController.text.trim();
-
-      print('Email: $email');
-      print('Password: $password');
-
-      // Validate email format using a simple regex pattern
-      final emailPattern = r"^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$";
-      final emailRegex = RegExp(emailPattern);
-
-      if (email.isNotEmpty && password.isNotEmpty) {
-        if (!emailRegex.hasMatch(email)) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Invalid email format.'),
-              backgroundColor: Colors.red,
-            ),
-          );
-          return;
-        }
-
-        final UserCredential userCredential =
-            await _auth.signInWithEmailAndPassword(
-          email: email,
-          password: password,
-        );
-
-        final User? user = userCredential.user;
-
-        if (user != null) {
-          // Update lastSignIn and isConnected in Firestore
-          await FirebaseFirestore.instance
-              .collection('users')
-              .doc(user.uid)
-              .set({
-            'lastSignIn': DateTime.now(),
-            'isConnected': true,
-          }, SetOptions(merge: true));
-
-          saveDeviceTokenToFirestore(user.uid) ;
-
-          print('Login Successful. User: ${user.email}');
-          // Show success SnackBar
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('Login Successful. Welcome ${user.email}'),
-              backgroundColor: Colors.green,
-            ),
-          );
-          final prefs = await SharedPreferences.getInstance();
-          await prefs.setBool('isLoggedIn', true);
-          // Navigate to home page after successful signup
-          Navigator.pushNamed(context, '/navbar');
-        } else {
-          // Show error SnackBar if no user is found
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('No user found.'),
-              backgroundColor: Colors.red,
-            ),
-          );
-        }
-      } else {
-        // Show SnackBar if email or password is empty
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Please enter both email and password.'),
-            backgroundColor: Colors.orange,
-          ),
-        );
-      }
-    } catch (error) {
-      print('Login Error: $error');
-      if (error is FirebaseAuthException) {
-        if (error.code == 'user-not-found') {
-          print('No user found for that email.');
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('No user found for that email.'),
-              backgroundColor: Colors.red,
-            ),
-          );
-        } else if (error.code == 'wrong-password') {
-          print('Wrong password provided.');
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Incorrect password.'),
-              backgroundColor: Colors.red,
-            ),
-          );
-        } else if (error.code == 'invalid-credential') {
-          print('The supplied auth credential is incorrect or malformed.');
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Invalid credentials provided.'),
-              backgroundColor: Colors.red,
-            ),
-          );
-        } else {
-          print('Error: ${error.message}');
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('Error: ${error.message}'),
-              backgroundColor: Colors.red,
-            ),
-          );
-        }
-      } else {
-        // Handle any other error
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('An error occurred: $error'),
-            backgroundColor: Colors.red,
-          ),
-        );
-      }
-    }
-  }
-
   @override
   void initState() {
     super.initState();
@@ -232,7 +110,57 @@ Future<String?> generateDeviceToken() async {
     super.dispose();
   }
 
+bool _isLoading = false; // Loading state variable
+
+Widget _buildGoogleSignInButton() {
+  final localizations = AppLocalizations.of(context)!;
+  final buttonText = localizations.googleSignIn;
+
+  return ElevatedButton(
+    onPressed: _isLoading ? null : _handleGoogleSignIn,
+    style: ElevatedButton.styleFrom(
+      backgroundColor: Colors.white,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(30.0),
+      ),
+      padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 15),
+      elevation: 6,
+    ),
+    child: _isLoading 
+      ? const SizedBox(
+          width: 24,
+          height: 24,
+          child: CircularProgressIndicator(
+            strokeWidth: 2.5,
+            valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+          ),
+        )
+      : Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Image.asset(
+              'assets/images/google_logo.png',
+              height: 24,
+              width: 24,
+            ),
+            const SizedBox(width: 12),
+            Text(
+              buttonText,
+              style: GoogleFonts.poppins(
+                fontSize: 18,
+                color: const Color(0xFF1A237E),
+              ),
+            ),
+          ],
+        ),
+  );
+}
+
 Future<void> _handleGoogleSignIn() async {
+  setState(() {
+    _isLoading = true; // Show loading indicator
+  });
+
   try {
     final GoogleSignIn googleSignIn = GoogleSignIn();
     final GoogleSignInAccount? googleUser = await googleSignIn.signIn();
@@ -250,21 +178,18 @@ Future<void> _handleGoogleSignIn() async {
         final User? user = userCredential.user;
 
         if (user != null) {
-          // First, check if the user document already exists
           final userDoc = await FirebaseFirestore.instance
               .collection('users')
               .doc(user.uid)
               .get();
 
-          // Prepare the user data
           Map<String, dynamic> userData = {
             'uid': user.uid,
             'email': user.email ?? 'No Email',
             'lastSignIn': DateTime.now(),
-            'isConnected': true,  // Add the isConnected field
+            'isConnected': true,
           };
 
-          // Only update name if it's not already set
           if (!userDoc.exists || userDoc.data()?['name'] == null) {
             userData['name'] = user.displayName ?? 'No Name';
           }
@@ -274,28 +199,24 @@ Future<void> _handleGoogleSignIn() async {
             userData['photoURL'] = user.photoURL ?? '';
           }
 
-          // If document doesn't exist, add createdAt
           if (!userDoc.exists) {
             userData['createdAt'] = DateTime.now();
           }
 
-          // Update the document with merge
           await FirebaseFirestore.instance
               .collection('users')
               .doc(user.uid)
               .set(userData, SetOptions(merge: true));
 
+          saveDeviceTokenToFirestore(user.uid);
 
-              saveDeviceTokenToFirestore(user.uid) ;
-
-          // Show success message and navigate
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Text('Welcome ${user.displayName ?? user.email}'),
               backgroundColor: Colors.green,
             ),
           );
-          
+
           final prefs = await SharedPreferences.getInstance();
           await prefs.setBool('isLoggedIn', true);
           Navigator.pushNamed(context, '/navbar');
@@ -340,6 +261,10 @@ Future<void> _handleGoogleSignIn() async {
       ),
     );
     print('Error during Google Sign-In: $error');
+  } finally {
+    setState(() {
+      _isLoading = false; // Hide loading indicator
+    });
   }
 }
   @override
@@ -452,55 +377,200 @@ Future<void> _handleGoogleSignIn() async {
     );
   }
 
-  Widget _buildLoginButton(BuildContext context, String buttonText) {
-    return ElevatedButton(
-      onPressed: handleLogin,
-      style: ElevatedButton.styleFrom(
-        backgroundColor: const Color(0xFFFFFFFF),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(30.0),
-        ),
-        padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 15),
-        elevation: 6,
+  
+
+Widget _buildLoginButton(BuildContext context, String buttonText) {
+  return ElevatedButton(
+    onPressed: isLoading ? null : () => handleLogin(context),
+    style: ElevatedButton.styleFrom(
+      backgroundColor: isLoading ? Colors.grey : const Color(0xFFFFFFFF),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(30.0),
       ),
-      child: Text(
-        buttonText,
-        style: GoogleFonts.poppins(
-          fontSize: 18,
-          color: const Color(0xFF1A237E),
+      padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 15),
+      elevation: 6,
+    ),
+    child: isLoading
+        ? const CircularProgressIndicator(
+            valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF1A237E)),
+          )
+        : Text(
+            buttonText,
+            style: GoogleFonts.poppins(
+              fontSize: 18,
+              color: const Color(0xFF1A237E),
+            ),
+          ),
+  );
+}
+
+Future<void> handleLogin(BuildContext context) async {
+  setState(() {
+    isLoading = true;
+  });
+
+  try {
+    final email = _emailController.text.trim();
+    final password = _passwordController.text.trim();
+
+    print('Email: $email');
+    print('Password: $password');
+
+    // Validate email format using a simple regex pattern
+    final emailPattern = r"^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$";
+    final emailRegex = RegExp(emailPattern);
+
+    if (email.isNotEmpty && password.isNotEmpty) {
+      if (!emailRegex.hasMatch(email)) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Invalid email format.'),
+            backgroundColor: Colors.red,
+          ),
+        );
+        return;
+      }
+
+      final UserCredential userCredential =
+          await _auth.signInWithEmailAndPassword(
+        email: email,
+        password: password,
+      );
+
+      final User? user = userCredential.user;
+
+      if (user != null) {
+        // Check if email is verified
+        if (!user.emailVerified) {
+          // Show verification needed message with resend option
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: const Text('Please verify your email before logging in.'),
+              backgroundColor: Colors.orange,
+              duration: const Duration(seconds: 8),
+              action: SnackBarAction(
+                label: 'Resend',
+                textColor: Colors.white,
+                onPressed: () async {
+                  try {
+                    await user.sendEmailVerification();
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text('Verification email resent! Please check your inbox.'),
+                        backgroundColor: Colors.green,
+                      ),
+                    );
+                  } catch (e) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text('Error resending verification email. Please try again later.'),
+                        backgroundColor: Colors.red,
+                      ),
+                    );
+                  }
+                },
+              ),
+            ),
+          );
+          
+          // Sign out the user since they haven't verified their email
+          await _auth.signOut();
+          setState(() {
+            isLoading = false;
+          });
+          return;
+        }
+
+        // Email is verified, proceed with login
+        await FirebaseFirestore.instance
+            .collection('users')
+            .doc(user.uid)
+            .set({
+          'lastSignIn': DateTime.now(),
+          'isConnected': true,
+          'isEmailVerified': true, // Update verification status in Firestore
+        }, SetOptions(merge: true));
+
+        saveDeviceTokenToFirestore(user.uid);
+
+        print('Login Successful. User: ${user.email}');
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Login Successful. Welcome ${user.email}'),
+            backgroundColor: Colors.green,
+          ),
+        );
+
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.setBool('isLoggedIn', true);
+
+        Navigator.pushNamed(context, '/navbar');
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('No user found.'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Please enter both email and password.'),
+          backgroundColor: Colors.orange,
         ),
+      );
+    }
+  } catch (error) {
+    print('Login Error: $error');
+    handleFirebaseAuthError(context, error);
+  } finally {
+    setState(() {
+      isLoading = false;
+    });
+  }
+}
+
+// Updated error handler to include verification-related errors
+void handleFirebaseAuthError(BuildContext context, Object error) {
+  if (error is FirebaseAuthException) {
+    String errorMessage;
+    switch (error.code) {
+      case 'user-not-found':
+        errorMessage = 'No user found for that email.';
+        break;
+      case 'wrong-password':
+        errorMessage = 'Incorrect password.';
+        break;
+      case 'invalid-email':
+        errorMessage = 'Invalid email format.';
+        break;
+      case 'user-disabled':
+        errorMessage = 'This account has been disabled.';
+        break;
+      case 'too-many-requests':
+        errorMessage = 'Too many failed login attempts. Please try again later.';
+        break;
+      default:
+        errorMessage = error.message ?? 'An unknown error occurred.';
+    }
+    
+    print('Error: $errorMessage');
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(errorMessage),
+        backgroundColor: Colors.red,
+      ),
+    );
+  } else {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('An error occurred: $error'),
+        backgroundColor: Colors.red,
       ),
     );
   }
-
-  Widget _buildGoogleSignInButton() {
-    final localizations =
-        AppLocalizations.of(context)!; // Access localized strings
-
-    return ElevatedButton.icon(
-      onPressed: _handleGoogleSignIn,
-      style: ElevatedButton.styleFrom(
-        backgroundColor: Colors.white,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(30.0),
-        ),
-        padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 15),
-        elevation: 6,
-      ),
-      icon: Image.asset(
-        'assets/images/google_logo.png', // Add your Google logo path
-        height: 24,
-        width: 24,
-      ),
-      label: Text(
-        localizations.googleSignIn, // Use localized text here
-        style: GoogleFonts.poppins(
-          fontSize: 18,
-          color: const Color(0xFF1A237E),
-        ),
-      ),
-    );
-  }
+}
 
   Widget _buildForgotPasswordButton(
       BuildContext context, String forgotPasswordText) {
