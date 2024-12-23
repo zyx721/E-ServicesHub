@@ -179,67 +179,67 @@ Future<bool> _checkIfUserIsAdmin() async {
                       // Only show notification bell for non-admin users
                       if (!isAdmin) _buildNotificationBell(),
 // =======
-                      Stack(
-                        alignment: Alignment.center,
-                        children: [
-                          IconButton(
-                            icon: const Icon(
-                              Icons.notifications_outlined,
-                              color: Colors.white,
-                              size: 28,
-                            ),
-                            onPressed: () {
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (context) => NotificationsPage(
-                                      userId: _auth.currentUser?.uid ?? ''),
-                                ),
-                              );
-                            },
-                          ),
-                          Positioned(
-                            right: 4, // Adjust position to align badge properly
-                            top: 8,
-                            child: StreamBuilder<DocumentSnapshot>(
-                              stream: FirebaseFirestore.instance
-                                  .collection('users')
-                                  .doc(_auth.currentUser?.uid ?? '')
-                                  .snapshots(),
-                              builder: (context, snapshot) {
-                                if (!snapshot.hasData ||
-                                    snapshot.data == null) {
-                                  return const SizedBox(); // Show nothing if no data
-                                }
-                                final data = snapshot.data!.data()
-                                    as Map<String, dynamic>;
-                                final unreadCount =
-                                    data['newCommentsCount'] ?? 0;
+                      // Stack(
+                      //   alignment: Alignment.center,
+                      //   children: [
+                      //     IconButton(
+                      //       icon: const Icon(
+                      //         Icons.home,
+                      //         color: Colors.white,
+                      //         size: 28,
+                      //       ),
+                      //       onPressed: () {
+                      //         Navigator.push(
+                      //           context,
+                      //           MaterialPageRoute(
+                      //             builder: (context) => NotificationsPage(
+                      //                 userId: _auth.currentUser?.uid ?? ''),
+                      //           ),
+                      //         );
+                      //       },
+                      //     ),
+                      //     Positioned(
+                      //       right: 4, // Adjust position to align badge properly
+                      //       top: 8,
+                      //       child: StreamBuilder<DocumentSnapshot>(
+                      //         stream: FirebaseFirestore.instance
+                      //             .collection('users')
+                      //             .doc(_auth.currentUser?.uid ?? '')
+                      //             .snapshots(),
+                      //         builder: (context, snapshot) {
+                      //           if (!snapshot.hasData ||
+                      //               snapshot.data == null) {
+                      //             return const SizedBox(); // Show nothing if no data
+                      //           }
+                      //           final data = snapshot.data!.data()
+                      //               as Map<String, dynamic>;
+                      //           final unreadCount =
+                      //               data['newCommentsCount'] ?? 0;
 
-                                if (unreadCount == 0) {
-                                  return const SizedBox(); // Show nothing if no unread comments
-                                }
+                      //           if (unreadCount == 0) {
+                      //             return const SizedBox(); // Show nothing if no unread comments
+                      //           }
 
-                                return Container(
-                                  padding: const EdgeInsets.all(5),
-                                  decoration: BoxDecoration(
-                                    color: Colors.red,
-                                    shape: BoxShape.circle,
-                                  ),
-                                  child: Text(
-                                    '$unreadCount',
-                                    style: const TextStyle(
-                                      color: Colors.white,
-                                      fontSize: 12,
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                  ),
-                                );
-                              },
-                            ),
-                          ),
-                        ],
-                      ),
+                      //           return Container(
+                      //             padding: const EdgeInsets.all(5),
+                      //             decoration: BoxDecoration(
+                      //               color: Colors.red,
+                      //               shape: BoxShape.circle,
+                      //             ),
+                      //             child: Text(
+                      //               '$unreadCount',
+                      //               style: const TextStyle(
+                      //                 color: Colors.white,
+                      //                 fontSize: 12,
+                      //                 fontWeight: FontWeight.bold,
+                      //               ),
+                      //             ),
+                      //           );
+                      //         },
+                      //       ),
+                      //     ),
+                      //   ],
+                      // ),
 // >>>>>>> Anas_front
                       _buildLanguageDropdown(),
                     ],
