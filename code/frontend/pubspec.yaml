@@ -41,6 +41,8 @@ dependencies:
   firebase_storage: ^12.3.7
   firebase_messaging: ^15.1.6
 
+  image: ^3.0.1
+  
 
 
 dev_dependencies:
@@ -100,3 +102,5 @@ flutter:
     - assets/animation/animation3.json
     - assets/animation/animation4.json
     - assets/animation/animation5.json
+    - assets/animation/id_aproved.json
+    - assets/animation/flip.json

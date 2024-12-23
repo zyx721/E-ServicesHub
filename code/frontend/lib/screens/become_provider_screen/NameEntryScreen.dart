@@ -44,14 +44,6 @@ class _NameEntryScreenState extends State<NameEntryScreen> {
   }
 
   void _saveProviderInfo() async {
-    final String firstName = _firstNameController.text.trim();
-    final String lastName = _lastNameController.text.trim();
-
-    if (firstName.isEmpty || lastName.isEmpty) {
-      _showErrorDialog(AppLocalizations.of(context)!.firstNameLastNameRequired);
-      return;
-    }
-
     if (_selectedChoices.length != 2) {
       _showErrorDialog(AppLocalizations.of(context)!.selectTwoWorkChoices);
       return;
@@ -68,8 +60,6 @@ class _NameEntryScreenState extends State<NameEntryScreen> {
           FirebaseFirestore.instance.collection('users').doc(user.uid);
 
       await userDoc.update({
-        'firstName': firstName,
-        'lastName': lastName,
         'selectedWorkChoices': _selectedChoices.toList(),
         'isSTEP_1': true,
       });

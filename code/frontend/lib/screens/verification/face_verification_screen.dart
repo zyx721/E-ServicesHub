@@ -6,6 +6,10 @@ import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:lottie/lottie.dart'; // Import the Lottie package
 import 'package:hanini_frontend/localization/app_localization.dart';
+import 'package:image/image.dart' as img; // Import the image package for image processing
+import 'package:path_provider/path_provider.dart'; // Import the path_provider package for file storage
+import 'dart:io'; // Import the dart:io package for file operations
+import 'package:flutter/services.dart'; // Import the services package for rootBundle
 
 class FaceCompareScreen extends StatefulWidget {
   @override
@@ -19,6 +23,8 @@ class _FaceCompareScreenState extends State<FaceCompareScreen> {
   String _comparisonResult = "";
   Color _resultColor = Colors.black;
   bool _showAnimation = false; // Flag to trigger animation
+  XFile? _firstImage;
+  XFile? _secondImage;
 
   @override
   void initState() {
@@ -42,8 +48,29 @@ class _FaceCompareScreenState extends State<FaceCompareScreen> {
     }
   }
 
-  Future<void> _takeAndSendPicture() async {
-    if (_isLoading) return;
+  Future<void> _captureImage(bool isFirstImage) async {
+    try {
+      final image = await _cameraController!.takePicture();
+      setState(() {
+        if (isFirstImage) {
+          _firstImage = image;
+        } else {
+          _secondImage = image;
+        }
+      });
+    } catch (e) {
+      print("Error capturing image: $e");
+    }
+  }
+
+  Future<void> _submitFaceImages() async {
+    if (_firstImage == null || _secondImage == null) {
+      setState(() {
+        _comparisonResult = "Please capture both images.";
+        _resultColor = Colors.redAccent;
+      });
+      return;
+    }
 
     setState(() {
       _isLoading = true;
@@ -52,12 +79,20 @@ class _FaceCompareScreenState extends State<FaceCompareScreen> {
     });
 
     try {
-      final image = await _cameraController!.takePicture();
-      final response = await _submitFaceImage(image.path);
+      final request = http.MultipartRequest(
+        'POST',
+        Uri.parse('https://polite-schools-ask.loca.lt/compare-face/'), // Ensure this URL is correct
+      );
 
-      if (response != null) {
+      request.files.add(await http.MultipartFile.fromPath('file1', _firstImage!.path));
+      request.files.add(await http.MultipartFile.fromPath('file2', _secondImage!.path));
+      final response = await request.send();
+      final responseData = await http.Response.fromStream(response);
+
+      if (response.statusCode == 200) {
+        final responseBody = json.decode(responseData.body);
         setState(() {
-          _comparisonResult = response['message'];
+          _comparisonResult = responseBody['message'];
           _resultColor = (_comparisonResult.trim() == "Faces match!")
               ? Colors.greenAccent
               : Colors.redAccent;
@@ -78,36 +113,11 @@ class _FaceCompareScreenState extends State<FaceCompareScreen> {
         });
       }
     } catch (e) {
-      print("Error capturing image: $e");
+      print("Error submitting face images: $e");
     } finally {
       setState(() {
         _isLoading = false;
       });
-    }
-  }
-
-  Future<Map<String, dynamic>?> _submitFaceImage(String imagePath) async {
-    final request = http.MultipartRequest(
-      'POST',
-      Uri.parse(
-          'https://polite-schools-ask.loca.lt/compare-face/'), // Ensure this URL is correct
-    );
-
-    try {
-      request.files.add(await http.MultipartFile.fromPath('file', imagePath));
-      final response = await request.send();
-      final responseData = await http.Response.fromStream(response);
-
-      if (response.statusCode == 200) {
-        return json.decode(responseData.body);
-      } else {
-        print(
-            "Failed to submit face image: ${response.statusCode} - ${responseData.body}");
-        return null;
-      }
-    } catch (e) {
-      print("Error submitting face image: $e");
-      return null;
     }
   }
 
@@ -255,49 +265,67 @@ class _FaceCompareScreenState extends State<FaceCompareScreen> {
                   bottom: 30,
                   left: 20,
                   right: 20,
-                  child: InkWell(
-                    onTap: _isLoading ? null : _takeAndSendPicture,
-                    child: Container(
-                      padding: EdgeInsets.symmetric(vertical: 15),
-                      decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                          colors: [
-                            Color(0xFF3949AB),
-                            Color(0xFF1E88E5),
-                          ],
-                          begin: Alignment.topCenter,
-                          end: Alignment.bottomCenter,
-                        ),
-                        borderRadius: BorderRadius.circular(30),
-                      ),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Icon(
-                            Icons.camera_alt,
-                            color: Colors.white,
+                  child: Column(
+                    children: [
+                      if (_firstImage == null)
+                        ElevatedButton(
+                          onPressed: _isLoading ? null : () => _captureImage(true),
+                          child: Text(
+                            "Capture With Mouth Closed",
+                            style: TextStyle(fontSize: 18),
                           ),
-                          SizedBox(width: 10),
-                          _isLoading
-                              ? SizedBox(
-                                  width: 20,
-                                  height: 20,
-                                  child: CircularProgressIndicator(
-                                    valueColor: AlwaysStoppedAnimation<Color>(
-                                        Colors.white),
-                                    strokeWidth: 2,
-                                  ),
-                                )
-                              : Text(
-                                  appLocalizations.verifyFace,
-                                  style: TextStyle(
-                                    color: Colors.white,
-                                    fontSize: 18,
-                                  ),
-                                ),
-                        ],
-                      ),
-                    ),
+                        ),
+                      if (_firstImage != null && _secondImage == null)
+                        ElevatedButton(
+                          onPressed: _isLoading ? null : () => _captureImage(false),
+                          child: Text(
+                            "Capture With Mouth Open",
+                            style: TextStyle(fontSize: 18),
+                          ),
+                        ),
+                      if (_firstImage != null)
+                        Padding(
+                          padding: const EdgeInsets.all(8.0),
+                          child: Image.file(
+                            File(_firstImage!.path),
+                            width: 100,
+                            height: 100,
+                          ),
+                        ),
+                      if (_secondImage != null)
+                        Padding(
+                          padding: const EdgeInsets.all(8.0),
+                          child: Image.file(
+                            File(_secondImage!.path),
+                            width: 100,
+                            height: 100,
+                          ),
+                        ),
+                      if (_firstImage != null && _secondImage != null)
+                        ElevatedButton(
+                          onPressed: _isLoading ? null : _submitFaceImages,
+                          child: Text(
+                            "Submit Images",
+                            style: TextStyle(fontSize: 18),
+                          ),
+                        ),
+                      if (_firstImage != null || _secondImage != null)
+                        ElevatedButton(
+                          onPressed: _isLoading
+                              ? null
+                              : () {
+                                  setState(() {
+                                    _firstImage = null;
+                                    _secondImage = null;
+                                    _comparisonResult = "";
+                                  });
+                                },
+                          child: Text(
+                            "Retake Images",
+                            style: TextStyle(fontSize: 18),
+                          ),
+                        ),
+                    ],
                   ),
                 ),
               ],

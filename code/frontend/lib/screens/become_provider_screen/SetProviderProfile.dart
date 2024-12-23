@@ -104,6 +104,8 @@ class _ServiceProviderProfileState extends State<SetProviderProfile> {
   List<String> portfolioImages = [];
 
   // Profile basic info
+  final TextEditingController _firstNameController = TextEditingController();
+  final TextEditingController _lastNameController = TextEditingController();
   final TextEditingController _professionController = TextEditingController();
   final TextEditingController _phoneController = TextEditingController();
   final TextEditingController _addressController = TextEditingController();
@@ -124,7 +126,14 @@ class _ServiceProviderProfileState extends State<SetProviderProfile> {
 
 
   String userPhotoUrl = '';
+  String _originalFirstName = "";
+  String _originalLastName = "";
 
+  @override
+  void initState() {
+    super.initState();
+    fetchUserData();
+  }
   
   Future<void> fetchUserData() async {
     try {
@@ -137,6 +146,10 @@ class _ServiceProviderProfileState extends State<SetProviderProfile> {
           final data = userDoc.data() as Map<String, dynamic>;
           setState(() {
             userPhotoUrl = data['photoURL'] ?? '';
+            _originalFirstName = data['firstName'] ?? '';
+            _originalLastName = data['lastName'] ?? '';
+            _firstNameController.text = _originalFirstName;
+            _lastNameController.text = _originalLastName;
           });
         }
       }
@@ -226,6 +239,14 @@ class _ServiceProviderProfileState extends State<SetProviderProfile> {
   }
 
   Future<void> _saveProfile() async {
+    final String firstName = _firstNameController.text.trim();
+    final String lastName = _lastNameController.text.trim();
+
+    if (_calculateDifference(_originalFirstName, firstName) > 2 || _calculateDifference(_originalLastName, lastName) > 2) {
+      _showErrorDialog("You can only change up to 2 characters in your names.");
+      return;
+    }
+
     if (_formKey.currentState!.validate()) {
       if (_skills.isEmpty || _certifications.isEmpty || _workExperience.isEmpty) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -256,6 +277,8 @@ class _ServiceProviderProfileState extends State<SetProviderProfile> {
 
         // Prepare the profile data
         Map<String, dynamic> profileData = {
+          'firstName': firstName,
+          'lastName': lastName,
           'basicInfo': {
             'profession': _professionController.text,
             'phone': _phoneController.text,
@@ -300,6 +323,33 @@ class _ServiceProviderProfileState extends State<SetProviderProfile> {
         );
       }
     }
+  }
+
+  int _calculateDifference(String original, String updated) {
+    int difference = 0;
+    for (int i = 0; i < original.length && i < updated.length; i++) {
+      if (original[i] != updated[i]) {
+        difference++;
+      }
+    }
+    difference += (original.length - updated.length).abs();
+    return difference;
+  }
+
+  void _showErrorDialog(String message) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text('Error'),
+        content: Text(message),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text('OK'),
+          ),
+        ],
+      ),
+    );
   }
 
   @override
@@ -468,6 +518,26 @@ Future<void> pickNewProfilePicture() async {
   Widget _buildBasicInfoFields() {
     return Column(
       children: [
+        TextFormField(
+          controller: _firstNameController,
+          decoration: InputDecoration(
+            labelText: 'First Name',
+            border: OutlineInputBorder(),
+            labelStyle: GoogleFonts.poppins(),
+          ),
+          validator: (value) => value!.isEmpty ? 'Please enter your first name' : null,
+        ),
+        const SizedBox(height: 10),
+        TextFormField(
+          controller: _lastNameController,
+          decoration: InputDecoration(
+            labelText: 'Last Name',
+            border: OutlineInputBorder(),
+            labelStyle: GoogleFonts.poppins(),
+          ),
+          validator: (value) => value!.isEmpty ? 'Please enter your last name' : null,
+        ),
+        const SizedBox(height: 10),
         TextFormField(
           controller: _professionController,
           decoration: InputDecoration(
@@ -875,4 +945,4 @@ Widget buildPortfolioSection() {
 
 }
 
-         
+
