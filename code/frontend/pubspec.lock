@@ -6,7 +6,7 @@ packages:
     description:
       name: _discoveryapis_commons
       sha256: "113c4100b90a5b70a983541782431b82168b3cae166ab130649c36eb3559d498"
-      url: "https://pub.dev"
+      url: "https://pub.flutter-io.cn"
     source: hosted
     version: "1.0.7"
   _flutterfire_internals:
@@ -38,7 +38,7 @@ packages:
     description:
       name: args
       sha256: bf9f5caeea8d8fe6721a9c358dd8a5c1947b27f1cfaa18b39c301273594919e6
-      url: "https://pub.dev"
+      url: "https://pub.flutter-io.cn"
     source: hosted
     version: "2.6.0"
   async:
@@ -272,13 +272,13 @@ packages:
       sha256: fbc008cf390d909b823763064b63afefe9f02d8afdb13eb3f485b871afee956b
       url: "https://pub.flutter-io.cn"
     source: hosted
-    version: "2.18.2"
+    version: "2.19.0"
   firebase_messaging:
     dependency: "direct main"
     description:
       name: firebase_messaging
       sha256: "151a3ee68736abf293aab66d1317ade53c88abe1db09c75a0460aebf7767bbdf"
-      url: "https://pub.dev"
+      url: "https://pub.flutter-io.cn"
     source: hosted
     version: "15.1.6"
   firebase_messaging_platform_interface:
@@ -286,7 +286,7 @@ packages:
     description:
       name: firebase_messaging_platform_interface
       sha256: f331ee51e40c243f90cc7bc059222dfec4e5df53125b08d31fb28961b00d2a9d
-      url: "https://pub.dev"
+      url: "https://pub.flutter-io.cn"
     source: hosted
     version: "4.5.49"
   firebase_messaging_web:
@@ -294,7 +294,7 @@ packages:
     description:
       name: firebase_messaging_web
       sha256: efaf3fdc54cd77e0eedb8e75f7f01c808828c64d052ddbf94d3009974e47d30f
-      url: "https://pub.dev"
+      url: "https://pub.flutter-io.cn"
     source: hosted
     version: "3.9.5"
   firebase_storage:
@@ -302,7 +302,7 @@ packages:
     description:
       name: firebase_storage
       sha256: "19102fafeaf99b35e0ac6911ad4fb2929e6fb1bc1d61e848514b9ad3c139d7e6"
-      url: "https://pub.dev"
+      url: "https://pub.flutter-io.cn"
     source: hosted
     version: "12.3.7"
   firebase_storage_platform_interface:
@@ -310,7 +310,7 @@ packages:
     description:
       name: firebase_storage_platform_interface
       sha256: "4f9993c1e2839b8e49a15b7346f1822ff50edb92c8db89fafa26c2eae8767a7d"
-      url: "https://pub.dev"
+      url: "https://pub.flutter-io.cn"
     source: hosted
     version: "5.1.34"
   firebase_storage_web:
@@ -318,10 +318,9 @@ packages:
     description:
       name: firebase_storage_web
       sha256: ed689089bd4cdafcefd0d5b8a5d635a68c657c75bdad26f15d0ca50748527103
-      url: "https://pub.dev"
+      url: "https://pub.flutter-io.cn"
     source: hosted
     version: "3.10.6"
-    version: "2.19.0"
   fixnum:
     dependency: transitive
     description:
@@ -475,7 +474,7 @@ packages:
     description:
       name: google_identity_services_web
       sha256: "55580f436822d64c8ff9a77e37d61f5fb1e6c7ec9d632a43ee324e2a05c3c6c9"
-      url: "https://pub.dev"
+      url: "https://pub.flutter-io.cn"
     source: hosted
     version: "0.3.3"
   google_sign_in:
@@ -523,7 +522,7 @@ packages:
     description:
       name: googleapis
       sha256: "864f222aed3f2ff00b816c675edf00a39e2aaf373d728d8abec30b37bee1a81c"
-      url: "https://pub.dev"
+      url: "https://pub.flutter-io.cn"
     source: hosted
     version: "13.2.0"
   googleapis_auth:
@@ -531,7 +530,7 @@ packages:
     description:
       name: googleapis_auth
       sha256: befd71383a955535060acde8792e7efc11d2fccd03dd1d3ec434e85b68775938
-      url: "https://pub.dev"
+      url: "https://pub.flutter-io.cn"
     source: hosted
     version: "1.6.0"
   http:
@@ -563,7 +562,7 @@ packages:
     description:
       name: image
       sha256: "8e9d133755c3e84c73288363e6343157c383a0c6c56fc51afcc5d4d7180306d6"
-      url: "https://pub.dev"
+      url: "https://pub.flutter-io.cn"
     source: hosted
     version: "3.3.0"
   image_picker:
@@ -859,7 +858,6 @@ packages:
     description:
       name: petitparser
       sha256: c15605cd28af66339f8eb6fbe0e541bfe2d1b72d5825efc6598f3e0a31b9ad27
-      url: "https://pub.dev"
       url: "https://pub.flutter-io.cn"
     source: hosted
     version: "6.0.2"
@@ -1129,7 +1127,6 @@ packages:
     description:
       name: xml
       sha256: b015a8ad1c488f66851d762d3090a21c600e479dc75e68328c52774040cf9226
-      url: "https://pub.dev"
       url: "https://pub.flutter-io.cn"
     source: hosted
     version: "6.5.0"
