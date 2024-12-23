@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-// import 'package:flutter_svg/svg.dart';
+import 'package:flutter_svg/svg.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:hanini_frontend/navbar.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -8,7 +8,6 @@ import 'package:url_launcher/url_launcher.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:hanini_frontend/screens/services/service.dart';
-// import 'package:hanini_frontend/screens/navScreens/service.dart';
 import 'package:hanini_frontend/models/colors.dart';
 import 'package:hanini_frontend/models/servicesWeHave.dart';
 
@@ -396,8 +395,6 @@ Widget _buildServicesGrid() {
   );
 }
 
-
-
   Widget _buildStarRating(double rating) {
     int fullStars = rating.floor();
     int halfStars = (rating % 1 >= 0.5) ? 1 : 0;
@@ -492,7 +489,6 @@ Widget _buildTopPopularHeader(BuildContext context) {
                       itemBuilder: (context, index) {
                         final service =
                             PopularServicesModel.getPopularServices()[index];
-                        var SvgPicture;
                         return Container(
                           decoration: BoxDecoration(
                             color: service.color.withOpacity(0.1),
@@ -548,7 +544,6 @@ Widget _buildTopPopularHeader(BuildContext context) {
           child: ListView.separated(
             itemBuilder: (context, index) {
               final service = PopularServicesModel.getPopularServices()[index];
-              var SvgPicture;
               return Container(
                 width: 150,
                 decoration: BoxDecoration(
