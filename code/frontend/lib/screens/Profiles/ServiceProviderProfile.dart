@@ -472,10 +472,11 @@ Widget build(BuildContext context) {
                   const SizedBox(height: 20),
                   _buildSectionTitle(localizations.certifications),
                   _buildCertificationsSection(localizations),
+                  const SizedBox(height: 20,)
                 ],
               ),
               Positioned(
-                top: 40, // Adjust this value to fine-tune the position
+                bottom: 40, // Adjust this value to fine-tune the position
                 right: 16, // Adjust this value to fine-tune the position
                 child: FloatingActionButton(
                   onPressed: toggleEditMode,

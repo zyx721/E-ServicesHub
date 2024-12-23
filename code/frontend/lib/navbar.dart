@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:hanini_frontend/main.dart';
 import 'package:hanini_frontend/screens/Profiles/SimpleUserProfile.dart';
+import 'package:hanini_frontend/screens/become_provider_screen/profilepage.dart';
 import 'package:iconsax/iconsax.dart';
 import 'package:hanini_frontend/screens/navScreens/searchpage.dart';
 import 'package:hanini_frontend/screens/Profiles/ServiceProviderProfile.dart';
@@ -14,20 +15,20 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:hanini_frontend/screens/navScreens/notificationspage.dart'; // Replace with actual file path
 import 'package:hanini_frontend/screens/Profiles/AdminProfile.dart'; // Import AdminProfile
-
-
+import 'models/colors.dart';
 
 class NavbarPage extends StatefulWidget {
-
-
-  const NavbarPage({Key? key}) : super(key: key);
+  final int initialIndex;
+  final String? serviceName;
+  const NavbarPage({Key? key, required this.initialIndex, this.serviceName}) : super(key: key);
 
   @override
   State<NavbarPage> createState() => _NavbarPageState();
 }
 
 class _NavbarPageState extends State<NavbarPage> {
-  int selectedIndex = 0;
+  late int selectedIndex;
+  String? serviceName;
   List<Widget> screens = [];
   bool isLoading = true;
   bool isAdmin = false;
@@ -35,6 +36,7 @@ class _NavbarPageState extends State<NavbarPage> {
   @override
   void initState() {
     super.initState();
+    selectedIndex = widget.initialIndex;
     _initializeScreens();
   }
 
@@ -42,32 +44,34 @@ class _NavbarPageState extends State<NavbarPage> {
     final FirebaseAuth _auth = FirebaseAuth.instance;
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
-Future<bool> _checkIfUserIsProvider() async {
-  final User? user = _auth.currentUser;
-  
-  // Check if the user is logged in
-  if (user != null) {
-    try {
-      final DocumentSnapshot userDoc =
+  Future<bool> _checkIfUserIsProvider() async {
+    final User? user = _auth.currentUser;
+
+    // Check if the user is logged in
+    if (user != null) {
+      try {
+        final DocumentSnapshot userDoc =
             await _firestore.collection('users').doc(user.uid).get();
 
-      // Check if the document exists and return the 'isProvider' field
-      if (userDoc.exists) {
-        final data = userDoc.data() as Map<String, dynamic>;
-        return data['isProvider'] ?? false;
-      } else {
-        throw Exception("User not found in Firestore");
+        // Check if the document exists and return the 'isProvider' field
+        if (userDoc.exists) {
+          final data = userDoc.data() as Map<String, dynamic>;
+          return data['isProvider'] ?? false;
+        } else {
+          throw Exception("User not found in Firestore");
+        }
+      } catch (e) {
+        // Log error or handle it
+        print("Error while fetching user: $e");
+        throw Exception("Failed to fetch user data");
       }
-    } catch (e) {
-      // Log error or handle it
-      print("Error while fetching user: $e");
-      throw Exception("Failed to fetch user data");
+    } else {
+      // Handle the case where no user is signed in
+      throw Exception("No user is currently signed in");
     }
-  } else {
-    // Handle the case where no user is signed in
-    throw Exception("No user is currently signed in");
   }
-}
+
+  
 
 Future<bool> _checkIfUserIsAdmin() async {
   final User? user = _auth.currentUser;
@@ -128,20 +132,13 @@ Future<bool> _checkIfUserIsAdmin() async {
     return isLoading
         ? Center(child: CircularProgressIndicator())
         : PopScope(
-          canPop: false,
-          child: Scaffold(
+            canPop: false,
+            child: Scaffold(
               appBar: PreferredSize(
                 preferredSize: Size.fromHeight(64.0),
                 child: Container(
                   decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      colors: [
-                        Color(0xFF3949AB),
-                        Color(0xFF1E88E5),
-                      ],
-                      begin: Alignment.topCenter,
-                      end: Alignment.bottomCenter,
-                    ),
+                        gradient: AppColors.mainGradient,
                   ),
                   child: AppBar(
                     title: Text(
@@ -151,12 +148,77 @@ Future<bool> _checkIfUserIsAdmin() async {
                         fontWeight: FontWeight.w600,
                         color: Colors.white,
                       ),
+                      
                     ),
                     backgroundColor: Colors.transparent,
                     elevation: 0,
                     actions: [
+// <<<<<<< HEAD
                       // Only show notification bell for non-admin users
                       if (!isAdmin) _buildNotificationBell(),
+// =======
+                      Stack(
+                        alignment: Alignment.center,
+                        children: [
+                          IconButton(
+                            icon: const Icon(
+                              Icons.notifications_outlined,
+                              color: Colors.white,
+                              size: 28,
+                            ),
+                            onPressed: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => NotificationsPage(
+                                      userId: _auth.currentUser?.uid ?? ''),
+                                ),
+                              );
+                            },
+                          ),
+                          Positioned(
+                            right: 4, // Adjust position to align badge properly
+                            top: 8,
+                            child: StreamBuilder<DocumentSnapshot>(
+                              stream: FirebaseFirestore.instance
+                                  .collection('users')
+                                  .doc(_auth.currentUser?.uid ?? '')
+                                  .snapshots(),
+                              builder: (context, snapshot) {
+                                if (!snapshot.hasData ||
+                                    snapshot.data == null) {
+                                  return const SizedBox(); // Show nothing if no data
+                                }
+                                final data = snapshot.data!.data()
+                                    as Map<String, dynamic>;
+                                final unreadCount =
+                                    data['newCommentsCount'] ?? 0;
+
+                                if (unreadCount == 0) {
+                                  return const SizedBox(); // Show nothing if no unread comments
+                                }
+
+                                return Container(
+                                  padding: const EdgeInsets.all(5),
+                                  decoration: BoxDecoration(
+                                    color: Colors.red,
+                                    shape: BoxShape.circle,
+                                  ),
+                                  child: Text(
+                                    '$unreadCount',
+                                    style: const TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                );
+                              },
+                            ),
+                          ),
+                        ],
+                      ),
+// >>>>>>> Anas_front
                       _buildLanguageDropdown(),
                     ],
                   ),
@@ -171,6 +233,7 @@ Future<bool> _checkIfUserIsAdmin() async {
                     selectedIndex = index;
                   });
                 },
+
                 destinations: isAdmin 
                   ? const [
                       NavigationDestination(
@@ -189,8 +252,9 @@ Future<bool> _checkIfUserIsAdmin() async {
                           icon: Icon(Iconsax.user), label: 'Profile'),
                     ],
               ),
+
             ),
-        );
+          );
   }
 
 
@@ -217,10 +281,13 @@ Future<bool> _checkIfUserIsAdmin() async {
             _buildLanguageMenuItem('fr', localizations.frenchLanguageName,
                 'assets/images/sfr.png'),
           ];
+          
         },
       ),
     );
   }
+
+  
 
   PopupMenuItem<String> _buildLanguageMenuItem(
       String languageCode, String languageName, String flagPath) {

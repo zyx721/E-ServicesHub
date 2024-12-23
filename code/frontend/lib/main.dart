@@ -108,7 +108,7 @@ class _MyAppState extends State<MyApp> {
       '/': (context) => OnboardingScreen(),
       '/login': (context) => const LoginScreen(),
       '/signup': (context) => const SignupScreen(),
-      '/navbar': (context) => NavbarPage(),
+      '/navbar': (context) => NavbarPage(initialIndex: 0),
       '/name_entry': (context) => NameEntryScreen(),
       '/verification': (context) => RealTimeDetection(cameras: widget.cameras),
       '/set-up':(context) => SetProviderProfile(),

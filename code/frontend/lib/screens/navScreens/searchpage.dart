@@ -6,7 +6,8 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:hanini_frontend/screens/services/service.dart';
 
 class SearchPage extends StatefulWidget {
-  const SearchPage({Key? key}) : super(key: key);
+  final String? serviceName;
+  const SearchPage({Key? key, this.serviceName}) : super(key: key);
 
   @override
   State<SearchPage> createState() => _SearchPageState();
@@ -44,8 +45,19 @@ class _SearchPageState extends State<SearchPage> {
   void initState() {
     super.initState();
     _searchController.addListener(_filterServices);
-    _loadServicesFromFirestore();
-    _loadLikedServices();
+    _initializeData();
+  }
+
+  Future<void> _initializeData() async {
+    await _loadServicesFromFirestore();
+    // await _loadLikedServices();
+    
+    // This is the key part that makes the search automatic
+    // Set initial search text and filter after data is loaded
+    if (widget.serviceName != null) {
+      _searchController.text = widget.serviceName!;    // Sets the search text
+      _filterServices();     // Triggers the search
+    }
   }
 
   void _loadLikedServices() async {
@@ -67,16 +79,17 @@ class _SearchPageState extends State<SearchPage> {
     }
   }
 
- Future<void> _loadServicesFromFirestore() async {
-  try {
-    final currentUserId = FirebaseAuth.instance.currentUser?.uid;
-    if (currentUserId == null) return;
+  Future<void> _loadServicesFromFirestore() async {
+    try {
+      final currentUserId = FirebaseAuth.instance.currentUser?.uid;
+      if (currentUserId == null) return;
 
-    QuerySnapshot snapshot = await FirebaseFirestore.instance
-        .collection('users')
-        .where('isProvider', isEqualTo: true)
-        .get();
+      QuerySnapshot snapshot = await FirebaseFirestore.instance
+          .collection('users')
+          .where('isProvider', isEqualTo: true)
+          .get();
 
+// <<<<<<< HEAD
     final fetchedServices = snapshot.docs
         .where((doc) => doc.id != currentUserId) // Exclude current user
         .map((doc) {
@@ -98,15 +111,29 @@ class _SearchPageState extends State<SearchPage> {
         'selectedWorkChoices': data?['selectedWorkChoices'] ?? [], // Add selectedWorkChoices
       };
     }).toList();
+// =======
+//       final fetchedServices = snapshot.docs
+//           .where((doc) => doc.id != currentUserId)
+//           .map((doc) {
+//         final data = doc.data() as Map<String, dynamic>?;
+//         return {
+//           'uid': doc.id,
+//           'name': data?['name'] ?? 'Unknown',
+//           'profession': data?['basicInfo']?['profession'] ?? 'Not specified',
+//           'photoURL': data?['photoURL'] ?? '',
+//           'rating': (data?['rating'] is num) ? (data?['rating'] as num).toDouble() : 0.0,
+//         };
+//       }).toList();
+// >>>>>>> Anas_front
 
-    setState(() {
-      services = fetchedServices;
-      filteredServices = services;
-    });
-  } catch (e) {
-    debugPrint("Error fetching services: $e");
+      setState(() {
+        services = fetchedServices;
+        filteredServices = services;
+      });
+    } catch (e) {
+      debugPrint("Error fetching services: $e");
+    }
   }
-}
 
   void toggleFavorite(Map<String, dynamic> service) async {
     final userId = FirebaseAuth.instance.currentUser?.uid;
@@ -334,7 +361,7 @@ class _SearchPageState extends State<SearchPage> {
                 itemBuilder: (context, index) {
                   final service = filteredServices[index];
                   final isFavorite = likedServiceIds.contains(service['uid']);
-                  return _buildServiceItem(service, isFavorite,service['uid']);
+                  return _buildServiceItem(service, isFavorite, service['uid']);
                 },
               ),
             ),
@@ -410,15 +437,15 @@ class _SearchPageState extends State<SearchPage> {
     );
   }
 
-  Widget _buildServiceItem(Map<String, dynamic> service, bool isFavorite,String serviceId) {
+  Widget _buildServiceItem(Map<String, dynamic> service, bool isFavorite, String serviceId) {
     return GestureDetector(
       onTap: () {
-            Navigator.push(
-      context, 
-      MaterialPageRoute(
-        builder: (context) => ServiceProviderFullProfile(providerId: serviceId, ),
-      ),
-    );
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => ServiceProviderFullProfile(providerId: serviceId),
+          ),
+        );
       },
       child: Card(
         shape: RoundedRectangleBorder(
@@ -494,5 +521,11 @@ class _SearchPageState extends State<SearchPage> {
         ),
       ),
     );
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
   }
 }

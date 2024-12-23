@@ -1,13 +1,14 @@
-flutter:
-  assets:
-    - assets/images/onboarding1.png
-    - assets/images/onboarding2.png
-    - assets/images/onboarding3.png
-    - assets/images/profile_picture.png
-    - assets/images/service(1).png  
-    - assets/images/service(2).png
-    - assets/images/service(3).png
-    - assets/images/service(4).png
-    - assets/images/service(5).png
-    - assets/images/service(6).png
+# flutter:
+#   assets:
+#     - assets/services_icon/car_repair.svg
+#     - assets/images/onboarding1.png
+#     - assets/images/onboarding2.png
+#     - assets/images/onboarding3.png
+#     - assets/images/profile_picture.png
+#     - assets/images/service(1).png  
+#     - assets/images/service(2).png
+#     - assets/images/service(3).png
+#     - assets/images/service(4).png
+#     - assets/images/service(5).png
+#     - assets/images/service(6).png
     
