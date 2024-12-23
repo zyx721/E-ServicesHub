@@ -1,6 +1,91 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:flutter/services.dart';
+import 'package:flutter/cupertino.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
+import 'package:googleapis_auth/auth_io.dart' as auth;
+
+
+// Add this method to fetch device token
+Future<String?> _getDeviceToken(String userId) async {
+  try {
+    final userDoc = await FirebaseFirestore.instance
+        .collection('users')
+        .doc(userId)
+        .get();
+    return userDoc.data()?['deviceToken'] as String?;
+  } catch (e) {
+    print('Error fetching device token: $e');
+    return null;
+  }
+}
+
+class PushNotificationService {
+  static Future<String> getAccessToken() async {
+    // Load the service account JSON
+    final serviceAccountJson =await rootBundle.loadString(
+        'assets/credentials/test.json'
+      );
+
+    // Define the required scopes
+    List<String> scopes = [
+      "https://www.googleapis.com/auth/firebase.database",
+      "https://www.googleapis.com/auth/firebase.messaging"
+    ];
+
+    // Create a client using the service account credentials
+    final auth.ServiceAccountCredentials credentials =
+        auth.ServiceAccountCredentials.fromJson(serviceAccountJson);
+
+    final auth.AuthClient client =
+        await auth.clientViaServiceAccount(credentials, scopes);
+
+    // Retrieve the access token
+    final String accessToken = client.credentials.accessToken.data;
+
+    // Close the client to avoid resource leaks
+    client.close();
+
+    return accessToken;
+  }
+
+  static Future<void> sendNotification(
+      String deviceToken, String title, String body, Map<String, dynamic> data) async {
+    final String serverKey = await getAccessToken();
+    String endpointFirebaseCloudMessaging =
+        'https://fcm.googleapis.com/v1/projects/hanini-2024/messages:send';
+
+    final Map<String, dynamic> message = {
+      'message': {
+        'token': deviceToken,
+        'notification': {
+          'title': title,
+          'body': body,
+        },
+        'data': data,
+      }
+    };
+
+    final http.Response response = await http.post(
+      Uri.parse(endpointFirebaseCloudMessaging),
+      headers: <String, String>{
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer $serverKey',
+      },
+      body: jsonEncode(message),
+    );
+
+    if (response.statusCode == 200) {
+      print('Notification sent successfully');
+    } else {
+      print('Failed to send notification');
+      print('Response: ${response.body}');
+    }
+  }
+}
+
 
 class ManualVerificationScreen extends StatelessWidget {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
@@ -167,6 +252,21 @@ class ManualVerificationScreen extends StatelessWidget {
           .collection('verification_requests')
           .doc(requestId)
           .delete();
+
+      // Send notification
+    final deviceToken = await _getDeviceToken(userId);
+    if (deviceToken != null) {
+      await PushNotificationService.sendNotification(
+        deviceToken,
+        'Verification Successful',
+        'Your account has been successfully verified! You now have full access to all features.',
+        {
+          'type': 'verification',
+          'status': 'success',
+          'timestamp': DateTime.now().toIso8601String(),
+        },
+      );
+      }
       
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('User verified successfully')),
@@ -192,7 +292,22 @@ class ManualVerificationScreen extends StatelessWidget {
           .collection('verification_requests')
           .doc(requestId)
           .delete();
-      
+
+
+    final deviceToken = await _getDeviceToken(userId);
+    if (deviceToken != null) {
+      await PushNotificationService.sendNotification(
+        deviceToken,
+        'Verification Update',
+        'Your verification request was not approved. Please ensure all submitted documents meet our requirements and try again.',
+        {
+          'type': 'verification',
+          'status': 'rejected',
+          'timestamp': DateTime.now().toIso8601String(),
+        },
+      );
+      }
+
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Request rejected')),
       );
@@ -493,7 +608,7 @@ Widget _buildActionButtons(BuildContext context, String requestId, Map<String, d
         onPressed: () => _rejectUser(
           context,
           requestId,
-          requestData['userId'] as String,
+          requestData['userId'] ,
         ),
         child: Text(
           'Reject Verification',
@@ -517,6 +632,21 @@ Widget _buildActionButtons(BuildContext context, String requestId, Map<String, d
           .collection('verification_requests')
           .doc(requestId)
           .delete();
+
+              // Send notification
+    final deviceToken = await _getDeviceToken(userId);
+    if (deviceToken != null) {
+      await PushNotificationService.sendNotification(
+        deviceToken,
+        'Verification Successful',
+        'Your account has been successfully verified! You now have full access to all features.',
+        {
+          'type': 'verification',
+          'status': 'success',
+          'timestamp': DateTime.now().toIso8601String(),
+        },
+      );
+      }
       Navigator.pop(context);
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('User verified successfully')),
@@ -539,6 +669,20 @@ Widget _buildActionButtons(BuildContext context, String requestId, Map<String, d
           .collection('verification_requests')
           .doc(requestId)
           .delete();
+
+              final deviceToken = await _getDeviceToken(userId);
+    if (deviceToken != null) {
+      await PushNotificationService.sendNotification(
+        deviceToken,
+        'Verification Update',
+        'Your verification request was not approved. Please ensure all submitted documents meet our requirements and try again.',
+        {
+          'type': 'verification',
+          'status': 'rejected',
+          'timestamp': DateTime.now().toIso8601String(),
+        },
+      );
+      }
       Navigator.pop(context);
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Verification request rejected')),

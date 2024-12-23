@@ -1,7 +1,96 @@
+
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
+import 'package:flutter/services.dart';
+import 'package:flutter/cupertino.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
+import 'package:googleapis_auth/auth_io.dart' as auth;
+
+
+
+
+// Add this method to fetch device token
+Future<String?> _getDeviceToken(String userId) async {
+  try {
+    final userDoc = await FirebaseFirestore.instance
+        .collection('users')
+        .doc(userId)
+        .get();
+    return userDoc.data()?['deviceToken'] as String?;
+  } catch (e) {
+    print('Error fetching device token: $e');
+    return null;
+  }
+}
+
+class PushNotificationService {
+  static Future<String> getAccessToken() async {
+    // Load the service account JSON
+    final serviceAccountJson =await rootBundle.loadString(
+        'assets/credentials/test.json'
+      );
+
+    // Define the required scopes
+    List<String> scopes = [
+      "https://www.googleapis.com/auth/firebase.database",
+      "https://www.googleapis.com/auth/firebase.messaging"
+    ];
+
+    // Create a client using the service account credentials
+    final auth.ServiceAccountCredentials credentials =
+        auth.ServiceAccountCredentials.fromJson(serviceAccountJson);
+
+    final auth.AuthClient client =
+        await auth.clientViaServiceAccount(credentials, scopes);
+
+    // Retrieve the access token
+    final String accessToken = client.credentials.accessToken.data;
+
+    // Close the client to avoid resource leaks
+    client.close();
+
+    return accessToken;
+  }
+
+  static Future<void> sendNotification(
+      String deviceToken, String title, String body, Map<String, dynamic> data) async {
+    final String serverKey = await getAccessToken();
+    String endpointFirebaseCloudMessaging =
+        'https://fcm.googleapis.com/v1/projects/hanini-2024/messages:send';
+
+    final Map<String, dynamic> message = {
+      'message': {
+        'token': deviceToken,
+        'notification': {
+          'title': title,
+          'body': body,
+        },
+        'data': data,
+      }
+    };
+
+    final http.Response response = await http.post(
+      Uri.parse(endpointFirebaseCloudMessaging),
+      headers: <String, String>{
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer $serverKey',
+      },
+      body: jsonEncode(message),
+    );
+
+    if (response.statusCode == 200) {
+      print('Notification sent successfully');
+    } else {
+      print('Failed to send notification');
+      print('Response: ${response.body}');
+    }
+  }
+}
+
+
 class NotificationsPage extends StatelessWidget {
   final String userId;
 
@@ -446,6 +535,9 @@ Future<void> _updateListingWithNegotiation(
     final String currentUserId = userId; // Current user's ID
     final String senderUid = listing['senderUid'] ?? userId;
     final String receiverUid = listing['receiverUid'] ?? userId;
+
+    final String targetUid = currentUserId == senderUid ? receiverUid : senderUid;
+    final String? targetToken = await _getDeviceToken(targetUid);
     
     final senderRef = FirebaseFirestore.instance
         .collection('users')
@@ -512,6 +604,24 @@ Future<void> _updateListingWithNegotiation(
     }
 
     await batch.commit();
+
+       // Send notification about counter offer
+    if (targetToken != null) {
+      final notificationTitle = 'New Counter Offer';
+      final notificationBody = 'You received a counter offer of DZD$newPay for "${listing['mainTitle']}"';
+      final notificationData = {
+        'type': 'counter_offer',
+        'listingId': listing['id'],
+        'newAmount': newPay
+      };
+
+      await PushNotificationService.sendNotification(
+        targetToken,
+        notificationTitle,
+        notificationBody,
+        notificationData
+      );
+    }
 
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
@@ -604,7 +714,10 @@ Future<void> _updateListingStatus(
   try {
     // Use the current userId as fallback for senderUid
     final String senderUid = listing['senderUid'] ?? userId;  // Fallback to current user
-    final String? receiverUid = listing['receiverUid'];
+    final String receiverUid = listing['receiverUid'];
+
+    final String? senderToken = await _getDeviceToken(senderUid);
+    final String? receiverToken = await _getDeviceToken(receiverUid);
     
     // Now we only need to check receiverUid since senderUid has a fallback
     if (receiverUid == null) {
@@ -669,6 +782,69 @@ Future<void> _updateListingStatus(
 
     await batch.commit();
 
+
+    // Send notifications based on status
+    String notificationTitle;
+    String notificationBody;
+    Map<String, dynamic> notificationData = {
+      'type': 'listing_update',
+      'listingId': listing['id'],
+      'status': status
+    };
+
+     switch (status.toLowerCase()) {
+      case 'active':
+        // Notify receiver
+        if (receiverToken != null) {
+          notificationTitle = 'Listing Accepted';
+          notificationBody = 'Your listing "${listing['mainTitle']}" has been accepted!';
+          await PushNotificationService.sendNotification(
+            receiverToken,
+            notificationTitle,
+            notificationBody,
+            notificationData
+          );
+        }
+        
+        // Notify sender
+        if (senderToken != null) {
+          notificationTitle = 'Listing Status Update';
+          notificationBody = 'Your offer for "${listing['mainTitle']}" has been accepted';
+          await PushNotificationService.sendNotification(
+            senderToken,
+            notificationTitle,
+            notificationBody,
+            notificationData
+          );
+        }
+        break;
+
+      case 'refused':
+        // Notify receiver
+        if (receiverToken != null) {
+          notificationTitle = 'Listing Refused';
+          notificationBody = 'Your listing "${listing['mainTitle']}" has been refused';
+          await PushNotificationService.sendNotification(
+            receiverToken,
+            notificationTitle,
+            notificationBody,
+            notificationData
+          );
+        }
+        
+        // Notify sender
+        if (senderToken != null) {
+          notificationTitle = 'Listing Status Update';
+          notificationBody = 'Your offer for "${listing['mainTitle']}" was not accepted';
+          await PushNotificationService.sendNotification(
+            senderToken,
+            notificationTitle,
+            notificationBody,
+            notificationData
+          );
+        }
+        break;
+    }
     // Success message
     String statusMessage;
     Color statusColor;
