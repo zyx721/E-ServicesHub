@@ -119,6 +119,8 @@ class _ServiceProviderProfileState extends State<ServiceProviderProfile> {
   bool isVerified = true;
   bool isLoading = true;
   double rating =0.0;
+  String wilaya ='';
+  String commune ='';
 
   final TextEditingController nameController = TextEditingController();
   final TextEditingController hourlyRateController = TextEditingController();
@@ -142,6 +144,8 @@ class _ServiceProviderProfileState extends State<ServiceProviderProfile> {
             aboutMe = data['aboutMe'] ?? 'Tell us about yourself';
             hourlyRate = data['basicInfo']['hourlyRate'] ?? '';
             profession = data['basicInfo']['profession'] ?? '';
+            wilaya = data['basicInfo']['wilaya'] ?? '';
+            commune = data['basicInfo']['commune'] ?? '';
             skills = data['skills'];
             certifications = data['certifications'];
             workExperience = data['workExperience'];
@@ -565,7 +569,7 @@ Widget build(BuildContext context) {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              buildStat(localizations.projects, '0'),
+              buildStat(commune, wilaya),
               buildStat(localizations.rating, _buildStarRating(rating)),
               buildStat(localizations.hourlyRate,
                   isEditMode ? buildHourlyRateEditor() : '$hourlyRate DZD'),

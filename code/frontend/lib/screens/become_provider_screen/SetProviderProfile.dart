@@ -10,6 +10,166 @@ import 'package:googleapis/drive/v3.dart' as drive;
 import 'package:flutter/services.dart' show rootBundle;
 import 'package:path/path.dart' as path;
 import 'package:googleapis_auth/auth_io.dart';
+import 'package:hanini_frontend/localization/algeria_cites.dart';
+
+
+
+// algeria_location_model.dart
+class AlgeriaLocation {
+  final int id;
+  final String communeNameAscii;
+  final String communeName;
+  final String dairaNameAscii;
+  final String dairaName;
+  final String wilayaCode;
+  final String wilayaNameAscii;
+  final String wilayaName;
+
+  const AlgeriaLocation({
+    required this.id,
+    required this.communeNameAscii,
+    required this.communeName,
+    required this.dairaNameAscii,
+    required this.dairaName,
+    required this.wilayaCode,
+    required this.wilayaNameAscii,
+    required this.wilayaName,
+  });
+
+  factory AlgeriaLocation.fromJson(Map<String, dynamic> json) {
+    return AlgeriaLocation(
+      id: json['id'] as int,
+      communeNameAscii: json['commune_name_ascii'] as String,
+      communeName: json['commune_name'] as String,
+      dairaNameAscii: json['daira_name_ascii'] as String,
+      dairaName: json['daira_name'] as String,
+      wilayaCode: json['wilaya_code'] as String,
+      wilayaNameAscii: json['wilaya_name_ascii'] as String,
+      wilayaName: json['wilaya_name'] as String,
+    );
+  }
+}
+
+// Convert the const data to AlgeriaLocation objects
+final List<AlgeriaLocation> algeriaLocations = algeria_cites
+    .map((json) => AlgeriaLocation.fromJson(json))
+    .toList();
+
+class LocationSelectionFields extends StatefulWidget {
+  final void Function(AlgeriaLocation?) onLocationSelected;
+  final String? initialWilayaCode;
+  final int? initialCommuneId;
+
+  const LocationSelectionFields({
+    Key? key,
+    required this.onLocationSelected,
+    this.initialWilayaCode,
+    this.initialCommuneId,
+  }) : super(key: key);
+
+  @override
+  State<LocationSelectionFields> createState() => _LocationSelectionFieldsState();
+}
+
+class _LocationSelectionFieldsState extends State<LocationSelectionFields> {
+  String? selectedWilayaCode;
+  int? selectedCommuneId;
+  
+  // Computed properties with proper uniqueness handling
+  Map<String, List<AlgeriaLocation>> get locationsByWilaya {
+    final map = <String, List<AlgeriaLocation>>{};
+    for (var location in algeriaLocations) {
+      if (!map.containsKey(location.wilayaCode)) {
+        map[location.wilayaCode] = [];
+      }
+      map[location.wilayaCode]!.add(location);
+    }
+    return map;
+  }
+
+  // Get unique wilayas with their names
+  List<MapEntry<String, String>> get uniqueWilayas {
+    final wilayaMap = <String, String>{};
+    for (var location in algeriaLocations) {
+      wilayaMap.putIfAbsent(location.wilayaCode, () => location.wilayaNameAscii);
+    }
+    final wilayas = wilayaMap.entries.toList()
+      ..sort((a, b) => a.value.compareTo(b.value));
+    return wilayas;
+  }
+
+  List<AlgeriaLocation> get communes {
+    return selectedWilayaCode != null 
+        ? locationsByWilaya[selectedWilayaCode] ?? []
+        : [];
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    selectedWilayaCode = widget.initialWilayaCode;
+    selectedCommuneId = widget.initialCommuneId;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      children: [
+        // Wilaya Dropdown
+        DropdownButtonFormField<String>(
+          value: selectedWilayaCode,
+          decoration: InputDecoration(
+            labelText: 'Wilaya',
+            border: const OutlineInputBorder(),
+            labelStyle: GoogleFonts.poppins(),
+          ),
+          items: uniqueWilayas.map((wilaya) {
+            return DropdownMenuItem<String>(
+              value: wilaya.key,
+              child: Text(wilaya.value, style: GoogleFonts.poppins()),
+            );
+          }).toList(),
+          onChanged: (String? newValue) {
+            setState(() {
+              selectedWilayaCode = newValue;
+              selectedCommuneId = null;
+              widget.onLocationSelected(null);
+            });
+          },
+          validator: (value) => value == null ? 'Please select a wilaya' : null,
+        ),
+        const SizedBox(height: 10),
+        // Commune Dropdown
+        DropdownButtonFormField<int>(
+          value: selectedCommuneId,
+          decoration: InputDecoration(
+            labelText: 'Commune',
+            border: const OutlineInputBorder(),
+            labelStyle: GoogleFonts.poppins(),
+          ),
+          items: communes.map((commune) {
+            return DropdownMenuItem<int>(
+              value: commune.id,
+              child: Text(commune.communeNameAscii, style: GoogleFonts.poppins()),
+            );
+          }).toList(),
+          onChanged: selectedWilayaCode == null
+              ? null
+              : (int? newValue) {
+                  setState(() {
+                    selectedCommuneId = newValue;
+                    final selectedLocation = communes.firstWhere(
+                      (location) => location.id == newValue,
+                    );
+                    widget.onLocationSelected(selectedLocation);
+                  });
+                },
+          validator: (value) => value == null ? 'Please select a commune' : null,
+        ),
+      ],
+    );
+  }
+}
 
 class GoogleDriveService {
   static const String _folderID = "1b517UTgjLJfsjyH2dByEPYZDg4cgwssQ"; // Your folder ID
@@ -98,6 +258,9 @@ class SetProviderProfile extends StatefulWidget {
 class _ServiceProviderProfileState extends State<SetProviderProfile> {
   final _driveService = GoogleDriveService();
   final _formKey = GlobalKey<FormState>();
+   // Add these new variables to track selected location
+  String? selectedWilaya;
+  String? selectedCommune;
 
     // Track temporary uploads that haven't been saved to profile yet
   List<String> _temporaryUploads = [];
@@ -259,18 +422,18 @@ class _ServiceProviderProfileState extends State<SetProviderProfile> {
           'basicInfo': {
             'profession': _professionController.text,
             'phone': _phoneController.text,
-            'address': _addressController.text,
+            'wilaya': selectedWilaya,  // Store wilaya separately
+            'commune': selectedCommune, // Store commune separately
             'hourlyRate': _hourlyRateController.text,
           },
           'skills': _skills,
           'certifications': _certifications,
           'workExperience': _workExperience,
-          'portfolioImages': portfolioImages, // Save all current portfolio images
+          'portfolioImages': portfolioImages,
           'rating': 0.0,
           'isProvider': true,
           'aboutMe': _descriptionController.text,
         };
-
         // Update the Firestore document
         await userDoc.update(profileData);
         
@@ -490,17 +653,18 @@ Future<void> pickNewProfilePicture() async {
             : null,
         ),
         const SizedBox(height: 10),
-        TextFormField(
-          controller: _addressController,
-          decoration: InputDecoration(
-            labelText: 'Address',
-            border: OutlineInputBorder(),
-            labelStyle: GoogleFonts.poppins(),
-          ),
-          validator: (value) => value!.isEmpty 
-            ? 'Please enter your address' 
-            : null,
+       const SizedBox(height: 10),
+        LocationSelectionFields(
+          onLocationSelected: (location) {
+            if (location != null) {
+              setState(() {
+                selectedWilaya = location.wilayaNameAscii;
+                selectedCommune = location.communeNameAscii;
+              });
+            }
+          },
         ),
+      const SizedBox(height: 10),
         const SizedBox(height: 10),
         TextFormField(
           controller: _hourlyRateController,

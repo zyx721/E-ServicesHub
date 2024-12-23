@@ -190,7 +190,7 @@ Future<void> _signup() async {
       _isLoading = false;
     });
   }
-
+  
 
 Widget _buildSignUpButton(BuildContext context) {
   return SlideTransition(
