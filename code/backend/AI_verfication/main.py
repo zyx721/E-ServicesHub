@@ -407,11 +407,11 @@ def extract_names(extracted_text):
         name_components = name_pattern.split('<<')
         if len(name_components) >= 2:
             last_name = name_components[0]
-            first_name = name_components[1]
+            first_name = ' '.join(name_components[1:])
 
             # Clean the names (remove any non-alphabetic characters)
             last_name = ''.join(c for c in last_name if c.isalpha()).upper()
-            first_name = ''.join(c for c in first_name if c.isalpha()).upper()
+            first_name = ' '.join(''.join(c for c in part if c.isalpha()).upper() for part in first_name.split())
 
             # Additional validation
             if len(last_name) < 2 or len(first_name) < 2:
