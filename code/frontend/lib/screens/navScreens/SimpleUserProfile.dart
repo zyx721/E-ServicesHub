@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:hanini_frontend/localization/app_localization.dart';
+import 'package:hanini_frontend/models/colors.dart';
 import 'package:hanini_frontend/screens/become_provider_screen/onboarding2.dart';
 
 class SimpleUserProfile extends StatefulWidget {
@@ -99,11 +100,11 @@ class _SimpleUserProfileState extends State<SimpleUserProfile> {
               ],
             ),
             Positioned(
-              bottom: 40, // Adjust this value to fine-tune the position
+              top: 400, // Adjust this value to fine-tune the position
               right: 16, // Adjust this value to fine-tune the position
               child: FloatingActionButton(
                 onPressed: toggleEditMode,
-                backgroundColor: const Color.fromARGB(255, 43, 133, 207),
+                backgroundColor: const Color.fromARGB(255, 0, 0, 0),
                 child: Icon(isEditMode ? Icons.check : Icons.edit),
                 tooltip: isEditMode
                     ? localization?.save
@@ -232,14 +233,7 @@ class _SimpleUserProfileState extends State<SimpleUserProfile> {
           width: MediaQuery.of(context).size.width * 0.8,
           padding: const EdgeInsets.symmetric(vertical: 16),
           decoration: BoxDecoration(
-            gradient: const LinearGradient(
-              colors: [
-                Color(0xFF3949AB),
-                Color(0xFF1E88E5),
-              ],
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-            ),
+            gradient: AppColors.mainGradient,
             borderRadius: BorderRadius.circular(30),
             boxShadow: [
               BoxShadow(

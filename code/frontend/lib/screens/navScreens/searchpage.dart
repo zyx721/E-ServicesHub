@@ -1,8 +1,10 @@
 import 'dart:math';
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/svg.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:hanini_frontend/models/colors.dart';
 import 'package:hanini_frontend/screens/services/service.dart';
 
 class SearchPage extends StatefulWidget {
@@ -340,13 +342,16 @@ class _SearchPageState extends State<SearchPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: Padding(
-        padding: const EdgeInsets.all(20.0),
-        child: Column(
+      body:
+       Padding(
+        padding: const EdgeInsets.only(left: 20, right: 20),
+        child:
+         Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            const SizedBox(height: 10),
             _buildSearchBar(),
-            const SizedBox(height: 20),
+            const SizedBox(height: 10),
             _buildAppliedFilters(),
             const SizedBox(height: 20),
             Expanded(
@@ -371,28 +376,68 @@ class _SearchPageState extends State<SearchPage> {
     );
   }
 
+
   Widget _buildSearchBar() {
-    return Row(
-      children: [
-        Expanded(
-          child: TextField(
-            controller: _searchController,
-            decoration: InputDecoration(
-              hintText: "Search services...",
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(30),
-              ),
-              prefixIcon: const Icon(Icons.search, color: Colors.blue),
-              suffixIcon: IconButton(
-                icon: const Icon(Icons.filter_list, color: Colors.blue),
-                onPressed: _showFilterDialog,
+    return Container(
+      margin: EdgeInsets.only(top: 10, left: 18, right: 18),
+      decoration: BoxDecoration(
+        boxShadow: [
+          BoxShadow(
+            color: Color(0xff1d1617).withOpacity(0.11),
+            blurRadius: 40,
+            spreadRadius: 0,
+          )
+        ],
+      ),
+      child: TextField(
+        controller: _searchController,
+        decoration: InputDecoration(
+          filled: true,
+          fillColor: Colors.white,
+          contentPadding: EdgeInsets.all(15),
+          hintText: 'Search services...',
+          hintStyle: TextStyle(
+            color: const Color.fromARGB(153, 170, 71, 188),
+            fontSize: 14,
+          ),
+          prefixIcon: Padding(
+            padding: const EdgeInsets.all(12.0),
+            child: SvgPicture.asset('assets/search_icons/Search.svg'), // Replace with your own asset
+          ),
+          suffixIcon: Container(
+            width: 100,
+            child: IntrinsicHeight(
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.end,
+                children: [
+                  VerticalDivider(
+                    color: Colors.black,
+                    indent: 10,
+                    endIndent: 10,
+                    thickness: 0.1,
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.all(10.0),
+                    child: GestureDetector(
+                      onTap: _showFilterDialog, // Trigger filter dialog on press
+                      child: SvgPicture.asset(
+                        'assets/search_icons/Filter.svg', // Replace with your own asset
+                      ),
+                    ),
+                  ),
+                ],
               ),
             ),
           ),
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(15),
+            borderSide: BorderSide.none,
+          ),
         ),
-      ],
+      ),
     );
   }
+
 
   Widget _buildAppliedFilters() {
     List<Widget> filters = [];
