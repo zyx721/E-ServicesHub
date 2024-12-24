@@ -112,6 +112,10 @@ class _ServiceProviderFullProfileState extends State<ServiceProviderFullProfile>
   double rating =0.0;
   String wilaya ='';
   String commune ='';
+    String wilayaArabic ="";
+  String wilayaLatin = "";
+  String communeArabic ="";
+  String communeLatin ="";
 
   // Fetch provider data from Firestore using providerId
   Future<void> fetchProviderData() async {
@@ -134,6 +138,11 @@ class _ServiceProviderFullProfileState extends State<ServiceProviderFullProfile>
           commune = data['basicInfo']['commune'] ?? '';
           certifications = data['certifications'];
           workExperience = data['workExperience'];
+          // Fetch both Arabic and Latin versions of wilaya and commune
+          wilayaArabic = data['basicInfo']['wilaya_arabic'] ?? '';
+          wilayaLatin = data['basicInfo']['wilaya_ascii'] ?? '';
+          communeArabic = data['basicInfo']['commune_arabic'] ?? '';
+          communeLatin = data['basicInfo']['commune_ascii'] ?? '';
           portfolioImages = List<String>.from(data['portfolioImages'] ?? []);
           selectedWorkChoices = data['selectedWorkChoices'] ?? [];
           rating = (data['rating'] ?? 0.0).toDouble();
@@ -570,6 +579,10 @@ Widget buildProfileTab() {
 }
 
 Widget buildTopProfileInfo() {
+       final currentLocale = Localizations.localeOf(context).languageCode;
+
+     final displayWilaya = currentLocale == 'ar' ? wilayaArabic : wilayaLatin;
+    final displayCommune = currentLocale == 'ar' ? communeArabic : communeLatin;
   return Column(
     crossAxisAlignment: CrossAxisAlignment.center,
     children: [
@@ -602,7 +615,7 @@ Widget buildTopProfileInfo() {
         child: Row(   
           mainAxisAlignment: MainAxisAlignment.spaceAround, // Center items evenly
           children: [
-            buildStat(commune, wilaya),
+            buildStat(displayCommune, displayWilaya),
             buildStat('Rating', _buildStarRating(rating)),
             buildStat('Hourly Rate', isEditMode ? buildHourlyRateEditor() : '$hourlyRate DZD',
             ),

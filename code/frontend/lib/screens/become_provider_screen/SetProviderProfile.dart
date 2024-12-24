@@ -121,63 +121,71 @@ class _LocationSelectionFieldsState extends State<LocationSelectionFields> {
     return Column(
       children: [
         // Wilaya Dropdown
-        DropdownButtonFormField<String>(
-          value: selectedWilayaCode,
-          decoration: InputDecoration(
-            labelText: localizations.wilaya,
-            border: const OutlineInputBorder(),
-            labelStyle: GoogleFonts.poppins(),
-          ),
-          items: uniqueWilayas.map((wilaya) {
-            return DropdownMenuItem<String>(
-              value: wilaya.key,
-              child: Text(wilaya.value, style: GoogleFonts.poppins()),
-            );
-          }).toList(),
-          onChanged: (String? newValue) {
-            setState(() {
-              selectedWilayaCode = newValue;
-              selectedCommuneId = null;
-              widget.onLocationSelected(null);
-            });
-          },
-          validator: (value) =>
-              value == null ? localizations.wilayaRequiredError : null,
-        ),
+   DropdownButtonFormField<String>(
+  value: selectedWilayaCode,
+  decoration: InputDecoration(
+    labelText: localizations.wilaya,
+    border: const OutlineInputBorder(),
+    labelStyle: GoogleFonts.poppins(),
+  ),
+  items: uniqueWilayas.map((wilaya) {
+    return DropdownMenuItem<String>(
+      value: wilaya.key, // wilayaCode
+      child: Text(
+        wilaya.value, // The name of the wilaya based on the locale
+        style: GoogleFonts.poppins(),
+      ),
+    );
+  }).toList(),
+  onChanged: (String? newValue) {
+    setState(() {
+      selectedWilayaCode = newValue;
+      selectedCommuneId = null; // Reset commune selection
+      widget.onLocationSelected(null);
+    });
+  },
+  validator: (value) => 
+      value == null ? localizations.wilayaRequiredError : null,
+),
+
         const SizedBox(height: 10),
         // Commune Dropdown
-        DropdownButtonFormField<int>(
-          value: selectedCommuneId,
-          decoration: InputDecoration(
-            labelText: localizations.commune,
-            border: const OutlineInputBorder(),
-            labelStyle: GoogleFonts.poppins(),
-          ),
-          items: communes.map((commune) {
-            final isArabic =
-                Localizations.localeOf(context).languageCode == 'ar';
-            return DropdownMenuItem<int>(
-              value: commune.id,
-              child: Text(
-                isArabic ? commune.communeName : commune.communeNameAscii,
-                style: GoogleFonts.poppins(),
-              ),
+      DropdownButtonFormField<int>(
+  value: selectedCommuneId,
+  decoration: InputDecoration(
+    labelText: localizations.commune,
+    border: const OutlineInputBorder(),
+    labelStyle: GoogleFonts.poppins(),
+  ),
+  items: communes.map((commune) {
+    return DropdownMenuItem<int>(
+      value: commune.id,
+      child: Text(
+        // Display based on current locale
+        Localizations.localeOf(context).languageCode == 'ar'
+            ? commune.communeName
+            : commune.communeNameAscii,
+        style: GoogleFonts.poppins(),
+      ),
+    );
+  }).toList(),
+  onChanged: selectedWilayaCode == null
+      ? null
+      : (int? newValue) {
+          setState(() {
+            selectedCommuneId = newValue;
+            final selectedLocation = communes.firstWhere(
+              (location) => location.id == newValue,
             );
-          }).toList(),
-          onChanged: selectedWilayaCode == null
-              ? null
-              : (int? newValue) {
-                  setState(() {
-                    selectedCommuneId = newValue;
-                    final selectedLocation = communes.firstWhere(
-                      (location) => location.id == newValue,
-                    );
-                    widget.onLocationSelected(selectedLocation);
-                  });
-                },
-          validator: (value) =>
-              value == null ? localizations.communeRequiredError : null,
-        ),
+
+            // Pass both Arabic and Latin names to the parent
+            widget.onLocationSelected(selectedLocation);
+          });
+        },
+  validator: (value) =>
+      value == null ? localizations.communeRequiredError : null,
+),
+
       ],
     );
   }
@@ -302,6 +310,12 @@ class _ServiceProviderProfileState extends State<SetProviderProfile> {
   var userPhotoUrl = '';
   String _originalFirstName = "";
   String _originalLastName = "";
+
+
+  String selectedWilayaAscii ="";
+  String selectedWilayaArabic="";
+  String selectedCommuneAscii ="";
+  String selectedCommuneArabic="";
 
   @override
   void initState() {
@@ -439,9 +453,10 @@ class _ServiceProviderProfileState extends State<SetProviderProfile> {
           'basicInfo': {
             'profession': _professionController.text,
             'phone': _phoneController.text,
-            'wilaya': selectedWilaya, // Store wilaya separately
-            'commune': selectedCommune, // Store commune separately
-
+            'wilaya': selectedWilayaAscii, // Latin name
+            'wilaya_arabic': selectedWilayaArabic, // Arabic name
+            'commune': selectedCommuneAscii, // Latin name
+            'commune_arabic': selectedCommuneArabic, // Arabic name
             'hourlyRate': _hourlyRateController.text,
           },
           'skills': _skills,
@@ -826,16 +841,19 @@ Future<void> pickNewProfilePicture() async {
         ),
         const SizedBox(height: 10),
         const SizedBox(height: 10),
-        LocationSelectionFields(
-          onLocationSelected: (location) {
-            if (location != null) {
-              setState(() {
-                selectedWilaya = location.wilayaNameAscii;
-                selectedCommune = location.communeNameAscii;
-              });
-            }
-          },
-        ),
+LocationSelectionFields(
+  onLocationSelected: (location) {
+    if (location != null) {
+      setState(() {
+        selectedWilayaAscii = location.wilayaNameAscii; // Latin
+        selectedWilayaArabic = location.wilayaName;    // Arabic
+        selectedCommuneAscii = location.communeNameAscii; // Latin
+        selectedCommuneArabic = location.communeName;     // Arabic
+      });
+    }
+  },
+),
+
         const SizedBox(height: 10),
         const SizedBox(height: 10),
         TextFormField(
