@@ -92,7 +92,8 @@ class _LocationSelectionFieldsState extends State<LocationSelectionFields> {
     for (var location in algeriaLocations) {
       // if language is Arabic, use Arabic names
       final isArabic = Localizations.localeOf(context).languageCode == 'ar';
-      wilayaMap.putIfAbsent(location.wilayaCode, () => isArabic ? location.wilayaName : location.wilayaNameAscii);
+      wilayaMap.putIfAbsent(location.wilayaCode,
+          () => isArabic ? location.wilayaName : location.wilayaNameAscii);
     }
     final wilayas = wilayaMap.entries.toList()
       ..sort((a, b) => a.value.compareTo(b.value));
@@ -161,7 +162,8 @@ class _LocationSelectionFieldsState extends State<LocationSelectionFields> {
             labelStyle: GoogleFonts.poppins(),
           ),
           items: communes.map((commune) {
-            final isArabic = Localizations.localeOf(context).languageCode == 'ar';
+            final isArabic =
+                Localizations.localeOf(context).languageCode == 'ar';
             return DropdownMenuItem<int>(
               value: commune.id,
               child: Text(

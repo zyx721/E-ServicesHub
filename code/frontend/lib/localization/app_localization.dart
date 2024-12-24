@@ -85,6 +85,29 @@ class AppLocalizations {
       ? "أصبح مقدم الخدمة"
       : (isFrench ? "Devenir fournisseur" : "Become a Provider");
 
+  // step2Button
+  String get step2Button =>
+      isArabic ? "اخر خطوة" : (isFrench ? "Dernière étape" : "Final Step");
+
+  // waitingButton
+  String get waitingButton => isArabic
+      ? "يتم التحقق من هويتك"
+      : (isFrench
+          ? "Votre identité est en cours de vérification"
+          : "Your identity is being verified");
+
+  // waitingMessage "Wait For Manual Verifcation"
+  String get waitingMessage => isArabic
+      ? "انتظر التحقق اليدوي"
+      : (isFrench
+          ? "Attendez la vérification manuelle"
+          : "Wait For Manual Verifcation");
+
+// verificationButton "Identity Verification"
+  String get verificationButton => isArabic
+      ? " 2 التحقق من الهوية "
+      : (isFrench ? "Vérification d'identité  2 " : "Identity Verification 2 ");
+
   // Common Buttons
   String get save => isArabic ? "حفظ" : (isFrench ? "Enregistrer" : "Save");
   String get cancel => isArabic ? "إلغاء" : (isFrench ? "Annuler" : "Cancel");
@@ -98,6 +121,8 @@ class AppLocalizations {
       ? "حدث خطأ"
       : (isFrench ? "Une erreur est survenue" : "An error occurred");
 
+
+// 'No user logged in'
   // Okay Messages
   String get okay => isArabic ? "حسنا" : (isFrench ? "D'accord" : "OK");
 

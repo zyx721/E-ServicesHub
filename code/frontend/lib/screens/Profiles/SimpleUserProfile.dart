@@ -10,24 +10,23 @@ import 'dart:io';
 import 'package:path/path.dart' as path;
 import 'package:googleapis_auth/auth_io.dart';
 
-
-
 class GoogleDriveService {
-  static const String _folderID = "1b517UTgjLJfsjyH2dByEPYZDg4cgwssQ"; // Your folder ID
+  static const String _folderID =
+      "1b517UTgjLJfsjyH2dByEPYZDg4cgwssQ"; // Your folder ID
 
   Future<drive.DriveApi> getDriveApi() async {
     try {
       // Load credentials from assets
-      final String credentials = await rootBundle.loadString(
-        'assets/credentials/service_account.json'
-      );
-      
-      final accountCredentials = ServiceAccountCredentials.fromJson(credentials);
+      final String credentials = await rootBundle
+          .loadString('assets/credentials/service_account.json');
+
+      final accountCredentials =
+          ServiceAccountCredentials.fromJson(credentials);
       final client = await clientViaServiceAccount(
         accountCredentials,
         [drive.DriveApi.driveScope],
       );
-      
+
       return drive.DriveApi(client);
     } catch (e) {
       throw Exception('Failed to initialize Drive API: $e');
@@ -71,11 +70,11 @@ class GoogleDriveService {
   Future<void> deleteFile(String fileUrl) async {
     try {
       final driveApi = await getDriveApi();
-      
+
       // Extract file ID from URL
       final uri = Uri.parse(fileUrl);
       final fileId = uri.queryParameters['id'];
-      
+
       if (fileId == null) {
         throw Exception('Invalid file URL');
       }
@@ -87,7 +86,6 @@ class GoogleDriveService {
     }
   }
 }
-
 
 class SimpleUserProfile extends StatefulWidget {
   const SimpleUserProfile({Key? key}) : super(key: key);
@@ -168,18 +166,17 @@ class _SimpleUserProfileState extends State<SimpleUserProfile> {
     }
   }
 
-  
-
   @override
   Widget build(BuildContext context) {
-    final AppLocalizations? localization = AppLocalizations.of(context); // Get localization
+    final AppLocalizations? localization =
+        AppLocalizations.of(context); // Get localization
 
     return Scaffold(
       body: isLoading
           ? const Center(child: CircularProgressIndicator())
           : Stack(
-            children: [
-              ListView(
+              children: [
+                ListView(
                   padding: EdgeInsets.zero,
                   children: [
                     const SizedBox(height: 50),
@@ -190,18 +187,17 @@ class _SimpleUserProfileState extends State<SimpleUserProfile> {
                     buildBecomeProviderButton(localization),
                   ],
                 ),
-                              Positioned(
-                top: 40, // Adjust this value to fine-tune the position
-                right: 16, // Adjust this value to fine-tune the position
-                child: FloatingActionButton(
-                  onPressed: toggleEditMode,
-                  child: Icon(isEditMode ? Icons.check : Icons.edit),
-                  backgroundColor: const Color.fromARGB(255, 43, 133, 207),
+                Positioned(
+                  top: 40, // Adjust this value to fine-tune the position
+                  right: 16, // Adjust this value to fine-tune the position
+                  child: FloatingActionButton(
+                    onPressed: toggleEditMode,
+                    child: Icon(isEditMode ? Icons.check : Icons.edit),
+                    backgroundColor: const Color.fromARGB(255, 43, 133, 207),
+                  ),
                 ),
-              ),
-            ],
-          ),
-
+              ],
+            ),
     );
   }
 
@@ -217,102 +213,99 @@ class _SimpleUserProfileState extends State<SimpleUserProfile> {
     });
   }
 
+  Future<void> pickNewProfilePicture() async {
+    try {
+      final ImagePicker picker = ImagePicker();
+      final XFile? pickedFile =
+          await picker.pickImage(source: ImageSource.gallery);
 
+      if (pickedFile == null) return;
 
-Future<void> pickNewProfilePicture() async {
-  try {
-    final ImagePicker picker = ImagePicker();
-    final XFile? pickedFile = await picker.pickImage(source: ImageSource.gallery);
-    
-    if (pickedFile == null) return;
+      // Show loading indicator
+      if (mounted) {
+        showDialog(
+          context: context,
+          barrierDismissible: false,
+          builder: (BuildContext context) {
+            return const Center(child: CircularProgressIndicator());
+          },
+        );
+      }
 
-    // Show loading indicator
-    if (mounted) {
-      showDialog(
-        context: context,
-        barrierDismissible: false,
-        builder: (BuildContext context) {
-          return const Center(child: CircularProgressIndicator());
-        },
-      );
-    }
+      // Upload new image to Drive
+      final file = File(pickedFile.path);
+      final fileUrl = await _driveService.uploadFile(file);
 
-    // Upload new image to Drive
-    final file = File(pickedFile.path);
-    final fileUrl = await _driveService.uploadFile(file);
+      // Get current user
+      final User? user = _auth.currentUser;
+      if (user == null) throw Exception('No user logged in');
 
-    // Get current user
-    final User? user = _auth.currentUser;
-    if (user == null) throw Exception('No user logged in');
+      // Delete old photo from Drive if it exists
+      if (userPhotoUrl.startsWith('https://drive.google.com')) {
+        try {
+          await _driveService.deleteFile(userPhotoUrl);
+        } catch (e) {
+          debugPrint('Error deleting old profile picture: $e');
+        }
+      }
 
-    // Delete old photo from Drive if it exists
-    if (userPhotoUrl.startsWith('https://drive.google.com')) {
-      try {
-        await _driveService.deleteFile(userPhotoUrl);
-      } catch (e) {
-        debugPrint('Error deleting old profile picture: $e');
+      // Update Firestore and local state
+      await _firestore.collection('users').doc(user.uid).update({
+        'photoURL': fileUrl,
+      });
+
+      setState(() {
+        userPhotoUrl = fileUrl;
+      });
+
+      // Close loading indicator
+      if (mounted) {
+        Navigator.of(context).pop();
+      }
+    } catch (e) {
+      debugPrint('Error updating profile picture: $e');
+      if (mounted) {
+        Navigator.of(context).pop(); // Close loading indicator
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Failed to update profile picture')),
+        );
       }
     }
-
-    // Update Firestore and local state
-    await _firestore.collection('users').doc(user.uid).update({
-      'photoURL': fileUrl,
-    });
-
-    setState(() {
-      userPhotoUrl = fileUrl;
-    });
-
-    // Close loading indicator
-    if (mounted) {
-      Navigator.of(context).pop();
-    }
-
-  } catch (e) {
-    debugPrint('Error updating profile picture: $e');
-    if (mounted) {
-      Navigator.of(context).pop(); // Close loading indicator
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Failed to update profile picture')),
-      );
-    }
   }
-}
-
 
   Widget buildTop(AppLocalizations localization) {
     return Column(
       children: [
         Stack(
-            alignment: Alignment.bottomRight,
-            children: [
-              CircleAvatar(
-                radius: profileHeight / 2,
-                backgroundColor: Colors.grey.shade200,
-                backgroundImage: userPhotoUrl.isNotEmpty
-                    ? NetworkImage(userPhotoUrl) as ImageProvider
-                    : const AssetImage('assets/images/default_profile.png'),
-              ),
-              if (isEditMode)
-                GestureDetector(
-                  onTap: () {
-                    pickNewProfilePicture();
-                  },
-                  child: Container(
-                    padding: const EdgeInsets.all(6),
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      color: Colors.blue,
-                    ),
-                    child: const Icon(
-                      Icons.camera_alt,
-                      size: 20,
-                      color: Colors.white,
-                    ),
+          alignment: Alignment.bottomRight,
+          children: [
+            CircleAvatar(
+              radius: profileHeight / 2,
+              backgroundColor: Colors.grey.shade200,
+              backgroundImage: userPhotoUrl.isNotEmpty
+                  ? NetworkImage(userPhotoUrl) as ImageProvider
+                  : const AssetImage('assets/images/default_profile.png'),
+            ),
+            if (isEditMode)
+              GestureDetector(
+                onTap: () {
+                  pickNewProfilePicture();
+                },
+                child: Container(
+                  padding: const EdgeInsets.all(6),
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: Colors.blue,
+                  ),
+                  child: const Icon(
+                    Icons.camera_alt,
+                    size: 20,
+                    color: Colors.white,
                   ),
                 ),
-            ],
-          ),
+              ),
+          ],
+        ),
         const SizedBox(height: 16),
         isEditMode
             ? Padding(
@@ -327,8 +320,8 @@ Future<void> pickNewProfilePicture() async {
               )
             : Text(
                 userName,
-                style: const TextStyle(
-                    fontSize: 24, fontWeight: FontWeight.bold),
+                style:
+                    const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
               ),
         const SizedBox(height: 6),
         Text(
@@ -352,7 +345,8 @@ Future<void> pickNewProfilePicture() async {
             children: [
               Text(
                 localization.aboutMe, // Use localization
-                style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                style:
+                    const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
               ),
               const SizedBox(height: 8),
               isEditMode
@@ -377,7 +371,10 @@ Future<void> pickNewProfilePicture() async {
     );
   }
 
-    Widget buildBecomeProviderButton(AppLocalizations localization) {
+  Widget buildBecomeProviderButton(AppLocalizations localization) {
+    final localizations = AppLocalizations.of(context);
+    if (localizations == null) return const SizedBox.shrink();
+
     // Determine button text and action based on status
     String buttonText;
     VoidCallback? onTapAction;
@@ -385,26 +382,26 @@ Future<void> pickNewProfilePicture() async {
     Color endColor;
 
     if (isStep2Complete) {
-      buttonText = "Final Step";
+      buttonText = localization.step2Button;
       startColor = Colors.green.shade600;
       endColor = Colors.green.shade800;
       onTapAction = () {
         Navigator.pushNamed(context, '/set-up');
       };
     } else if (isWaiting) {
-      buttonText = "Verification In Progress...";
+      buttonText = localization.waitingButton;
       startColor = Colors.orange.shade600;
       endColor = Colors.orange.shade800;
       onTapAction = () {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text("Wait For Manual Verifcation"),
+            content: Text(localization.waitingMessage),
             duration: const Duration(seconds: 3),
           ),
         );
       };
     } else if (isStep1Complete) {
-      buttonText = "STEP 2";
+      buttonText = localization.verificationButton;
       startColor = const Color(0xFF3949AB);
       endColor = const Color(0xFF1E88E5);
       onTapAction = () {
