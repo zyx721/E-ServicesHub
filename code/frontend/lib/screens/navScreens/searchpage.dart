@@ -4,6 +4,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:hanini_frontend/screens/services/service.dart';
+import 'package:hanini_frontend/localization/app_localization.dart'; // Import localization
 
 class SearchPage extends StatefulWidget {
   final String? serviceName;
@@ -365,6 +366,17 @@ class _SearchPageState extends State<SearchPage> {
     );
   }
 
+  String get searchHint {
+    final locale = Localizations.localeOf(context).languageCode;
+    if (locale == 'ar') {
+      return "ابحث عن خدمات...";
+    } else if (locale == 'fr') {
+      return "Recherchez des services...";
+    } else {
+      return "Search for services...";
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -406,7 +418,8 @@ class _SearchPageState extends State<SearchPage> {
           child: TextField(
             controller: _searchController,
             decoration: InputDecoration(
-              hintText: "Search services.........",
+              hintText: AppLocalizations.of(context)?.searchHint ??
+                  "Search for services...", // Use localized search hint
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(30),
               ),

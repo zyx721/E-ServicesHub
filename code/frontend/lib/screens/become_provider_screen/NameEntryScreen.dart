@@ -36,8 +36,7 @@ class _NameEntryScreenState extends State<NameEntryScreen> {
       case 'ar':
         return choice.ar;
       case 'fr':
-        return choice.fr ??
-            choice.en; // Fallback to English if French not available
+        return choice.fr ?? choice.en; // Fallback to English if French not available
       default:
         return choice.en;
     }
