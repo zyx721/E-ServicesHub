@@ -373,6 +373,7 @@ def extract_text(image_path):
 
     return extracted_text
 
+# Improved extract_names function to handle the extracted text correctly
 def extract_names(extracted_text):
     """
     Extract last name and first name from complex ID text patterns.
@@ -390,8 +391,8 @@ def extract_names(extracted_text):
     # Look for patterns that match our expected format
     name_pattern = None
     for word in words:
-        # Check if the word contains '<<' and ends with multiple '<'s
-        if '<<' in word and any(c in word for c in ['<', 'K']):  # Include 'K' as it might appear
+        # Check if the word contains '<<' and word ends with multiple '<'s
+        if '<<' in word and word.endswith('<<<<<'):
             # Make sure it's not just a sequence of numbers and '<<'
             parts = word.split('<<')
             if len(parts) >= 2 and any(part.isalpha() for part in parts[:2]):
