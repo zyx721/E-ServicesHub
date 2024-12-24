@@ -495,10 +495,11 @@ class _HomePageState extends State<HomePage> {
                         mainAxisSpacing: 10,
                       ),
                       itemCount:
-                          PopularServicesModel.getPopularServices().length,
+                          PopularServicesModel.getPopularServices(context)
+                              .length,
                       itemBuilder: (context, index) {
-                        final service =
-                            PopularServicesModel.getPopularServices()[index];
+                        final service = PopularServicesModel.getPopularServices(
+                            context)[index];
                         return Container(
                           decoration: BoxDecoration(
                             color: service.color.withOpacity(0.1),
@@ -516,18 +517,10 @@ class _HomePageState extends State<HomePage> {
                               Text(
                                 service.name,
                                 textAlign: TextAlign.center,
-                                style: const TextStyle(
-                                  fontWeight: FontWeight.bold,
-                                  color: AppColors.mainColor,
-                                  fontSize: 14,
-                                ),
-                              ),
-                              const SizedBox(height: 4),
-                              Text(
-                                '${service.availableProviders} Providers',
-                                style: const TextStyle(
-                                  color: Color(0xff7B6F72),
-                                  fontSize: 12,
+                                style: TextStyle(
+                                  color:
+                                      Colors.black, // Ensure text color is set
+                                  fontSize: 14, // Set a default font size
                                 ),
                               ),
                             ],
@@ -553,7 +546,8 @@ class _HomePageState extends State<HomePage> {
           height: 140,
           child: ListView.separated(
             itemBuilder: (context, index) {
-              final service = PopularServicesModel.getPopularServices()[index];
+              final service =
+                  PopularServicesModel.getPopularServices(context)[index];
               return Container(
                 width: 150,
                 decoration: BoxDecoration(
@@ -655,7 +649,7 @@ class _HomePageState extends State<HomePage> {
               );
             },
             separatorBuilder: (context, index) => const SizedBox(width: 25),
-            itemCount: PopularServicesModel.getPopularServices().length,
+            itemCount: PopularServicesModel.getPopularServices(context).length,
             scrollDirection: Axis.horizontal,
             padding: const EdgeInsets.only(left: 10, right: 10),
           ),

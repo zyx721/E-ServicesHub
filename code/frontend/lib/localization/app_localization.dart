@@ -253,6 +253,10 @@ class AppLocalizations {
   String get retry =>
       isArabic ? "إعادة المحاولة" : (isFrench ? "Réessayer" : "Retry");
 
+  // babysitter
+  String get babysitter =>
+      isArabic ? " مربية أطفال " : (isFrench ? "Babysitter" : "Babysitter");
+
   String get firstNameRequired => isArabic
       ? "الاسم الأول مطلوب."
       : (isFrench ? "Le prénom est obligatoires." : "First Name is required.");
@@ -283,8 +287,8 @@ class AppLocalizations {
 
   // New localization for work choices
   String get houseCleaning => isArabic
-      ? "تنظيف المنزل"
-      : (isFrench ? "Nettoyage de la maison" : "House Cleaning");
+      ? "تنظيف المنازل"
+      : (isFrench ? "Nettoyage maison" : "House Cleaning");
   String get electricity =>
       isArabic ? "كهرباء" : (isFrench ? "Électricité" : "Electricity");
   String get plumbing =>
@@ -300,28 +304,28 @@ class AppLocalizations {
       : (isFrench ? "Lutte antiparasitaire" : "Pest Control");
   String get acRepair => isArabic
       ? "إصلاح مكيف الهواء"
-      : (isFrench ? "Réparation de climatiseur" : "AC Repair");
+      : (isFrench ? "Réparation AC" : "AC Repair");
   String get vehicleRepair => isArabic
       ? "إصلاح المركبات"
-      : (isFrench ? "Réparation de véhicules" : "Vehicle Repair");
+      : (isFrench ? "Réparation véhicule" : "Vehicle Repair");
   String get applianceInstallation => isArabic
       ? "تركيب الأجهزة"
-      : (isFrench ? "Installation d'appareils" : "Appliance Installation");
+      : (isFrench ? "Installation appareils" : "Appliance Installation");
   String get itSupport => isArabic
       ? "دعم تكنولوجيا المعلومات"
       : (isFrench ? "Support informatique" : "IT Support");
   String get homeSecurity => isArabic
       ? "أمن المنزل"
-      : (isFrench ? "Sécurité à domicile" : "Home Security");
+      : (isFrench ? "Sécurité domicile" : "Home Security");
   String get interiorDesign => isArabic
       ? "تصميم داخلي"
-      : (isFrench ? "Design d'intérieur" : "Interior Design");
+      : (isFrench ? "Design intérieur" : "Interior Design");
   String get windowCleaning => isArabic
       ? "تنظيف النوافذ"
-      : (isFrench ? "Nettoyage de fenêtres" : "Window Cleaning");
+      : (isFrench ? "Nettoyage fenêtres" : "Window Cleaning");
   String get furnitureAssembly => isArabic
       ? "تجميع الأثاث"
-      : (isFrench ? "Assemblage de meubles" : "Furniture Assembly");
+      : (isFrench ? "Assemblage meubles" : "Furniture Assembly");
 
   // New localization for id_verification_screen
   String get realTimeDetection => isArabic
