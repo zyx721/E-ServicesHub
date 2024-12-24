@@ -268,6 +268,8 @@ class _ServiceProviderProfileState extends State<ServiceProviderProfile> {
   Set<String> deletingImages = {};
 
   Widget buildPortfolioSection() {
+    final localizations = AppLocalizations.of(context);
+
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16),
       child: Column(
@@ -362,7 +364,9 @@ class _ServiceProviderProfileState extends State<ServiceProviderProfile> {
                     }).toList(),
                   ),
                 )
-              : const Center(child: Text('No portfolio images available')),
+              : Center(
+                  child: Text(localizations?.noPortfolioImagesAvailable ??
+                      'No portfolio images available')),
           const SizedBox(height: 16),
           if (isEditMode)
             ElevatedButton(

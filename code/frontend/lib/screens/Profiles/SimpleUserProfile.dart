@@ -220,6 +220,9 @@ class _SimpleUserProfileState extends State<SimpleUserProfile> {
   }
 
   Future<void> pickNewProfilePicture() async {
+    final localizations = AppLocalizations.of(context);
+    if (localizations == null) return;
+
     try {
       final ImagePicker picker = ImagePicker();
       final XFile? pickedFile =
@@ -244,14 +247,14 @@ class _SimpleUserProfileState extends State<SimpleUserProfile> {
 
       // Get current user
       final User? user = _auth.currentUser;
-      if (user == null) throw Exception('No user logged in');
+      if (user == null) throw Exception(localizations.noUserLoggedIn);
 
       // Delete old photo from Drive if it exists
       if (userPhotoUrl.startsWith('https://drive.google.com')) {
         try {
           await _driveService.deleteFile(userPhotoUrl);
         } catch (e) {
-          debugPrint('Error deleting old profile picture: $e');
+          debugPrint('${localizations.errorDeletingOldProfilePicture}$e');
         }
       }
 
@@ -269,11 +272,12 @@ class _SimpleUserProfileState extends State<SimpleUserProfile> {
         Navigator.of(context).pop();
       }
     } catch (e) {
-      debugPrint('Error updating profile picture: $e');
+      debugPrint('${localizations.errorUpdatingProfilePicture}$e');
       if (mounted) {
         Navigator.of(context).pop(); // Close loading indicator
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Failed to update profile picture')),
+          SnackBar(
+              content: Text('${localizations.errorUpdatingProfilePicture}$e')),
         );
       }
     }

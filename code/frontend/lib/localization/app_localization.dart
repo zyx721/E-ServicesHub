@@ -75,12 +75,31 @@ class AppLocalizations {
           ? "Les données de l'utilisateur ont été mises à jour avec succès"
           : "User data updated successfully");
 
+  // No user logged in
+  String get noUserLoggedIn => isArabic
+      ? "لا يوجد مستخدم مسجل"
+      : (isFrench ? "Aucun utilisateur connecté" : "No user logged in");
+
 // Error fetching user data:
   String get errorFetchingUserData => isArabic
       ? "حدث خطأ أثناء جلب بيانات المستخدم"
       : (isFrench
           ? "Une erreur s'est produite lors de la récupération des données de l'utilisateur"
           : "An error occurred while fetching user data");
+
+// Error deleting old profile picture
+  String get errorDeletingOldProfilePicture => isArabic
+      ? "حدث خطأ أثناء حذف الصورة الشخصية القديمة"
+      : (isFrench
+          ? "Une erreur s'est produite lors de la suppression de l'ancienne photo de profil"
+          : "An error occurred while deleting the old profile picture");
+
+// Error updating profile picture
+  String get errorUpdatingProfilePicture => isArabic
+      ? "حدث خطأ أثناء تحديث الصورة الشخصية"
+      : (isFrench
+          ? "Une erreur s'est produite lors de la mise à jour de la photo de profil"
+          : "An error occurred while updating the profile picture");
 
   //errorSavingUserData
   String get errorSavingUserData => isArabic
@@ -150,7 +169,7 @@ class AppLocalizations {
       ? "لا يوجد اتصال بالإنترنت"
       : (isFrench ? "Pas de connexion Internet" : "No Internet connection");
   String get aboutMe => isArabic
-      ? "نبـذة نفسك"
+      ? "نبـذة عنك"
       : (isFrench ? "Écrivez sur vous" : "Write about yourself");
 
   // New localization for no favorite services
