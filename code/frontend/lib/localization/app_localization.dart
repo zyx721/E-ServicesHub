@@ -68,6 +68,27 @@ class AppLocalizations {
   String get profile =>
       isArabic ? "الملف الشخصي" : (isFrench ? "Profil" : "Profile");
 
+  // User data updated successfully
+  String get userDataUpdatedSuccessfully => isArabic
+      ? "تم تحديث بيانات المستخدم بنجاح"
+      : (isFrench
+          ? "Les données de l'utilisateur ont été mises à jour avec succès"
+          : "User data updated successfully");
+
+// Error fetching user data:
+  String get errorFetchingUserData => isArabic
+      ? "حدث خطأ أثناء جلب بيانات المستخدم"
+      : (isFrench
+          ? "Une erreur s'est produite lors de la récupération des données de l'utilisateur"
+          : "An error occurred while fetching user data");
+
+  //errorSavingUserData
+  String get errorSavingUserData => isArabic
+      ? "حدث خطأ أثناء تحديث بيانات المستخدم"
+      : (isFrench
+          ? "Une erreur s'est produite lors de la mise à jour des données de l'utilisateur"
+          : "An error occurred while updating user data");
+
   String get providerText =>
       isArabic ? "مزود الخدمة" : (isFrench ? "Fournisseur" : "Provider");
   // Sidebar Translations
@@ -120,7 +141,6 @@ class AppLocalizations {
   String get error => isArabic
       ? "حدث خطأ"
       : (isFrench ? "Une erreur est survenue" : "An error occurred");
-
 
 // 'No user logged in'
   // Okay Messages

@@ -119,6 +119,9 @@ class _SimpleUserProfileState extends State<SimpleUserProfile> {
   }
 
   Future<void> fetchUserData() async {
+    final localizations = AppLocalizations.of(context);
+    if (localizations == null) return;
+
     try {
       final User? user = _auth.currentUser;
       if (user != null) {
@@ -142,11 +145,14 @@ class _SimpleUserProfileState extends State<SimpleUserProfile> {
         }
       }
     } catch (e) {
-      debugPrint('Error fetching user data: $e');
+      debugPrint(localizations.errorFetchingUserData + '$e');
     }
   }
 
   Future<void> saveUserData() async {
+    final localizations = AppLocalizations.of(context);
+    if (localizations == null) return;
+
     try {
       final User? user = _auth.currentUser;
       if (user != null) {
@@ -159,10 +165,10 @@ class _SimpleUserProfileState extends State<SimpleUserProfile> {
         // Update FirebaseAuth user profile
         await user.updateDisplayName(userName);
         await user.reload(); // Refresh the current user
-        debugPrint('User data updated successfully');
+        debugPrint(localizations.userDataUpdatedSuccessfully);
       }
     } catch (e) {
-      debugPrint('Error saving user data: $e');
+      debugPrint(localizations.errorSavingUserData + '$e');
     }
   }
 
