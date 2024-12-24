@@ -579,7 +579,7 @@ Widget build(BuildContext context) {
           Align(
             alignment: Alignment.centerLeft,
             child: Text(
-              localizations.aboutMe,
+              localizations.aboutMeLabel,
               style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
             ),
           ),
@@ -591,7 +591,7 @@ Widget build(BuildContext context) {
                   maxLines: 4,
                   decoration: InputDecoration(
                     border: const OutlineInputBorder(),
-                    hintText: localizations.writeAboutYourself,
+                    hintText: localizations.aboutMeLabel,
                   ),
                 )
               : Text(

@@ -310,84 +310,54 @@ class _ServiceProviderProfileState extends State<SetProviderProfile> {
 
   
 
- @override
-  void dispose() {
-    // Cleanup temporary uploads when widget is disposed
-    _cleanupTemporaryUploads();
-    super.dispose();
+  // Add these variables to track temporary images
+  List<File> _temporaryImageFiles = [];
+  bool _isUploading = false;
+
+  // Modify the pickNewPortfolioImage function to store files temporarily
+  Future<void> pickNewPortfolioImage() async {
+    final ImagePicker picker = ImagePicker();
+    final XFile? pickedFile = await picker.pickImage(source: ImageSource.gallery);
+
+    if (pickedFile != null) {
+      setState(() {
+        _temporaryImageFiles.add(File(pickedFile.path));
+      });
+    }
   }
 
+  // Add function to upload all images at once
+  Future<List<String>> _uploadAllImages() async {
+    List<String> uploadedUrls = [];
+    setState(() {
+      _isUploading = true;
+    });
 
-  Future<void> _cleanupTemporaryUploads() async {
-    for (String fileUrl in _temporaryUploads) {
-      try {
-        await _driveService.deleteFile(fileUrl);
-      } catch (e) {
-        debugPrint('Error cleaning up temporary upload: $e');
+    try {
+      for (File file in _temporaryImageFiles) {
+        final fileUrl = await _driveService.uploadFile(file);
+        uploadedUrls.add(fileUrl);
       }
-    }
-  }
-
-  Future<void> uploadToGoogleDrive(File file) async {
-    try {
-      final fileUrl = await _driveService.uploadFile(file);
-      
-      setState(() {
-        _temporaryUploads.add(fileUrl); // Track as temporary upload
-        portfolioImages.add(fileUrl);
-      });
-
-      debugPrint('File uploaded temporarily: $fileUrl');
     } catch (e) {
-      debugPrint('Error uploading to Google Drive: $e');
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Failed to upload image')),
-      );
-    }
-  }
-
-  Future<void> deletePortfolioImage(String imageUrl) async {
-    try {
-      final bool? confirm = await showDialog<bool>(
-        context: context,
-        builder: (BuildContext context) {
-          return AlertDialog(
-            title: const Text('Delete Image'),
-            content: const Text('Are you sure you want to delete this image?'),
-            actions: <Widget>[
-              TextButton(
-                onPressed: () => Navigator.of(context).pop(false),
-                child: const Text('Cancel'),
-              ),
-              TextButton(
-                onPressed: () => Navigator.of(context).pop(true),
-                child: const Text('Delete'),
-              ),
-            ],
-          );
-        },
-      );
-
-      if (confirm != true) return;
-
-      await _driveService.deleteFile(imageUrl);
-
+      // If there's an error, cleanup any successful uploads
+      for (String url in uploadedUrls) {
+        try {
+          await _driveService.deleteFile(url);
+        } catch (e) {
+          debugPrint('Error cleaning up after failed upload: $e');
+        }
+      }
+      throw e;
+    } finally {
       setState(() {
-        portfolioImages.remove(imageUrl);
-        _temporaryUploads.remove(imageUrl); // Remove from temporary tracking
+        _isUploading = false;
       });
-
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Image deleted successfully')),
-      );
-    } catch (e) {
-      debugPrint('Error deleting portfolio image: $e');
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Failed to delete image')),
-      );
     }
+
+    return uploadedUrls;
   }
 
+  // Modify the _saveProfile function to include image uploads
   Future<void> _saveProfile() async {
     if (_formKey.currentState!.validate()) {
       if (_skills.isEmpty || _certifications.isEmpty || _workExperience.isEmpty) {
@@ -415,30 +385,39 @@ class _ServiceProviderProfileState extends State<SetProviderProfile> {
           },
         );
 
+        // Upload all images first
+        List<String> uploadedImages = [];
+        if (_temporaryImageFiles.isNotEmpty) {
+          uploadedImages = await _uploadAllImages();
+        }
+
         final DocumentReference userDoc = FirebaseFirestore.instance.collection('users').doc(user.uid);
 
-        // Prepare the profile data
+        // Prepare the profile data with uploaded image URLs
         Map<String, dynamic> profileData = {
           'basicInfo': {
             'profession': _professionController.text,
             'phone': _phoneController.text,
-            'wilaya': selectedWilaya,  // Store wilaya separately
-            'commune': selectedCommune, // Store commune separately
+            'wilaya': selectedWilaya,
+            'commune': selectedCommune,
             'hourlyRate': _hourlyRateController.text,
           },
           'skills': _skills,
           'certifications': _certifications,
           'workExperience': _workExperience,
-          'portfolioImages': portfolioImages,
+          'portfolioImages': uploadedImages,
           'rating': 0.0,
           'isProvider': true,
           'aboutMe': _descriptionController.text,
         };
+
         // Update the Firestore document
         await userDoc.update(profileData);
-        
-        // Clear temporary uploads list since they're now saved
-        _temporaryUploads.clear();
+
+        // Clear temporary files
+        setState(() {
+          _temporaryImageFiles.clear();
+        });
 
         // Close loading indicator
         Navigator.of(context).pop();
@@ -463,8 +442,9 @@ class _ServiceProviderProfileState extends State<SetProviderProfile> {
         );
       }
     }
-  }
 
+
+}
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -520,6 +500,88 @@ class _ServiceProviderProfileState extends State<SetProviderProfile> {
     );
   }
 
+bool isAddingImage = false;
+Set<String> deletingImages = {};
+
+// Modify the portfolio section UI to show temporary images
+  Widget buildPortfolioSection() {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            'Portfolio',
+            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+          ),
+          const SizedBox(height: 8),
+          _temporaryImageFiles.isNotEmpty
+              ? SingleChildScrollView(
+                  scrollDirection: Axis.horizontal,
+                  child: Row(
+                    children: _temporaryImageFiles.map((file) {
+                      return Padding(
+                        padding: const EdgeInsets.only(right: 8),
+                        child: Stack(
+                          children: [
+                            Image.file(
+                              file,
+                              width: 100,
+                              height: 100,
+                              fit: BoxFit.cover,
+                            ),
+                            Positioned(
+                              top: 4,
+                              right: 4,
+                              child: Container(
+                                decoration: BoxDecoration(
+                                  color: Colors.black.withOpacity(0.5),
+                                  shape: BoxShape.circle,
+                                ),
+                                child: IconButton(
+                                  icon: const Icon(Icons.delete, color: Colors.white),
+                                  iconSize: 20,
+                                  padding: EdgeInsets.zero,
+                                  constraints: const BoxConstraints(
+                                    minWidth: 32,
+                                    minHeight: 32,
+                                  ),
+                                  onPressed: () {
+                                    setState(() {
+                                      _temporaryImageFiles.remove(file);
+                                    });
+                                  },
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      );
+                    }).toList(),
+                  ),
+                )
+              : const Center(child: Text('No portfolio images selected')),
+          const SizedBox(height: 16),
+          ElevatedButton(
+            onPressed: _isUploading 
+              ? null 
+              : pickNewPortfolioImage,
+            child: _isUploading
+              ? const SizedBox(
+                  height: 20,
+                  width: 20,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                  ),
+                )
+              : const Text('Add Portfolio Image'),
+          ),
+        ],
+      ),
+    );
+  }
+
+
   Widget _buildSectionTitle(String title) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 10),
@@ -566,6 +628,15 @@ class _ServiceProviderProfileState extends State<SetProviderProfile> {
             ),
     );
   }
+
+
+
+  final FirebaseAuth _auth = FirebaseAuth.instance;
+  
+  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+
+
+
 
 Future<void> pickNewProfilePicture() async {
   try {
@@ -886,153 +957,7 @@ Future<void> pickNewProfilePicture() async {
 
 
 
-  final FirebaseAuth _auth = FirebaseAuth.instance;
-  
-  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
-
-
-  Future<void> pickNewPortfolioImage() async {
-    final ImagePicker picker = ImagePicker();
-    final XFile? pickedFile =
-        await picker.pickImage(source: ImageSource.gallery);
-
-    if (pickedFile != null) {
-      final file = File(pickedFile.path);
-      await uploadToGoogleDrive(file);
-    }
-  }
-  
-
-   // Add these to your class state variables
-bool isAddingImage = false;
-Set<String> deletingImages = {};
-
-Widget buildPortfolioSection() {
-  return Padding(
-    padding: const EdgeInsets.symmetric(horizontal: 16),
-    child: Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const Text(
-          'Portfolio',
-          style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-        ),
-        const SizedBox(height: 8),
-        portfolioImages.isNotEmpty
-            ? SingleChildScrollView(
-                scrollDirection: Axis.horizontal,
-                child: Row(
-                  children: portfolioImages.map((imageUrl) {
-                    final isDeleting = deletingImages.contains(imageUrl);
-                    
-                    return Padding(
-                      padding: const EdgeInsets.only(right: 8),
-                      child: Stack(
-                        children: [
-                          GestureDetector(
-                            onTap: () {
-                              // Show image in full screen
-                            },
-                            child: Image.network(
-                              imageUrl,
-                              width: 100,
-                              height: 100,
-                              fit: BoxFit.cover,
-                              loadingBuilder: (BuildContext context, Widget child,
-                                  ImageChunkEvent? loadingProgress) {
-                                if (loadingProgress == null) {
-                                  return child;
-                                }
-                                return Center(
-                                  child: CircularProgressIndicator(
-                                    value: loadingProgress.expectedTotalBytes != null
-                                        ? loadingProgress.cumulativeBytesLoaded /
-                                            loadingProgress.expectedTotalBytes!
-                                        : null,
-                                  ),
-                                );
-                              },
-                            ),
-                          ),
-                          if (isDeleting)
-                            Container(
-                              width: 100,
-                              height: 100,
-                              color: Colors.black.withOpacity(0.5),
-                              child: const Center(
-                                child: CircularProgressIndicator(
-                                  color: Colors.white,
-                                ),
-                              ),
-                            ),
-                          if (!isDeleting)
-                            Positioned(
-                              top: 4,
-                              right: 4,
-                              child: Container(
-                                decoration: BoxDecoration(
-                                  color: Colors.black.withOpacity(0.5),
-                                  shape: BoxShape.circle,
-                                ),
-                                child: IconButton(
-                                  icon: const Icon(Icons.delete, color: Colors.white),
-                                  iconSize: 20,
-                                  padding: EdgeInsets.zero,
-                                  constraints: const BoxConstraints(
-                                    minWidth: 32,
-                                    minHeight: 32,
-                                  ),
-                                  onPressed: () async {
-                                    setState(() {
-                                      deletingImages.add(imageUrl);
-                                    });
-                                    await deletePortfolioImage(imageUrl);
-                                    setState(() {
-                                      deletingImages.remove(imageUrl);
-                                    });
-                                  },
-                                ),
-                              ),
-                            ),
-                        ],
-                      ),
-                    );
-                  }).toList(),
-                ),
-              )
-            : const Center(child: Text('No portfolio images available')),
-        const SizedBox(height: 16),
-        
-          ElevatedButton(
-            onPressed: isAddingImage 
-              ? null 
-              : () async {
-                  setState(() {
-                    isAddingImage = true;
-                  });
-                  try {
-                    await pickNewPortfolioImage();
-                  } finally {
-                    setState(() {
-                      isAddingImage = false;
-                    });
-                  }
-                },
-            child: isAddingImage
-              ? const SizedBox(
-                  height: 20,
-                  width: 20,
-                  child: CircularProgressIndicator(
-                    strokeWidth: 2,
-                  ),
-                )
-              : const Text('Add Portfolio Image'),
-          ),
-      ],
-    ),
-  );
-}
 
 
 

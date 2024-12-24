@@ -552,6 +552,7 @@ Widget buildProfileTab() {
         _buildSectionTitle('Work Experience'),
         _buildWorkExperienceSection(),
         const SizedBox(height: 20),
+         _buildSectionTitle('Portfolio'),
         buildPortfolioSection(),
         const SizedBox(height: 20),
         _buildSectionTitle('Certifications'),
@@ -595,7 +596,7 @@ Widget buildTopProfileInfo() {
       const SizedBox(height: 20),
       Padding(
         padding: const EdgeInsets.symmetric(horizontal: 16),
-        child: Row(
+        child: Row(   
           mainAxisAlignment: MainAxisAlignment.spaceAround, // Center items evenly
           children: [
             buildStat(commune, wilaya),
@@ -693,10 +694,6 @@ Widget buildTopProfileInfo() {
     child: Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text(
-          'Portfolio',
-          style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-        ),
         const SizedBox(height: 8),
         portfolioImages.isNotEmpty
             ? SingleChildScrollView(
