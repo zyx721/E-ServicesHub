@@ -1,7 +1,7 @@
-
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:hanini_frontend/models/colors.dart';
 import 'package:intl/intl.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter/cupertino.dart';
@@ -9,16 +9,11 @@ import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:googleapis_auth/auth_io.dart' as auth;
 
-
-
-
 // Add this method to fetch device token
 Future<String?> _getDeviceToken(String userId) async {
   try {
-    final userDoc = await FirebaseFirestore.instance
-        .collection('users')
-        .doc(userId)
-        .get();
+    final userDoc =
+        await FirebaseFirestore.instance.collection('users').doc(userId).get();
     return userDoc.data()?['deviceToken'] as String?;
   } catch (e) {
     print('Error fetching device token: $e');
@@ -29,9 +24,8 @@ Future<String?> _getDeviceToken(String userId) async {
 class PushNotificationService {
   static Future<String> getAccessToken() async {
     // Load the service account JSON
-    final serviceAccountJson =await rootBundle.loadString(
-        'assets/credentials/test.json'
-      );
+    final serviceAccountJson =
+        await rootBundle.loadString('assets/credentials/test.json');
 
     // Define the required scopes
     List<String> scopes = [
@@ -55,8 +49,8 @@ class PushNotificationService {
     return accessToken;
   }
 
-  static Future<void> sendNotification(
-      String deviceToken, String title, String body, Map<String, dynamic> data) async {
+  static Future<void> sendNotification(String deviceToken, String title,
+      String body, Map<String, dynamic> data) async {
     final String serverKey = await getAccessToken();
     String endpointFirebaseCloudMessaging =
         'https://fcm.googleapis.com/v1/projects/hanini-2024/messages:send';
@@ -90,7 +84,6 @@ class PushNotificationService {
   }
 }
 
-
 class NotificationsPage extends StatelessWidget {
   final String userId;
 
@@ -99,113 +92,117 @@ class NotificationsPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    
+
     return DefaultTabController(
       length: 2,
       child: Scaffold(
-        appBar: AppBar(
-          elevation: 2,
-          shadowColor: Colors.black.withOpacity(0.1),
-          centerTitle: true,
-          backgroundColor: theme.colorScheme.surface,
-          title: Text(
-            "Notifications",
-            style: TextStyle(
-              color: theme.colorScheme.onSurface,
-              fontWeight: FontWeight.w700,
-              fontSize: 20,
-              letterSpacing: -0.5,
+        appBar: PreferredSize(
+          preferredSize: Size.fromHeight(120),
+          child: Container(
+            decoration: BoxDecoration(
+              gradient: AppColors.mainGradient,
             ),
-          ),
-          bottom: PreferredSize(
-            preferredSize: const Size.fromHeight(65),
-            child: Container(
-              decoration: BoxDecoration(
-                border: Border(
-                  bottom: BorderSide(
-                    color: theme.colorScheme.outline.withOpacity(0.1),
-                    width: 1,
+            child: AppBar(
+              elevation: 0,
+              centerTitle: true,
+              backgroundColor: theme.colorScheme.primary,
+              title: Padding(
+                padding: const EdgeInsets.only(
+                    top: 14.0), // Added padding to shift the title down
+                child: Text(
+                  "Notifications",
+                  style: GoogleFonts.poppins(
+                    color: Colors.white,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 20,
                   ),
                 ),
               ),
-              child: TabBar(
-                indicatorWeight: 3,
-                indicatorColor: theme.colorScheme.primary,
-                labelColor: theme.colorScheme.primary,
-                unselectedLabelColor: theme.colorScheme.onSurface.withOpacity(0.5),
-                labelStyle: const TextStyle(
-                  fontWeight: FontWeight.w600,
-                  fontSize: 16,
-                ),
-                unselectedLabelStyle: const TextStyle(
-                  fontWeight: FontWeight.w500,
-                  fontSize: 16,
-                ),
-                indicatorSize: TabBarIndicatorSize.label,
-                labelPadding: const EdgeInsets.symmetric(horizontal: 24),
-                tabs: [
-                  Tab(
-                    height: 56,
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(
-                          Icons.list_alt,
-                          size: 22,
-                        ),
-                        const SizedBox(width: 10),
-                        Text(
-                          "Listings",
-                          style: TextStyle(
-                            height: 1.2,
-                          ),
-                        ),
-                      ],
-                    ),
+              bottom: PreferredSize(
+                preferredSize: const Size.fromHeight(
+                    60), // Adjusted size for better spacing
+                child: Container(
+                  decoration: BoxDecoration(
+                    color: theme.colorScheme.surface,
+                    borderRadius:
+                        const BorderRadius.vertical(top: Radius.circular(20)),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.1),
+                        blurRadius: 8,
+                        offset: const Offset(0, 2),
+                      ),
+                    ],
                   ),
-                  Tab(
-                    height: 56,
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(
-                          Icons.star_outline,
-                          size: 22,
-                        ),
-                        const SizedBox(width: 10),
-                        Text(
-                          "Reviews",
-                          style: TextStyle(
-                            height: 1.2,
-                          ),
-                        ),
-                      ],
+                  // padding: const EdgeInsets.symmetric(horizontal: 16), // Padding for tabs
+                  child: TabBar(
+                    indicator: BoxDecoration(
+                      borderRadius: BorderRadius.circular(20), // Rounded tabs
+                      color: theme.colorScheme.primary.withOpacity(0.2),
                     ),
+                    labelColor: theme.colorScheme.primary,
+                    unselectedLabelColor: Colors.grey,
+                    labelStyle: GoogleFonts.poppins(
+                        fontWeight: FontWeight.w600, fontSize: 16),
+                    tabs: [
+                      Tab(
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(
+                              Icons.list_alt,
+                              size: 22,
+                              color: theme.colorScheme.primary,
+                            ),
+                            const SizedBox(width: 8),
+                            Text(
+                              "Listings",
+                              style: TextStyle(height: 1.2),
+                            ),
+                          ],
+                        ),
+                      ),
+                      Tab(
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(
+                              Icons.star_outline,
+                              size: 22,
+                              color: theme.colorScheme.primary,
+                            ),
+                            const SizedBox(width: 8),
+                            Text(
+                              "Reviews",
+                              style: TextStyle(height: 1.2),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
                   ),
-                ],
+                ),
               ),
             ),
           ),
         ),
-        body: Container(
-          color: theme.colorScheme.surface.withOpacity(0.95),
-          child: TabBarView(
-            children: [
-              Container(
-                color: theme.colorScheme.surface.withOpacity(0.95),
-                child: ListingsTab(userId: userId),
-              ),
-              Container(
-                color: theme.colorScheme.surface.withOpacity(0.95),
-                child: ReviewsTab(userId: userId),
-              ),
-            ],
-          ),
+        body:
+            // Padding(
+            // padding: const EdgeInsets.only(top: 8, bottom: 8), // Padding to prevent content from touching edges
+            // child:
+
+            TabBarView(
+          children: [
+            ListingsTab(userId: userId),
+            ReviewsTab(userId: userId),
+          ],
         ),
       ),
+      // ),
     );
   }
 }
+
 class ListingsTab extends StatelessWidget {
   final String userId;
 
@@ -280,7 +277,6 @@ class ListingsTab extends StatelessWidget {
   }
 }
 
-
 class ListingsList extends StatelessWidget {
   final String userId;
   final String type;
@@ -288,204 +284,217 @@ class ListingsList extends StatelessWidget {
   const ListingsList({required this.userId, required this.type});
 
   Color _getStatusColor(String status, ThemeData theme) {
-  switch (status.toLowerCase()) {
-    case 'pending':
-      return Colors.orange;
-    case 'active':
-      return Colors.green;
-    case 'completed':
-      return theme.colorScheme.primary;
-    case 'cancelled':
-      return Colors.red;
-    case 'refused':
-      return Colors.red.shade700;
-    case 'counter_offer_sent':
-    case 'counter_offer_received':
-      return Colors.blue; // Or any color you prefer for negotiation states
-    default:
-      return theme.colorScheme.onSurface.withOpacity(0.6);
+    switch (status.toLowerCase()) {
+      case 'pending':
+        return Colors.orange;
+      case 'active':
+        return Colors.green;
+      case 'completed':
+        return theme.colorScheme.primary;
+      case 'cancelled':
+        return Colors.red;
+      case 'refused':
+        return Colors.red.shade700;
+      case 'counter_offer_sent':
+      case 'counter_offer_received':
+        return Colors.blue; // Or any color you prefer for negotiation states
+      default:
+        return theme.colorScheme.onSurface.withOpacity(0.6);
+    }
   }
-}
 
   String _getStatusIcon(String status) {
-  switch (status.toLowerCase()) {
-    case 'pending':
-      return '⌛';
-    case 'active':
-      return '✓';
-    case 'completed':
-      return '★';
-    case 'cancelled':
-      return '×';
-    case 'refused':
-      return '✕';
-    case 'counter_offer_sent':
-    case 'counter_offer_received':
-      return '💬'; // Or any icon you prefer for negotiation states
-    default:
-      return '•';
+    switch (status.toLowerCase()) {
+      case 'pending':
+        return '⌛';
+      case 'active':
+        return '✓';
+      case 'completed':
+        return '★';
+      case 'cancelled':
+        return '×';
+      case 'refused':
+        return '✕';
+      case 'counter_offer_sent':
+      case 'counter_offer_received':
+        return '💬'; // Or any icon you prefer for negotiation states
+      default:
+        return '•';
+    }
   }
-}
 
+  Widget _buildNegotiationHistory(Map<String, dynamic> listing) {
+    final negotiations = listing['negotiation_history'] as List<dynamic>? ?? [];
+    if (negotiations.isEmpty) return const SizedBox.shrink();
 
-Widget _buildNegotiationHistory(Map<String, dynamic> listing) {
-  final negotiations = listing['negotiation_history'] as List<dynamic>? ?? [];
-  if (negotiations.isEmpty) return const SizedBox.shrink();
+    return StatefulBuilder(
+      builder: (BuildContext context, StateSetter setState) {
+        bool isExpanded = false;
 
-  return StatefulBuilder(
-    builder: (BuildContext context, StateSetter setState) {
-      bool isExpanded = false;
-      
-      return Container(
-        decoration: BoxDecoration(
-          border: Border.all(
-            color: Theme.of(context).dividerColor.withOpacity(0.1),
-            width: 1,
+        return Container(
+          decoration: BoxDecoration(
+            border: Border.all(
+              color: Theme.of(context).dividerColor.withOpacity(0.1),
+              width: 1,
+            ),
+            borderRadius: BorderRadius.circular(8),
           ),
-          borderRadius: BorderRadius.circular(8),
-        ),
-        child: ExpansionTile(
-          title: Row(
-            children: [
-              const Icon(Icons.history, size: 20),
-              const SizedBox(width: 2),
-              Text(
-                'Negotiation History',
-                style: GoogleFonts.inter(
-                  fontSize: 12,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-              const SizedBox(width: 8),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                decoration: BoxDecoration(
-                  color: Theme.of(context).colorScheme.primary.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Text(
-                  '${negotiations.length}',
+          child: ExpansionTile(
+            title: Row(
+              children: [
+                const Icon(Icons.history, size: 20),
+                const SizedBox(width: 2),
+                Text(
+                  'Negotiation History',
                   style: GoogleFonts.inter(
                     fontSize: 12,
-                    color: Theme.of(context).colorScheme.primary,
-                    fontWeight: FontWeight.w500,
+                    fontWeight: FontWeight.w600,
                   ),
+                ),
+                const SizedBox(width: 8),
+                Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                  decoration: BoxDecoration(
+                    color:
+                        Theme.of(context).colorScheme.primary.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Text(
+                    '${negotiations.length}',
+                    style: GoogleFonts.inter(
+                      fontSize: 12,
+                      color: Theme.of(context).colorScheme.primary,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            children: [
+              Padding(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: negotiations.asMap().entries.map((entry) {
+                    final index = entry.key;
+                    final negotiation = entry.value;
+                    final date = DateTime.parse(negotiation['timestamp']);
+                    final formattedDate =
+                        DateFormat.yMMMd().add_jm().format(date);
+                    final proposedBy = negotiation['proposed_by'];
+                    final amount = negotiation['pay'];
+
+                    return Padding(
+                      padding: const EdgeInsets.only(bottom: 12),
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Container(
+                            width: 24,
+                            height: 24,
+                            decoration: BoxDecoration(
+                              color: Theme.of(context)
+                                  .colorScheme
+                                  .primary
+                                  .withOpacity(0.1),
+                              shape: BoxShape.circle,
+                            ),
+                            child: Center(
+                              child: Text(
+                                '${index + 1}',
+                                style: GoogleFonts.inter(
+                                  fontSize: 12,
+                                  color: Theme.of(context).colorScheme.primary,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Row(
+                                  mainAxisAlignment:
+                                      MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    Text(
+                                      proposedBy == "sender"
+                                          ? "Offer sent"
+                                          : "Counter offer received",
+                                      style: GoogleFonts.inter(
+                                        fontSize: 11,
+                                        fontWeight: FontWeight.w600,
+                                      ),
+                                    ),
+                                    Container(
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 8,
+                                        vertical: 2,
+                                      ),
+                                      decoration: BoxDecoration(
+                                        color: Theme.of(context)
+                                            .colorScheme
+                                            .primary
+                                            .withOpacity(0.1),
+                                        borderRadius: BorderRadius.circular(4),
+                                      ),
+                                      child: Text(
+                                        '\DZD $amount',
+                                        style: GoogleFonts.inter(
+                                          fontSize: 10,
+                                          color: Theme.of(context)
+                                              .colorScheme
+                                              .primary,
+                                          fontWeight: FontWeight.w500,
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                const SizedBox(height: 4),
+                                Text(
+                                  formattedDate,
+                                  style: GoogleFonts.inter(
+                                    fontSize: 12,
+                                    color: Colors.grey[600],
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    );
+                  }).toList(),
                 ),
               ),
             ],
           ),
-          children: [
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: negotiations.asMap().entries.map((entry) {
-                  final index = entry.key;
-                  final negotiation = entry.value;
-                  final date = DateTime.parse(negotiation['timestamp']);
-                  final formattedDate = DateFormat.yMMMd().add_jm().format(date);
-                  final proposedBy = negotiation['proposed_by'];
-                  final amount = negotiation['pay'];
+        );
+      },
+    );
+  }
 
-                  return Padding(
-                    padding: const EdgeInsets.only(bottom: 12),
-                    child: Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Container(
-                          width: 24,
-                          height: 24,
-                          decoration: BoxDecoration(
-                            color: Theme.of(context).colorScheme.primary.withOpacity(0.1),
-                            shape: BoxShape.circle,
-                          ),
-                          child: Center(
-                            child: Text(
-                              '${index + 1}',
-                              style: GoogleFonts.inter(
-                                fontSize: 12,
-                                color: Theme.of(context).colorScheme.primary,
-                                fontWeight: FontWeight.w500,
-                              ),
-                            ),
-                          ),
-                        ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Row(
-                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                children: [
-                                  Text(
-                                    proposedBy == "sender" ? "Offer sent" : "Counter offer received",
-                                    style: GoogleFonts.inter(
-                                      fontSize: 11,
-                                      fontWeight: FontWeight.w600,
-                                    ),
-                                  ),
-                                  Container(
-                                    padding: const EdgeInsets.symmetric(
-                                      horizontal: 8,
-                                      vertical: 2,
-                                    ),
-                                    decoration: BoxDecoration(
-                                      color: Theme.of(context).colorScheme.primary.withOpacity(0.1),
-                                      borderRadius: BorderRadius.circular(4),
-                                    ),
-                                    child: Text(
-                                      '\DZD $amount',
-                                      style: GoogleFonts.inter(
-                                        fontSize: 10,
-                                        color: Theme.of(context).colorScheme.primary,
-                                        fontWeight: FontWeight.w500,
-                                      ),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                              const SizedBox(height: 4),
-                              Text(
-                                formattedDate,
-                                style: GoogleFonts.inter(
-                                  fontSize: 12,
-                                  color: Colors.grey[600],
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ],
-                    ),
-                  );
-                }).toList(),
-              ),
-            ),
-          ],
-        ),
-      );
-    },
-  );
-}
-
-
-   Future<void> _showNegotiationDialog(
+  Future<void> _showNegotiationDialog(
     BuildContext context,
     Map<String, dynamic> listing,
   ) async {
     final TextEditingController payController = TextEditingController();
-    
+
     return showDialog(
       context: context,
       builder: (context) => AlertDialog(
         title: Text('Negotiate Price',
-          style: GoogleFonts.inter(fontWeight: FontWeight.w600)),
+            style: GoogleFonts.inter(fontWeight: FontWeight.w600)),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
             Text('Current offer: ${listing['pay']}',
-              style: GoogleFonts.inter()),
+                style: GoogleFonts.inter()),
             const SizedBox(height: 16),
             TextField(
               controller: payController,
@@ -523,132 +532,129 @@ Widget _buildNegotiationHistory(Map<String, dynamic> listing) {
     );
   }
 
-Future<void> _updateListingWithNegotiation(
-  BuildContext context,
-  Map<String, dynamic> listing,
-  String newPay,
-) async {
-  try {
-    final batch = FirebaseFirestore.instance.batch();
-    
-    // Get the correct sender and receiver UIDs
-    final String currentUserId = userId; // Current user's ID
-    final String senderUid = listing['senderUid'] ?? userId;
-    final String receiverUid = listing['receiverUid'] ?? userId;
+  Future<void> _updateListingWithNegotiation(
+    BuildContext context,
+    Map<String, dynamic> listing,
+    String newPay,
+  ) async {
+    try {
+      final batch = FirebaseFirestore.instance.batch();
 
-    final String targetUid = currentUserId == senderUid ? receiverUid : senderUid;
-    final String? targetToken = await _getDeviceToken(targetUid);
-    
-    final senderRef = FirebaseFirestore.instance
-        .collection('users')
-        .doc(senderUid);
-    
-    final receiverRef = FirebaseFirestore.instance
-        .collection('users')
-        .doc(receiverUid);
+      // Get the correct sender and receiver UIDs
+      final String currentUserId = userId; // Current user's ID
+      final String senderUid = listing['senderUid'] ?? userId;
+      final String receiverUid = listing['receiverUid'] ?? userId;
 
-    // Determine if current user is sender or receiver
-    final bool isCurrentUserSender = currentUserId == senderUid;
-    
-    // Set the status based on who's making the offer
-    final String newSenderStatus = isCurrentUserSender ? "counter_offer_sent" : "counter_offer_received";
-    final String newReceiverStatus = isCurrentUserSender ? "counter_offer_received" : "counter_offer_sent";
-    
-    // Create negotiation history entry
-    final negotiationEntry = {
-      'pay': newPay,
-      'timestamp': DateTime.now().toIso8601String(),
-      'proposed_by': isCurrentUserSender ? "sender" : "receiver"
-    };
+      final String targetUid =
+          currentUserId == senderUid ? receiverUid : senderUid;
+      final String? targetToken = await _getDeviceToken(targetUid);
 
-    // Update sender's listing
-    final senderDoc = await senderRef.get();
-    if (senderDoc.exists) {
-      final sentListings = List<Map<String, dynamic>>.from(
-        senderDoc.data()?['Listing_(sent)'] ?? []
-      );
-      final updatedSentListings = sentListings.map((item) {
-        if (item['id'] == listing['id']) {
-          final currentHistory = List<Map<String, dynamic>>.from(item['negotiation_history'] ?? []);
-          return {
-            ...item,
-            'status': newSenderStatus,
-            'pay': newPay,
-            'negotiation_history': [...currentHistory, negotiationEntry]
-          };
-        }
-        return item;
-      }).toList();
-      batch.update(senderRef, {'Listing_(sent)': updatedSentListings});
-    }
+      final senderRef =
+          FirebaseFirestore.instance.collection('users').doc(senderUid);
 
-    // Update receiver's listing
-    final receiverDoc = await receiverRef.get();
-    if (receiverDoc.exists) {
-      final receivedListings = List<Map<String, dynamic>>.from(
-        receiverDoc.data()?['Listing_(received)'] ?? []
-      );
-      final updatedReceivedListings = receivedListings.map((item) {
-        if (item['id'] == listing['id']) {
-          final currentHistory = List<Map<String, dynamic>>.from(item['negotiation_history'] ?? []);
-          return {
-            ...item,
-            'status': newReceiverStatus,
-            'pay': newPay,
-            'negotiation_history': [...currentHistory, negotiationEntry]
-          };
-        }
-        return item;
-      }).toList();
-      batch.update(receiverRef, {'Listing_(received)': updatedReceivedListings});
-    }
+      final receiverRef =
+          FirebaseFirestore.instance.collection('users').doc(receiverUid);
 
-    await batch.commit();
+      // Determine if current user is sender or receiver
+      final bool isCurrentUserSender = currentUserId == senderUid;
 
-       // Send notification about counter offer
-    if (targetToken != null) {
-      final notificationTitle = 'New Counter Offer';
-      final notificationBody = 'You received a counter offer of DZD$newPay for "${listing['mainTitle']}"';
-      final notificationData = {
-        'type': 'counter_offer',
-        'listingId': listing['id'],
-        'newAmount': newPay
+      // Set the status based on who's making the offer
+      final String newSenderStatus =
+          isCurrentUserSender ? "counter_offer_sent" : "counter_offer_received";
+      final String newReceiverStatus =
+          isCurrentUserSender ? "counter_offer_received" : "counter_offer_sent";
+
+      // Create negotiation history entry
+      final negotiationEntry = {
+        'pay': newPay,
+        'timestamp': DateTime.now().toIso8601String(),
+        'proposed_by': isCurrentUserSender ? "sender" : "receiver"
       };
 
-      await PushNotificationService.sendNotification(
-        targetToken,
-        notificationTitle,
-        notificationBody,
-        notificationData
-      );
-    }
+      // Update sender's listing
+      final senderDoc = await senderRef.get();
+      if (senderDoc.exists) {
+        final sentListings = List<Map<String, dynamic>>.from(
+            senderDoc.data()?['Listing_(sent)'] ?? []);
+        final updatedSentListings = sentListings.map((item) {
+          if (item['id'] == listing['id']) {
+            final currentHistory = List<Map<String, dynamic>>.from(
+                item['negotiation_history'] ?? []);
+            return {
+              ...item,
+              'status': newSenderStatus,
+              'pay': newPay,
+              'negotiation_history': [...currentHistory, negotiationEntry]
+            };
+          }
+          return item;
+        }).toList();
+        batch.update(senderRef, {'Listing_(sent)': updatedSentListings});
+      }
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('Counter offer of \DZD$newPay sent successfully'),
-        backgroundColor: Colors.green,
-      ),
-    );
-  } catch (e) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Failed to send counter offer. Please try again.'),
-        backgroundColor: Colors.red,
-      ),
-    );
-    print('Error updating listing with negotiation: $e');
+      // Update receiver's listing
+      final receiverDoc = await receiverRef.get();
+      if (receiverDoc.exists) {
+        final receivedListings = List<Map<String, dynamic>>.from(
+            receiverDoc.data()?['Listing_(received)'] ?? []);
+        final updatedReceivedListings = receivedListings.map((item) {
+          if (item['id'] == listing['id']) {
+            final currentHistory = List<Map<String, dynamic>>.from(
+                item['negotiation_history'] ?? []);
+            return {
+              ...item,
+              'status': newReceiverStatus,
+              'pay': newPay,
+              'negotiation_history': [...currentHistory, negotiationEntry]
+            };
+          }
+          return item;
+        }).toList();
+        batch.update(
+            receiverRef, {'Listing_(received)': updatedReceivedListings});
+      }
+
+      await batch.commit();
+
+      // Send notification about counter offer
+      if (targetToken != null) {
+        final notificationTitle = 'New Counter Offer';
+        final notificationBody =
+            'You received a counter offer of DZD$newPay for "${listing['mainTitle']}"';
+        final notificationData = {
+          'type': 'counter_offer',
+          'listingId': listing['id'],
+          'newAmount': newPay
+        };
+
+        await PushNotificationService.sendNotification(
+            targetToken, notificationTitle, notificationBody, notificationData);
+      }
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Counter offer of \DZD$newPay sent successfully'),
+          backgroundColor: Colors.green,
+        ),
+      );
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Failed to send counter offer. Please try again.'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      print('Error updating listing with negotiation: $e');
+    }
   }
-}
-  
-  
-  
-  
- Widget _buildActionButtons(
+
+  Widget _buildActionButtons(
     BuildContext context,
     Map<String, dynamic> listing,
     String status,
   ) {
-    final userHasCounterOffer = (status.toLowerCase().contains('counter_offer_received'));
+    final userHasCounterOffer =
+        (status.toLowerCase().contains('counter_offer_received'));
 
     if (type == "received" && status.toLowerCase() == 'pending') {
       return Row(
@@ -706,182 +712,169 @@ Future<void> _updateListingWithNegotiation(
 
     return const SizedBox.shrink();
   }
-Future<void> _updateListingStatus(
-  BuildContext context,
-  String status,
-  Map<String, dynamic> listing,
-) async {
-  try {
-    // Use the current userId as fallback for senderUid
-    final String senderUid = listing['senderUid'] ?? userId;  // Fallback to current user
-    final String receiverUid = listing['receiverUid'];
 
-    final String? senderToken = await _getDeviceToken(senderUid);
-    final String? receiverToken = await _getDeviceToken(receiverUid);
-    
-    // Now we only need to check receiverUid since senderUid has a fallback
-    if (receiverUid == null) {
-      print('Debug - listing data: $listing');
-      throw Exception('Missing receiver UID in listing data');
-    }
+  Future<void> _updateListingStatus(
+    BuildContext context,
+    String status,
+    Map<String, dynamic> listing,
+  ) async {
+    try {
+      // Use the current userId as fallback for senderUid
+      final String senderUid =
+          listing['senderUid'] ?? userId; // Fallback to current user
+      final String receiverUid = listing['receiverUid'];
 
-    final batch = FirebaseFirestore.instance.batch();
-    
-    // Get references with validated UIDs
-    final senderRef = FirebaseFirestore.instance
-        .collection('users')
-        .doc(senderUid);
-    
-    final receiverRef = FirebaseFirestore.instance
-        .collection('users')
-        .doc(receiverUid);
+      final String? senderToken = await _getDeviceToken(senderUid);
+      final String? receiverToken = await _getDeviceToken(receiverUid);
 
-    // Update sender's listing
-    final senderDoc = await senderRef.get();
-    if (senderDoc.exists) {
-      final sentListings = List<Map<String, dynamic>>.from(
-        senderDoc.data()?['Listing_(sent)'] ?? []
+      // Now we only need to check receiverUid since senderUid has a fallback
+      if (receiverUid == null) {
+        print('Debug - listing data: $listing');
+        throw Exception('Missing receiver UID in listing data');
+      }
+
+      final batch = FirebaseFirestore.instance.batch();
+
+      // Get references with validated UIDs
+      final senderRef =
+          FirebaseFirestore.instance.collection('users').doc(senderUid);
+
+      final receiverRef =
+          FirebaseFirestore.instance.collection('users').doc(receiverUid);
+
+      // Update sender's listing
+      final senderDoc = await senderRef.get();
+      if (senderDoc.exists) {
+        final sentListings = List<Map<String, dynamic>>.from(
+            senderDoc.data()?['Listing_(sent)'] ?? []);
+        final updatedSentListings = sentListings.map((item) {
+          if (item['id'] == listing['id']) {
+            // Ensure we preserve the senderUid in the updated listing
+            return {
+              ...item,
+              'status': status,
+              'lastUpdated': DateTime.now().toIso8601String(),
+              'senderUid': senderUid, // Explicitly set senderUid
+            };
+          }
+          return item;
+        }).toList();
+
+        batch.update(senderRef, {'Listing_(sent)': updatedSentListings});
+      }
+
+      // Update receiver's listing
+      final receiverDoc = await receiverRef.get();
+      if (receiverDoc.exists) {
+        final receivedListings = List<Map<String, dynamic>>.from(
+            receiverDoc.data()?['Listing_(received)'] ?? []);
+        final updatedReceivedListings = receivedListings.map((item) {
+          if (item['id'] == listing['id']) {
+            // Ensure we preserve the senderUid in the updated listing
+            return {
+              ...item,
+              'status': status,
+              'lastUpdated': DateTime.now().toIso8601String(),
+              'senderUid': senderUid, // Explicitly set senderUid
+            };
+          }
+          return item;
+        }).toList();
+
+        batch.update(
+            receiverRef, {'Listing_(received)': updatedReceivedListings});
+      }
+
+      await batch.commit();
+
+      // Send notifications based on status
+      String notificationTitle;
+      String notificationBody;
+      Map<String, dynamic> notificationData = {
+        'type': 'listing_update',
+        'listingId': listing['id'],
+        'status': status
+      };
+
+      switch (status.toLowerCase()) {
+        case 'active':
+          // Notify receiver
+          if (receiverToken != null) {
+            notificationTitle = 'Listing Accepted';
+            notificationBody =
+                'Your listing "${listing['mainTitle']}" has been accepted!';
+            await PushNotificationService.sendNotification(receiverToken,
+                notificationTitle, notificationBody, notificationData);
+          }
+
+          // Notify sender
+          if (senderToken != null) {
+            notificationTitle = 'Listing Status Update';
+            notificationBody =
+                'Your offer for "${listing['mainTitle']}" has been accepted';
+            await PushNotificationService.sendNotification(senderToken,
+                notificationTitle, notificationBody, notificationData);
+          }
+          break;
+
+        case 'refused':
+          // Notify receiver
+          if (receiverToken != null) {
+            notificationTitle = 'Listing Refused';
+            notificationBody =
+                'Your listing "${listing['mainTitle']}" has been refused';
+            await PushNotificationService.sendNotification(receiverToken,
+                notificationTitle, notificationBody, notificationData);
+          }
+
+          // Notify sender
+          if (senderToken != null) {
+            notificationTitle = 'Listing Status Update';
+            notificationBody =
+                'Your offer for "${listing['mainTitle']}" was not accepted';
+            await PushNotificationService.sendNotification(senderToken,
+                notificationTitle, notificationBody, notificationData);
+          }
+          break;
+      }
+      // Success message
+      String statusMessage;
+      Color statusColor;
+
+      switch (status.toLowerCase()) {
+        case 'active':
+          statusMessage = 'Listing accepted successfully';
+          statusColor = Colors.green;
+          break;
+        case 'refused':
+          statusMessage = 'Listing refused';
+          statusColor = Colors.red;
+          break;
+        default:
+          statusMessage = 'Listing status updated successfully';
+          statusColor = Colors.blue;
+      }
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(statusMessage),
+          backgroundColor: statusColor,
+        ),
       );
-      final updatedSentListings = sentListings.map((item) {
-        if (item['id'] == listing['id']) {
-          // Ensure we preserve the senderUid in the updated listing
-          return {
-            ...item,
-            'status': status,
-            'lastUpdated': DateTime.now().toIso8601String(),
-            'senderUid': senderUid,  // Explicitly set senderUid
-          };
-        }
-        return item;
-      }).toList();
-      
-      batch.update(senderRef, {'Listing_(sent)': updatedSentListings});
-    }
+    } catch (e) {
+      print('Error updating listing status: $e');
+      print('Current user ID: $userId');
+      print('Listing data: $listing');
 
-    // Update receiver's listing
-    final receiverDoc = await receiverRef.get();
-    if (receiverDoc.exists) {
-      final receivedListings = List<Map<String, dynamic>>.from(
-        receiverDoc.data()?['Listing_(received)'] ?? []
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Failed to update listing status: ${e.toString()}'),
+          backgroundColor: Colors.red,
+        ),
       );
-      final updatedReceivedListings = receivedListings.map((item) {
-        if (item['id'] == listing['id']) {
-          // Ensure we preserve the senderUid in the updated listing
-          return {
-            ...item,
-            'status': status,
-            'lastUpdated': DateTime.now().toIso8601String(),
-            'senderUid': senderUid,  // Explicitly set senderUid
-          };
-        }
-        return item;
-      }).toList();
-      
-      batch.update(receiverRef, {'Listing_(received)': updatedReceivedListings});
     }
-
-    await batch.commit();
-
-
-    // Send notifications based on status
-    String notificationTitle;
-    String notificationBody;
-    Map<String, dynamic> notificationData = {
-      'type': 'listing_update',
-      'listingId': listing['id'],
-      'status': status
-    };
-
-     switch (status.toLowerCase()) {
-      case 'active':
-        // Notify receiver
-        if (receiverToken != null) {
-          notificationTitle = 'Listing Accepted';
-          notificationBody = 'Your listing "${listing['mainTitle']}" has been accepted!';
-          await PushNotificationService.sendNotification(
-            receiverToken,
-            notificationTitle,
-            notificationBody,
-            notificationData
-          );
-        }
-        
-        // Notify sender
-        if (senderToken != null) {
-          notificationTitle = 'Listing Status Update';
-          notificationBody = 'Your offer for "${listing['mainTitle']}" has been accepted';
-          await PushNotificationService.sendNotification(
-            senderToken,
-            notificationTitle,
-            notificationBody,
-            notificationData
-          );
-        }
-        break;
-
-      case 'refused':
-        // Notify receiver
-        if (receiverToken != null) {
-          notificationTitle = 'Listing Refused';
-          notificationBody = 'Your listing "${listing['mainTitle']}" has been refused';
-          await PushNotificationService.sendNotification(
-            receiverToken,
-            notificationTitle,
-            notificationBody,
-            notificationData
-          );
-        }
-        
-        // Notify sender
-        if (senderToken != null) {
-          notificationTitle = 'Listing Status Update';
-          notificationBody = 'Your offer for "${listing['mainTitle']}" was not accepted';
-          await PushNotificationService.sendNotification(
-            senderToken,
-            notificationTitle,
-            notificationBody,
-            notificationData
-          );
-        }
-        break;
-    }
-    // Success message
-    String statusMessage;
-    Color statusColor;
-    
-    switch (status.toLowerCase()) {
-      case 'active':
-        statusMessage = 'Listing accepted successfully';
-        statusColor = Colors.green;
-        break;
-      case 'refused':
-        statusMessage = 'Listing refused';
-        statusColor = Colors.red;
-        break;
-      default:
-        statusMessage = 'Listing status updated successfully';
-        statusColor = Colors.blue;
-    }
-
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(statusMessage),
-        backgroundColor: statusColor,
-      ),
-    );
-  } catch (e) {
-    print('Error updating listing status: $e');
-    print('Current user ID: $userId');
-    print('Listing data: $listing');
-    
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('Failed to update listing status: ${e.toString()}'),
-        backgroundColor: Colors.red,
-      ),
-    );
   }
-}
+
   Widget _buildInfoItem({
     required IconData icon,
     required String label,
@@ -908,14 +901,17 @@ Future<void> _updateListingStatus(
     );
   }
 
-  
   @override
   Widget build(BuildContext context) {
-    final collectionKey = type == "sent" ? 'Listing_(sent)' : 'Listing_(received)';
+    final collectionKey =
+        type == "sent" ? 'Listing_(sent)' : 'Listing_(received)';
     final theme = Theme.of(context);
 
     return StreamBuilder<DocumentSnapshot>(
-      stream: FirebaseFirestore.instance.collection('users').doc(userId).snapshots(),
+      stream: FirebaseFirestore.instance
+          .collection('users')
+          .doc(userId)
+          .snapshots(),
       builder: (context, snapshot) {
         if (!snapshot.hasData || snapshot.data == null) {
           return const Center(
@@ -993,7 +989,6 @@ Future<void> _updateListingStatus(
                                   const SizedBox(height: 4),
                                   Container(
                                     padding: const EdgeInsets.symmetric(
-                                     
                                       vertical: 4,
                                     ),
                                     decoration: BoxDecoration(
@@ -1013,7 +1008,8 @@ Future<void> _updateListingStatus(
                                           style: GoogleFonts.inter(
                                             fontSize: 10,
                                             fontWeight: FontWeight.w500,
-                                            color: _getStatusColor(status, theme),
+                                            color:
+                                                _getStatusColor(status, theme),
                                           ),
                                         ),
                                       ],
@@ -1030,7 +1026,8 @@ Future<void> _updateListingStatus(
                               decoration: BoxDecoration(
                                 color: type == "sent"
                                     ? theme.colorScheme.primary.withOpacity(0.1)
-                                    : theme.colorScheme.secondary.withOpacity(0.1),
+                                    : theme.colorScheme.secondary
+                                        .withOpacity(0.1),
                                 borderRadius: BorderRadius.circular(20),
                               ),
                               child: Row(
@@ -1096,7 +1093,7 @@ Future<void> _updateListingStatus(
                         ),
                         const SizedBox(height: 16),
                         _buildNegotiationHistory(listing),
-                          const SizedBox(height: 16),
+                        const SizedBox(height: 16),
                         _buildActionButtons(context, listing, status),
                       ],
                     ),
@@ -1111,40 +1108,40 @@ Future<void> _updateListingStatus(
   }
 }
 
-  Widget _buildInfoItem({
-    required IconData icon,
-    required String label,
-    required String value,
-    required ThemeData theme,
-  }) {
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Icon(
-          icon,
-          size: 16,
+Widget _buildInfoItem({
+  required IconData icon,
+  required String label,
+  required String value,
+  required ThemeData theme,
+}) {
+  return Row(
+    mainAxisSize: MainAxisSize.min,
+    children: [
+      Icon(
+        icon,
+        size: 16,
+        color: theme.colorScheme.onSurface.withOpacity(0.5),
+      ),
+      const SizedBox(width: 4),
+      Text(
+        "$label: ",
+        style: GoogleFonts.inter(
+          fontSize: 12,
           color: theme.colorScheme.onSurface.withOpacity(0.5),
+          fontWeight: FontWeight.w500,
         ),
-        const SizedBox(width: 4),
-        Text(
-          "$label: ",
-          style: GoogleFonts.inter(
-            fontSize: 12,
-            color: theme.colorScheme.onSurface.withOpacity(0.5),
-            fontWeight: FontWeight.w500,
-          ),
+      ),
+      Text(
+        value,
+        style: GoogleFonts.inter(
+          fontSize: 12,
+          color: theme.colorScheme.onSurface,
+          fontWeight: FontWeight.w500,
         ),
-        Text(
-          value,
-          style: GoogleFonts.inter(
-            fontSize: 12,
-            color: theme.colorScheme.onSurface,
-            fontWeight: FontWeight.w500,
-          ),
-        ),
-      ],
-    );
-  }
+      ),
+    ],
+  );
+}
 
 class ReviewsTab extends StatefulWidget {
   final String userId;
@@ -1167,10 +1164,12 @@ class _ReviewsTabState extends State<ReviewsTab> {
 
   Future<void> _loadLastViewedTimestamp() async {
     // Fetch the last viewed timestamp from Firestore (or local storage)
-    final userDoc = await _firestore.collection('users').doc(widget.userId).get();
+    final userDoc =
+        await _firestore.collection('users').doc(widget.userId).get();
     final userData = userDoc.data() as Map<String, dynamic>? ?? {};
     setState(() {
-      final timestampString = userData['last_viewed_reviews'] as String?; // Stored as ISO 8601 string
+      final timestampString = userData['last_viewed_reviews']
+          as String?; // Stored as ISO 8601 string
       if (timestampString != null) {
         lastViewedTimestamp = DateTime.parse(timestampString);
       }
@@ -1182,7 +1181,7 @@ class _ReviewsTabState extends State<ReviewsTab> {
     final now = DateTime.now();
     await _firestore.collection('users').doc(widget.userId).update({
       'last_viewed_reviews': now.toIso8601String(),
-      'newCommentsCount':0,
+      'newCommentsCount': 0,
     });
   }
 
@@ -1215,7 +1214,8 @@ class _ReviewsTabState extends State<ReviewsTab> {
           return Center(
             child: Text(
               'No reviews available.',
-              style: GoogleFonts.poppins(fontSize: 16, fontStyle: FontStyle.italic),
+              style: GoogleFonts.poppins(
+                  fontSize: 16, fontStyle: FontStyle.italic),
             ),
           );
         }
@@ -1239,7 +1239,8 @@ class _ReviewsTabState extends State<ReviewsTab> {
                       itemCount: reviews.length,
                       itemBuilder: (context, index) {
                         final review = reviews[index] as Map<String, dynamic>;
-                        final comment = review['comment'] ?? 'No comment provided';
+                        final comment =
+                            review['comment'] ?? 'No comment provided';
                         final commenterId = review['id_commentor'] ?? 'Unknown';
                         final rating = review['rating']?.toDouble() ?? 0.0;
                         final timestamp = review['timestamp'] ?? '';
@@ -1254,109 +1255,135 @@ class _ReviewsTabState extends State<ReviewsTab> {
 
                         // Parse and format the timestamp
                         final formattedTimestamp = reviewTimestamp != null
-                            ? DateFormat('MMM d, yyyy • h:mm a').format(reviewTimestamp)
+                            ? DateFormat('MMM d, yyyy • h:mm a')
+                                .format(reviewTimestamp)
                             : 'Unknown time';
 
                         return FutureBuilder<DocumentSnapshot>(
-                          future: _firestore.collection('users').doc(commenterId).get(),
+                          future: _firestore
+                              .collection('users')
+                              .doc(commenterId)
+                              .get(),
                           builder: (context, commenterSnapshot) {
-                            if (commenterSnapshot.connectionState == ConnectionState.waiting) {
-                              return const Center(child: CircularProgressIndicator());
+                            if (commenterSnapshot.connectionState ==
+                                ConnectionState.waiting) {
+                              return const Center(
+                                  child: CircularProgressIndicator());
                             }
 
-                            final commenterData = commenterSnapshot.data?.data() as Map<String, dynamic>? ?? {};
-                            final commenterName = commenterData['name'] ?? 'Anonymous';
-                            final commenterPhoto = commenterData['photoURL'] ?? '';
+                            final commenterData = commenterSnapshot.data?.data()
+                                    as Map<String, dynamic>? ??
+                                {};
+                            final commenterName =
+                                commenterData['name'] ?? 'Anonymous';
+                            final commenterPhoto =
+                                commenterData['photoURL'] ?? '';
 
-  return Card(
-  margin: const EdgeInsets.symmetric(vertical: 8),
-  child: Padding(
-    padding: const EdgeInsets.all(12.0),
-    child: Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        CircleAvatar(
-          radius: 20,
-          backgroundImage: commenterPhoto.isNotEmpty
-              ? NetworkImage(commenterPhoto)
-              : const AssetImage('assets/images/default_profile.png')
-                  as ImageProvider,
-        ),
-        const SizedBox(width: 12),
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                   
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          commenterName,
-                          style: GoogleFonts.poppins(
-                            fontWeight: FontWeight.w600,
-                            fontSize: 13,
-                          ),
-                        ),
-              const SizedBox(height: 6),
-              _buildStarRating(rating),
-              const SizedBox(height: 8),
-              ],
-              ),
-
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.end,
-                    children: [
-                      Text(
-                        formattedTimestamp,
-                        style: GoogleFonts.poppins(
-                          fontSize: 12,
-                          color: Colors.grey[500],
-                        ),
-                      ),
-                      if (isNew)
-                        Row(
-                          children: [
-                            Container(
-                              margin: const EdgeInsets.only(top: 4),
-                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                              decoration: BoxDecoration(
-                                color: Colors.red,
-                                borderRadius: BorderRadius.circular(4),
-                              ),
-                              child: Text(
-                                'NEW',
-                                style: GoogleFonts.poppins(
-                                  fontSize: 10,
-                                  color: Colors.white,
+                            return Card(
+                              margin: const EdgeInsets.symmetric(vertical: 8),
+                              child: Padding(
+                                padding: const EdgeInsets.all(12.0),
+                                child: Row(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    CircleAvatar(
+                                      radius: 20,
+                                      backgroundImage: commenterPhoto.isNotEmpty
+                                          ? NetworkImage(commenterPhoto)
+                                          : const AssetImage(
+                                                  'assets/images/default_profile.png')
+                                              as ImageProvider,
+                                    ),
+                                    const SizedBox(width: 12),
+                                    Expanded(
+                                      child: Column(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        children: [
+                                          Row(
+                                            mainAxisAlignment:
+                                                MainAxisAlignment.spaceBetween,
+                                            crossAxisAlignment:
+                                                CrossAxisAlignment.start,
+                                            children: [
+                                              Column(
+                                                crossAxisAlignment:
+                                                    CrossAxisAlignment.start,
+                                                children: [
+                                                  Text(
+                                                    commenterName,
+                                                    style: GoogleFonts.poppins(
+                                                      fontWeight:
+                                                          FontWeight.w600,
+                                                      fontSize: 13,
+                                                    ),
+                                                  ),
+                                                  const SizedBox(height: 6),
+                                                  _buildStarRating(rating),
+                                                  const SizedBox(height: 8),
+                                                ],
+                                              ),
+                                              Column(
+                                                crossAxisAlignment:
+                                                    CrossAxisAlignment.end,
+                                                children: [
+                                                  Text(
+                                                    formattedTimestamp,
+                                                    style: GoogleFonts.poppins(
+                                                      fontSize: 12,
+                                                      color: Colors.grey[500],
+                                                    ),
+                                                  ),
+                                                  if (isNew)
+                                                    Row(
+                                                      children: [
+                                                        Container(
+                                                          margin:
+                                                              const EdgeInsets
+                                                                  .only(top: 4),
+                                                          padding:
+                                                              const EdgeInsets
+                                                                  .symmetric(
+                                                                  horizontal: 8,
+                                                                  vertical: 4),
+                                                          decoration:
+                                                              BoxDecoration(
+                                                            color: Colors.red,
+                                                            borderRadius:
+                                                                BorderRadius
+                                                                    .circular(
+                                                                        4),
+                                                          ),
+                                                          child: Text(
+                                                            'NEW',
+                                                            style: GoogleFonts
+                                                                .poppins(
+                                                              fontSize: 10,
+                                                              color:
+                                                                  Colors.white,
+                                                            ),
+                                                          ),
+                                                        ),
+                                                      ],
+                                                    ),
+                                                ],
+                                              ),
+                                            ],
+                                          ),
+                                          Text(
+                                            comment,
+                                            style: GoogleFonts.poppins(
+                                              color: Colors.grey[700],
+                                              fontSize: 13,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  ],
                                 ),
                               ),
-                            ),
-                          ],
-                        ),
-                    ],
-                  ),
-                ],
-              ),
-                Text(
-                comment,
-                style: GoogleFonts.poppins(
-                  color: Colors.grey[700],
-                  fontSize: 13,
-                ),
-              ),
-            ],
-          ),
-        ),
-      ],
-    ),
-  ),
-);
-
+                            );
                           },
                         );
                       },

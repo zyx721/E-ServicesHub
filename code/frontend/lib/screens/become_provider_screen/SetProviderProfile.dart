@@ -5,7 +5,6 @@ import 'package:image_picker/image_picker.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'dart:io';
-import 'package:image_picker/image_picker.dart';
 import 'package:googleapis/drive/v3.dart' as drive;
 import 'package:flutter/services.dart' show rootBundle;
 import 'package:path/path.dart' as path;
@@ -940,5 +939,3 @@ Widget buildPortfolioSection() {
   );
 }
 }
-
-

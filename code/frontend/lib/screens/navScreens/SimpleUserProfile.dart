@@ -100,12 +100,12 @@ class _SimpleUserProfileState extends State<SimpleUserProfile> {
               ],
             ),
             Positioned(
-              top: 400, // Adjust this value to fine-tune the position
+              top: 40, // Adjust this value to fine-tune the position
               right: 16, // Adjust this value to fine-tune the position
               child: FloatingActionButton(
                 onPressed: toggleEditMode,
                 backgroundColor: const Color.fromARGB(255, 0, 0, 0),
-                child: Icon(isEditMode ? Icons.check : Icons.edit),
+                child: Icon(isEditMode ? Icons.check : Icons.edit,),
                 tooltip: isEditMode
                     ? localization?.save
                     : localization?.editProfile, // Use localization
