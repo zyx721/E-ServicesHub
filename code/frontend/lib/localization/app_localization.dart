@@ -292,11 +292,12 @@ class AppLocalizations {
   String get selectYourServices => isArabic
       ? "اختر خدماتك:"
       : (isFrench ? "Sélectionnez vos services:" : "Select Your Services:");
-  String get selectTwoChoices => isArabic
-      ? "يمكنك اختيار خيارين فقط."
+  String get selectOneChoice => isArabic
+      ? "يرجى اختيار خيار واحد فقط."
       : (isFrench
-          ? "Vous ne pouvez sélectionner que deux choix."
-          : "You can only select two choices.");
+          ? "Veuillez sélectionner un seul choix."
+          : "Please select only one choice.");
+
   String get continueButton =>
       isArabic ? "استمر" : (isFrench ? "Continuer" : "Continue");
   String get firstNameLastNameRequired => isArabic

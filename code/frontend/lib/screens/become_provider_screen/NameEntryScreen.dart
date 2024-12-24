@@ -24,7 +24,16 @@ class _NameEntryScreenState extends State<NameEntryScreen> {
       }
 
       final List<dynamic> choices = snapshot.data()!['choices'];
-      return choices.map((choice) => WorkChoice.fromMap(choice)).toList();
+      final workChoices =
+          choices.map((choice) => WorkChoice.fromMap(choice)).toList();
+
+      // Print choices in console
+      workChoices.forEach((choice) {
+        print(
+            'Choice: ${choice.id}, EN: ${choice.en}, AR: ${choice.ar}, FR: ${choice.fr}');
+      });
+
+      return workChoices;
     });
   }
 
@@ -36,14 +45,15 @@ class _NameEntryScreenState extends State<NameEntryScreen> {
       case 'ar':
         return choice.ar;
       case 'fr':
-        return choice.fr ?? choice.en; // Fallback to English if French not available
+        return choice.fr ??
+            choice.en; // Fallback to English if French not available
       default:
         return choice.en;
     }
   }
 
   void _saveProviderInfo() async {
-    if (_selectedChoices.length != 2) {
+    if (_selectedChoices.length != 1) {
       _showErrorDialog(AppLocalizations.of(context)!.selectTwoWorkChoices);
       return;
     }
@@ -135,10 +145,10 @@ class _NameEntryScreenState extends State<NameEntryScreen> {
                         setState(() {
                           if (isSelected) {
                             _selectedChoices.remove(choice.id);
-                          } else if (_selectedChoices.length < 2) {
+                          } else if (_selectedChoices.length < 1) {
                             _selectedChoices.add(choice.id);
                           } else {
-                            _showErrorDialog(appLocalizations.selectTwoChoices);
+                            _showErrorDialog(appLocalizations.selectOneChoice);
                           }
                         });
                       },
