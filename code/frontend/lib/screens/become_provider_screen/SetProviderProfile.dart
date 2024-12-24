@@ -11,8 +11,7 @@ import 'package:flutter/services.dart' show rootBundle;
 import 'package:path/path.dart' as path;
 import 'package:googleapis_auth/auth_io.dart';
 import 'package:hanini_frontend/localization/algeria_cites.dart';
-
-
+import 'package:hanini_frontend/localization/app_localization.dart';
 
 // algeria_location_model.dart
 class AlgeriaLocation {
@@ -51,9 +50,8 @@ class AlgeriaLocation {
 }
 
 // Convert the const data to AlgeriaLocation objects
-final List<AlgeriaLocation> algeriaLocations = algeria_cites
-    .map((json) => AlgeriaLocation.fromJson(json))
-    .toList();
+final List<AlgeriaLocation> algeriaLocations =
+    algeria_cites.map((json) => AlgeriaLocation.fromJson(json)).toList();
 
 class LocationSelectionFields extends StatefulWidget {
   final void Function(AlgeriaLocation?) onLocationSelected;
@@ -68,13 +66,14 @@ class LocationSelectionFields extends StatefulWidget {
   }) : super(key: key);
 
   @override
-  State<LocationSelectionFields> createState() => _LocationSelectionFieldsState();
+  State<LocationSelectionFields> createState() =>
+      _LocationSelectionFieldsState();
 }
 
 class _LocationSelectionFieldsState extends State<LocationSelectionFields> {
   String? selectedWilayaCode;
   int? selectedCommuneId;
-  
+
   // Computed properties with proper uniqueness handling
   Map<String, List<AlgeriaLocation>> get locationsByWilaya {
     final map = <String, List<AlgeriaLocation>>{};
@@ -91,7 +90,10 @@ class _LocationSelectionFieldsState extends State<LocationSelectionFields> {
   List<MapEntry<String, String>> get uniqueWilayas {
     final wilayaMap = <String, String>{};
     for (var location in algeriaLocations) {
-      wilayaMap.putIfAbsent(location.wilayaCode, () => location.wilayaNameAscii);
+      // if language is Arabic, use Arabic names
+      final isArabic = Localizations.localeOf(context).languageCode == 'ar';
+      wilayaMap.putIfAbsent(location.wilayaCode,
+          () => isArabic ? location.wilayaName : location.wilayaNameAscii);
     }
     final wilayas = wilayaMap.entries.toList()
       ..sort((a, b) => a.value.compareTo(b.value));
@@ -99,7 +101,7 @@ class _LocationSelectionFieldsState extends State<LocationSelectionFields> {
   }
 
   List<AlgeriaLocation> get communes {
-    return selectedWilayaCode != null 
+    return selectedWilayaCode != null
         ? locationsByWilaya[selectedWilayaCode] ?? []
         : [];
   }
@@ -113,13 +115,16 @@ class _LocationSelectionFieldsState extends State<LocationSelectionFields> {
 
   @override
   Widget build(BuildContext context) {
+    final localizations = AppLocalizations.of(context);
+    if (localizations == null) return const SizedBox.shrink();
+
     return Column(
       children: [
         // Wilaya Dropdown
         DropdownButtonFormField<String>(
           value: selectedWilayaCode,
           decoration: InputDecoration(
-            labelText: 'Wilaya',
+            labelText: localizations.wilaya,
             border: const OutlineInputBorder(),
             labelStyle: GoogleFonts.poppins(),
           ),
@@ -136,21 +141,27 @@ class _LocationSelectionFieldsState extends State<LocationSelectionFields> {
               widget.onLocationSelected(null);
             });
           },
-          validator: (value) => value == null ? 'Please select a wilaya' : null,
+          validator: (value) =>
+              value == null ? localizations.wilayaRequiredError : null,
         ),
         const SizedBox(height: 10),
         // Commune Dropdown
         DropdownButtonFormField<int>(
           value: selectedCommuneId,
           decoration: InputDecoration(
-            labelText: 'Commune',
+            labelText: localizations.commune,
             border: const OutlineInputBorder(),
             labelStyle: GoogleFonts.poppins(),
           ),
           items: communes.map((commune) {
+            final isArabic =
+                Localizations.localeOf(context).languageCode == 'ar';
             return DropdownMenuItem<int>(
               value: commune.id,
-              child: Text(commune.communeNameAscii, style: GoogleFonts.poppins()),
+              child: Text(
+                isArabic ? commune.communeName : commune.communeNameAscii,
+                style: GoogleFonts.poppins(),
+              ),
             );
           }).toList(),
           onChanged: selectedWilayaCode == null
@@ -164,7 +175,8 @@ class _LocationSelectionFieldsState extends State<LocationSelectionFields> {
                     widget.onLocationSelected(selectedLocation);
                   });
                 },
-          validator: (value) => value == null ? 'Please select a commune' : null,
+          validator: (value) =>
+              value == null ? localizations.communeRequiredError : null,
         ),
       ],
     );
@@ -172,21 +184,22 @@ class _LocationSelectionFieldsState extends State<LocationSelectionFields> {
 }
 
 class GoogleDriveService {
-  static const String _folderID = "1b517UTgjLJfsjyH2dByEPYZDg4cgwssQ"; // Your folder ID
+  static const String _folderID =
+      "1b517UTgjLJfsjyH2dByEPYZDg4cgwssQ"; // Your folder ID
 
   Future<drive.DriveApi> getDriveApi() async {
     try {
       // Load credentials from assets
-      final String credentials = await rootBundle.loadString(
-        'assets/credentials/service_account.json'
-      );
-      
-      final accountCredentials = ServiceAccountCredentials.fromJson(credentials);
+      final String credentials = await rootBundle
+          .loadString('assets/credentials/service_account.json');
+
+      final accountCredentials =
+          ServiceAccountCredentials.fromJson(credentials);
       final client = await clientViaServiceAccount(
         accountCredentials,
         [drive.DriveApi.driveScope],
       );
-      
+
       return drive.DriveApi(client);
     } catch (e) {
       throw Exception('Failed to initialize Drive API: $e');
@@ -230,11 +243,11 @@ class GoogleDriveService {
   Future<void> deleteFile(String fileUrl) async {
     try {
       final driveApi = await getDriveApi();
-      
+
       // Extract file ID from URL
       final uri = Uri.parse(fileUrl);
       final fileId = uri.queryParameters['id'];
-      
+
       if (fileId == null) {
         throw Exception('Invalid file URL');
       }
@@ -247,7 +260,6 @@ class GoogleDriveService {
   }
 }
 
-
 class SetProviderProfile extends StatefulWidget {
   const SetProviderProfile({Key? key}) : super(key: key);
 
@@ -258,15 +270,17 @@ class SetProviderProfile extends StatefulWidget {
 class _ServiceProviderProfileState extends State<SetProviderProfile> {
   final _driveService = GoogleDriveService();
   final _formKey = GlobalKey<FormState>();
-   // Add these new variables to track selected location
+  // Add these new variables to track selected location
   String? selectedWilaya;
   String? selectedCommune;
 
-    // Track temporary uploads that haven't been saved to profile yet
+  // Track temporary uploads that haven't been saved to profile yet
   List<String> _temporaryUploads = [];
   List<String> portfolioImages = [];
 
   // Profile basic info
+  final TextEditingController _firstNameController = TextEditingController();
+  final TextEditingController _lastNameController = TextEditingController();
   final TextEditingController _professionController = TextEditingController();
   final TextEditingController _phoneController = TextEditingController();
   final TextEditingController _addressController = TextEditingController();
@@ -279,16 +293,22 @@ class _ServiceProviderProfileState extends State<SetProviderProfile> {
   List<Map<String, String>> _workExperience = [];
   // Controllers for dynamic inputs
   final TextEditingController _skillController = TextEditingController();
-  final TextEditingController _certificationController = TextEditingController();
+  final TextEditingController _certificationController =
+      TextEditingController();
   final TextEditingController _companyController = TextEditingController();
   final TextEditingController _positionController = TextEditingController();
   final TextEditingController _durationController = TextEditingController();
 
+  var userPhotoUrl = '';
+  String _originalFirstName = "";
+  String _originalLastName = "";
 
+  @override
+  void initState() {
+    super.initState();
+    fetchUserData();
+  }
 
-  String userPhotoUrl = '';
-
-  
   Future<void> fetchUserData() async {
     try {
       final User? user = _auth.currentUser;
@@ -300,6 +320,10 @@ class _ServiceProviderProfileState extends State<SetProviderProfile> {
           final data = userDoc.data() as Map<String, dynamic>;
           setState(() {
             userPhotoUrl = data['photoURL'] ?? '';
+            _originalFirstName = data['firstName'] ?? '';
+            _originalLastName = data['lastName'] ?? '';
+            _firstNameController.text = _originalFirstName;
+            _lastNameController.text = _originalLastName;
           });
         }
       }
@@ -307,9 +331,6 @@ class _ServiceProviderProfileState extends State<SetProviderProfile> {
       debugPrint('Error fetching user data: $e');
     }
   }
-
-  
-
   // Add these variables to track temporary images
   List<File> _temporaryImageFiles = [];
   bool _isUploading = false;
@@ -359,10 +380,26 @@ class _ServiceProviderProfileState extends State<SetProviderProfile> {
 
   // Modify the _saveProfile function to include image uploads
   Future<void> _saveProfile() async {
+    final localizations = AppLocalizations.of(context);
+    if (localizations == null) return;
+
+    final String firstName = _firstNameController.text.trim();
+    final String lastName = _lastNameController.text.trim();
+
+    if (_calculateDifference(_originalFirstName, firstName) > 2 ||
+        _calculateDifference(_originalLastName, lastName) > 2) {
+      _showErrorDialog(localizations.nameChangeLimit);
+      return;
+    }
+
     if (_formKey.currentState!.validate()) {
-      if (_skills.isEmpty || _certifications.isEmpty || _workExperience.isEmpty) {
+      if (_skills.isEmpty ||
+          _certifications.isEmpty ||
+          _workExperience.isEmpty) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Please add at least one skill, certification, and work experience')),
+          const SnackBar(
+              content: Text(
+                  'Please add at least one skill, certification, and work experience')),
         );
         return;
       }
@@ -385,6 +422,7 @@ class _ServiceProviderProfileState extends State<SetProviderProfile> {
           },
         );
 
+
         // Upload all images first
         List<String> uploadedImages = [];
         if (_temporaryImageFiles.isNotEmpty) {
@@ -393,13 +431,17 @@ class _ServiceProviderProfileState extends State<SetProviderProfile> {
 
         final DocumentReference userDoc = FirebaseFirestore.instance.collection('users').doc(user.uid);
 
+
         // Prepare the profile data with uploaded image URLs
         Map<String, dynamic> profileData = {
+          'firstName': firstName,
+          'lastName': lastName,
           'basicInfo': {
             'profession': _professionController.text,
             'phone': _phoneController.text,
-            'wilaya': selectedWilaya,
-            'commune': selectedCommune,
+            'wilaya': selectedWilaya, // Store wilaya separately
+            'commune': selectedCommune, // Store commune separately
+
             'hourlyRate': _hourlyRateController.text,
           },
           'skills': _skills,
@@ -414,10 +456,10 @@ class _ServiceProviderProfileState extends State<SetProviderProfile> {
         // Update the Firestore document
         await userDoc.update(profileData);
 
-        // Clear temporary files
-        setState(() {
-          _temporaryImageFiles.clear();
-        });
+
+        // Clear temporary uploads list since they're now saved
+        _temporaryUploads.clear();
+
 
         // Close loading indicator
         Navigator.of(context).pop();
@@ -426,7 +468,9 @@ class _ServiceProviderProfileState extends State<SetProviderProfile> {
         Navigator.pushReplacement(
           context,
           MaterialPageRoute(
-            builder: (context) => NavbarPage(),
+            builder: (context) => NavbarPage(
+              initialIndex: 3,
+            ),
           ),
         );
 
@@ -436,7 +480,7 @@ class _ServiceProviderProfileState extends State<SetProviderProfile> {
       } catch (e) {
         // Close loading indicator
         Navigator.of(context).pop();
-        
+
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Error updating profile: $e')),
         );
@@ -445,12 +489,50 @@ class _ServiceProviderProfileState extends State<SetProviderProfile> {
 
 
 }
+
+  int _calculateDifference(String original, String updated) {
+    int difference = 0;
+    for (int i = 0; i < original.length && i < updated.length; i++) {
+      if (original[i] != updated[i]) {
+        difference++;
+      }
+    }
+    difference += (original.length - updated.length).abs();
+    return difference;
+  }
+
+  void _showErrorDialog(String message) {
+    final localizations = AppLocalizations.of(context);
+    if (localizations == null) return;
+
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(localizations.error),
+        content: Text(message),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text(localizations.okay),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
+    final localizations = AppLocalizations.of(context);
+    if (localizations == null) {
+      return Padding(
+        padding: const EdgeInsets.only(right: 20.0),
+        child: CircularProgressIndicator(),
+      );
+    }
     return Scaffold(
       appBar: AppBar(
         title: Text(
-          'Setup Your Profile',
+          AppLocalizations.of(context)!.setupYourProfile,
           style: GoogleFonts.poppins(fontWeight: FontWeight.bold),
         ),
       ),
@@ -461,33 +543,28 @@ class _ServiceProviderProfileState extends State<SetProviderProfile> {
           children: [
             _buildProfileImageUpload(),
             const SizedBox(height: 20),
-
-            _buildSectionTitle('Basic Information'),
+            _buildSectionTitle(localizations.BaicInfo),
             _buildBasicInfoFields(),
             const SizedBox(height: 20),
-
-            _buildSectionTitle('Skills'),
+            _buildSectionTitle(localizations.skills),
             _buildSkillsSection(),
             const SizedBox(height: 20),
-
-            _buildSectionTitle('Work Experience'),
+            _buildSectionTitle(localizations.workExperience),
             _buildWorkExperienceSection(),
             const SizedBox(height: 20),
-
-            _buildSectionTitle('Certifications'),
+            _buildSectionTitle(localizations.certifications),
             _buildCertificationsSection(),
             const SizedBox(height: 20),
-
+            _buildSectionTitle(localizations.portfolio),
             buildPortfolioSection(),
             const SizedBox(height: 20),
-
             ElevatedButton(
               onPressed: _saveProfile,
               style: ElevatedButton.styleFrom(
                 padding: const EdgeInsets.symmetric(vertical: 15),
               ),
               child: Text(
-                'Save Profile',
+                localizations.saveProfile,
                 style: GoogleFonts.poppins(
                   fontSize: 16,
                   fontWeight: FontWeight.bold,
@@ -599,35 +676,36 @@ Set<String> deletingImages = {};
   Widget _buildProfileImageUpload() {
     return Center(
       child: Stack(
-              children: [
-                CircleAvatar(
-                  radius: 60,
-                  backgroundColor: Colors.grey.shade200,
-                  backgroundImage: userPhotoUrl.isNotEmpty
-                      ? NetworkImage(userPhotoUrl) as ImageProvider
-                      : const AssetImage('assets/images/default_profile.png'),
-                ),
-                  GestureDetector(
-                    onTap: () {
-                      pickNewProfilePicture();
-                    },
-                    child: Container(
-                      padding: const EdgeInsets.all(6),
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        color: Colors.blue,
-                      ),
-                      child: const Icon(
-                        Icons.camera_alt,
-                        size: 20,
-                        color: Colors.white,
-                      ),
-                    ),
-                  ),
-              ],
+        children: [
+          CircleAvatar(
+            radius: 60,
+            backgroundColor: Colors.grey.shade200,
+            backgroundImage: userPhotoUrl.isNotEmpty
+                ? NetworkImage(userPhotoUrl) as ImageProvider
+                : const AssetImage('assets/images/default_profile.png'),
+          ),
+          GestureDetector(
+            onTap: () {
+              pickNewProfilePicture();
+            },
+            child: Container(
+              padding: const EdgeInsets.all(6),
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: Colors.blue,
+              ),
+              child: const Icon(
+                Icons.camera_alt,
+                size: 20,
+                color: Colors.white,
+              ),
             ),
+          ),
+        ],
+      ),
     );
   }
+
 
 
 
@@ -645,86 +723,109 @@ Future<void> pickNewProfilePicture() async {
     
     if (pickedFile == null) return;
 
-    // Show loading indicator
-    if (mounted) {
-      showDialog(
-        context: context,
-        barrierDismissible: false,
-        builder: (BuildContext context) {
-          return const Center(child: CircularProgressIndicator());
-        },
-      );
-    }
+      // Show loading indicator
+      if (mounted) {
+        showDialog(
+          context: context,
+          barrierDismissible: false,
+          builder: (BuildContext context) {
+            return const Center(child: CircularProgressIndicator());
+          },
+        );
+      }
 
-    // Upload new image to Drive
-    final file = File(pickedFile.path);
-    final fileUrl = await _driveService.uploadFile(file);
+      // Upload new image to Drive
+      final file = File(pickedFile.path);
+      final fileUrl = await _driveService.uploadFile(file);
 
-    // Get current user
-    final User? user = _auth.currentUser;
-    if (user == null) throw Exception('No user logged in');
+      // Get current user
+      final User? user = _auth.currentUser;
+      if (user == null) throw Exception('No user logged in');
 
-    // Delete old photo from Drive if it exists
-    if (userPhotoUrl.startsWith('https://drive.google.com')) {
-      try {
-        await _driveService.deleteFile(userPhotoUrl);
-      } catch (e) {
-        debugPrint('Error deleting old profile picture: $e');
+      // Delete old photo from Drive if it exists
+      if (userPhotoUrl.startsWith('https://drive.google.com')) {
+        try {
+          await _driveService.deleteFile(userPhotoUrl);
+        } catch (e) {
+          debugPrint('Error deleting old profile picture: $e');
+        }
+      }
+
+      // Update Firestore and local state
+      await _firestore.collection('users').doc(user.uid).update({
+        'photoURL': fileUrl,
+      });
+
+      setState(() {
+        userPhotoUrl = fileUrl;
+      });
+
+      // Close loading indicator
+      if (mounted) {
+        Navigator.of(context).pop();
+      }
+    } catch (e) {
+      debugPrint('Error updating profile picture: $e');
+      if (mounted) {
+        Navigator.of(context).pop(); // Close loading indicator
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Failed to update profile picture')),
+        );
       }
     }
-
-    // Update Firestore and local state
-    await _firestore.collection('users').doc(user.uid).update({
-      'photoURL': fileUrl,
-    });
-
-    setState(() {
-      userPhotoUrl = fileUrl;
-    });
-
-    // Close loading indicator
-    if (mounted) {
-      Navigator.of(context).pop();
-    }
-
-  } catch (e) {
-    debugPrint('Error updating profile picture: $e');
-    if (mounted) {
-      Navigator.of(context).pop(); // Close loading indicator
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Failed to update profile picture')),
-      );
-    }
   }
-}
-
 
   Widget _buildBasicInfoFields() {
+    final localizations = AppLocalizations.of(context);
+    if (localizations == null) return const SizedBox.shrink();
+
     return Column(
       children: [
         TextFormField(
-          controller: _professionController,
+          controller: _firstNameController,
           decoration: InputDecoration(
-            labelText: 'Profession',
+            labelText: localizations.firstName,
             border: OutlineInputBorder(),
             labelStyle: GoogleFonts.poppins(),
           ),
-          validator: (value) => value!.isEmpty ? 'Please enter your profession' : null,
+          validator: (value) =>
+              value!.isEmpty ? localizations.firstNameRequired : null,
+        ),
+        const SizedBox(height: 10),
+        TextFormField(
+          controller: _lastNameController,
+          decoration: InputDecoration(
+            labelText: localizations.lastName,
+            border: OutlineInputBorder(),
+            labelStyle: GoogleFonts.poppins(),
+          ),
+          validator: (value) =>
+              value!.isEmpty ? localizations.LastNameRequired : null,
+        ),
+        const SizedBox(height: 10),
+        TextFormField(
+          controller: _professionController,
+          decoration: InputDecoration(
+            labelText: localizations.profession,
+            border: OutlineInputBorder(),
+            labelStyle: GoogleFonts.poppins(),
+          ),
+          validator: (value) =>
+              value!.isEmpty ? localizations.professionRequiredError : null,
         ),
         const SizedBox(height: 10),
         TextFormField(
           controller: _phoneController,
           decoration: InputDecoration(
-            labelText: 'Phone Number',
+            labelText: localizations.phone,
             border: OutlineInputBorder(),
             labelStyle: GoogleFonts.poppins(),
           ),
-          validator: (value) => value!.isEmpty 
-            ? 'Please enter your phone number' 
-            : null,
+          validator: (value) =>
+              value!.isEmpty ? localizations.phoneRequiredError : null,
         ),
         const SizedBox(height: 10),
-       const SizedBox(height: 10),
+        const SizedBox(height: 10),
         LocationSelectionFields(
           onLocationSelected: (location) {
             if (location != null) {
@@ -735,38 +836,39 @@ Future<void> pickNewProfilePicture() async {
             }
           },
         ),
-      const SizedBox(height: 10),
+        const SizedBox(height: 10),
         const SizedBox(height: 10),
         TextFormField(
           controller: _hourlyRateController,
           keyboardType: TextInputType.number,
           decoration: InputDecoration(
-            labelText: 'Hourly Rate (DZD)',
+            labelText: localizations.hourlyRate,
             border: OutlineInputBorder(),
             labelStyle: GoogleFonts.poppins(),
           ),
-          validator: (value) => value!.isEmpty 
-            ? 'Please enter your hourly rate' 
-            : null,
+          validator: (value) =>
+              value!.isEmpty ? localizations.hourlyRateRequiredError : null,
         ),
         const SizedBox(height: 10),
         TextFormField(
           controller: _descriptionController,
           maxLines: 3,
           decoration: InputDecoration(
-            labelText: 'About Me',
+            labelText: localizations.aboutMe,
             border: OutlineInputBorder(),
             labelStyle: GoogleFonts.poppins(),
           ),
-          validator: (value) => value!.isEmpty 
-            ? 'Please provide a brief description' 
-            : null,
+          validator: (value) =>
+              value!.isEmpty ? localizations.fieldRequiredError : null,
         ),
       ],
     );
   }
 
   Widget _buildSkillsSection() {
+    final localizations = AppLocalizations.of(context);
+    if (localizations == null) return const SizedBox.shrink();
+
     return Column(
       children: [
         Row(
@@ -775,7 +877,7 @@ Future<void> pickNewProfilePicture() async {
               child: TextField(
                 controller: _skillController,
                 decoration: InputDecoration(
-                  labelText: 'Add Skill',
+                  labelText: localizations.addSkill,
                   border: OutlineInputBorder(),
                   labelStyle: GoogleFonts.poppins(),
                 ),
@@ -791,11 +893,13 @@ Future<void> pickNewProfilePicture() async {
         Wrap(
           spacing: 8,
           runSpacing: 8,
-          children: _skills.map((skill) => Chip(
-            label: Text(skill, style: GoogleFonts.poppins()),
-            deleteIcon: Icon(Icons.close),
-            onDeleted: () => _removeSkill(skill),
-          )).toList(),
+          children: _skills
+              .map((skill) => Chip(
+                    label: Text(skill, style: GoogleFonts.poppins()),
+                    deleteIcon: Icon(Icons.close),
+                    onDeleted: () => _removeSkill(skill),
+                  ))
+              .toList(),
         ),
       ],
     );
@@ -817,21 +921,24 @@ Future<void> pickNewProfilePicture() async {
   }
 
   Widget _buildWorkExperienceSection() {
+    final localizations = AppLocalizations.of(context);
+    if (localizations == null) return const SizedBox.shrink();
+
     return Column(
       children: [
         TextField(
           controller: _companyController,
           decoration: InputDecoration(
-            labelText: 'Company Name',
+            labelText: localizations.companyName,
             border: OutlineInputBorder(),
             labelStyle: GoogleFonts.poppins(),
           ),
         ),
         const SizedBox(height: 10),
-                TextField(
+        TextField(
           controller: _positionController,
           decoration: InputDecoration(
-            labelText: 'Position',
+            labelText: localizations.position,
             border: OutlineInputBorder(),
             labelStyle: GoogleFonts.poppins(),
           ),
@@ -840,7 +947,7 @@ Future<void> pickNewProfilePicture() async {
         TextField(
           controller: _durationController,
           decoration: InputDecoration(
-            labelText: 'Duration',
+            labelText: localizations.duration,
             border: OutlineInputBorder(),
             labelStyle: GoogleFonts.poppins(),
           ),
@@ -849,7 +956,7 @@ Future<void> pickNewProfilePicture() async {
         ElevatedButton(
           onPressed: _addWorkExperience,
           child: Text(
-            'Add Experience',
+            localizations.addWorkExperience,
             style: GoogleFonts.poppins(),
           ),
         ),
@@ -866,8 +973,10 @@ Future<void> pickNewProfilePicture() async {
                 subtitle: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text('Position: ${experience['position'] ?? ''}', style: GoogleFonts.poppins()),
-                    Text('Duration: ${experience['duration'] ?? ''}', style: GoogleFonts.poppins()),
+                    Text('Position: ${experience['position'] ?? ''}',
+                        style: GoogleFonts.poppins()),
+                    Text('Duration: ${experience['duration'] ?? ''}',
+                        style: GoogleFonts.poppins()),
                   ],
                 ),
                 trailing: IconButton(
@@ -906,6 +1015,8 @@ Future<void> pickNewProfilePicture() async {
   }
 
   Widget _buildCertificationsSection() {
+    final localizations = AppLocalizations.of(context);
+    if (localizations == null) return const SizedBox.shrink();
     return Column(
       children: [
         Row(
@@ -914,7 +1025,7 @@ Future<void> pickNewProfilePicture() async {
               child: TextField(
                 controller: _certificationController,
                 decoration: InputDecoration(
-                  labelText: 'Add Certification',
+                  labelText: localizations.skills,
                   border: OutlineInputBorder(),
                   labelStyle: GoogleFonts.poppins(),
                 ),
@@ -930,11 +1041,13 @@ Future<void> pickNewProfilePicture() async {
         Wrap(
           spacing: 8,
           runSpacing: 8,
-          children: _certifications.map((certification) => Chip(
-            label: Text(certification, style: GoogleFonts.poppins()),
-            deleteIcon: Icon(Icons.close),
-            onDeleted: () => _removeCertification(certification),
-          )).toList(),
+          children: _certifications
+              .map((certification) => Chip(
+                    label: Text(certification, style: GoogleFonts.poppins()),
+                    deleteIcon: Icon(Icons.close),
+                    onDeleted: () => _removeCertification(certification),
+                  ))
+              .toList(),
         ),
       ],
     );
@@ -956,12 +1069,9 @@ Future<void> pickNewProfilePicture() async {
   }
 
 
-
-
-
-
-
-
 }
 
-         
+
+ 
+
+  

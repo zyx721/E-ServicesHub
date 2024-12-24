@@ -10,24 +10,23 @@ import 'package:googleapis_auth/auth_io.dart';
 import 'package:googleapis/drive/v3.dart' as drive;
 import 'package:flutter/services.dart' show rootBundle;
 
-
-
 class GoogleDriveService {
-  static const String _folderID = "1b517UTgjLJfsjyH2dByEPYZDg4cgwssQ"; // Your folder ID
+  static const String _folderID =
+      "1b517UTgjLJfsjyH2dByEPYZDg4cgwssQ"; // Your folder ID
 
   Future<drive.DriveApi> getDriveApi() async {
     try {
       // Load credentials from assets
-      final String credentials = await rootBundle.loadString(
-        'assets/credentials/service_account.json'
-      );
-      
-      final accountCredentials = ServiceAccountCredentials.fromJson(credentials);
+      final String credentials = await rootBundle
+          .loadString('assets/credentials/service_account.json');
+
+      final accountCredentials =
+          ServiceAccountCredentials.fromJson(credentials);
       final client = await clientViaServiceAccount(
         accountCredentials,
         [drive.DriveApi.driveScope],
       );
-      
+
       return drive.DriveApi(client);
     } catch (e) {
       throw Exception('Failed to initialize Drive API: $e');
@@ -71,11 +70,11 @@ class GoogleDriveService {
   Future<void> deleteFile(String fileUrl) async {
     try {
       final driveApi = await getDriveApi();
-      
+
       // Extract file ID from URL
       final uri = Uri.parse(fileUrl);
       final fileId = uri.queryParameters['id'];
-      
+
       if (fileId == null) {
         throw Exception('Invalid file URL');
       }
@@ -88,15 +87,11 @@ class GoogleDriveService {
   }
 }
 
-
-
-
 class ServiceProviderProfile extends StatefulWidget {
   const ServiceProviderProfile({Key? key}) : super(key: key);
 
   @override
-  State<ServiceProviderProfile> createState() =>
-      _ServiceProviderProfileState();
+  State<ServiceProviderProfile> createState() => _ServiceProviderProfileState();
 }
 
 class _ServiceProviderProfileState extends State<ServiceProviderProfile> {
@@ -118,9 +113,9 @@ class _ServiceProviderProfileState extends State<ServiceProviderProfile> {
   bool isEditMode = false;
   bool isVerified = true;
   bool isLoading = true;
-  double rating =0.0;
-  String wilaya ='';
-  String commune ='';
+  double rating = 0.0;
+  String wilaya = '';
+  String commune = '';
 
   final TextEditingController nameController = TextEditingController();
   final TextEditingController hourlyRateController = TextEditingController();
@@ -163,9 +158,6 @@ class _ServiceProviderProfileState extends State<ServiceProviderProfile> {
     }
   }
 
-  
-  
-
   @override
   void initState() {
     super.initState();
@@ -180,8 +172,7 @@ class _ServiceProviderProfileState extends State<ServiceProviderProfile> {
     super.dispose();
   }
 
-
-    Future<void> deletePortfolioImage(String imageUrl) async {
+  Future<void> deletePortfolioImage(String imageUrl) async {
     try {
       // Show confirmation dialog
       final bool? confirm = await showDialog<bool>(
@@ -237,11 +228,11 @@ class _ServiceProviderProfileState extends State<ServiceProviderProfile> {
       }
     }
   }
-  
-    Future<void> uploadToGoogleDrive(File file) async {
+
+  Future<void> uploadToGoogleDrive(File file) async {
     try {
       final fileUrl = await _driveService.uploadFile(file);
-      
+
       // Update Firestore with the new URL
       final user = _auth.currentUser;
       if (user != null) {
@@ -261,7 +252,6 @@ class _ServiceProviderProfileState extends State<ServiceProviderProfile> {
     }
   }
 
-
   Future<void> pickNewPortfolioImage() async {
     final ImagePicker picker = ImagePicker();
     final XFile? pickedFile =
@@ -273,160 +263,165 @@ class _ServiceProviderProfileState extends State<ServiceProviderProfile> {
     }
   }
 
+  // Add these to your class state variables
+  bool isAddingImage = false;
+  Set<String> deletingImages = {};
 
- // Add these to your class state variables
-bool isAddingImage = false;
-Set<String> deletingImages = {};
+  Widget buildPortfolioSection() {
+    final localizations = AppLocalizations.of(context);
 
-Widget buildPortfolioSection() {
-  return Padding(
-    padding: const EdgeInsets.symmetric(horizontal: 16),
-    child: Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const Text(
-          'Portfolio',
-          style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-        ),
-        const SizedBox(height: 8),
-        portfolioImages.isNotEmpty
-            ? SingleChildScrollView(
-                scrollDirection: Axis.horizontal,
-                child: Row(
-                  children: portfolioImages.map((imageUrl) {
-                    final isDeleting = deletingImages.contains(imageUrl);
-                    
-                    return Padding(
-                      padding: const EdgeInsets.only(right: 8),
-                      child: Stack(
-                        children: [
-                          GestureDetector(
-                            onTap: () {
-                              // Show image in full screen
-                            },
-                            child: Image.network(
-                              imageUrl,
-                              width: 100,
-                              height: 100,
-                              fit: BoxFit.cover,
-                              loadingBuilder: (BuildContext context, Widget child,
-                                  ImageChunkEvent? loadingProgress) {
-                                if (loadingProgress == null) {
-                                  return child;
-                                }
-                                return Center(
-                                  child: CircularProgressIndicator(
-                                    value: loadingProgress.expectedTotalBytes != null
-                                        ? loadingProgress.cumulativeBytesLoaded /
-                                            loadingProgress.expectedTotalBytes!
-                                        : null,
-                                  ),
-                                );
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const SizedBox(height: 8),
+          portfolioImages.isNotEmpty
+              ? SingleChildScrollView(
+                  scrollDirection: Axis.horizontal,
+                  child: Row(
+                    children: portfolioImages.map((imageUrl) {
+                      final isDeleting = deletingImages.contains(imageUrl);
+
+                      return Padding(
+                        padding: const EdgeInsets.only(right: 8),
+                        child: Stack(
+                          children: [
+                            GestureDetector(
+                              onTap: () {
+                                // Show image in full screen
                               },
-                            ),
-                          ),
-                          if (isEditMode && isDeleting)
-                            Container(
-                              width: 100,
-                              height: 100,
-                              color: Colors.black.withOpacity(0.5),
-                              child: const Center(
-                                child: CircularProgressIndicator(
-                                  color: Colors.white,
-                                ),
+                              child: Image.network(
+                                imageUrl,
+                                width: 100,
+                                height: 100,
+                                fit: BoxFit.cover,
+                                loadingBuilder: (BuildContext context,
+                                    Widget child,
+                                    ImageChunkEvent? loadingProgress) {
+                                  if (loadingProgress == null) {
+                                    return child;
+                                  }
+                                  return Center(
+                                    child: CircularProgressIndicator(
+                                      value:
+                                          loadingProgress.expectedTotalBytes !=
+                                                  null
+                                              ? loadingProgress
+                                                      .cumulativeBytesLoaded /
+                                                  loadingProgress
+                                                      .expectedTotalBytes!
+                                              : null,
+                                    ),
+                                  );
+                                },
                               ),
                             ),
-                          if (isEditMode && !isDeleting)
-                            Positioned(
-                              top: 4,
-                              right: 4,
-                              child: Container(
-                                decoration: BoxDecoration(
-                                  color: Colors.black.withOpacity(0.5),
-                                  shape: BoxShape.circle,
-                                ),
-                                child: IconButton(
-                                  icon: const Icon(Icons.delete, color: Colors.white),
-                                  iconSize: 20,
-                                  padding: EdgeInsets.zero,
-                                  constraints: const BoxConstraints(
-                                    minWidth: 32,
-                                    minHeight: 32,
+                            if (isEditMode && isDeleting)
+                              Container(
+                                width: 100,
+                                height: 100,
+                                color: Colors.black.withOpacity(0.5),
+                                child: const Center(
+                                  child: CircularProgressIndicator(
+                                    color: Colors.white,
                                   ),
-                                  onPressed: () async {
-                                    setState(() {
-                                      deletingImages.add(imageUrl);
-                                    });
-                                    await deletePortfolioImage(imageUrl);
-                                    setState(() {
-                                      deletingImages.remove(imageUrl);
-                                    });
-                                  },
                                 ),
                               ),
-                            ),
-                        ],
-                      ),
-                    );
-                  }).toList(),
-                ),
-              )
-            : const Center(child: Text('No portfolio images available')),
-        const SizedBox(height: 16),
-        if (isEditMode)
-          ElevatedButton(
-            onPressed: isAddingImage 
-              ? null 
-              : () async {
-                  setState(() {
-                    isAddingImage = true;
-                  });
-                  try {
-                    await pickNewPortfolioImage();
-                  } finally {
-                    setState(() {
-                      isAddingImage = false;
-                    });
-                  }
-                },
-            child: isAddingImage
-              ? const SizedBox(
-                  height: 20,
-                  width: 20,
-                  child: CircularProgressIndicator(
-                    strokeWidth: 2,
+                            if (isEditMode && !isDeleting)
+                              Positioned(
+                                top: 4,
+                                right: 4,
+                                child: Container(
+                                  decoration: BoxDecoration(
+                                    color: Colors.black.withOpacity(0.5),
+                                    shape: BoxShape.circle,
+                                  ),
+                                  child: IconButton(
+                                    icon: const Icon(Icons.delete,
+                                        color: Colors.white),
+                                    iconSize: 20,
+                                    padding: EdgeInsets.zero,
+                                    constraints: const BoxConstraints(
+                                      minWidth: 32,
+                                      minHeight: 32,
+                                    ),
+                                    onPressed: () async {
+                                      setState(() {
+                                        deletingImages.add(imageUrl);
+                                      });
+                                      await deletePortfolioImage(imageUrl);
+                                      setState(() {
+                                        deletingImages.remove(imageUrl);
+                                      });
+                                    },
+                                  ),
+                                ),
+                              ),
+                          ],
+                        ),
+                      );
+                    }).toList(),
                   ),
                 )
-              : const Text('Add Portfolio Image'),
-          ),
-      ],
-    ),
-  );
-}
-  Future<void> saveUserData() async {
-  try {
-    final User? user = _auth.currentUser;
-    if (user != null) {
-      // Update Firestore
-      await _firestore.collection('users').doc(user.uid).update({
-        'name': userName,
-        'aboutMe': aboutMe,
-        'basicInfo.hourlyRate': hourlyRate,
-        'skills': skills, 
-        'certifications': certifications, 
-        'workExperience':workExperience,
-      });
-
-      // Update FirebaseAuth user profile
-      await user.updateDisplayName(userName);
-      await user.reload(); // Refresh the current user
-      debugPrint('User data updated successfully');
-    }
-  } catch (e) {
-    debugPrint('Error saving user data: $e');
+              : Center(
+                  child: Text(localizations?.noPortfolioImagesAvailable ??
+                      'No portfolio images available')),
+          const SizedBox(height: 16),
+          if (isEditMode)
+            ElevatedButton(
+              onPressed: isAddingImage
+                  ? null
+                  : () async {
+                      setState(() {
+                        isAddingImage = true;
+                      });
+                      try {
+                        await pickNewPortfolioImage();
+                      } finally {
+                        setState(() {
+                          isAddingImage = false;
+                        });
+                      }
+                    },
+              child: isAddingImage
+                  ? const SizedBox(
+                      height: 20,
+                      width: 20,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                      ),
+                    )
+                  : const Text('Add Portfolio Image'),
+            ),
+        ],
+      ),
+    );
   }
-}
 
+  Future<void> saveUserData() async {
+    try {
+      final User? user = _auth.currentUser;
+      if (user != null) {
+        // Update Firestore
+        await _firestore.collection('users').doc(user.uid).update({
+          'name': userName,
+          'aboutMe': aboutMe,
+          'basicInfo.hourlyRate': hourlyRate,
+          'skills': skills,
+          'certifications': certifications,
+          'workExperience': workExperience,
+        });
+
+        // Update FirebaseAuth user profile
+        await user.updateDisplayName(userName);
+        await user.reload(); // Refresh the current user
+        debugPrint('User data updated successfully');
+      }
+    } catch (e) {
+      debugPrint('Error saving user data: $e');
+    }
+  }
 
   // Toggle edit mode and save changes
   void toggleEditMode() {
@@ -440,10 +435,9 @@ Widget buildPortfolioSection() {
       }
       isEditMode = !isEditMode;
     });
-
-    // After saving changes, navigate to '/navbar'
+// After saving changes, stay on the same page
     if (!isEditMode) {
-      Navigator.pushReplacementNamed(context, '/navbar');
+      // Do not navigate away
     }
   }
 
@@ -452,47 +446,54 @@ Widget buildPortfolioSection() {
   }
 
   @override
-Widget build(BuildContext context) {
-  final localizations = AppLocalizations.of(context); // Get localization instance
+  Widget build(BuildContext context) {
+    final localizations =
+        AppLocalizations.of(context); // Get localization instance
 
-  return Scaffold(
-    body: isLoading
-        ? const Center(child: CircularProgressIndicator())
-        : Stack(
-            children: [
-              ListView(
-                padding: EdgeInsets.zero,
-                children: [
-                  buildTop(localizations!),
-                  buildProfileInfo(localizations),
-                  const SizedBox(height: 20),
-                  _buildSectionTitle(localizations.skills),
-                  _buildSkillsSection(localizations),
-                  const SizedBox(height: 20),
-                  _buildSectionTitle(localizations.workExperience),
-                  _buildWorkExperienceSection(localizations),
-                  const SizedBox(height: 20),
-                  buildPortfolioSection(),// A message to ziyed: you forgot to do the localization part for the portfolio -Fares
-                  const SizedBox(height: 20),
-                  _buildSectionTitle(localizations.certifications),
-                  _buildCertificationsSection(localizations),
-                ],
-              ),
-              Positioned(
-                top: 40, // Adjust this value to fine-tune the position
-                right: 16, // Adjust this value to fine-tune the position
-                child: FloatingActionButton(
-                  onPressed: toggleEditMode,
-                  child: Icon(isEditMode ? Icons.check : Icons.edit),
-                  tooltip: isEditMode ? localizations.save : localizations.editProfile,
-                  backgroundColor: const Color.fromARGB(255, 43, 133, 207),
+    return Scaffold(
+      body: isLoading
+          ? const Center(child: CircularProgressIndicator())
+          : Stack(
+              children: [
+                ListView(
+                  padding: EdgeInsets.zero,
+                  children: [
+                    buildTop(localizations!),
+                    buildProfileInfo(localizations),
+                    const SizedBox(height: 20),
+                    _buildSectionTitle(localizations.skills),
+                    _buildSkillsSection(localizations),
+                    const SizedBox(height: 20),
+                    _buildSectionTitle(localizations.workExperience),
+                    _buildWorkExperienceSection(localizations),
+                    const SizedBox(height: 20),
+                    _buildSectionTitle(localizations.portfolio),
+                    buildPortfolioSection(),
+                    const SizedBox(height: 20),
+                    _buildSectionTitle(localizations.certifications),
+                    _buildCertificationsSection(localizations),
+                    const SizedBox(
+                      height: 20,
+                    )
+                  ],
                 ),
-              ),
-            ],
-          ),
-    resizeToAvoidBottomInset: false,
-  );
-}
+                Positioned(
+                  bottom: 40, // Adjust this value to fine-tune the position
+                  right: 16, // Adjust this value to fine-tune the position
+                  child: FloatingActionButton(
+                    onPressed: toggleEditMode,
+                    child: Icon(isEditMode ? Icons.check : Icons.edit),
+                    tooltip: isEditMode
+                        ? localizations.save
+                        : localizations.editProfile,
+                    backgroundColor: const Color.fromARGB(255, 43, 133, 207),
+                  ),
+                ),
+              ],
+            ),
+      resizeToAvoidBottomInset: false,
+    );
+  }
 
   Widget buildTop(AppLocalizations localizations) {
     return Center(
@@ -530,21 +531,22 @@ Widget build(BuildContext context) {
             ],
           ),
           const SizedBox(height: 20),
-            isEditMode
-            ? Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                child: TextField(
-                  controller: nameController,
-                  decoration: InputDecoration(
-                    border: const OutlineInputBorder(),
-                    labelText: localizations.name,
+          isEditMode
+              ? Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  child: TextField(
+                    controller: nameController,
+                    decoration: InputDecoration(
+                      border: const OutlineInputBorder(),
+                      labelText: localizations.name,
+                    ),
                   ),
+                )
+              : Text(
+                  userName,
+                  style: const TextStyle(
+                      fontSize: 24, fontWeight: FontWeight.bold),
                 ),
-              )
-            :Text(
-            userName,
-            style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
-          ),
           const SizedBox(height: 4),
           Text(
             profession,
@@ -618,295 +620,299 @@ Widget build(BuildContext context) {
     );
   }
 
-
 // Add a new skill
-void addSkill(String skill) {
-  if (skill.isNotEmpty) {
-    setState(() {
-      // Trim the skill and add it if it's not already in the list
-      skill = skill.trim();
-      if (!skills.contains(skill)) {
-        skills.add(skill);
-      }
-    });
+  void addSkill(String skill) {
+    if (skill.isNotEmpty) {
+      setState(() {
+        // Trim the skill and add it if it's not already in the list
+        skill = skill.trim();
+        if (!skills.contains(skill)) {
+          skills.add(skill);
+        }
+      });
+    }
   }
-}
 
 // Replace the existing methods with these:
 
 // Remove a skill
-void removeSkill(int index ) {
-  setState(() {
-    skills.removeAt(index); // Remove the first occurrence of the skill
-  });
-}
+  void removeSkill(int index) {
+    setState(() {
+      skills.removeAt(index); // Remove the first occurrence of the skill
+    });
+  }
 
-Widget _buildSkillsSection(AppLocalizations localizations) {
-  return Padding(
-    padding: const EdgeInsets.symmetric(horizontal: 16.0),
-    child: Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        // If in edit mode, show the input field for new skills
-        if (isEditMode)
-          Row(
-            children: [
-              Expanded(
-                child: TextField(
-                  controller: skillController,
+  Widget _buildSkillsSection(AppLocalizations localizations) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16.0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // If in edit mode, show the input field for new skills
+          if (isEditMode)
+            Row(
+              children: [
+                Expanded(
+                  child: TextField(
+                    controller: skillController,
+                    decoration: InputDecoration(
+                      labelText: localizations.addSkill,
+                      border: const OutlineInputBorder(),
+                    ),
+                  ),
+                ),
+                IconButton(
+                  icon: const Icon(Icons.add_circle, color: Colors.blue),
+                  onPressed: () {
+                    String skill =
+                        skillController.text.trim(); // Get skill from input
+                    if (skill.isNotEmpty) {
+                      addSkill(skill); // Add skill to list
+                      skillController.clear(); // Clear the input field
+                    }
+                  },
+                ),
+              ],
+            ),
+
+          // Display list of skills
+          if (skills.isNotEmpty)
+            Wrap(
+              spacing: 8.0,
+              runSpacing: 4.0,
+              children: skills
+                  .map(
+                    (skill) => Padding(
+                      padding: const EdgeInsets.all(4.0),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 12.0, vertical: 8.0),
+                        decoration: BoxDecoration(
+                          color: Colors.blue.shade50,
+                          borderRadius: BorderRadius.circular(16.0),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Text(skill, style: GoogleFonts.poppins()),
+                            if (isEditMode)
+                              IconButton(
+                                icon: const Icon(Icons.cancel,
+                                    color: Colors.red, size: 18),
+                                onPressed: () {
+                                  removeSkill(
+                                      skills.indexOf(skill)); // Remove skill
+                                },
+                              ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  )
+                  .toList(),
+            )
+          else
+            Center(child: Text(localizations.noSkillsAvailable)),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildWorkExperienceSection(AppLocalizations localizations) {
+    final TextEditingController companyController = TextEditingController();
+    final TextEditingController positionController = TextEditingController();
+    final TextEditingController durationController = TextEditingController();
+
+    void addWorkExperience() {
+      String company = companyController.text.trim();
+      String position = positionController.text.trim();
+      String duration = durationController.text.trim();
+
+      if (company.isNotEmpty && position.isNotEmpty && duration.isNotEmpty) {
+        setState(() {
+          workExperience.add({
+            'company': company,
+            'position': position,
+            'duration': duration,
+          });
+        });
+        // Clear input fields after adding
+        companyController.clear();
+        positionController.clear();
+        durationController.clear();
+      }
+    }
+
+    void removeWorkExperience(int index) {
+      setState(() {
+        workExperience.removeAt(index);
+      });
+    }
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16.0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          if (isEditMode)
+            Column(
+              children: [
+                TextField(
+                  controller: companyController,
                   decoration: InputDecoration(
-                    labelText: localizations.addSkill,
+                    labelText: localizations.companyName,
                     border: const OutlineInputBorder(),
                   ),
                 ),
-              ),
-              IconButton(
-                icon: const Icon(Icons.add_circle, color: Colors.blue),
-                onPressed: () {
-                  String skill = skillController.text.trim(); // Get skill from input
-                  if (skill.isNotEmpty) {
-                    addSkill(skill); // Add skill to list
-                    skillController.clear(); // Clear the input field
-                  }
-                },
-              ),
-            ],
-          ),
-        
-        // Display list of skills
-        if (skills.isNotEmpty)
-          Wrap(
-            spacing: 8.0,
-            runSpacing: 4.0,
-            children: skills
-                .map(
-                  (skill) => Padding(
-                    padding: const EdgeInsets.all(4.0),
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 8.0),
-                      decoration: BoxDecoration(
-                        color: Colors.blue.shade50,
-                        borderRadius: BorderRadius.circular(16.0),
-                      ),
+                const SizedBox(height: 8),
+                TextField(
+                  controller: positionController,
+                  decoration: InputDecoration(
+                    labelText: localizations.position,
+                    border: const OutlineInputBorder(),
+                  ),
+                ),
+                const SizedBox(height: 8),
+                TextField(
+                  controller: durationController,
+                  decoration: InputDecoration(
+                    labelText: localizations.duration,
+                    border: const OutlineInputBorder(),
+                  ),
+                ),
+                const SizedBox(height: 8),
+                ElevatedButton(
+                  onPressed: addWorkExperience,
+                  child: Text(localizations.addWorkExperience),
+                ),
+                const SizedBox(height: 16),
+              ],
+            ),
+          if (workExperience.isNotEmpty)
+            ListView.builder(
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              itemCount: workExperience.length,
+              itemBuilder: (context, index) {
+                final exp = workExperience[index];
+                return ListTile(
+                  contentPadding: EdgeInsets.zero,
+                  title: Text(
+                    exp['company'],
+                    style: GoogleFonts.poppins(fontWeight: FontWeight.w600),
+                  ),
+                  subtitle: Text(
+                    '${exp['position']} | ${exp['duration']}',
+                    style: GoogleFonts.poppins(),
+                  ),
+                  trailing: isEditMode
+                      ? IconButton(
+                          icon: const Icon(Icons.delete, color: Colors.red),
+                          onPressed: () => removeWorkExperience(index),
+                        )
+                      : null,
+                );
+              },
+            )
+          else
+            Center(child: Text(localizations.noWorkExperienceAvailable)),
+        ],
+      ),
+    );
+  }
+
+  void addCertification(String certification) {
+    if (certification.isNotEmpty) {
+      setState(() {
+        // Trim the certification to remove any leading/trailing whitespace
+        certification = certification.trim();
+
+        // Check if the certification is not already in the list
+        if (!certifications.contains(certification)) {
+          certifications.add(certification);
+        }
+      });
+    }
+  }
+
+// Remove a certification from the list
+  void removeCertification(int index) {
+    setState(() {
+      certifications.removeAt(index);
+    });
+  }
+
+  Widget _buildCertificationsSection(AppLocalizations localizations) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16.0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const SizedBox(height: 8),
+          if (isEditMode)
+            Row(
+              children: [
+                Expanded(
+                  child: TextField(
+                    controller: certificationController,
+                    decoration: InputDecoration(
+                      labelText: localizations.addCertification,
+                      border: const OutlineInputBorder(),
+                    ),
+                  ),
+                ),
+                IconButton(
+                  icon: const Icon(Icons.add_circle, color: Colors.blue),
+                  onPressed: () {
+                    String certification = certificationController.text.trim();
+                    if (certification.isNotEmpty) {
+                      addCertification(certification);
+                      certificationController.clear();
+                    }
+                  },
+                ),
+              ],
+            ),
+
+          // Display list of certifications
+          if (certifications.isNotEmpty)
+            Column(
+              children: certifications
+                  .map(
+                    (cert) => Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 4.0),
                       child: Row(
-                        mainAxisSize: MainAxisSize.min,
                         children: [
-                          Text(skill, style: GoogleFonts.poppins()),
+                          const Icon(Icons.verified,
+                              color: Colors.green, size: 20),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Text(
+                              cert,
+                              style: GoogleFonts.poppins(),
+                            ),
+                          ),
                           if (isEditMode)
                             IconButton(
-                              icon: const Icon(Icons.cancel, color: Colors.red, size: 18),
+                              icon: const Icon(Icons.remove_circle,
+                                  color: Colors.red),
                               onPressed: () {
-                                removeSkill(skills.indexOf(skill)); // Remove skill
+                                removeCertification(
+                                    certifications.indexOf(cert));
                               },
                             ),
                         ],
                       ),
                     ),
-                  ),
-                )
-                .toList(),
-          )
-        else
-          Center(child: Text(localizations.noSkillsAvailable)),
-      ],
-    ),
-  );
-}
-
-Widget _buildWorkExperienceSection(AppLocalizations localizations) {
-  final TextEditingController companyController = TextEditingController();
-  final TextEditingController positionController = TextEditingController();
-  final TextEditingController durationController = TextEditingController();
-
-  void addWorkExperience() {
-    String company = companyController.text.trim();
-    String position = positionController.text.trim();
-    String duration = durationController.text.trim();
-
-    if (company.isNotEmpty && position.isNotEmpty && duration.isNotEmpty) {
-      setState(() {
-        workExperience.add({
-          'company': company,
-          'position': position,
-          'duration': duration,
-        });
-      });
-      // Clear input fields after adding
-      companyController.clear();
-      positionController.clear();
-      durationController.clear();
-    }
+                  )
+                  .toList(),
+            )
+          else
+            Center(child: Text(localizations.noCertificationsAvailable)),
+        ],
+      ),
+    );
   }
-
-  void removeWorkExperience(int index) {
-    setState(() {
-      workExperience.removeAt(index);
-    });
-  }
-
-  return Padding(
-    padding: const EdgeInsets.symmetric(horizontal: 16.0),
-    child: Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        if (isEditMode)
-          Column(
-            children: [
-              TextField(
-                controller: companyController,
-                decoration: InputDecoration(
-                  labelText: localizations.companyName,
-                  border: const OutlineInputBorder(),
-                ),
-              ),
-              const SizedBox(height: 8),
-              TextField(
-                controller: positionController,
-                decoration: InputDecoration(
-                  labelText: localizations.position,
-                  border: const OutlineInputBorder(),
-                ),
-              ),
-              const SizedBox(height: 8),
-              TextField(
-                controller: durationController,
-                decoration: InputDecoration(
-                  labelText: localizations.duration,
-                  border: const OutlineInputBorder(),
-                ),
-              ),
-              const SizedBox(height: 8),
-              ElevatedButton(
-                onPressed: addWorkExperience,
-                child: Text(localizations.addWorkExperience),
-              ),
-              const SizedBox(height: 16),
-            ],
-          ),
-        if (workExperience.isNotEmpty)
-          ListView.builder(
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            itemCount: workExperience.length,
-            itemBuilder: (context, index) {
-              final exp = workExperience[index];
-              return ListTile(
-                contentPadding: EdgeInsets.zero,
-                title: Text(
-                  exp['company'],
-                  style: GoogleFonts.poppins(fontWeight: FontWeight.w600),
-                ),
-                subtitle: Text(
-                  '${exp['position']} | ${exp['duration']}',
-                  style: GoogleFonts.poppins(),
-                ),
-                trailing: isEditMode
-                    ? IconButton(
-                        icon: const Icon(Icons.delete, color: Colors.red),
-                        onPressed: () => removeWorkExperience(index),
-                      )
-                    : null,
-              );
-            },
-          )
-        else
-          Center(child: Text(localizations.noWorkExperienceAvailable)),
-      ],
-    ),
-  );
-}
-
-void addCertification(String certification) {
-  if (certification.isNotEmpty) {
-    setState(() {
-      // Trim the certification to remove any leading/trailing whitespace
-      certification = certification.trim();
-      
-      // Check if the certification is not already in the list
-      if (!certifications.contains(certification)) {
-        certifications.add(certification);
-      }
-    });
-  }
-}
-
-// Remove a certification from the list
-void removeCertification(int index) {
-  setState(() {
-    certifications.removeAt(index);
-  });
-}
-
-
-Widget _buildCertificationsSection(AppLocalizations localizations) {
-  return Padding(
-    padding: const EdgeInsets.symmetric(horizontal: 16.0),
-    child: Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const SizedBox(height: 8),
-        if (isEditMode)
-          Row(
-            children: [
-              Expanded(
-                child: TextField(
-                  controller: certificationController,
-                  decoration: InputDecoration(
-                    labelText: localizations.addCertification,
-                    border: const OutlineInputBorder(),
-                  ),
-                ),
-              ),
-              IconButton(
-                icon: const Icon(Icons.add_circle, color: Colors.blue),
-                onPressed: () {
-                  String certification = certificationController.text.trim();
-                  if (certification.isNotEmpty) {
-                    addCertification(certification);
-                    certificationController.clear();
-                  }
-                },
-              ),
-            ],
-          ),
-        
-        // Display list of certifications
-        if (certifications.isNotEmpty)
-          Column(
-            children: certifications
-                .map(
-                  (cert) => Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 4.0),
-                    child: Row(
-                      children: [
-                        const Icon(Icons.verified, color: Colors.green, size: 20),
-                        const SizedBox(width: 8),
-                        Expanded(
-                          child: Text(
-                            cert,
-                            style: GoogleFonts.poppins(),
-                          ),
-                        ),
-                        if (isEditMode)
-                          IconButton(
-                            icon: const Icon(Icons.remove_circle, color: Colors.red),
-                            onPressed: () {
-                              removeCertification(certifications.indexOf(cert));
-                            },
-                          ),
-                      ],
-                    ),
-                  ),
-                )
-                .toList(),
-          )
-        else
-          Center(child: Text(localizations.noCertificationsAvailable)),
-      ],
-    ),
-  );
-}
-
 
   Widget buildHourlyRateEditor() {
     return SizedBox(
@@ -938,89 +944,88 @@ Widget _buildCertificationsSection(AppLocalizations localizations) {
     );
   }
 
-Widget _buildStarRating(double? rating) {
-  if (rating == null || rating < 0.0) {
-    rating = 0.0; // Default value for invalid or missing rating
+  Widget _buildStarRating(double? rating) {
+    if (rating == null || rating < 0.0) {
+      rating = 0.0; // Default value for invalid or missing rating
+    }
+
+    int fullStars = rating.floor();
+    bool hasHalfStar = (rating - fullStars) >= 0.5;
+
+    return Row(
+      mainAxisSize: MainAxisSize.min, // To prevent expanding
+      children: List.generate(5, (index) {
+        if (index < fullStars) {
+          // Full star
+          return const Icon(Icons.star, color: Colors.yellow, size: 16);
+        } else if (hasHalfStar && index == fullStars) {
+          // Half star
+          return const Icon(Icons.star_half, color: Colors.yellow, size: 16);
+        } else {
+          // Empty star
+          return const Icon(Icons.star_border, color: Colors.yellow, size: 16);
+        }
+      }),
+    );
   }
 
-  int fullStars = rating.floor();
-  bool hasHalfStar = (rating - fullStars) >= 0.5;
+  Future<void> pickNewProfilePicture() async {
+    try {
+      final ImagePicker picker = ImagePicker();
+      final XFile? pickedFile =
+          await picker.pickImage(source: ImageSource.gallery);
 
-  return Row(
-    mainAxisSize: MainAxisSize.min, // To prevent expanding
-    children: List.generate(5, (index) {
-      if (index < fullStars) {
-        // Full star
-        return const Icon(Icons.star, color: Colors.yellow, size: 16);
-      } else if (hasHalfStar && index == fullStars) {
-        // Half star
-        return const Icon(Icons.star_half, color: Colors.yellow, size: 16);
-      } else {
-        // Empty star
-        return const Icon(Icons.star_border, color: Colors.yellow, size: 16);
+      if (pickedFile == null) return;
+
+      // Show loading indicator
+      if (mounted) {
+        showDialog(
+          context: context,
+          barrierDismissible: false,
+          builder: (BuildContext context) {
+            return const Center(child: CircularProgressIndicator());
+          },
+        );
       }
-    }),
-  );
-}
 
-  
-Future<void> pickNewProfilePicture() async {
-  try {
-    final ImagePicker picker = ImagePicker();
-    final XFile? pickedFile = await picker.pickImage(source: ImageSource.gallery);
-    
-    if (pickedFile == null) return;
+      // Upload new image to Drive
+      final file = File(pickedFile.path);
+      final fileUrl = await _driveService.uploadFile(file);
 
-    // Show loading indicator
-    if (mounted) {
-      showDialog(
-        context: context,
-        barrierDismissible: false,
-        builder: (BuildContext context) {
-          return const Center(child: CircularProgressIndicator());
-        },
-      );
-    }
+      // Get current user
+      final User? user = _auth.currentUser;
+      if (user == null) throw Exception('No user logged in');
 
-    // Upload new image to Drive
-    final file = File(pickedFile.path);
-    final fileUrl = await _driveService.uploadFile(file);
-
-    // Get current user
-    final User? user = _auth.currentUser;
-    if (user == null) throw Exception('No user logged in');
-
-    // Delete old photo from Drive if it exists
-    if (userPhotoUrl.startsWith('https://drive.google.com')) {
-      try {
-        await _driveService.deleteFile(userPhotoUrl);
-      } catch (e) {
-        debugPrint('Error deleting old profile picture: $e');
+      // Delete old photo from Drive if it exists
+      if (userPhotoUrl.startsWith('https://drive.google.com')) {
+        try {
+          await _driveService.deleteFile(userPhotoUrl);
+        } catch (e) {
+          debugPrint('Error deleting old profile picture: $e');
+        }
       }
-    }
 
-    // Update Firestore and local state
-    await _firestore.collection('users').doc(user.uid).update({
-      'photoURL': fileUrl,
-    });
+      // Update Firestore and local state
+      await _firestore.collection('users').doc(user.uid).update({
+        'photoURL': fileUrl,
+      });
 
-    setState(() {
-      userPhotoUrl = fileUrl;
-    });
+      setState(() {
+        userPhotoUrl = fileUrl;
+      });
 
-    // Close loading indicator
-    if (mounted) {
-      Navigator.of(context).pop();
-    }
-
-  } catch (e) {
-    debugPrint('Error updating profile picture: $e');
-    if (mounted) {
-      Navigator.of(context).pop(); // Close loading indicator
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Failed to update profile picture')),
-      );
+      // Close loading indicator
+      if (mounted) {
+        Navigator.of(context).pop();
+      }
+    } catch (e) {
+      debugPrint('Error updating profile picture: $e');
+      if (mounted) {
+        Navigator.of(context).pop(); // Close loading indicator
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Failed to update profile picture')),
+        );
+      }
     }
   }
-}
 }

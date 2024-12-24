@@ -7,167 +7,233 @@ import 'dart:convert';
 import 'dart:io';
 import 'face_verification_screen.dart'; // Replace with your actual face comparison screen import
 import 'package:hanini_frontend/localization/app_localization.dart';
+import 'package:flutter/services.dart';
+import 'package:lottie/lottie.dart'; // Import Lottie package
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:image/image.dart' as img; // Import the image package for image processing
 
 class RealTimeDetection extends StatefulWidget {
   final List<CameraDescription> cameras;
-
   RealTimeDetection({required this.cameras});
 
   @override
   _RealTimeDetectionState createState() => _RealTimeDetectionState();
 }
 
-class _RealTimeDetectionState extends State<RealTimeDetection> {
+class _RealTimeDetectionState extends State<RealTimeDetection> with SingleTickerProviderStateMixin {
   late CameraController _cameraController;
-  bool _isDetecting = false;
+  XFile? _capturedImage;
+  bool _isUploading = false;
   String? _errorMessage;
+  late AnimationController _flashAnimationController;
+  late Animation<double> _flashAnimation;
+  bool _isCapturing = false;
+  bool _isBackIdCaptured = false; // Flag to check if back of ID is captured
+  bool _showFrontIdMessage = false; // Flag to show front ID message
+  bool _showBackIdMessage = false; // Flag to show back ID message
+  bool _showFrontIdAnimation = false; // Flag to show front ID animation
+  bool _showBackIdAnimation = false; // Flag to show back ID animation
 
   @override
   void initState() {
     super.initState();
     _initializeCamera();
+    _flashAnimationController = AnimationController(
+      duration: const Duration(milliseconds: 300),
+      vsync: this,
+    );
+    _flashAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
+      CurvedAnimation(
+        parent: _flashAnimationController,
+        curve: Curves.easeInOut,
+      ),
+    );
   }
 
   Future<void> _initializeCamera() async {
     _cameraController = CameraController(
       widget.cameras[0],
-      ResolutionPreset.medium,
+      ResolutionPreset.high,
+      enableAudio: false,
     );
 
     try {
       await _cameraController.initialize();
+      await _cameraController.setFlashMode(FlashMode.auto);
       if (!mounted) return;
       setState(() {});
     } catch (e) {
-      print("Error initializing camera: $e");
-      if (mounted) {
-        setState(() {
-          _errorMessage = "Camera error: $e";
-        });
-      }
+      _showError("Camera initialization failed");
     }
   }
 
-  void _startDetection() {
-    if (_cameraController.value.isInitialized) {
-      setState(() {
-        _isDetecting = true;
-      });
-      _captureFrames();
-    }
-  }
-
-  void _stopDetection() {
+  void _showError(String message) {
     if (mounted) {
       setState(() {
-        _isDetecting = false;
+        _errorMessage = message;
+      });
+      Future.delayed(Duration(seconds: 3), () {
+        if (mounted) {
+          setState(() {
+            _errorMessage = null;
+          });
+        }
       });
     }
   }
 
-  Future<void> _captureFrames() async {
-    while (_isDetecting && mounted) {
-      try {
-        final XFile image = await _cameraController.takePicture();
-        await _uploadImage(File(image.path));
-      } catch (e) {
-        print("Error capturing frame: $e");
-        if (mounted) {
-          setState(() {
-            _errorMessage = "Capture error: $e";
-          });
-        }
-        break;
-      }
+  Future<void> _captureImage() async {
+    if (_isCapturing) return;
+
+    setState(() {
+      _isCapturing = true;
+    });
+
+    try {
+      // Haptic feedback
+      HapticFeedback.mediumImpact();
+      
+      // Flash animation
+      _flashAnimationController.forward().then((_) {
+        _flashAnimationController.reverse();
+      });
+
+      final XFile image = await _cameraController.takePicture();
+      setState(() {
+        _capturedImage = image;
+      });
+    } catch (e) {
+      _showError("Failed to capture image");
+    } finally {
+      setState(() {
+        _isCapturing = false;
+      });
     }
   }
 
-  Future<void> _uploadImage(File image) async {
-    final request = http.MultipartRequest(
-      'POST',
-      Uri.parse(
-          'https://polite-schools-ask.loca.lt/upload-image/'), // Replace with your server's IP address
-    );
+  Future<void> _uploadCapturedImage() async {
+    if (_capturedImage == null) return;
 
-    request.files.add(await http.MultipartFile.fromPath('file', image.path));
+    setState(() {
+      _isUploading = true;
+    });
 
     try {
+      final request = http.MultipartRequest(
+        'POST',
+        Uri.parse(_isBackIdCaptured
+            ? 'https://polite-schools-ask.loca.lt/upload-back-id/'
+            : 'https://polite-schools-ask.loca.lt/upload-image/'),
+      );
+
+      request.files.add(await http.MultipartFile.fromPath('file', _capturedImage!.path));
       final response = await request.send();
       final responseData = await http.Response.fromStream(response);
 
       if (!mounted) return;
 
+      setState(() {
+        _isUploading = false;
+      });
+
       if (response.statusCode == 200) {
         final responseBody = jsonDecode(responseData.body);
-        final message = responseBody["message"];
-        final stopCapture = responseBody["stop_capture"];
-        print("Response: $message");
-
-        if (stopCapture) {
-          _stopDetection();
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (context) => FaceCompareScreen(),
-            ),
-          );
+        if (_isBackIdCaptured) {
+          if (responseBody["stop_capture"]) {
+            setState(() {
+              _showBackIdAnimation = true;
+            });
+            await Future.delayed(Duration(seconds: 2));
+            await _saveProviderInfo(responseBody["first_name"], responseBody["last_name"]);
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (context) => FaceCompareScreen()),
+            );
+          } else {
+            _showError(responseBody["message"]);
+          }
         } else {
           setState(() {
-            _errorMessage = "Invalid ID: $message";
+            _isBackIdCaptured = true;
+            _capturedImage = null;
+            _showFrontIdMessage = false;
+            _showBackIdMessage = true;
+            _showFrontIdAnimation = true;
+          });
+          await Future.delayed(Duration(seconds: 2));
+          setState(() {
+            _showFrontIdAnimation = false;
           });
         }
       } else {
-        setState(() {
-          _errorMessage = "Upload failed: ${response.statusCode}";
-        });
+        _showError("Upload failed. Please try again.");
       }
     } catch (e) {
-      print("Error uploading image: $e");
-      if (mounted) {
-        setState(() {
-          _errorMessage = "An error occurred during upload.";
-        });
+      setState(() {
+        _isUploading = false;
+      });
+      _showError("Network error. Please check your connection.");
+    }
+  }
+
+  Future<void> _saveProviderInfo(String firstName, String lastName) async {
+    try {
+      // Get the current user's UID
+      final User? user = FirebaseAuth.instance.currentUser;
+      if (user == null) {
+        _showError("User not authenticated.");
+        return;
       }
+
+      // Reference Firestore document
+      final DocumentReference userDoc =
+          FirebaseFirestore.instance.collection('users').doc(user.uid);
+
+      // Update Firestore with the new information
+      await userDoc.update({
+        'firstName': firstName,
+        'lastName': lastName,
+        'isSTEP_1': true,
+      });
+    } catch (e) {
+      _showError("Failed to save data: $e");
     }
   }
 
   @override
   void dispose() {
-    _isDetecting = false;
     _cameraController.dispose();
+    _flashAnimationController.dispose();
     super.dispose();
   }
 
-  void _showSupportDialog() {
-    final AppLocalizations appLocalizations = AppLocalizations.of(context)!;
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: Text(appLocalizations.support),
-          content: Text(appLocalizations.supportMessage),
-          actions: <Widget>[
-            TextButton(
-              onPressed: () {
-                Navigator.of(context).pop();
-              },
-              child: Text(appLocalizations.ok),
+  Widget _buildCameraOverlay() {
+    return Stack(
+      fit: StackFit.expand,
+      children: [
+        Container(
+          decoration: BoxDecoration(
+            color: Colors.black.withOpacity(0.5),
+          ),
+        ),
+        Center(
+          child: Container(
+            width: MediaQuery.of(context).size.width * 0.9,
+            height: MediaQuery.of(context).size.width * 0.6,
+            decoration: BoxDecoration(
+              border: Border.all(color: Colors.white, width: 2),
+              borderRadius: BorderRadius.circular(20),
             ),
-            TextButton(
-              onPressed: () {
-                Navigator.of(context).pop();
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => ManualVerificationScreen(),
-                  ),
-                );
-              },
-              child: Text('Manual Verification'),
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(20),
+              child: Container(
+                color: Colors.transparent,
+              ),
             ),
-          ],
-        );
-      },
+          ),
+        ),
+      ],
     );
   }
 
@@ -176,203 +242,287 @@ class _RealTimeDetectionState extends State<RealTimeDetection> {
     final AppLocalizations appLocalizations = AppLocalizations.of(context)!;
 
     return Scaffold(
-      appBar: PreferredSize(
-        preferredSize: Size.fromHeight(64.0),
-        child: Container(
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              colors: [
-                Color(0xFF3949AB), // Indigo 600
-                Color(0xFF1E88E5), // Blue 600
-              ],
-              begin: Alignment.topCenter,
-              end: Alignment.bottomCenter,
-            ),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withOpacity(0.2),
-                blurRadius: 4,
-                offset: Offset(0, 2),
-              ),
-            ],
-          ),
-          child: AppBar(
-            backgroundColor: Colors.transparent,
-            elevation: 0,
-            title: Text(
-              appLocalizations.realTimeDetection,
-              style: TextStyle(
-                fontSize: 22,
-                fontWeight: FontWeight.w600,
-                color: Colors.white,
-              ),
-            ),
-            actions: [
-              IconButton(
-                icon: Icon(
-                  Icons.help_outline,
-                  color: Colors.white,
-                  size: 28,
-                ),
-                onPressed: _showSupportDialog,
-              ),
-            ],
-          ),
-        ),
-      ),
+      backgroundColor: Colors.black,
       body: _cameraController.value.isInitialized
           ? Stack(
               children: [
-                CameraPreview(_cameraController),
-                Center(
-                  child: Container(
-                    width: 380,
-                    height: 250,
-                    decoration: BoxDecoration(
-                      border: Border.all(
-                        color: const Color.fromARGB(255, 0, 0, 0),
-                        width: 2.5,
-                      ),
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                    child: Center(
-                      child: Padding(
-                        padding: EdgeInsets.only(top: 45, left: 170),
-                        child: Text(
-                          'XXXXXXXXXXXXXXXXXX : رقم التعريف الوطني ',
-                          style: TextStyle(
-                            color: const Color.fromARGB(109, 3, 68, 18),
-                            fontSize: 8.2,
-                            fontWeight: FontWeight.bold,
-                            shadows: [
-                              Shadow(
-                                blurRadius: 10.0,
-                                color: const Color.fromARGB(147, 43, 43, 43),
-                                offset: Offset(1, 0),
-                              ),
-                            ],
-                          ),
+                Transform.scale(
+                  scale: 1.1,
+                  child: _capturedImage == null
+                      ? CameraPreview(_cameraController)
+                      : Image.file(
+                          File(_capturedImage!.path),
+                          fit: BoxFit.cover,
                         ),
+                ),
+                if (_capturedImage == null) _buildCameraOverlay(),
+                AnimatedBuilder(
+                  animation: _flashAnimation,
+                  builder: (context, child) {
+                    return Opacity(
+                      opacity: _flashAnimation.value,
+                      child: Container(
+                        color: Colors.white,
                       ),
-                    ),
+                    );
+                  },
+                ),
+                SafeArea(
+                  child: Column(
+                    children: [
+                      _buildAppBar(appLocalizations),
+                      Spacer(),
+                      _buildBottomControls(appLocalizations),
+                      SizedBox(height: 32),
+                    ],
                   ),
                 ),
-                Positioned(
-                  bottom: 30,
-                  left: 20,
-                  right: 20,
-                  child: InkWell(
-                    onTap: _isDetecting ? _stopDetection : _startDetection,
-                    child: Container(
-                      padding: EdgeInsets.symmetric(vertical: 15),
-                      decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                          colors: [
-                            Color(0xFF3949AB),
-                            Color(0xFF1E88E5),
-                          ],
-                          begin: Alignment.topCenter,
-                          end: Alignment.bottomCenter,
-                        ),
-                        borderRadius: BorderRadius.circular(30),
-                      ),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
+                if (_isUploading)
+                  Container(
+                    color: Colors.black54,
+                    child: Center(
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
                         children: [
-                          Icon(
-                            _isDetecting ? Icons.stop : Icons.play_arrow,
-                            color: Colors.white,
+                          CircularProgressIndicator(
+                            valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
                           ),
-                          SizedBox(width: 10),
+                          SizedBox(height: 16),
                           Text(
-                            _isDetecting
-                                ? appLocalizations.stopDetection
-                                : appLocalizations.startDetection,
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontSize: 18,
-                            ),
+                            'Uploading...',
+                            style: TextStyle(color: Colors.white),
                           ),
                         ],
                       ),
                     ),
                   ),
-                ),
+                if (_showFrontIdMessage)
+                  _buildMessageOverlay("Please capture the back of the ID."),
+                if (_showBackIdMessage)
+                  _buildMessageOverlay("Back ID captured. Proceeding..."),
                 if (_errorMessage != null)
-                  Positioned(
-                    bottom: 100,
-                    left: 20,
-                    right: 20,
-                    child: Container(
-                      padding: EdgeInsets.all(12),
-                      decoration: BoxDecoration(
-                        color: Colors.redAccent,
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                      child: Text(
-                        _errorMessage!,
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
-                        ),
-                        textAlign: TextAlign.center,
-                      ),
-                    ),
-                  ),
-                Positioned(
-                  bottom: 280,
-                  left: 27,
-                  width: 110,
-                  height: 150,
-                  child: Container(
-                    decoration: BoxDecoration(
-                      border: Border.all(
-                        color: const Color.fromARGB(69, 0, 0, 0),
-                        width: 2.0,
-                      ),
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                    child: Image.asset(
-                      'assets/images/face_shape.png',
-                      width: 150,
-                      height: 140,
-                    ),
-                  ),
-                ),
-                Positioned(
-                  bottom: 458,
-                  left: 20,
-                  right: 20,
-                  child: Image.asset(
-                    'assets/images/id_things.png',
-                    height: 45,
-                  ),
-                ),
-                Positioned(
-                  top: 50,
-                  right: 20,
-                  child: ElevatedButton(
-                    onPressed: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => SetProviderProfile(),
-                        ),
-                      );
-                    },
-                    child: Text(appLocalizations.skip),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.orange,
-                      padding:
-                          EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-                      textStyle: TextStyle(fontSize: 16),
-                    ),
-                  ),
-                ),
+                  _buildMessageOverlay(_errorMessage!),
+                if (_showFrontIdAnimation)
+                  _buildLottieAnimation('assets/animation/flip.json', size: 300),
+                if (_showBackIdAnimation)
+                  _buildLottieAnimation('assets/animation/id_aproved.json', size: 200),
               ],
             )
-          : Center(child: CircularProgressIndicator()),
+          : Center(
+              child: CircularProgressIndicator(
+                valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+              ),
+            ),
+    );
+  }
+
+  Widget _buildMessageOverlay(String message) {
+    return Positioned(
+      bottom: 150,
+      left: 16,
+      right: 16,
+      child: Container(
+        padding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        decoration: BoxDecoration(
+          color: Colors.blue.withOpacity(0.9),
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: Text(
+          message,
+          style: TextStyle(color: Colors.white),
+          textAlign: TextAlign.center,
+        ),
+      ),
+    );
+  }
+
+  Widget _buildLottieAnimation(String assetPath, {double size = 200}) {
+    return Center(
+      child: Lottie.asset(
+        assetPath,
+        width: size,
+        height: size,
+        fit: BoxFit.fill,
+      ),
+    );
+  }
+
+  Widget _buildAppBar(AppLocalizations appLocalizations) {
+    return Container(
+      padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          IconButton(
+            icon: Icon(Icons.arrow_back_ios, color: Colors.white),
+            onPressed: () => Navigator.pop(context),
+          ),
+          Text(
+            appLocalizations.realTimeDetection,
+            style: TextStyle(
+              color: Colors.white,
+              fontSize: 20,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          IconButton(
+            icon: Icon(Icons.help_outline, color: Colors.white),
+            onPressed: () => _showSupportDialog(appLocalizations),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildBottomControls(AppLocalizations appLocalizations) {
+    return Container(
+      padding: EdgeInsets.symmetric(horizontal: 24),
+      child: _capturedImage == null
+          ? GestureDetector(
+              onTap: _captureImage,
+              child: Container(
+                width: 80,
+                height: 80,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  border: Border.all(color: Colors.white, width: 4),
+                ),
+                child: Center(
+                  child: Container(
+                    width: 64,
+                    height: 64,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: Colors.white,
+                    ),
+                  ),
+                ),
+              ),
+            )
+          : Row(
+              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+              children: [
+                _buildActionButton(
+                  icon: Icons.refresh,
+                  label: appLocalizations.retake,
+                  color: Colors.orange,
+                  onPressed: () {
+                    setState(() {
+                      _capturedImage = null;
+                    });
+                  },
+                ),
+                _buildActionButton(
+                  icon: Icons.check,
+                  label: _isBackIdCaptured
+                      ? appLocalizations.uploadLabel
+                      : "Upload Front ID",
+                  color: Colors.green,
+                  onPressed: _uploadCapturedImage,
+                ),
+              ],
+            ),
+    );
+  }
+
+  Widget _buildActionButton({
+    required IconData icon,
+    required String label,
+    required Color color,
+    required VoidCallback onPressed,
+  }) {
+    return GestureDetector(
+      onTap: onPressed,
+      child: Container(
+        padding: EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+        decoration: BoxDecoration(
+          color: color,
+          borderRadius: BorderRadius.circular(30),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(icon, color: Colors.white),
+            SizedBox(width: 8),
+            Text(
+              label,
+              style: TextStyle(
+                color: Colors.white,
+                fontSize: 16,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _showSupportDialog(AppLocalizations appLocalizations) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return Dialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20),
+          ),
+          child: Padding(
+            padding: EdgeInsets.all(24),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  appLocalizations.support,
+                  style: TextStyle(
+                    fontSize: 24,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                SizedBox(height: 16),
+                Text(
+                  appLocalizations.supportMessage,
+                  style: TextStyle(fontSize: 16),
+                  textAlign: TextAlign.center,
+                ),
+                SizedBox(height: 24),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                  children: [
+                    TextButton(
+                      onPressed: () => Navigator.pop(context),
+                      child: Text(
+                        appLocalizations.ok,
+                        style: TextStyle(fontSize: 13.5),
+                      ),
+                    ),
+                    ElevatedButton(
+                      onPressed: () {
+                        Navigator.pop(context);
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => ManualVerificationScreen(),
+                          ),
+                        );
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.purple,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(30),
+                        ),
+                      ),
+                      child: Text(
+                        appLocalizations.manualVerification ,
+                        style: TextStyle(fontSize: 11,color: Colors.white),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        );
+      },
     );
   }
 }
