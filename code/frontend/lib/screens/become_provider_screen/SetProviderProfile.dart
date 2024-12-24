@@ -435,9 +435,9 @@ class _ServiceProviderProfileState extends State<SetProviderProfile> {
           _certifications.isEmpty ||
           _workExperience.isEmpty) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-              content: Text(
-                  'Please add at least one skill, certification, and work experience')),
+          SnackBar(
+              content:
+                  Text(localizations.addSkillsCertificationsWorkExperience)),
         );
         return;
       }
@@ -445,7 +445,7 @@ class _ServiceProviderProfileState extends State<SetProviderProfile> {
       User? user = FirebaseAuth.instance.currentUser;
       if (user == null) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('User is not authenticated')),
+          SnackBar(content: Text(localizations.userNotAuthenticated)),
         );
         return;
       }

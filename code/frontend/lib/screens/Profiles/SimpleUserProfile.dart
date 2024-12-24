@@ -179,8 +179,7 @@ class _SimpleUserProfileState extends State<SimpleUserProfile> {
     }
   }
 
-
-    Future<void> saveUserData() async {
+  Future<void> saveUserData() async {
     final localizations = AppLocalizations.of(context);
     if (localizations == null) return;
 
@@ -206,7 +205,7 @@ class _SimpleUserProfileState extends State<SimpleUserProfile> {
   @override
   Widget build(BuildContext context) {
     final AppLocalizations? localization = AppLocalizations.of(context);
-    
+
     if (localization == null) {
       return const Scaffold(
         body: Center(child: CircularProgressIndicator()),

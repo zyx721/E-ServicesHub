@@ -11,56 +11,6 @@ class AppLocalizations {
   bool get isEnglish => locale.languageCode == 'en';
   bool get isFrench => locale.languageCode == 'fr';
 
-  // Service translations
-  String service(int index) {
-    switch (index) {
-      case 1:
-        return isArabic ? "سباكة" : (isFrench ? "Plomberie" : "Plumbing");
-      case 2:
-        return isArabic ? "كهرباء" : (isFrench ? "Électrique" : "Electrical");
-      case 3:
-        return isArabic ? "نجارة" : (isFrench ? "Menuiserie" : "Carpentry");
-      case 4:
-        return isArabic ? "تنظيف" : (isFrench ? "Nettoyage" : "Cleaning");
-      case 5:
-        return isArabic ? "دهان" : (isFrench ? "Peinture" : "Painting");
-      case 6:
-        return isArabic
-            ? "تكييف"
-            : (isFrench ? "Climatisation" : "Air Conditioning");
-      case 7:
-        return isArabic ? "مكياج" : (isFrench ? "Maquillage" : "Makeup Artist");
-      case 8:
-        return isArabic
-            ? "مدرس خصوصي"
-            : (isFrench ? "Tuteur privé" : "Private Tutor");
-      case 9:
-        return isArabic
-            ? "مدرب رياضي"
-            : (isFrench ? "Coach de fitness" : "Workout Coach");
-      case 10:
-        return isArabic
-            ? "علاج نفسي"
-            : (isFrench ? "Thérapie mentale" : "Mental Health Therapy");
-      case 11:
-        return isArabic ? "نجار" : (isFrench ? "Serrurier" : "Locksmith");
-      case 12:
-        return isArabic ? "حارس" : (isFrench ? "Gardien" : "Guardian");
-      case 13:
-        return isArabic ? "شيف" : (isFrench ? "Chef" : "Chef");
-      case 14:
-        return isArabic
-            ? "تركيب الألواح الشمسية"
-            : (isFrench
-                ? "Installation de panneaux solaires"
-                : "Solar Panel Installation");
-      default:
-        return isArabic
-            ? "خدمة غير معروفة"
-            : (isFrench ? "Service inconnu" : "Unknown Service");
-    }
-  }
-
   String get home => isArabic ? "الرئيسية" : (isFrench ? "Accueil" : "Home");
   String get search => isArabic ? "بحث" : (isFrench ? "Rechercher" : "Search");
   String get favorites =>
@@ -80,7 +30,41 @@ class AppLocalizations {
       ? "لا يوجد مستخدم مسجل"
       : (isFrench ? "Aucun utilisateur connecté" : "No user logged in");
 
-// Error fetching user data:
+// Change Password
+  String get changePassword => isArabic
+      ? "تغيير كلمة المرور"
+      : (isFrench ? "Changer le mot de passe" : "Change Password");
+
+  // Notification Settings
+  String get notificationSettings => isArabic
+      ? "إعدادات الإشعارات"
+      : (isFrench ? "Paramètres de notification" : "Notification Settings");
+
+  // Privacy Settings
+  String get privacySettings => isArabic
+      ? "إعدادات الخصوصية"
+      : (isFrench ? "Paramètres de confidentialité" : "Privacy Settings");
+
+  // aboutApp
+  String get aboutApp => isArabic
+      ? "حول التطبيق"
+      : (isFrench ? "À propos de l'application" : "About App");
+
+  // Please add at least one skill, certification, and work experience
+  String get addSkillsCertificationsWorkExperience => isArabic
+      ? "يرجى إضافة مهارة وشهادة وخبرة عمل واحدة على الأقل"
+      : (isFrench
+          ? "Veuillez ajouter au moins une compétence, une certification et une expérience de travail"
+          : "Please add at least one skill, certification, and work experience");
+
+  // User is not authenticated
+  String get userNotAuthenticated => isArabic
+      ? "المستخدم غير مصادق عليه"
+      : (isFrench
+          ? "L'utilisateur n'est pas authentifié"
+          : "User is not authenticated");
+
+  // Error fetching user data:
   String get errorFetchingUserData => isArabic
       ? "حدث خطأ أثناء جلب بيانات المستخدم"
       : (isFrench
@@ -199,10 +183,9 @@ class AppLocalizations {
       : (isFrench
           ? "Le prénom et le nom de famille sont obligatoires."
           : "First Name and Last Name are required.");
-    // Add retry localization
-  String get retry => isArabic
-      ? "إعادة المحاولة"
-      : (isFrench ? "Réessayer" : "Retry");
+  // Add retry localization
+  String get retry =>
+      isArabic ? "إعادة المحاولة" : (isFrench ? "Réessayer" : "Retry");
 
   String get firstNameRequired => isArabic
       ? "الاسم الأول مطلوب."
@@ -279,7 +262,6 @@ class AppLocalizations {
       ? "الكشف في الوقت الحقيقي"
       : (isFrench ? "Détection en temps réel" : "Real-Time Detection");
 
-      
   String get support => isArabic ? "الدعم" : (isFrench ? "Soutien" : "Support");
   String get supportMessage => isArabic
       ? "إذا لم يتم اكتشاف بطاقتك، يرجى التأكد من أنها محاذية بشكل صحيح وحاول مرة أخرى."
