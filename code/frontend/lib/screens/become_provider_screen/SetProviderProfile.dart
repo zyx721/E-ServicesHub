@@ -11,8 +11,7 @@ import 'package:flutter/services.dart' show rootBundle;
 import 'package:path/path.dart' as path;
 import 'package:googleapis_auth/auth_io.dart';
 import 'package:hanini_frontend/localization/algeria_cites.dart';
-
-
+import 'package:hanini_frontend/localization/app_localization.dart';
 
 // algeria_location_model.dart
 class AlgeriaLocation {
@@ -51,9 +50,8 @@ class AlgeriaLocation {
 }
 
 // Convert the const data to AlgeriaLocation objects
-final List<AlgeriaLocation> algeriaLocations = algeria_cites
-    .map((json) => AlgeriaLocation.fromJson(json))
-    .toList();
+final List<AlgeriaLocation> algeriaLocations =
+    algeria_cites.map((json) => AlgeriaLocation.fromJson(json)).toList();
 
 class LocationSelectionFields extends StatefulWidget {
   final void Function(AlgeriaLocation?) onLocationSelected;
@@ -68,13 +66,14 @@ class LocationSelectionFields extends StatefulWidget {
   }) : super(key: key);
 
   @override
-  State<LocationSelectionFields> createState() => _LocationSelectionFieldsState();
+  State<LocationSelectionFields> createState() =>
+      _LocationSelectionFieldsState();
 }
 
 class _LocationSelectionFieldsState extends State<LocationSelectionFields> {
   String? selectedWilayaCode;
   int? selectedCommuneId;
-  
+
   // Computed properties with proper uniqueness handling
   Map<String, List<AlgeriaLocation>> get locationsByWilaya {
     final map = <String, List<AlgeriaLocation>>{};
@@ -91,7 +90,8 @@ class _LocationSelectionFieldsState extends State<LocationSelectionFields> {
   List<MapEntry<String, String>> get uniqueWilayas {
     final wilayaMap = <String, String>{};
     for (var location in algeriaLocations) {
-      wilayaMap.putIfAbsent(location.wilayaCode, () => location.wilayaNameAscii);
+      wilayaMap.putIfAbsent(
+          location.wilayaCode, () => location.wilayaNameAscii);
     }
     final wilayas = wilayaMap.entries.toList()
       ..sort((a, b) => a.value.compareTo(b.value));
@@ -99,7 +99,7 @@ class _LocationSelectionFieldsState extends State<LocationSelectionFields> {
   }
 
   List<AlgeriaLocation> get communes {
-    return selectedWilayaCode != null 
+    return selectedWilayaCode != null
         ? locationsByWilaya[selectedWilayaCode] ?? []
         : [];
   }
@@ -150,7 +150,8 @@ class _LocationSelectionFieldsState extends State<LocationSelectionFields> {
           items: communes.map((commune) {
             return DropdownMenuItem<int>(
               value: commune.id,
-              child: Text(commune.communeNameAscii, style: GoogleFonts.poppins()),
+              child:
+                  Text(commune.communeNameAscii, style: GoogleFonts.poppins()),
             );
           }).toList(),
           onChanged: selectedWilayaCode == null
@@ -164,7 +165,8 @@ class _LocationSelectionFieldsState extends State<LocationSelectionFields> {
                     widget.onLocationSelected(selectedLocation);
                   });
                 },
-          validator: (value) => value == null ? 'Please select a commune' : null,
+          validator: (value) =>
+              value == null ? 'Please select a commune' : null,
         ),
       ],
     );
@@ -172,21 +174,22 @@ class _LocationSelectionFieldsState extends State<LocationSelectionFields> {
 }
 
 class GoogleDriveService {
-  static const String _folderID = "1b517UTgjLJfsjyH2dByEPYZDg4cgwssQ"; // Your folder ID
+  static const String _folderID =
+      "1b517UTgjLJfsjyH2dByEPYZDg4cgwssQ"; // Your folder ID
 
   Future<drive.DriveApi> getDriveApi() async {
     try {
       // Load credentials from assets
-      final String credentials = await rootBundle.loadString(
-        'assets/credentials/service_account.json'
-      );
-      
-      final accountCredentials = ServiceAccountCredentials.fromJson(credentials);
+      final String credentials = await rootBundle
+          .loadString('assets/credentials/service_account.json');
+
+      final accountCredentials =
+          ServiceAccountCredentials.fromJson(credentials);
       final client = await clientViaServiceAccount(
         accountCredentials,
         [drive.DriveApi.driveScope],
       );
-      
+
       return drive.DriveApi(client);
     } catch (e) {
       throw Exception('Failed to initialize Drive API: $e');
@@ -230,11 +233,11 @@ class GoogleDriveService {
   Future<void> deleteFile(String fileUrl) async {
     try {
       final driveApi = await getDriveApi();
-      
+
       // Extract file ID from URL
       final uri = Uri.parse(fileUrl);
       final fileId = uri.queryParameters['id'];
-      
+
       if (fileId == null) {
         throw Exception('Invalid file URL');
       }
@@ -247,7 +250,6 @@ class GoogleDriveService {
   }
 }
 
-
 class SetProviderProfile extends StatefulWidget {
   const SetProviderProfile({Key? key}) : super(key: key);
 
@@ -258,11 +260,11 @@ class SetProviderProfile extends StatefulWidget {
 class _ServiceProviderProfileState extends State<SetProviderProfile> {
   final _driveService = GoogleDriveService();
   final _formKey = GlobalKey<FormState>();
-   // Add these new variables to track selected location
+  // Add these new variables to track selected location
   String? selectedWilaya;
   String? selectedCommune;
 
-    // Track temporary uploads that haven't been saved to profile yet
+  // Track temporary uploads that haven't been saved to profile yet
   List<String> _temporaryUploads = [];
   List<String> portfolioImages = [];
 
@@ -281,14 +283,13 @@ class _ServiceProviderProfileState extends State<SetProviderProfile> {
   List<Map<String, String>> _workExperience = [];
   // Controllers for dynamic inputs
   final TextEditingController _skillController = TextEditingController();
-  final TextEditingController _certificationController = TextEditingController();
+  final TextEditingController _certificationController =
+      TextEditingController();
   final TextEditingController _companyController = TextEditingController();
   final TextEditingController _positionController = TextEditingController();
   final TextEditingController _durationController = TextEditingController();
 
-
-
-  String userPhotoUrl = '';
+  var userPhotoUrl = '';
   String _originalFirstName = "";
   String _originalLastName = "";
 
@@ -297,7 +298,7 @@ class _ServiceProviderProfileState extends State<SetProviderProfile> {
     super.initState();
     fetchUserData();
   }
-  
+
   Future<void> fetchUserData() async {
     try {
       final User? user = _auth.currentUser;
@@ -321,15 +322,12 @@ class _ServiceProviderProfileState extends State<SetProviderProfile> {
     }
   }
 
-  
-
- @override
+  @override
   void dispose() {
     // Cleanup temporary uploads when widget is disposed
     _cleanupTemporaryUploads();
     super.dispose();
   }
-
 
   Future<void> _cleanupTemporaryUploads() async {
     for (String fileUrl in _temporaryUploads) {
@@ -344,7 +342,7 @@ class _ServiceProviderProfileState extends State<SetProviderProfile> {
   Future<void> uploadToGoogleDrive(File file) async {
     try {
       final fileUrl = await _driveService.uploadFile(file);
-      
+
       setState(() {
         _temporaryUploads.add(fileUrl); // Track as temporary upload
         portfolioImages.add(fileUrl);
@@ -405,15 +403,20 @@ class _ServiceProviderProfileState extends State<SetProviderProfile> {
     final String firstName = _firstNameController.text.trim();
     final String lastName = _lastNameController.text.trim();
 
-    if (_calculateDifference(_originalFirstName, firstName) > 2 || _calculateDifference(_originalLastName, lastName) > 2) {
+    if (_calculateDifference(_originalFirstName, firstName) > 2 ||
+        _calculateDifference(_originalLastName, lastName) > 2) {
       _showErrorDialog("You can only change up to 2 characters in your names.");
       return;
     }
 
     if (_formKey.currentState!.validate()) {
-      if (_skills.isEmpty || _certifications.isEmpty || _workExperience.isEmpty) {
+      if (_skills.isEmpty ||
+          _certifications.isEmpty ||
+          _workExperience.isEmpty) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Please add at least one skill, certification, and work experience')),
+          const SnackBar(
+              content: Text(
+                  'Please add at least one skill, certification, and work experience')),
         );
         return;
       }
@@ -436,7 +439,8 @@ class _ServiceProviderProfileState extends State<SetProviderProfile> {
           },
         );
 
-        final DocumentReference userDoc = FirebaseFirestore.instance.collection('users').doc(user.uid);
+        final DocumentReference userDoc =
+            FirebaseFirestore.instance.collection('users').doc(user.uid);
 
         // Prepare the profile data
         Map<String, dynamic> profileData = {
@@ -445,7 +449,7 @@ class _ServiceProviderProfileState extends State<SetProviderProfile> {
           'basicInfo': {
             'profession': _professionController.text,
             'phone': _phoneController.text,
-            'wilaya': selectedWilaya,  // Store wilaya separately
+            'wilaya': selectedWilaya, // Store wilaya separately
             'commune': selectedCommune, // Store commune separately
             'hourlyRate': _hourlyRateController.text,
           },
@@ -459,7 +463,7 @@ class _ServiceProviderProfileState extends State<SetProviderProfile> {
         };
         // Update the Firestore document
         await userDoc.update(profileData);
-        
+
         // Clear temporary uploads list since they're now saved
         _temporaryUploads.clear();
 
@@ -470,7 +474,9 @@ class _ServiceProviderProfileState extends State<SetProviderProfile> {
         Navigator.pushReplacement(
           context,
           MaterialPageRoute(
-            builder: (context) => NavbarPage(initialIndex: 3,),
+            builder: (context) => NavbarPage(
+              initialIndex: 3,
+            ),
           ),
         );
 
@@ -480,7 +486,7 @@ class _ServiceProviderProfileState extends State<SetProviderProfile> {
       } catch (e) {
         // Close loading indicator
         Navigator.of(context).pop();
-        
+
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Error updating profile: $e')),
         );
@@ -517,10 +523,17 @@ class _ServiceProviderProfileState extends State<SetProviderProfile> {
 
   @override
   Widget build(BuildContext context) {
+    final localizations = AppLocalizations.of(context);
+    if (localizations == null) {
+      return Padding(
+        padding: const EdgeInsets.only(right: 20.0),
+        child: CircularProgressIndicator(),
+      );
+    }
     return Scaffold(
       appBar: AppBar(
         title: Text(
-          'Setup Your Profile',
+          AppLocalizations.of(context)!.setupYourProfile,
           style: GoogleFonts.poppins(fontWeight: FontWeight.bold),
         ),
       ),
@@ -531,26 +544,21 @@ class _ServiceProviderProfileState extends State<SetProviderProfile> {
           children: [
             _buildProfileImageUpload(),
             const SizedBox(height: 20),
-
-            _buildSectionTitle('Basic Information'),
+            _buildSectionTitle(AppLocalizations.of(context)!.BaicInfo),
             _buildBasicInfoFields(),
             const SizedBox(height: 20),
-
-            _buildSectionTitle('Skills'),
+            _buildSectionTitle(localizations.skills),
             _buildSkillsSection(),
             const SizedBox(height: 20),
-
-            _buildSectionTitle('Work Experience'),
+            _buildSectionTitle(localizations.workExperience),
             _buildWorkExperienceSection(),
             const SizedBox(height: 20),
-
-            _buildSectionTitle('Certifications'),
+            _buildSectionTitle(localizations.certifications),
             _buildCertificationsSection(),
             const SizedBox(height: 20),
-
+            _buildSectionTitle(localizations.portfolio),
             buildPortfolioSection(),
             const SizedBox(height: 20),
-
             ElevatedButton(
               onPressed: _saveProfile,
               style: ElevatedButton.styleFrom(
@@ -587,96 +595,95 @@ class _ServiceProviderProfileState extends State<SetProviderProfile> {
   Widget _buildProfileImageUpload() {
     return Center(
       child: Stack(
-              children: [
-                CircleAvatar(
-                  radius: 60,
-                  backgroundColor: Colors.grey.shade200,
-                  backgroundImage: userPhotoUrl.isNotEmpty
-                      ? NetworkImage(userPhotoUrl) as ImageProvider
-                      : const AssetImage('assets/images/default_profile.png'),
-                ),
-                  GestureDetector(
-                    onTap: () {
-                      pickNewProfilePicture();
-                    },
-                    child: Container(
-                      padding: const EdgeInsets.all(6),
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        color: Colors.blue,
-                      ),
-                      child: const Icon(
-                        Icons.camera_alt,
-                        size: 20,
-                        color: Colors.white,
-                      ),
-                    ),
-                  ),
-              ],
+        children: [
+          CircleAvatar(
+            radius: 60,
+            backgroundColor: Colors.grey.shade200,
+            backgroundImage: userPhotoUrl.isNotEmpty
+                ? NetworkImage(userPhotoUrl) as ImageProvider
+                : const AssetImage('assets/images/default_profile.png'),
+          ),
+          GestureDetector(
+            onTap: () {
+              pickNewProfilePicture();
+            },
+            child: Container(
+              padding: const EdgeInsets.all(6),
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: Colors.blue,
+              ),
+              child: const Icon(
+                Icons.camera_alt,
+                size: 20,
+                color: Colors.white,
+              ),
             ),
+          ),
+        ],
+      ),
     );
   }
 
-Future<void> pickNewProfilePicture() async {
-  try {
-    final ImagePicker picker = ImagePicker();
-    final XFile? pickedFile = await picker.pickImage(source: ImageSource.gallery);
-    
-    if (pickedFile == null) return;
+  Future<void> pickNewProfilePicture() async {
+    try {
+      final ImagePicker picker = ImagePicker();
+      final XFile? pickedFile =
+          await picker.pickImage(source: ImageSource.gallery);
 
-    // Show loading indicator
-    if (mounted) {
-      showDialog(
-        context: context,
-        barrierDismissible: false,
-        builder: (BuildContext context) {
-          return const Center(child: CircularProgressIndicator());
-        },
-      );
-    }
+      if (pickedFile == null) return;
 
-    // Upload new image to Drive
-    final file = File(pickedFile.path);
-    final fileUrl = await _driveService.uploadFile(file);
+      // Show loading indicator
+      if (mounted) {
+        showDialog(
+          context: context,
+          barrierDismissible: false,
+          builder: (BuildContext context) {
+            return const Center(child: CircularProgressIndicator());
+          },
+        );
+      }
 
-    // Get current user
-    final User? user = _auth.currentUser;
-    if (user == null) throw Exception('No user logged in');
+      // Upload new image to Drive
+      final file = File(pickedFile.path);
+      final fileUrl = await _driveService.uploadFile(file);
 
-    // Delete old photo from Drive if it exists
-    if (userPhotoUrl.startsWith('https://drive.google.com')) {
-      try {
-        await _driveService.deleteFile(userPhotoUrl);
-      } catch (e) {
-        debugPrint('Error deleting old profile picture: $e');
+      // Get current user
+      final User? user = _auth.currentUser;
+      if (user == null) throw Exception('No user logged in');
+
+      // Delete old photo from Drive if it exists
+      if (userPhotoUrl.startsWith('https://drive.google.com')) {
+        try {
+          await _driveService.deleteFile(userPhotoUrl);
+        } catch (e) {
+          debugPrint('Error deleting old profile picture: $e');
+        }
+      }
+
+      // Update Firestore and local state
+      await _firestore.collection('users').doc(user.uid).update({
+        'photoURL': fileUrl,
+      });
+
+      setState(() {
+        userPhotoUrl = fileUrl;
+      });
+
+      // Close loading indicator
+      if (mounted) {
+        Navigator.of(context).pop();
+      }
+    } catch (e) {
+      debugPrint('Error updating profile picture: $e');
+      if (mounted) {
+        Navigator.of(context).pop(); // Close loading indicator
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Failed to update profile picture')),
+        );
       }
     }
-
-    // Update Firestore and local state
-    await _firestore.collection('users').doc(user.uid).update({
-      'photoURL': fileUrl,
-    });
-
-    setState(() {
-      userPhotoUrl = fileUrl;
-    });
-
-    // Close loading indicator
-    if (mounted) {
-      Navigator.of(context).pop();
-    }
-
-  } catch (e) {
-    debugPrint('Error updating profile picture: $e');
-    if (mounted) {
-      Navigator.of(context).pop(); // Close loading indicator
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Failed to update profile picture')),
-      );
-    }
   }
-}
-
 
   Widget _buildBasicInfoFields() {
     return Column(
@@ -688,7 +695,8 @@ Future<void> pickNewProfilePicture() async {
             border: OutlineInputBorder(),
             labelStyle: GoogleFonts.poppins(),
           ),
-          validator: (value) => value!.isEmpty ? 'Please enter your first name' : null,
+          validator: (value) =>
+              value!.isEmpty ? 'Please enter your first name' : null,
         ),
         const SizedBox(height: 10),
         TextFormField(
@@ -698,7 +706,8 @@ Future<void> pickNewProfilePicture() async {
             border: OutlineInputBorder(),
             labelStyle: GoogleFonts.poppins(),
           ),
-          validator: (value) => value!.isEmpty ? 'Please enter your last name' : null,
+          validator: (value) =>
+              value!.isEmpty ? 'Please enter your last name' : null,
         ),
         const SizedBox(height: 10),
         TextFormField(
@@ -708,7 +717,8 @@ Future<void> pickNewProfilePicture() async {
             border: OutlineInputBorder(),
             labelStyle: GoogleFonts.poppins(),
           ),
-          validator: (value) => value!.isEmpty ? 'Please enter your profession' : null,
+          validator: (value) =>
+              value!.isEmpty ? 'Please enter your profession' : null,
         ),
         const SizedBox(height: 10),
         TextFormField(
@@ -718,12 +728,11 @@ Future<void> pickNewProfilePicture() async {
             border: OutlineInputBorder(),
             labelStyle: GoogleFonts.poppins(),
           ),
-          validator: (value) => value!.isEmpty 
-            ? 'Please enter your phone number' 
-            : null,
+          validator: (value) =>
+              value!.isEmpty ? 'Please enter your phone number' : null,
         ),
         const SizedBox(height: 10),
-       const SizedBox(height: 10),
+        const SizedBox(height: 10),
         LocationSelectionFields(
           onLocationSelected: (location) {
             if (location != null) {
@@ -734,7 +743,7 @@ Future<void> pickNewProfilePicture() async {
             }
           },
         ),
-      const SizedBox(height: 10),
+        const SizedBox(height: 10),
         const SizedBox(height: 10),
         TextFormField(
           controller: _hourlyRateController,
@@ -744,9 +753,8 @@ Future<void> pickNewProfilePicture() async {
             border: OutlineInputBorder(),
             labelStyle: GoogleFonts.poppins(),
           ),
-          validator: (value) => value!.isEmpty 
-            ? 'Please enter your hourly rate' 
-            : null,
+          validator: (value) =>
+              value!.isEmpty ? 'Please enter your hourly rate' : null,
         ),
         const SizedBox(height: 10),
         TextFormField(
@@ -757,9 +765,8 @@ Future<void> pickNewProfilePicture() async {
             border: OutlineInputBorder(),
             labelStyle: GoogleFonts.poppins(),
           ),
-          validator: (value) => value!.isEmpty 
-            ? 'Please provide a brief description' 
-            : null,
+          validator: (value) =>
+              value!.isEmpty ? 'Please provide a brief description' : null,
         ),
       ],
     );
@@ -790,11 +797,13 @@ Future<void> pickNewProfilePicture() async {
         Wrap(
           spacing: 8,
           runSpacing: 8,
-          children: _skills.map((skill) => Chip(
-            label: Text(skill, style: GoogleFonts.poppins()),
-            deleteIcon: Icon(Icons.close),
-            onDeleted: () => _removeSkill(skill),
-          )).toList(),
+          children: _skills
+              .map((skill) => Chip(
+                    label: Text(skill, style: GoogleFonts.poppins()),
+                    deleteIcon: Icon(Icons.close),
+                    onDeleted: () => _removeSkill(skill),
+                  ))
+              .toList(),
         ),
       ],
     );
@@ -827,7 +836,7 @@ Future<void> pickNewProfilePicture() async {
           ),
         ),
         const SizedBox(height: 10),
-                TextField(
+        TextField(
           controller: _positionController,
           decoration: InputDecoration(
             labelText: 'Position',
@@ -865,8 +874,10 @@ Future<void> pickNewProfilePicture() async {
                 subtitle: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text('Position: ${experience['position'] ?? ''}', style: GoogleFonts.poppins()),
-                    Text('Duration: ${experience['duration'] ?? ''}', style: GoogleFonts.poppins()),
+                    Text('Position: ${experience['position'] ?? ''}',
+                        style: GoogleFonts.poppins()),
+                    Text('Duration: ${experience['duration'] ?? ''}',
+                        style: GoogleFonts.poppins()),
                   ],
                 ),
                 trailing: IconButton(
@@ -929,11 +940,13 @@ Future<void> pickNewProfilePicture() async {
         Wrap(
           spacing: 8,
           runSpacing: 8,
-          children: _certifications.map((certification) => Chip(
-            label: Text(certification, style: GoogleFonts.poppins()),
-            deleteIcon: Icon(Icons.close),
-            onDeleted: () => _removeCertification(certification),
-          )).toList(),
+          children: _certifications
+              .map((certification) => Chip(
+                    label: Text(certification, style: GoogleFonts.poppins()),
+                    deleteIcon: Icon(Icons.close),
+                    onDeleted: () => _removeCertification(certification),
+                  ))
+              .toList(),
         ),
       ],
     );
@@ -954,13 +967,9 @@ Future<void> pickNewProfilePicture() async {
     });
   }
 
-
-
   final FirebaseAuth _auth = FirebaseAuth.instance;
-  
+
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
-
-
 
   Future<void> pickNewPortfolioImage() async {
     final ImagePicker picker = ImagePicker();
@@ -972,137 +981,135 @@ Future<void> pickNewProfilePicture() async {
       await uploadToGoogleDrive(file);
     }
   }
-  
 
-   // Add these to your class state variables
-bool isAddingImage = false;
-Set<String> deletingImages = {};
+  // Add these to your class state variables
+  bool isAddingImage = false;
+  Set<String> deletingImages = {};
 
-Widget buildPortfolioSection() {
-  return Padding(
-    padding: const EdgeInsets.symmetric(horizontal: 16),
-    child: Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const Text(
-          'Portfolio',
-          style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-        ),
-        const SizedBox(height: 8),
-        portfolioImages.isNotEmpty
-            ? SingleChildScrollView(
-                scrollDirection: Axis.horizontal,
-                child: Row(
-                  children: portfolioImages.map((imageUrl) {
-                    final isDeleting = deletingImages.contains(imageUrl);
-                    
-                    return Padding(
-                      padding: const EdgeInsets.only(right: 8),
-                      child: Stack(
-                        children: [
-                          GestureDetector(
-                            onTap: () {
-                              // Show image in full screen
-                            },
-                            child: Image.network(
-                              imageUrl,
-                              width: 100,
-                              height: 100,
-                              fit: BoxFit.cover,
-                              loadingBuilder: (BuildContext context, Widget child,
-                                  ImageChunkEvent? loadingProgress) {
-                                if (loadingProgress == null) {
-                                  return child;
-                                }
-                                return Center(
-                                  child: CircularProgressIndicator(
-                                    value: loadingProgress.expectedTotalBytes != null
-                                        ? loadingProgress.cumulativeBytesLoaded /
-                                            loadingProgress.expectedTotalBytes!
-                                        : null,
-                                  ),
-                                );
+  Widget buildPortfolioSection() {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const SizedBox(height: 8),
+          portfolioImages.isNotEmpty
+              ? SingleChildScrollView(
+                  scrollDirection: Axis.horizontal,
+                  child: Row(
+                    children: portfolioImages.map((imageUrl) {
+                      final isDeleting = deletingImages.contains(imageUrl);
+
+                      return Padding(
+                        padding: const EdgeInsets.only(right: 8),
+                        child: Stack(
+                          children: [
+                            GestureDetector(
+                              onTap: () {
+                                // Show image in full screen
                               },
-                            ),
-                          ),
-                          if (isDeleting)
-                            Container(
-                              width: 100,
-                              height: 100,
-                              color: Colors.black.withOpacity(0.5),
-                              child: const Center(
-                                child: CircularProgressIndicator(
-                                  color: Colors.white,
-                                ),
+                              child: Image.network(
+                                imageUrl,
+                                width: 100,
+                                height: 100,
+                                fit: BoxFit.cover,
+                                loadingBuilder: (BuildContext context,
+                                    Widget child,
+                                    ImageChunkEvent? loadingProgress) {
+                                  if (loadingProgress == null) {
+                                    return child;
+                                  }
+                                  return Center(
+                                    child: CircularProgressIndicator(
+                                      value:
+                                          loadingProgress.expectedTotalBytes !=
+                                                  null
+                                              ? loadingProgress
+                                                      .cumulativeBytesLoaded /
+                                                  loadingProgress
+                                                      .expectedTotalBytes!
+                                              : null,
+                                    ),
+                                  );
+                                },
                               ),
                             ),
-                          if (!isDeleting)
-                            Positioned(
-                              top: 4,
-                              right: 4,
-                              child: Container(
-                                decoration: BoxDecoration(
-                                  color: Colors.black.withOpacity(0.5),
-                                  shape: BoxShape.circle,
-                                ),
-                                child: IconButton(
-                                  icon: const Icon(Icons.delete, color: Colors.white),
-                                  iconSize: 20,
-                                  padding: EdgeInsets.zero,
-                                  constraints: const BoxConstraints(
-                                    minWidth: 32,
-                                    minHeight: 32,
+                            if (isDeleting)
+                              Container(
+                                width: 100,
+                                height: 100,
+                                color: Colors.black.withOpacity(0.5),
+                                child: const Center(
+                                  child: CircularProgressIndicator(
+                                    color: Colors.white,
                                   ),
-                                  onPressed: () async {
-                                    setState(() {
-                                      deletingImages.add(imageUrl);
-                                    });
-                                    await deletePortfolioImage(imageUrl);
-                                    setState(() {
-                                      deletingImages.remove(imageUrl);
-                                    });
-                                  },
                                 ),
                               ),
-                            ),
-                        ],
-                      ),
-                    );
-                  }).toList(),
-                ),
-              )
-            : const Center(child: Text('No portfolio images available')),
-        const SizedBox(height: 16),
-        
-          ElevatedButton(
-            onPressed: isAddingImage 
-              ? null 
-              : () async {
-                  setState(() {
-                    isAddingImage = true;
-                  });
-                  try {
-                    await pickNewPortfolioImage();
-                  } finally {
-                    setState(() {
-                      isAddingImage = false;
-                    });
-                  }
-                },
-            child: isAddingImage
-              ? const SizedBox(
-                  height: 20,
-                  width: 20,
-                  child: CircularProgressIndicator(
-                    strokeWidth: 2,
+                            if (!isDeleting)
+                              Positioned(
+                                top: 4,
+                                right: 4,
+                                child: Container(
+                                  decoration: BoxDecoration(
+                                    color: Colors.black.withOpacity(0.5),
+                                    shape: BoxShape.circle,
+                                  ),
+                                  child: IconButton(
+                                    icon: const Icon(Icons.delete,
+                                        color: Colors.white),
+                                    iconSize: 20,
+                                    padding: EdgeInsets.zero,
+                                    constraints: const BoxConstraints(
+                                      minWidth: 32,
+                                      minHeight: 32,
+                                    ),
+                                    onPressed: () async {
+                                      setState(() {
+                                        deletingImages.add(imageUrl);
+                                      });
+                                      await deletePortfolioImage(imageUrl);
+                                      setState(() {
+                                        deletingImages.remove(imageUrl);
+                                      });
+                                    },
+                                  ),
+                                ),
+                              ),
+                          ],
+                        ),
+                      );
+                    }).toList(),
                   ),
                 )
-              : const Text('Add Portfolio Image'),
+              : const Center(child: Text('No portfolio images available')),
+          const SizedBox(height: 16),
+          ElevatedButton(
+            onPressed: isAddingImage
+                ? null
+                : () async {
+                    setState(() {
+                      isAddingImage = true;
+                    });
+                    try {
+                      await pickNewPortfolioImage();
+                    } finally {
+                      setState(() {
+                        isAddingImage = false;
+                      });
+                    }
+                  },
+            child: isAddingImage
+                ? const SizedBox(
+                    height: 20,
+                    width: 20,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                    ),
+                  )
+                : const Text('Add Portfolio Image'),
           ),
-      ],
-    ),
-  );
+        ],
+      ),
+    );
+  }
 }
-}
-
-

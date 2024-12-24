@@ -443,8 +443,7 @@ class _ServiceProviderProfileState extends State<ServiceProviderProfile> {
 
   @override
   Widget build(BuildContext context) {
-    final localizations =
-        AppLocalizations.of(context); // Get localization instance
+    final localizations = AppLocalizations.of(context);
 
     return Scaffold(
       body: isLoading

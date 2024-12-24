@@ -412,14 +412,15 @@ class _SearchPageState extends State<SearchPage> {
   }
 
   Widget _buildSearchBar() {
+    final localizations = AppLocalizations.of(context);
+    if (localizations == null) return const SizedBox.shrink();
     return Row(
       children: [
         Expanded(
           child: TextField(
             controller: _searchController,
             decoration: InputDecoration(
-              hintText: AppLocalizations.of(context)?.searchHint ??
-                  "Search for services...", // Use localized search hint
+              hintText: localizations.searchHint,
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(30),
               ),

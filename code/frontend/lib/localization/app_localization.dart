@@ -507,6 +507,18 @@ class AppLocalizations {
   String get homePage =>
       isArabic ? "إلغاء" : (isFrench ? "mon profile" : "home page");
 
+  String get setupYourProfile => isArabic
+      ? "إعداد ملفك الشخصي"
+      : (isFrench ? "Configurer votre profil" : "Setup Your Profile");
+
+  String get BaicInfo => isArabic
+      ? "معلومات عامة"
+      : (isFrench ? "Informations de base" : "Basic Information");
+
+  // String get portfolio => isArabic
+  //      ? "المعرض"
+  //      : (isFrench ? "Portfolio" : "Portfolio");
+
   // Static method to access the instance
   static AppLocalizations? of(BuildContext context) {
     return Localizations.of<AppLocalizations>(context, AppLocalizations);
