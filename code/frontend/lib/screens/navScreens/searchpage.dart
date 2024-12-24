@@ -249,11 +249,14 @@ class _SearchPageState extends State<SearchPage> {
   }
 
   void _showFilterDialog() {
+    final localizations = AppLocalizations.of(context);
+    if (localizations == null) return;
+
     showDialog(
       context: context,
       builder: (context) {
         return AlertDialog(
-          title: const Text('Filter Services'),
+          title: Text(localizations.filterServices),
           content: SingleChildScrollView(
             child: Column(
               mainAxisSize: MainAxisSize.min,
@@ -262,7 +265,7 @@ class _SearchPageState extends State<SearchPage> {
                   builder: (context, setState) {
                     return Column(
                       children: [
-                        const Text('Minimum Rating'),
+                        Text(localizations.minimumRating),
                         Slider(
                           value: _minRating,
                           min: 0,
@@ -276,9 +279,9 @@ class _SearchPageState extends State<SearchPage> {
                           },
                         ),
                         Text(
-                            'Minimum Rating: ${_minRating.toStringAsFixed(1)}'),
+                            '${localizations.minimumRating} ${_minRating.toStringAsFixed(1)}'),
                         const SizedBox(height: 20),
-                        const Text('Price Range (DZD)'),
+                        Text(localizations.priceRange),
                         RangeSlider(
                           values: _priceRange,
                           min: 0,
@@ -297,9 +300,9 @@ class _SearchPageState extends State<SearchPage> {
                           },
                         ),
                         Text(
-                            'Price Range: ${_priceRange.start.toStringAsFixed(0)} - ${_priceRange.end == 19999 ? '∞' : _priceRange.end.toStringAsFixed(0)} DZD'),
+                            '${localizations.priceRange} ${_priceRange.start.toStringAsFixed(0)} - ${_priceRange.end == 19999 ? '∞' : _priceRange.end.toStringAsFixed(0)} ${localizations.dzd}'),
                         const SizedBox(height: 20),
-                        const Text('Work Domains'),
+                        Text(localizations.workDomain),
                         Container(
                           height: 150, // Fixed height for scrollable container
                           child: SingleChildScrollView(
@@ -346,7 +349,7 @@ class _SearchPageState extends State<SearchPage> {
                 });
                 Navigator.of(context).pop();
               },
-              child: const Text('Clear Filters'),
+              child: Text(localizations.clearFilters),
             ),
             TextButton(
               onPressed: () {
@@ -358,7 +361,7 @@ class _SearchPageState extends State<SearchPage> {
                 });
                 Navigator.of(context).pop();
               },
-              child: const Text('Apply Filters'),
+              child: Text(localizations.applyFilters),
             ),
           ],
         );

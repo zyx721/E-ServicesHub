@@ -11,7 +11,8 @@ import 'package:flutter/services.dart';
 import 'package:lottie/lottie.dart'; // Import Lottie package
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:image/image.dart' as img; // Import the image package for image processing
+import 'package:image/image.dart'
+    as img; // Import the image package for image processing
 
 class RealTimeDetection extends StatefulWidget {
   final List<CameraDescription> cameras;
@@ -21,7 +22,8 @@ class RealTimeDetection extends StatefulWidget {
   _RealTimeDetectionState createState() => _RealTimeDetectionState();
 }
 
-class _RealTimeDetectionState extends State<RealTimeDetection> with SingleTickerProviderStateMixin {
+class _RealTimeDetectionState extends State<RealTimeDetection>
+    with SingleTickerProviderStateMixin {
   late CameraController _cameraController;
   XFile? _capturedImage;
   bool _isUploading = false;
@@ -93,7 +95,7 @@ class _RealTimeDetectionState extends State<RealTimeDetection> with SingleTicker
     try {
       // Haptic feedback
       HapticFeedback.mediumImpact();
-      
+
       // Flash animation
       _flashAnimationController.forward().then((_) {
         _flashAnimationController.reverse();
@@ -127,7 +129,8 @@ class _RealTimeDetectionState extends State<RealTimeDetection> with SingleTicker
             : 'https://polite-schools-ask.loca.lt/upload-image/'),
       );
 
-      request.files.add(await http.MultipartFile.fromPath('file', _capturedImage!.path));
+      request.files
+          .add(await http.MultipartFile.fromPath('file', _capturedImage!.path));
       final response = await request.send();
       final responseData = await http.Response.fromStream(response);
 
@@ -145,7 +148,8 @@ class _RealTimeDetectionState extends State<RealTimeDetection> with SingleTicker
               _showBackIdAnimation = true;
             });
             await Future.delayed(Duration(seconds: 2));
-            await _saveProviderInfo(responseBody["first_name"], responseBody["last_name"]);
+            await _saveProviderInfo(
+                responseBody["first_name"], responseBody["last_name"]);
             Navigator.push(
               context,
               MaterialPageRoute(builder: (context) => FaceCompareScreen()),
@@ -285,7 +289,8 @@ class _RealTimeDetectionState extends State<RealTimeDetection> with SingleTicker
                         mainAxisSize: MainAxisSize.min,
                         children: [
                           CircularProgressIndicator(
-                            valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                            valueColor:
+                                AlwaysStoppedAnimation<Color>(Colors.white),
                           ),
                           SizedBox(height: 16),
                           Text(
@@ -300,12 +305,13 @@ class _RealTimeDetectionState extends State<RealTimeDetection> with SingleTicker
                   _buildMessageOverlay("Please capture the back of the ID."),
                 if (_showBackIdMessage)
                   _buildMessageOverlay("Back ID captured. Proceeding..."),
-                if (_errorMessage != null)
-                  _buildMessageOverlay(_errorMessage!),
+                if (_errorMessage != null) _buildMessageOverlay(_errorMessage!),
                 if (_showFrontIdAnimation)
-                  _buildLottieAnimation('assets/animation/flip.json', size: 300),
+                  _buildLottieAnimation('assets/animation/flip.json',
+                      size: 300),
                 if (_showBackIdAnimation)
-                  _buildLottieAnimation('assets/animation/id_aproved.json', size: 200),
+                  _buildLottieAnimation('assets/animation/id_aproved.json',
+                      size: 200),
               ],
             )
           : Center(
@@ -414,9 +420,10 @@ class _RealTimeDetectionState extends State<RealTimeDetection> with SingleTicker
                 ),
                 _buildActionButton(
                   icon: Icons.check,
-                  label: _isBackIdCaptured
-                      ? appLocalizations.uploadLabel
-                      : "Upload Front ID",
+                  // label: _isBackIdCaptured
+                  //     ? appLocalizations.uploadLabel
+                  //     : "Upload Front ID",
+                  label: appLocalizations.uploadLabel,
                   color: Colors.green,
                   onPressed: _uploadCapturedImage,
                 ),
@@ -512,8 +519,8 @@ class _RealTimeDetectionState extends State<RealTimeDetection> with SingleTicker
                         ),
                       ),
                       child: Text(
-                        appLocalizations.manualVerification ,
-                        style: TextStyle(fontSize: 11,color: Colors.white),
+                        appLocalizations.manualVerification,
+                        style: TextStyle(fontSize: 11, color: Colors.white),
                       ),
                     ),
                   ],

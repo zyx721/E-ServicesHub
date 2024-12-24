@@ -71,10 +71,6 @@ class AppLocalizations {
   // Location
   String get location =>
       isArabic ? " الموقع " : (isFrench ? " Emplacement " : " Location ");
-
-  // Pay
-  String get pay => isArabic ? " الدفع " : (isFrench ? " Payer " : " Pay ");
-
   // Popular Services
   String get popularServices => isArabic
       ? "الخدمات الشائعة"
@@ -145,10 +141,49 @@ class AppLocalizations {
   String get listings =>
       isArabic ? "القوائم" : (isFrench ? "Listes" : "Listings");
 
+  // New Review Received
+  String get newReviewReceived => isArabic
+      ? "لديك مراجعة جديدة على ملفك الشخصي"
+      : (isFrench
+          ? "Nouvel avis reçu sur votre profil"
+          : "New review on your profile");
+  // You have a new review on your profile
+  String get youHaveNewReviewOnYourProfile => isArabic
+      ? "لديك مراجعة جديدة على ملفك الشخصي"
+      : (isFrench
+          ? "Vous avez un nouvel avis sur votre profil"
+          : "You have a new review on your profile");
+  // Failed to add review. Please try again.
+  String get failedToAddReview => isArabic
+      ? "فشل إضافة المراجعة. يرجى المحاولة مرة أخرى."
+      : (isFrench
+          ? "Échec de l'ajout de l'avis. Veuillez réessayer."
+          : "Failed to add review. Please try again.");
+
+  // Review added successfully!
+  String get reviewAddedSuccessfully => isArabic
+      ? "تمت إضافة المراجعة بنجاح!"
+      : (isFrench ? "Avis ajouté avec succès!" : "Review added successfully!");
+
   // Reviews
   String get reviews =>
       isArabic ? "المراجعات" : (isFrench ? "Avis" : "Reviews");
 
+  // Add Review
+  String get addReview =>
+      isArabic ? "إضافة مراجعة" : (isFrench ? "Ajouter un avis" : "Add Review");
+
+  // addComment
+  String get addComment => isArabic
+      ? "أضف تعليق"
+      : (isFrench ? "Ajouter un commentaire" : "Add Comment");
+
+  // submit
+  String get submit => isArabic ? "إرسال" : (isFrench ? "Soumettre" : "Submit");
+  // Submitting review
+  String get submittingReview => isArabic
+      ? "جارٍ تقديم المراجعة..."
+      : (isFrench ? "Soumission de l'avis ..." : "Submitting review ...");
   // Sent
   String get sent => isArabic ? "المرسل" : (isFrench ? "Envoyé" : "Sent");
 
@@ -218,9 +253,14 @@ class AppLocalizations {
   String get noInternet => isArabic
       ? "لا يوجد اتصال بالإنترنت"
       : (isFrench ? "Pas de connexion Internet" : "No Internet connection");
-  String get aboutMe => isArabic
-      ? "نبـذة عنك"
-      : (isFrench ? "Écrivez sur vous" : "Write about yourself");
+
+  String get aboutMe =>
+      isArabic ? "نبـذة عني" : (isFrench ? "À propos de moi" : "About Me");
+
+  // workDomain
+  String get workDomain => isArabic
+      ? "مجال العمل"
+      : (isFrench ? "Domaine de travail" : "Work Domain");
 
   // New localization for no favorite services
   String get noFavoriteServicesYet => isArabic
@@ -228,6 +268,21 @@ class AppLocalizations {
       : (isFrench
           ? "Aucun service favori pour le moment"
           : "No favorite services yet");
+
+  // Filter Services
+  String get filterServices => isArabic
+      ? "تصفية الخدمات"
+      : (isFrench ? "Filtrer les services" : "Filter Services");
+
+  // Clear Filters
+  String get clearFilters => isArabic
+      ? "مسح الفلاتر"
+      : (isFrench ? "Effacer les filtres" : "Clear Filters");
+
+  // Apply Filters
+  String get applyFilters => isArabic
+      ? "تطبيق الفلاتر"
+      : (isFrench ? "Appliquer les filtres" : "Apply Filters");
 
   // New localization for NameEntryScreen
   String get firstName =>
@@ -332,6 +387,11 @@ class AppLocalizations {
       ? "الكشف في الوقت الحقيقي"
       : (isFrench ? "Détection en temps réel" : "Real-Time Detection");
 
+  // Upload Front ID
+  String get uploadFrontID => isArabic
+      ? "تحميل الهوية الأمامية"
+      : (isFrench ? "Télécharger l'identifiant avant" : "Upload Front ID");
+
   String get support => isArabic ? "الدعم" : (isFrench ? "Soutien" : "Support");
   String get supportMessage => isArabic
       ? "إذا لم يتم اكتشاف بطاقتك، يرجى التأكد من أنها محاذية بشكل صحيح وحاول مرة أخرى."
@@ -347,6 +407,7 @@ class AppLocalizations {
   String get skip => isArabic ? "تخطي" : (isFrench ? "Sauter" : "Skip");
   String get uploadLabel =>
       isArabic ? "تحميل" : (isFrench ? "Télécharger" : "Upload");
+
   String get retake => isArabic ? "إعادة" : (isFrench ? "Reprendre" : "Retake");
 
   // New localization for face_verification_screen
@@ -400,12 +461,13 @@ class AppLocalizations {
   String get workExperience => isArabic
       ? "الخبرة العملية"
       : (isFrench ? "Expérience professionnelle" : "Work Experience");
+
   String get companyName => isArabic
       ? "اسم الشركة"
       : (isFrench ? "Nom de l'entreprise" : "Company Name");
   String get position =>
       isArabic ? "المنصب" : (isFrench ? "Poste" : "Position");
-  String get duration => isArabic ? "المدة" : (isFrench ? "Durée" : "Duration");
+  String get duration => isArabic ? "خلال" : (isFrench ? "Durée" : "Duration");
   String get addWorkExperience => isArabic
       ? "أضف خبرة عمل"
       : (isFrench
@@ -443,6 +505,87 @@ class AppLocalizations {
       : (isFrench
           ? "Aucune certification disponible"
           : "No certifications available");
+
+  // contact Provider
+  String get contactProvider => isArabic
+      ? "اتصل بمزود الخدمة"
+      : (isFrench ? "Contacter le fournisseur" : "Contact Provider");
+
+  // Contact Information
+  String get contactInformation => isArabic
+      ? "معلومات الاتصال"
+      : (isFrench ? "Coordonnées" : "Contact Information");
+
+  // Send Direct Listing
+  String get sendDirectListing => isArabic
+      ? "إرسال قائمة مباشرة"
+      : (isFrench ? "Envoyer une liste directe" : "Send Direct Listing");
+
+  // Send Direct Job Listing
+  String get sendDirectJobListing => isArabic
+      ? "إرسال قائمة وظائف مباشرة"
+      : (isFrench
+          ? "Envoyer une liste d'emplois directe"
+          : "Send Direct Job Listing");
+
+  // Main Title
+  String get mainTitle => isArabic
+      ? "العنوان الرئيسي"
+      : (isFrench ? "Titre principal" : "Main Title");
+  // Please enter a title
+  String get pleaseEnterTitle => isArabic
+      ? "الرجاء إدخال عنوان"
+      : (isFrench ? "Veuillez entrer un titre" : "Please enter a title");
+
+  // Description
+  String get description =>
+      isArabic ? "الوصف" : (isFrench ? "Description" : "Description");
+  // Please enter a description
+  String get pleaseEnterDescription => isArabic
+      ? "الرجاء إدخال وصف"
+      : (isFrench
+          ? "Veuillez entrer une description"
+          : "Please enter a description");
+
+  // Pay
+  String get pay => isArabic ? "الدفع" : (isFrench ? "Payer" : "Pay");
+  //Please enter the pay
+  String get pleaseEnterPay => isArabic
+      ? "الرجاء إدخال مبلغ الدفع"
+      : (isFrench ? "Veuillez entrer le paiement" : "Please enter the pay");
+
+  // Location
+  String get locationRequiredError => isArabic
+      ? "يرجى تحديد الموقع"
+      : (isFrench
+          ? "Veuillez sélectionner l'emplacement"
+          : "Please select the location");
+
+  // Sending listing...
+  String get sendingListing => isArabic
+      ? "إرسال القائمة..."
+      : (isFrench ? "Envoi de la liste..." : "Sending listing...");
+
+  // sendListing
+  String get sendListing => isArabic
+      ? "إرسال القائمة"
+      : (isFrench ? "Envoyer la liste" : "Send Listing");
+
+  // Failed to send listing. Please try again.
+  String get failedToSendListing => isArabic
+      ? "فشل إرسال القائمة. يرجى المحاولة مرة أخرى."
+      : (isFrench
+          ? "Échec de l'envoi de la liste. Veuillez réessayer."
+          : "Failed to send listing. Please try again.");
+  // Job listing sent successfully!
+  String get jobListingSentSuccessfully => isArabic
+      ? "تم إرسال قائمة الوظائف بنجاح!"
+      : (isFrench
+          ? "Liste d'emplois envoyée avec succès!"
+          : "Job listing sent successfully!");
+
+  // close
+  String get close => isArabic ? "إغلاق" : (isFrench ? "Fermer" : "Close");
 
   // Admin Profile
   String get manageUsers => isArabic
@@ -702,9 +845,17 @@ class AppLocalizations {
       ? "معلومات عامة"
       : (isFrench ? "Informations de base" : "Basic Information");
 
-  // String get portfolio => isArabic
-  //      ? "المعرض"
-  //      : (isFrench ? "Portfolio" : "Portfolio");
+  // Price Range (DZD)
+  String get priceRange =>
+      isArabic ? "حدود السعر " : (isFrench ? "Plage de prix" : "Price Range");
+
+  // DZD
+  String get dzd => isArabic ? "دج" : (isFrench ? "DZD" : "DZD");
+
+  // Minimum Rating
+  String get minimumRating => isArabic
+      ? "التقييم الأدنى"
+      : (isFrench ? "Note minimale" : "Minimum Rating");
 
   // Static method to access the instance
   static AppLocalizations? of(BuildContext context) {

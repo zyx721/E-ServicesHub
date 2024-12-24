@@ -1,4 +1,3 @@
-
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -12,14 +11,13 @@ import 'package:flutter/cupertino.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:googleapis_auth/auth_io.dart' as auth;
-
+import 'package:hanini_frontend/localization/app_localization.dart';
 
 class PushNotificationService {
   static Future<String> getAccessToken() async {
     // Load the service account JSON
-    final serviceAccountJson =await rootBundle.loadString(
-        'assets/credentials/test.json'
-      );
+    final serviceAccountJson =
+        await rootBundle.loadString('assets/credentials/test.json');
 
     // Define the required scopes
     List<String> scopes = [
@@ -43,8 +41,8 @@ class PushNotificationService {
     return accessToken;
   }
 
-  static Future<void> sendNotification(
-      String deviceToken, String title, String body, Map<String, dynamic> data) async {
+  static Future<void> sendNotification(String deviceToken, String title,
+      String body, Map<String, dynamic> data) async {
     final String serverKey = await getAccessToken();
     String endpointFirebaseCloudMessaging =
         'https://fcm.googleapis.com/v1/projects/hanini-2024/messages:send';
@@ -78,21 +76,22 @@ class PushNotificationService {
   }
 }
 
-
 class ServiceProviderFullProfile extends StatefulWidget {
   final String providerId;
 
-  const ServiceProviderFullProfile({Key? key, required this.providerId}) : super(key: key);
+  const ServiceProviderFullProfile({Key? key, required this.providerId})
+      : super(key: key);
 
   @override
-  _ServiceProviderFullProfileState createState() => _ServiceProviderFullProfileState();
+  _ServiceProviderFullProfileState createState() =>
+      _ServiceProviderFullProfileState();
 }
 
-class _ServiceProviderFullProfileState extends State<ServiceProviderFullProfile> {
+class _ServiceProviderFullProfileState
+    extends State<ServiceProviderFullProfile> {
   final double profileHeight = 150;
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   final String currentUserId = FirebaseAuth.instance.currentUser!.uid;
-
 
   List<String> portfolioImages = [];
   List<dynamic> skills = [];
@@ -105,13 +104,13 @@ class _ServiceProviderFullProfileState extends State<ServiceProviderFullProfile>
   String userPhotoUrl = '';
   String aboutMe = '';
   String hourlyRate = '';
-  String phoneNubmber ='';
+  String phoneNubmber = '';
   bool isEditMode = false;
   bool isVerified = true;
   bool isLoading = true;
-  double rating =0.0;
-  String wilaya ='';
-  String commune ='';
+  double rating = 0.0;
+  String wilaya = '';
+  String commune = '';
 
   // Fetch provider data from Firestore using providerId
   Future<void> fetchProviderData() async {
@@ -152,7 +151,6 @@ class _ServiceProviderFullProfileState extends State<ServiceProviderFullProfile>
   void initState() {
     super.initState();
     fetchProviderData();
-
   }
 
   @override
@@ -161,9 +159,6 @@ class _ServiceProviderFullProfileState extends State<ServiceProviderFullProfile>
     aboutMeController.dispose();
     super.dispose();
   }
-
-
-
 
   // Toggle edit mode and save changes
   void toggleEditMode() {
@@ -186,563 +181,630 @@ class _ServiceProviderFullProfileState extends State<ServiceProviderFullProfile>
     Navigator.pop(context); // Navigate back to the previous screen or navbar
   }
 
-@override
-Widget build(BuildContext context) {
-  return DefaultTabController(
-    length: 2, // Number of tabs
-    child: Scaffold(
-      body: isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : Column(
-              children: [
-                buildTopProfileInfo(),
-                const SizedBox(height: 20),
-                TabBar(
-                  labelColor: Colors.black,
-                  unselectedLabelColor: Colors.grey,
-                  indicatorColor: Colors.blue,
-                  tabs: const [
-                    Tab(text: 'Profile'),
-                    Tab(text: 'Reviews'),
-                  ],
-                ),
-                Expanded(
-                  child: TabBarView(
-                    children: [
-                      SingleChildScrollView(
-                        child: Column(
-                          children: [
-                            buildProfileTab(), // Profile content
-                          ],
+  @override
+  Widget build(BuildContext context) {
+    final localizations = AppLocalizations.of(context);
+    if (localizations == null) return const SizedBox.shrink();
+
+    return DefaultTabController(
+      length: 2, // Number of tabs
+      child: Scaffold(
+        body: isLoading
+            ? const Center(child: CircularProgressIndicator())
+            : Column(
+                children: [
+                  buildTopProfileInfo(),
+                  const SizedBox(height: 20),
+                  TabBar(
+                    labelColor: Colors.black,
+                    unselectedLabelColor: Colors.grey,
+                    indicatorColor: Colors.blue,
+                    tabs: [
+                      Tab(text: localizations.profile),
+                      Tab(text: localizations.reviews),
+                    ],
+                  ),
+                  Expanded(
+                    child: TabBarView(
+                      children: [
+                        SingleChildScrollView(
+                          child: Column(
+                            children: [
+                              buildProfileTab(), // Profile content
+                            ],
+                          ),
                         ),
+                        buildReviewsTab(), // Reviews content
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+      ),
+    );
+  }
+
+  Widget buildReviewsTab() {
+    final localizations = AppLocalizations.of(context);
+    if (localizations == null) return const SizedBox.shrink();
+
+    return FutureBuilder<DocumentSnapshot>(
+      future: _firestore.collection('users').doc(widget.providerId).get(),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const Center(child: CircularProgressIndicator());
+        }
+
+        if (snapshot.hasError) {
+          return Center(
+            child: Text(
+              'Error fetching reviews. Please try again later.',
+              style: GoogleFonts.poppins(fontSize: 16, color: Colors.red),
+            ),
+          );
+        }
+
+        if (!snapshot.hasData || !snapshot.data!.exists) {
+          return Center(
+            child: Text(
+              localizations.noReviewsAvailable,
+              style: GoogleFonts.poppins(
+                  fontSize: 16, fontStyle: FontStyle.italic),
+            ),
+          );
+        }
+
+        final providerData = snapshot.data!.data() as Map<String, dynamic>;
+        final reviews = providerData['reviews'] ?? [];
+
+        return Column(
+          children: [
+            Expanded(
+              child: reviews.isEmpty
+                  ? Center(
+                      child: Text(
+                        localizations.noReviewsAvailable,
+                        style: GoogleFonts.poppins(
+                            fontSize: 16, fontStyle: FontStyle.italic),
                       ),
-                      buildReviewsTab(), // Reviews content
+                    )
+                  : ListView.builder(
+                      padding: const EdgeInsets.all(16.0),
+                      itemCount: reviews.length,
+                      itemBuilder: (context, index) {
+                        final review = reviews[index] as Map<String, dynamic>;
+                        final comment =
+                            review['comment'] ?? 'No comment provided';
+                        final commenterId = review['id_commentor'] ?? 'Unknown';
+                        final rating = review['rating']?.toDouble() ?? 0.0;
+                        final timestamp = review['timestamp'] ?? '';
+
+                        // Parse and format the timestamp
+                        final formattedTimestamp = timestamp.isNotEmpty
+                            ? DateFormat('MMM d, yyyy • h:mm a').format(
+                                DateTime.parse(timestamp),
+                              )
+                            : 'Unknown time';
+
+                        return FutureBuilder<DocumentSnapshot>(
+                          future: _firestore
+                              .collection('users')
+                              .doc(commenterId)
+                              .get(),
+                          builder: (context, commenterSnapshot) {
+                            if (commenterSnapshot.connectionState ==
+                                ConnectionState.waiting) {
+                              return const Center(
+                                  child: CircularProgressIndicator());
+                            }
+
+                            final commenterData = commenterSnapshot.data?.data()
+                                    as Map<String, dynamic>? ??
+                                {};
+                            final commenterName =
+                                commenterData['name'] ?? 'Anonymous';
+                            final commenterPhoto =
+                                commenterData['photoURL'] ?? '';
+
+                            return Card(
+                              margin: const EdgeInsets.symmetric(vertical: 8),
+                              child: Padding(
+                                padding: const EdgeInsets.all(12.0),
+                                child: Row(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    CircleAvatar(
+                                      radius: 20,
+                                      backgroundImage: commenterPhoto.isNotEmpty
+                                          ? NetworkImage(commenterPhoto)
+                                          : const AssetImage(
+                                                  'assets/images/default_profile.png')
+                                              as ImageProvider,
+                                    ),
+                                    const SizedBox(width: 12),
+                                    Expanded(
+                                      child: Column(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        children: [
+                                          Row(
+                                            mainAxisAlignment:
+                                                MainAxisAlignment.spaceBetween,
+                                            children: [
+                                              Text(
+                                                commenterName,
+                                                style: GoogleFonts.poppins(
+                                                    fontWeight:
+                                                        FontWeight.w600),
+                                              ),
+                                              Text(
+                                                formattedTimestamp,
+                                                style: GoogleFonts.poppins(
+                                                  fontSize: 12,
+                                                  color: Colors.grey[500],
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                          const SizedBox(height: 4),
+                                          _buildStarRating(rating),
+                                          const SizedBox(height: 8),
+                                          Text(
+                                            comment,
+                                            style: GoogleFonts.poppins(
+                                                color: Colors.grey[700]),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            );
+                          },
+                        );
+                      },
+                    ),
+            ),
+            GestureDetector(
+              onTap: () {
+                _showAddReviewDialog(context, widget.providerId, _firestore);
+              },
+              child: Container(
+                padding: const EdgeInsets.all(
+                    10), // Optional padding for touchable area
+                decoration: BoxDecoration(
+                  color: Colors.blue, // Button color
+                ),
+                child: Center(
+                  child: Text(
+                    localizations.addReview,
+                    style: GoogleFonts.poppins(
+                      color: Colors.white, // Text color
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  void _showAddReviewDialog(
+      BuildContext context, String providerId, FirebaseFirestore firestore) {
+    final localizations = AppLocalizations.of(context);
+    if (localizations == null) return;
+
+    final TextEditingController commentController = TextEditingController();
+    double newRating = 3.0;
+    bool isSubmitting = false; // Add loading state variable
+
+    showDialog(
+      context: context,
+      barrierDismissible: !isSubmitting, // Prevent dismissal while submitting
+      builder: (BuildContext dialogContext) {
+        return StatefulBuilder(
+          // Use StatefulBuilder to manage dialog state
+          builder: (context, setState) {
+            return AlertDialog(
+              title:
+                  Text(localizations.addReview, style: GoogleFonts.poppins()),
+              content: SingleChildScrollView(
+                child: ConstrainedBox(
+                  constraints: BoxConstraints(
+                    maxHeight: MediaQuery.of(context).size.height * 0.6,
+                  ),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      TextField(
+                        controller: commentController,
+                        enabled: !isSubmitting,
+                        decoration: InputDecoration(
+                          labelText: localizations.addComment,
+                          border: OutlineInputBorder(),
+                        ),
+                        maxLines: 3,
+                      ),
+                      const SizedBox(height: 16),
+                      RatingBar.builder(
+                        initialRating: newRating,
+                        minRating: 0.5,
+                        direction: Axis.horizontal,
+                        allowHalfRating: true,
+                        itemCount: 5,
+                        ignoreGestures: isSubmitting,
+                        itemPadding:
+                            const EdgeInsets.symmetric(horizontal: 2.5),
+                        itemBuilder: (context, _) => const Icon(
+                          Icons.star,
+                          color: Colors.amber,
+                        ),
+                        onRatingUpdate: (rating) {
+                          newRating = rating;
+                        },
+                      ),
+                      if (isSubmitting)
+                        Padding(
+                          padding: const EdgeInsets.only(top: 16.0),
+                          child: Column(
+                            children: [
+                              const CircularProgressIndicator(),
+                              const SizedBox(height: 8),
+                              Text(
+                                localizations.submittingReview,
+                                style: GoogleFonts.poppins(
+                                  color: Colors.grey[600],
+                                  fontSize: 12,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
                     ],
                   ),
                 ),
-              ],
-            ),
-    ),
-  );
-}
+              ),
+              actions: [
+                TextButton(
+                  onPressed: isSubmitting ? null : () => Navigator.pop(context),
+                  child:
+                      Text(localizations.cancel, style: GoogleFonts.poppins()),
+                ),
+                ElevatedButton(
+                  onPressed: isSubmitting
+                      ? null
+                      : () async {
+                          if (commentController.text.trim().isEmpty) return;
 
-Widget buildReviewsTab() {
-  return FutureBuilder<DocumentSnapshot>(
-    future: _firestore.collection('users').doc(widget.providerId).get(),
-    builder: (context, snapshot) {
-      if (snapshot.connectionState == ConnectionState.waiting) {
-        return const Center(child: CircularProgressIndicator());
-      }
-
-      if (snapshot.hasError) {
-        return Center(
-          child: Text(
-            'Error fetching reviews. Please try again later.',
-            style: GoogleFonts.poppins(fontSize: 16, color: Colors.red),
-          ),
-        );
-      }
-
-      if (!snapshot.hasData || !snapshot.data!.exists) {
-        return Center(
-          child: Text(
-            'No reviews available.',
-            style: GoogleFonts.poppins(fontSize: 16, fontStyle: FontStyle.italic),
-          ),
-        );
-      }
-
-      final providerData = snapshot.data!.data() as Map<String, dynamic>;
-      final reviews = providerData['reviews'] ?? [];
-
-      return Column(
-        children: [
-          Expanded(
-            child: reviews.isEmpty
-                ? Center(
-                    child: Text(
-                      'No reviews available.',
-                      style: GoogleFonts.poppins(
-                          fontSize: 16, fontStyle: FontStyle.italic),
-                    ),
-                  )
-                : ListView.builder(
-                    padding: const EdgeInsets.all(16.0),
-                    itemCount: reviews.length,
-                    itemBuilder: (context, index) {
-                      final review = reviews[index] as Map<String, dynamic>;
-                      final comment = review['comment'] ?? 'No comment provided';
-                      final commenterId = review['id_commentor'] ?? 'Unknown';
-                      final rating = review['rating']?.toDouble() ?? 0.0;
-                      final timestamp = review['timestamp'] ?? '';
-
-                      // Parse and format the timestamp
-                      final formattedTimestamp = timestamp.isNotEmpty
-                          ? DateFormat('MMM d, yyyy • h:mm a').format(
-                              DateTime.parse(timestamp),
-                            )
-                          : 'Unknown time';
-
-                      return FutureBuilder<DocumentSnapshot>(
-                        future: _firestore.collection('users').doc(commenterId).get(),
-                        builder: (context, commenterSnapshot) {
-                          if (commenterSnapshot.connectionState ==
-                              ConnectionState.waiting) {
-                            return const Center(child: CircularProgressIndicator());
+                          final user = FirebaseAuth.instance.currentUser;
+                          if (user == null) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                  content: Text(
+                                      'You must be logged in to add a review')),
+                            );
+                            return;
                           }
 
-                          final commenterData =
-                              commenterSnapshot.data?.data() as Map<String, dynamic>? ?? {};
-                          final commenterName = commenterData['name'] ?? 'Anonymous';
-                          final commenterPhoto =
-                              commenterData['photoURL'] ?? '';
-
-                          return Card(
-                            margin: const EdgeInsets.symmetric(vertical: 8),
-                            child: Padding(
-                              padding: const EdgeInsets.all(12.0),
-                              child: Row(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  CircleAvatar(
-                                    radius: 20,
-                                    backgroundImage: commenterPhoto.isNotEmpty
-                                        ? NetworkImage(commenterPhoto)
-                                        : const AssetImage(
-                                                'assets/images/default_profile.png')
-                                            as ImageProvider,
-                                  ),
-                                  const SizedBox(width: 12),
-                                  Expanded(
-                                    child: Column(
-                                      crossAxisAlignment: CrossAxisAlignment.start,
-                                      children: [
-                                        Row(
-                                          mainAxisAlignment:
-                                              MainAxisAlignment.spaceBetween,
-                                          children: [
-                                            Text(
-                                              commenterName,
-                                              style: GoogleFonts.poppins(
-                                                  fontWeight: FontWeight.w600),
-                                            ),
-                                            Text(
-                                              formattedTimestamp,
-                                              style: GoogleFonts.poppins(
-                                                fontSize: 12,
-                                                color: Colors.grey[500],
-                                              ),
-                                            ),
-                                          ],
-                                        ),
-                                        const SizedBox(height: 4),
-                                        _buildStarRating(rating),
-                                        const SizedBox(height: 8),
-                                        Text(
-                                          comment,
-                                          style: GoogleFonts.poppins(
-                                              color: Colors.grey[700]),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          );
-                        },
-                      );
-                    },
-                  ),
-          ),
-GestureDetector(
-  onTap: () {
-    _showAddReviewDialog(context, widget.providerId, _firestore);
-  },
-  child: Container(
-    padding: const EdgeInsets.all(10), // Optional padding for touchable area
-    decoration: BoxDecoration(
-      color: Colors.blue, // Button color
-    ),
-    child: Center(
-      child: Text(
-        'Add Review',
-        style: GoogleFonts.poppins(
-          color: Colors.white, // Text color
-        ),
-      ),
-    ),
-  ),
-),
-
-        ],
-      );
-    },
-  );
-}
-
-
-
-
-
-void _showAddReviewDialog(BuildContext context, String providerId, FirebaseFirestore firestore) {
-  final TextEditingController commentController = TextEditingController();
-  double newRating = 3.0;
-  bool isSubmitting = false; // Add loading state variable
-
-  showDialog(
-    context: context,
-    barrierDismissible: !isSubmitting, // Prevent dismissal while submitting
-    builder: (BuildContext dialogContext) {
-      return StatefulBuilder( // Use StatefulBuilder to manage dialog state
-        builder: (context, setState) {
-          return AlertDialog(
-            title: Text('Add a Review', style: GoogleFonts.poppins()),
-            content: SingleChildScrollView(
-              child: ConstrainedBox(
-                constraints: BoxConstraints(
-                  maxHeight: MediaQuery.of(context).size.height * 0.6,
-                ),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    TextField(
-                      controller: commentController,
-                      enabled: !isSubmitting,
-                      decoration: const InputDecoration(
-                        labelText: 'Comment',
-                        border: OutlineInputBorder(),
-                      ),
-                      maxLines: 3,
-                    ),
-                    const SizedBox(height: 16),
-                    RatingBar.builder(
-                      initialRating: newRating,
-                      minRating: 0.5,
-                      direction: Axis.horizontal,
-                      allowHalfRating: true,
-                      itemCount: 5,
-                      ignoreGestures: isSubmitting,
-                      itemPadding: const EdgeInsets.symmetric(horizontal: 2.5),
-                      itemBuilder: (context, _) => const Icon(
-                        Icons.star,
-                        color: Colors.amber,
-                      ),
-                      onRatingUpdate: (rating) {
-                        newRating = rating;
-                      },
-                    ),
-                    if (isSubmitting)
-                      Padding(
-                        padding: const EdgeInsets.only(top: 16.0),
-                        child: Column(
-                          children: [
-                            const CircularProgressIndicator(),
-                            const SizedBox(height: 8),
-                            Text(
-                              'Submitting review...',
-                              style: GoogleFonts.poppins(
-                                color: Colors.grey[600],
-                                fontSize: 12,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                  ],
-                ),
-              ),
-            ),
-            actions: [
-              TextButton(
-                onPressed: isSubmitting ? null : () => Navigator.pop(context),
-                child: Text('Cancel', style: GoogleFonts.poppins()),
-              ),
-              ElevatedButton(
-                onPressed: isSubmitting
-                    ? null
-                    : () async {
-                        if (commentController.text.trim().isEmpty) return;
-
-                        final user = FirebaseAuth.instance.currentUser;
-                        if (user == null) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                                content: Text('You must be logged in to add a review')),
-                          );
-                          return;
-                        }
-
-                        setState(() {
-                          isSubmitting = true;
-                        });
-
-                        try {
-                          final review = {
-                            'comment': commentController.text.trim(),
-                            'rating': newRating,
-                            'id_commentor': user.uid,
-                            'timestamp': DateTime.now().toIso8601String(),
-                          };
-
-                          final providerRef = firestore.collection('users').doc(providerId);
-
-                          await providerRef.update({
-                            'reviews': FieldValue.arrayUnion([review]),
-                            'newCommentsCount': FieldValue.increment(1),
+                          setState(() {
+                            isSubmitting = true;
                           });
 
-                          final providerDoc = await providerRef.get();
-                          final providerData = providerDoc.data() as Map<String, dynamic>;
-                          final reviews = providerData['reviews'] as List<dynamic> ?? [];
+                          try {
+                            final review = {
+                              'comment': commentController.text.trim(),
+                              'rating': newRating,
+                              'id_commentor': user.uid,
+                              'timestamp': DateTime.now().toIso8601String(),
+                            };
 
-                          double totalRating = 0.0;
-                          for (var rev in reviews) {
-                            totalRating += (rev['rating'] as num).toDouble();
-                          }
-                          final newAverageRating = totalRating / reviews.length;
+                            final providerRef =
+                                firestore.collection('users').doc(providerId);
 
-                          await providerRef.update({
-                            'rating': newAverageRating,
-                          });
+                            await providerRef.update({
+                              'reviews': FieldValue.arrayUnion([review]),
+                              'newCommentsCount': FieldValue.increment(1),
+                            });
 
-                          final String deviceToken = providerData['deviceToken'];
-                          if (deviceToken.isNotEmpty) {
-                            await PushNotificationService.sendNotification(
-                              deviceToken,
-                              'New Review Received',
-                              'You have a new review on your profile',
-                              {'providerId': providerId},
+                            final providerDoc = await providerRef.get();
+                            final providerData =
+                                providerDoc.data() as Map<String, dynamic>;
+                            final reviews =
+                                providerData['reviews'] as List<dynamic> ?? [];
+
+                            double totalRating = 0.0;
+                            for (var rev in reviews) {
+                              totalRating += (rev['rating'] as num).toDouble();
+                            }
+                            final newAverageRating =
+                                totalRating / reviews.length;
+
+                            await providerRef.update({
+                              'rating': newAverageRating,
+                            });
+
+                            final String deviceToken =
+                                providerData['deviceToken'];
+                            if (deviceToken.isNotEmpty) {
+                              await PushNotificationService.sendNotification(
+                                deviceToken,
+                                localizations.newReviewReceived,
+                                localizations.youHaveNewReviewOnYourProfile,
+                                {'providerId': providerId},
+                              );
+                            }
+
+                            Navigator.pop(context);
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                  content: Text(
+                                      localizations.reviewAddedSuccessfully)),
+                            );
+                          } catch (e) {
+                            setState(() {
+                              isSubmitting = false;
+                            });
+                            debugPrint('Error adding review: $e');
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                  content:
+                                      Text(localizations.failedToAddReview)),
                             );
                           }
+                        },
+                  child: Text(localizations.submit,
+                      style: GoogleFonts.poppins(color: Colors.black)),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
+  }
 
-                          Navigator.pop(context);
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(content: Text('Review added successfully!')),
-                          );
-                        } catch (e) {
-                          setState(() {
-                            isSubmitting = false;
-                          });
-                          debugPrint('Error adding review: $e');
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                                content: Text('Failed to add review. Please try again.')),
-                          );
-                        }
-                      },
-                child: Text('Submit', style: GoogleFonts.poppins()),
-              ),
-            ],
-          );
-        },
-      );
-    },
-  );
-}
-
-Widget buildProfileTab() {
-  return  // Make sure everything is scrollable
-    Column(
+  Widget buildProfileTab() {
+    final localizations = AppLocalizations.of(context);
+    if (localizations == null) return Column();
+    return // Make sure everything is scrollable
+        Column(
       children: [
-         const SizedBox(height: 20),
+        // const SizedBox(height: 20),
         buildAboutMeSection(),
         const SizedBox(height: 20),
-        _buildSectionTitle('Skills'),
+        _buildSectionTitle(localizations.skills),
         _buildSkillsSection(),
         const SizedBox(height: 20),
-        _buildSectionTitle('Work Experience'),
+        _buildSectionTitle(localizations.workExperience),
         _buildWorkExperienceSection(),
         const SizedBox(height: 20),
-        _buildSectionTitle('Work Domains'),
+        _buildSectionTitle(localizations.workDomain),
         _buildWorkDomainsSection(),
         const SizedBox(height: 20),
         buildPortfolioSection(),
         const SizedBox(height: 20),
-        _buildSectionTitle('Certifications'),
+        _buildSectionTitle(localizations.certifications),
         _buildCertificationsSection(),
         const SizedBox(height: 40),
         _buildContactButton(),
         const SizedBox(height: 40),
       ],
     );
-}
+  }
 
-Widget buildTopProfileInfo() {
-  return Column(
-    crossAxisAlignment: CrossAxisAlignment.center,
-    children: [
-      const SizedBox(height: 40),
-      Stack(
-        alignment: Alignment.bottomRight,
-        children: [
-          CircleAvatar(
-            radius: profileHeight / 2,
-            backgroundColor: Colors.grey.shade200,
-            backgroundImage: userPhotoUrl.isNotEmpty
-                ? NetworkImage(userPhotoUrl) as ImageProvider
-                : const AssetImage('assets/images/default_profile.png'),
-          ),
-        ],
-      ),
-      const SizedBox(height: 20),
-      Text(
-        userName,
-        style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
-      ),
-      const SizedBox(height: 4),
-      Text(
-        profession,
-        style: TextStyle(fontSize: 16, color: Colors.grey.shade700),
-      ),
-      const SizedBox(height: 20),
-      Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 16),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceAround, // Center items evenly
+  Widget buildTopProfileInfo() {
+    final localizations = AppLocalizations.of(context);
+    if (localizations == null) return Column();
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.center,
+      children: [
+        const SizedBox(height: 40),
+        Stack(
+          alignment: Alignment.bottomRight,
           children: [
-            buildStat(commune, wilaya),
-            buildStat('Rating', _buildStarRating(rating)),
-            buildStat('Hourly Rate', isEditMode ? buildHourlyRateEditor() : '$hourlyRate DZD',
+            CircleAvatar(
+              radius: profileHeight / 2,
+              backgroundColor: Colors.grey.shade200,
+              backgroundImage: userPhotoUrl.isNotEmpty
+                  ? NetworkImage(userPhotoUrl) as ImageProvider
+                  : const AssetImage('assets/images/default_profile.png'),
             ),
           ],
         ),
-      ),
-    ],
-  );
-}
+        const SizedBox(height: 20),
+        Text(
+          userName,
+          style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+        ),
+        const SizedBox(height: 4),
+        Text(
+          profession,
+          style: TextStyle(fontSize: 16, color: Colors.grey.shade700),
+        ),
+        const SizedBox(height: 20),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16),
+          child: Row(
+            mainAxisAlignment:
+                MainAxisAlignment.spaceAround, // Center items evenly
+            children: [
+              buildStat(commune, wilaya),
+              buildStat(localizations.rating, _buildStarRating(rating)),
+              buildStat(
+                localizations.hourlyRate,
+                isEditMode ? buildHourlyRateEditor() : '$hourlyRate DZD',
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
 
   Column buildAboutMeSection() {
+    final localizations = AppLocalizations.of(context);
+    if (localizations == null) return Column();
     return Column(
-          children: [
-            _buildSectionTitle('About Me'),
-            const SizedBox(height: 8),
-             Text(
-                    aboutMe,
-                    style: TextStyle(fontSize: 14, color: Colors.grey.shade700),
-                    textAlign: TextAlign.justify,
-                  ),
-          ],
-        );
+      children: [
+        _buildSectionTitle(localizations.aboutMe),
+        const SizedBox(height: 8),
+        Align(
+          alignment: Alignment.center,
+          child: Text(
+            aboutMe,
+            style: TextStyle(fontSize: 14, color: Colors.grey.shade700),
+            textAlign: TextAlign.justify,
+          ),
+        ),
+      ],
+    );
   }
 
   Widget _buildSkillsSection() {
-  return Padding(
-    padding: const EdgeInsets.symmetric(horizontal: 16.0),
-    child: Align(
-      alignment: Alignment.topLeft,
-      child: Column( 
-        children: [
-          if (skills.isNotEmpty)
-            Wrap(  
-              spacing: 8.0,
-              runSpacing: 4.0,
-              children: skills
-                  .map(
-                    (skill) => Padding(
-                      padding: const EdgeInsets.all(4.0),
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 8.0),
-                        decoration: BoxDecoration(
-                          color: Colors.blue.shade50,
-                          borderRadius: BorderRadius.circular(16.0),
-                        ),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Text(skill, style: GoogleFonts.poppins()),
-                          ],
+    final localizations = AppLocalizations.of(context);
+    if (localizations == null) return Column();
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16.0),
+      child: Align(
+        alignment: Alignment.center,
+        child: Column(
+          children: [
+            if (skills.isNotEmpty)
+              Wrap(
+                spacing: 8.0,
+                runSpacing: 4.0,
+                children: skills
+                    .map(
+                      (skill) => Padding(
+                        padding: const EdgeInsets.all(4.0),
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 12.0, vertical: 8.0),
+                          decoration: BoxDecoration(
+                            color: Colors.blue.shade50,
+                            borderRadius: BorderRadius.circular(16.0),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Text(skill, style: GoogleFonts.poppins()),
+                            ],
+                          ),
                         ),
                       ),
-                    ),
-                  )
-                  .toList(),
-            )
-          else
-            const Center(child: Text('No skills available')),
-        ],
+                    )
+                    .toList(),
+              )
+            else
+              Center(child: Text(localizations.noSkillsAvailable)),
+          ],
+        ),
       ),
-    ),
-  );
-}
+    );
+  }
 
   Widget _buildWorkExperienceSection() {
+    final localizations = AppLocalizations.of(context);
+    if (localizations == null) return Column();
+
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16.0),
       child: Column(
-        children: workExperience
-            .map((exp) => ListTile(
-                  contentPadding: EdgeInsets.zero,
-                  title: Text(
-                    exp['company'],
-                    style: GoogleFonts.poppins(fontWeight: FontWeight.w600),
-                  ),
-                  subtitle: Text(
-                    '${exp['position']} | ${exp['duration']}',
+        children: workExperience.isNotEmpty
+            ? workExperience
+                .map((exp) => ListTile(
+                      contentPadding: EdgeInsets.zero,
+                      title: Text(
+                        '${localizations.companyName} : ${exp['company']}',
+                        style: GoogleFonts.poppins(fontWeight: FontWeight.w600),
+                      ),
+                      subtitle: Text(
+                        '${localizations.position} : ${exp['position']}\n ${localizations.duration} : ${exp['duration']}',
+                        style: GoogleFonts.poppins(),
+                      ),
+                    ))
+                .toList()
+            : [
+                Center(
+                  child: Text(
+                    localizations.noWorkExperienceAvailable,
                     style: GoogleFonts.poppins(),
                   ),
-                ))
-            .toList(),
+                ),
+              ],
       ),
     );
   }
 
   Widget buildPortfolioSection() {
-  return Padding(
-    padding: const EdgeInsets.symmetric(horizontal: 16),
-    child: Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const Text(
-          'Portfolio',
-          style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-        ),
-        const SizedBox(height: 8),
-        portfolioImages.isNotEmpty
-            ? SingleChildScrollView(
-                scrollDirection: Axis.horizontal,
-                child: Row(
-                  children: portfolioImages.map((imageUrl) {
-                    return Padding(
-                      padding: const EdgeInsets.only(right: 8),
-                      child: Stack(
-                        children: [
-                          GestureDetector(
-                            onTap: () {
-                              // Show image in full screen
-                            },
-                            child: Image.network(
-                              imageUrl,
-                              width: 100, // Fixed width for consistency
-                              height: 100, // Fixed height for consistency
-                              fit: BoxFit.cover,
-                              loadingBuilder: (BuildContext context, Widget child,
-                                  ImageChunkEvent? loadingProgress) {
-                                if (loadingProgress == null) {
-                                  return child;
-                                }
-                                return Center(
-                                  child: CircularProgressIndicator(
-                                    value: loadingProgress.expectedTotalBytes != null
-                                        ? loadingProgress.cumulativeBytesLoaded /
-                                            loadingProgress.expectedTotalBytes!
-                                        : null,
-                                  ),
-                                );
+    final localizations = AppLocalizations.of(context);
+    if (localizations == null) return Column();
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            localizations.portfolio,
+            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+          ),
+          const SizedBox(height: 8),
+          portfolioImages.isNotEmpty
+              ? SingleChildScrollView(
+                  scrollDirection: Axis.horizontal,
+                  child: Row(
+                    children: portfolioImages.map((imageUrl) {
+                      return Padding(
+                        padding: const EdgeInsets.only(right: 8),
+                        child: Stack(
+                          children: [
+                            GestureDetector(
+                              onTap: () {
+                                // Show image in full screen
                               },
+                              child: Image.network(
+                                imageUrl,
+                                width: 100, // Fixed width for consistency
+                                height: 100, // Fixed height for consistency
+                                fit: BoxFit.cover,
+                                loadingBuilder: (BuildContext context,
+                                    Widget child,
+                                    ImageChunkEvent? loadingProgress) {
+                                  if (loadingProgress == null) {
+                                    return child;
+                                  }
+                                  return Center(
+                                    child: CircularProgressIndicator(
+                                      value:
+                                          loadingProgress.expectedTotalBytes !=
+                                                  null
+                                              ? loadingProgress
+                                                      .cumulativeBytesLoaded /
+                                                  loadingProgress
+                                                      .expectedTotalBytes!
+                                              : null,
+                                    ),
+                                  );
+                                },
+                              ),
                             ),
-                          ),
-                        ],
-                      ),
-                    );
-                  }).toList(),
-                ),
-              )
-            : const Center(child: Text('No portfolio images available')),
-      ],
-    ),
-  );
-}
+                          ],
+                        ),
+                      );
+                    }).toList(),
+                  ),
+                )
+              : Center(child: Text(localizations.noPortfolioImages)),
+        ],
+      ),
+    );
+  }
 
   Widget _buildCertificationsSection() {
     return Padding(
@@ -827,41 +889,51 @@ Widget buildTopProfileInfo() {
     }
   }
 
-    Widget _buildSectionTitle(String title) {
-  return Padding(
-    padding: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 16.0),
-    child: Align(
-      alignment: Alignment.centerLeft,  // Align title to the start
-      child: Text(
-        title,
-        style: GoogleFonts.poppins(
-          fontSize: 20,
-          fontWeight: FontWeight.bold,
-          color: Colors.black87,
+  Widget _buildSectionTitle(String title) {
+    final localizations = AppLocalizations.of(context);
+    if (localizations == null) return const SizedBox.shrink();
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 10.0, horizontal: 16.0),
+      child: Align(
+        alignment: localizations.locale.languageCode == 'ar'
+            ? Alignment.centerRight
+            : Alignment.centerLeft, // Align title based on language
+        child: Text(
+          title,
+          style: GoogleFonts.poppins(
+            fontSize: 20,
+            fontWeight: FontWeight.bold,
+            color: Colors.black87,
+          ),
         ),
       ),
-    ),
-  );
-}
+    );
+  }
 
   Widget _buildContactButton() {
+    final localizations = AppLocalizations.of(context);
+    if (localizations == null) return const SizedBox.shrink();
+
     return Center(
       child: ElevatedButton.icon(
         onPressed: _showContactBottomSheet,
         icon: const Icon(Icons.contact_mail),
         label: Text(
-          'Contact Provider',
+          localizations.contactProvider,
           style: GoogleFonts.poppins(),
         ),
         style: ElevatedButton.styleFrom(
           padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-          
         ),
       ),
     );
   }
 
   void _showContactBottomSheet() {
+    final localizations = AppLocalizations.of(context);
+    if (localizations == null) return;
+
     showModalBottomSheet(
       context: context,
       shape: const RoundedRectangleBorder(
@@ -873,7 +945,7 @@ Widget buildTopProfileInfo() {
           mainAxisSize: MainAxisSize.min,
           children: [
             Text(
-              'Contact Information',
+              localizations.contactInformation,
               style: GoogleFonts.poppins(
                 fontSize: 20,
                 fontWeight: FontWeight.bold,
@@ -901,22 +973,21 @@ Widget buildTopProfileInfo() {
                 ElevatedButton(
                   onPressed: () => Navigator.pop(context),
                   child: Text(
-                    'Close',
+                    localizations.close,
                     style: GoogleFonts.poppins(),
                   ),
                 ),
-
- ElevatedButton(
-  style: ElevatedButton.styleFrom(backgroundColor: Colors.blue),
-  onPressed: () {
-    _showContactDialog(widget.providerId, currentUserId, _firestore); // Call your dialog function here
-  },
-  child: Text(
-    'Send Direct Listing',
-    style: GoogleFonts.poppins(),
-  ),
-),
-
+                ElevatedButton(
+                  style: ElevatedButton.styleFrom(backgroundColor: Colors.blue),
+                  onPressed: () {
+                    _showContactDialog(widget.providerId, currentUserId,
+                        _firestore); // Call your dialog function here
+                  },
+                  child: Text(
+                    localizations.sendDirectListing,
+                    style: GoogleFonts.poppins(color: Colors.white),
+                  ),
+                ),
               ],
             ),
           ],
@@ -925,198 +996,226 @@ Widget buildTopProfileInfo() {
     );
   }
 
-  void _showContactDialog(String recipientUid, String senderUid, FirebaseFirestore firestore) {
-  final _formKey = GlobalKey<FormState>();
-  String mainTitle = '';
-  String description = '';
-  String pay = '';
-  String location = '';
-  bool isSubmitting = false; // Add loading state variable
+  void _showContactDialog(
+      String recipientUid, String senderUid, FirebaseFirestore firestore) {
+    final localizations = AppLocalizations.of(context);
+    if (localizations == null) return;
 
-  showDialog(
-    context: context,
-    barrierDismissible: !isSubmitting, // Prevent dismissal while submitting
-    builder: (BuildContext dialogContext) {
-      return StatefulBuilder( // Use StatefulBuilder to manage dialog state
-        builder: (context, setState) {
-          return AlertDialog(
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(20),
-            ),
-            content: SingleChildScrollView(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(
-                    'Send Direct Job Listing',
-                    style: GoogleFonts.poppins(
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
+    final _formKey = GlobalKey<FormState>();
+    String mainTitle = '';
+    String description = '';
+    String pay = '';
+    String location = '';
+    bool isSubmitting = false; // Add loading state variable
+
+    showDialog(
+      context: context,
+      barrierDismissible: !isSubmitting, // Prevent dismissal while submitting
+      builder: (BuildContext dialogContext) {
+        return StatefulBuilder(
+          // Use StatefulBuilder to manage dialog state
+          builder: (context, setState) {
+            return AlertDialog(
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(20),
+              ),
+              content: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      localizations.sendDirectJobListing,
+                      style: GoogleFonts.poppins(
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
-                  ),
-                  const SizedBox(height: 20),
-                  Form(
-                    key: _formKey,
-                    child: Column(
-                      children: [
-                        TextFormField(
-                          enabled: !isSubmitting,
-                          decoration: const InputDecoration(labelText: 'Main Title'),
-                          validator: (value) =>
-                              value!.isEmpty ? 'Please enter a title' : null,
-                          onSaved: (value) => mainTitle = value!,
-                        ),
-                        TextFormField(
-                          enabled: !isSubmitting,
-                          decoration: const InputDecoration(labelText: 'Description'),
-                          validator: (value) =>
-                              value!.isEmpty ? 'Please enter a description' : null,
-                          onSaved: (value) => description = value!,
-                        ),
-                        TextFormField(
-                          enabled: !isSubmitting,
-                          decoration: const InputDecoration(labelText: 'Pay'),
-                          keyboardType: TextInputType.number,
-                          inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-                          validator: (value) =>
-                              value!.isEmpty ? 'Please enter the pay' : null,
-                          onSaved: (value) => pay = value!,
-                        ),
-                        TextFormField(
-                          enabled: !isSubmitting,
-                          decoration: const InputDecoration(labelText: 'Location'),
-                          validator: (value) =>
-                              value!.isEmpty ? 'Please enter a location' : null,
-                          onSaved: (value) => location = value!,
-                        ),
-                      ],
-                    ),
-                  ),
-                  if (isSubmitting)
-                    Padding(
-                      padding: const EdgeInsets.only(top: 16.0),
+                    const SizedBox(height: 20),
+                    Form(
+                      key: _formKey,
                       child: Column(
                         children: [
-                          const CircularProgressIndicator(),
-                          const SizedBox(height: 8),
-                          Text(
-                            'Sending listing...',
-                            style: GoogleFonts.poppins(
-                              color: Colors.grey[600],
-                              fontSize: 12,
-                            ),
+                          TextFormField(
+                            enabled: !isSubmitting,
+                            decoration: InputDecoration(
+                                labelText: localizations.mainTitle),
+                            validator: (value) => value!.isEmpty
+                                ? localizations.pleaseEnterTitle
+                                : null,
+                            onSaved: (value) => mainTitle = value!,
+                          ),
+                          TextFormField(
+                            enabled: !isSubmitting,
+                            decoration: InputDecoration(
+                                labelText: localizations.description),
+                            validator: (value) => value!.isEmpty
+                                ? localizations.pleaseEnterDescription
+                                : null,
+                            onSaved: (value) => description = value!,
+                          ),
+                          TextFormField(
+                            enabled: !isSubmitting,
+                            decoration:
+                                InputDecoration(labelText: localizations.pay),
+                            keyboardType: TextInputType.number,
+                            inputFormatters: [
+                              FilteringTextInputFormatter.digitsOnly
+                            ],
+                            validator: (value) => value!.isEmpty
+                                ? localizations.pleaseEnterPay
+                                : null,
+                            onSaved: (value) => pay = value!,
+                          ),
+                          TextFormField(
+                            enabled: !isSubmitting,
+                            decoration: InputDecoration(
+                                labelText: localizations.location),
+                            validator: (value) => value!.isEmpty
+                                ? localizations.locationRequiredError
+                                : null,
+                            onSaved: (value) => location = value!,
                           ),
                         ],
                       ),
                     ),
-                  const SizedBox(height: 20),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      ElevatedButton(
-                        onPressed: isSubmitting ? null : () => Navigator.pop(context),
-                        child: Text(
-                          'Close',
-                          style: GoogleFonts.poppins(),
+                    if (isSubmitting)
+                      Padding(
+                        padding: const EdgeInsets.only(top: 16.0),
+                        child: Column(
+                          children: [
+                            const CircularProgressIndicator(),
+                            const SizedBox(height: 8),
+                            Text(
+                              localizations.sendingListing,
+                              style: GoogleFonts.poppins(
+                                color: Colors.grey[600],
+                                fontSize: 12,
+                              ),
+                            ),
+                          ],
                         ),
                       ),
-                      ElevatedButton(
-                        onPressed: isSubmitting
-                            ? null
-                            : () async {
-                                if (_formKey.currentState!.validate()) {
-                                  setState(() {
-                                    isSubmitting = true;
-                                  });
-
-                                  try {
-                                    _formKey.currentState!.save();
-                                    final uniqueId = Uuid().v4();
-
-                                    final jobData = {
-                                      'id': uniqueId,
-                                      'mainTitle': mainTitle,
-                                      'description': description,
-                                      'pay': pay,
-                                      'location': location,
-                                      'status': 'pending',
-                                      'timestamp': DateTime.now().toIso8601String(),
-                                      'receiverUid': recipientUid,
-                                      'senderUid': senderUid,
-                                    };
-
-                                    // Save to sender's listings
-                                    await FirebaseFirestore.instance
-                                        .collection('users')
-                                        .doc(senderUid)
-                                        .update({
-                                      'Listing_(sent)': FieldValue.arrayUnion([jobData]),
+                    const SizedBox(height: 20),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        ElevatedButton(
+                          onPressed: isSubmitting
+                              ? null
+                              : () => Navigator.pop(context),
+                          child: Text(
+                            localizations.close,
+                            style: GoogleFonts.poppins(),
+                          ),
+                        ),
+                        ElevatedButton(
+                          onPressed: isSubmitting
+                              ? null
+                              : () async {
+                                  if (_formKey.currentState!.validate()) {
+                                    setState(() {
+                                      isSubmitting = true;
                                     });
 
-                                    // Save to recipient's listings
-                                    await FirebaseFirestore.instance
-                                        .collection('users')
-                                        .doc(recipientUid)
-                                        .update({
-                                      'Listing_(received)':
-                                          FieldValue.arrayUnion([jobData]),
-                                    });
+                                    try {
+                                      _formKey.currentState!.save();
+                                      final uniqueId = Uuid().v4();
 
-                                    final providerRef =
-                                        firestore.collection('users').doc(recipientUid);
-                                    final providerDoc = await providerRef.get();
-                                    final providerData =
-                                        providerDoc.data() as Map<String, dynamic>;
+                                      final jobData = {
+                                        'id': uniqueId,
+                                        'mainTitle': mainTitle,
+                                        'description': description,
+                                        'pay': pay,
+                                        'location': location,
+                                        'status': 'pending',
+                                        'timestamp':
+                                            DateTime.now().toIso8601String(),
+                                        'receiverUid': recipientUid,
+                                        'senderUid': senderUid,
+                                      };
 
-                                    final String deviceToken = providerData['deviceToken'];
-                                    if (deviceToken.isNotEmpty) {
-                                      await PushNotificationService.sendNotification(
-                                        deviceToken,
-                                        'New Job Listing',
-                                        'You have received a new job listing: $mainTitle',
-                                        jobData,
+                                      // Save to sender's listings
+                                      await FirebaseFirestore.instance
+                                          .collection('users')
+                                          .doc(senderUid)
+                                          .update({
+                                        'Listing_(sent)':
+                                            FieldValue.arrayUnion([jobData]),
+                                      });
+
+                                      // Save to recipient's listings
+                                      await FirebaseFirestore.instance
+                                          .collection('users')
+                                          .doc(recipientUid)
+                                          .update({
+                                        'Listing_(received)':
+                                            FieldValue.arrayUnion([jobData]),
+                                      });
+
+                                      final providerRef = firestore
+                                          .collection('users')
+                                          .doc(recipientUid);
+                                      final providerDoc =
+                                          await providerRef.get();
+                                      final providerData = providerDoc.data()
+                                          as Map<String, dynamic>;
+
+                                      final String deviceToken =
+                                          providerData['deviceToken'];
+                                      if (deviceToken.isNotEmpty) {
+                                        await PushNotificationService
+                                            .sendNotification(
+                                          deviceToken,
+                                          'New Job Listing',
+                                          'You have received a new job listing: $mainTitle',
+                                          jobData,
+                                        );
+                                      }
+
+                                      Navigator.pop(context);
+                                      ScaffoldMessenger.of(context)
+                                          .showSnackBar(
+                                        SnackBar(
+                                          content: Text(localizations
+                                              .jobListingSentSuccessfully),
+                                        ),
+                                      );
+                                    } catch (e) {
+                                      setState(() {
+                                        isSubmitting = false;
+                                      });
+                                      debugPrint('Error sending listing: $e');
+                                      ScaffoldMessenger.of(context)
+                                          .showSnackBar(
+                                        SnackBar(
+                                          content: Text(localizations
+                                              .failedToSendListing),
+                                        ),
                                       );
                                     }
-
-                                    Navigator.pop(context);
-                                    ScaffoldMessenger.of(context).showSnackBar(
-                                      const SnackBar(
-                                        content: Text('Job listing sent successfully!'),
-                                      ),
-                                    );
-                                  } catch (e) {
-                                    setState(() {
-                                      isSubmitting = false;
-                                    });
-                                    debugPrint('Error sending listing: $e');
-                                    ScaffoldMessenger.of(context).showSnackBar(
-                                      const SnackBar(
-                                        content:
-                                            Text('Failed to send listing. Please try again.'),
-                                      ),
-                                    );
                                   }
-                                }
-                              },
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color.fromARGB(255, 52, 141, 237),
+                                },
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor:
+                                const Color.fromARGB(255, 52, 141, 237),
+                            foregroundColor: Colors.white,
+                          ),
+                          child: Text(
+                            localizations.sendListing,
+                            style: GoogleFonts.poppins(),
+                          ),
                         ),
-                        child: Text(
-                          'Send Listing',
-                          style: GoogleFonts.poppins(),
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
+                      ],
+                    ),
+                  ],
+                ),
               ),
-            ),
-          );
-        },
-      );
-    },
-  );
-}
+            );
+          },
+        );
+      },
+    );
+  }
 
   Widget _buildWorkDomainsSection() {
     return Padding(
@@ -1134,7 +1233,8 @@ Widget buildTopProfileInfo() {
                       (choice) => Padding(
                         padding: const EdgeInsets.all(4.0),
                         child: Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 8.0),
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 12.0, vertical: 8.0),
                           decoration: BoxDecoration(
                             color: Colors.blue.shade50,
                             borderRadius: BorderRadius.circular(16.0),
