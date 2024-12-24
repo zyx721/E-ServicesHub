@@ -10,6 +10,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:hanini_frontend/screens/services/service.dart';
 import 'package:hanini_frontend/models/colors.dart';
 import 'package:hanini_frontend/models/servicesWeHave.dart';
+import 'package:hanini_frontend/localization/app_localization.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({Key? key}) : super(key: key);
@@ -255,145 +256,149 @@ class _HomePageState extends State<HomePage> {
   }
 
   // Top Services Header Widget
-Widget _buildTopServicesHeader() {
-  return Padding(
-    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10), // Add padding to the entire Row
-    child: Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: [
-        Text(
-          'Top Services',
-          style: GoogleFonts.poppins(
-            color: AppColors.mainColor,
-            fontSize: 20,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-        const Icon(Icons.more_horiz, color: AppColors.mainColor),
-      ],
-    ),
-  );
-}
+  Widget _buildTopServicesHeader() {
+    final localizations = AppLocalizations.of(context);
+    if (localizations == null) return const SizedBox.shrink();
 
-
-Widget _buildServicesGrid() {
-  return Padding(
-    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-    child: GridView.builder(
-      shrinkWrap: true, // Ensures the grid only takes as much space as needed
-      physics: NeverScrollableScrollPhysics(), // Disables internal scrolling for GridView
-      controller: _scrollController,
-      itemCount: services.length + (_isFetching ? 1 : 0),
-      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: 2,
-        mainAxisSpacing: 20,
-        crossAxisSpacing: 20,
-        childAspectRatio: 0.9, // Control the aspect ratio of the grid cells
-      ),
-      itemBuilder: (context, index) {
-        if (index >= services.length) {
-          return Center(child: CircularProgressIndicator());
-        }
-
-        final service = services[index];
-        final serviceId = service['docId'] ?? service['uid'];
-        final isFavorite = favoriteServices.contains(serviceId);
-
-        return GestureDetector(
-          onTap: () {
-            // Navigate to FullProfilePage with the selected service's ID
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (context) => ServiceProviderFullProfile(
-                  providerId: serviceId,
-                ),
-              ),
-            );
-          },
-          child: Card(
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(16),
+    return Padding(
+      padding: const EdgeInsets.symmetric(
+          horizontal: 20, vertical: 10), // Add padding to the entire Row
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text(
+            localizations.topServices,
+            style: GoogleFonts.poppins(
+              color: AppColors.mainColor,
+              fontSize: 20,
+              fontWeight: FontWeight.bold,
             ),
-            child: Stack(
-              children: [
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // Set a reduced height for the image container
-                    Container(
-                      height: 90, // Reduced height for the image container
-                      decoration: BoxDecoration(
-                        borderRadius: BorderRadius.vertical(
-                          top: Radius.circular(16),
-                        ),
-                        image: DecorationImage(
-                          image: NetworkImage(service['photoURL'] ?? ''),
-                          fit: BoxFit.cover,
-                        ),
-                      ),
-                      child: service['photoURL'] == null
-                          ? Center(
-                              child: Icon(Icons.broken_image,
-                                  size: 50, color: Colors.grey),
-                            )
-                          : null,
-                    ),
-                    Container(
-                      decoration: BoxDecoration(
-                        color: AppColors.tempColor,
-                        borderRadius: BorderRadius.vertical(
-                          bottom: Radius.circular(16),
-                        ),
-                      ),
-                      child: Padding(
-                        padding: const EdgeInsets.all(8.0),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              service['basicInfo']['profession'] ?? 'N/A',
-                              style: GoogleFonts.poppins(
-                                fontSize: 14,
-                                fontWeight: FontWeight.bold,
-                              ),
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                            Text(
-                              service['name'] ?? 'Unknown',
-                              style: GoogleFonts.poppins(
-                                fontSize: 12,
-                                color: AppColors.mainColor,
-                              ),
-                              maxLines: 1,
-                            ),
-                            _buildStarRating(service['rating'].toDouble()),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-                Positioned(
-                  top: 8,
-                  right: 8,
-                  child: IconButton(
-                    icon: Icon(
-                      isFavorite ? Icons.favorite : Icons.favorite_border,
-                      color: isFavorite ? Colors.red : Colors.grey,
-                    ),
-                    onPressed: () => toggleFavorite(service),
+          ),
+          const Icon(Icons.more_horiz, color: AppColors.mainColor),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildServicesGrid() {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+      child: GridView.builder(
+        shrinkWrap: true, // Ensures the grid only takes as much space as needed
+        physics:
+            NeverScrollableScrollPhysics(), // Disables internal scrolling for GridView
+        controller: _scrollController,
+        itemCount: services.length + (_isFetching ? 1 : 0),
+        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+          crossAxisCount: 2,
+          mainAxisSpacing: 20,
+          crossAxisSpacing: 20,
+          childAspectRatio: 0.9, // Control the aspect ratio of the grid cells
+        ),
+        itemBuilder: (context, index) {
+          if (index >= services.length) {
+            return Center(child: CircularProgressIndicator());
+          }
+
+          final service = services[index];
+          final serviceId = service['docId'] ?? service['uid'];
+          final isFavorite = favoriteServices.contains(serviceId);
+
+          return GestureDetector(
+            onTap: () {
+              // Navigate to FullProfilePage with the selected service's ID
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => ServiceProviderFullProfile(
+                    providerId: serviceId,
                   ),
                 ),
-              ],
+              );
+            },
+            child: Card(
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(16),
+              ),
+              child: Stack(
+                children: [
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // Set a reduced height for the image container
+                      Container(
+                        height: 90, // Reduced height for the image container
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.vertical(
+                            top: Radius.circular(16),
+                          ),
+                          image: DecorationImage(
+                            image: NetworkImage(service['photoURL'] ?? ''),
+                            fit: BoxFit.cover,
+                          ),
+                        ),
+                        child: service['photoURL'] == null
+                            ? Center(
+                                child: Icon(Icons.broken_image,
+                                    size: 50, color: Colors.grey),
+                              )
+                            : null,
+                      ),
+                      Container(
+                        decoration: BoxDecoration(
+                          color: AppColors.tempColor,
+                          borderRadius: BorderRadius.vertical(
+                            bottom: Radius.circular(16),
+                          ),
+                        ),
+                        child: Padding(
+                          padding: const EdgeInsets.all(8.0),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                service['basicInfo']['profession'] ?? 'N/A',
+                                style: GoogleFonts.poppins(
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                              Text(
+                                service['name'] ?? 'Unknown',
+                                style: GoogleFonts.poppins(
+                                  fontSize: 12,
+                                  color: AppColors.mainColor,
+                                ),
+                                maxLines: 1,
+                              ),
+                              _buildStarRating(service['rating'].toDouble()),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  Positioned(
+                    top: 8,
+                    right: 8,
+                    child: IconButton(
+                      icon: Icon(
+                        isFavorite ? Icons.favorite : Icons.favorite_border,
+                        color: isFavorite ? Colors.red : Colors.grey,
+                      ),
+                      onPressed: () => toggleFavorite(service),
+                    ),
+                  ),
+                ],
+              ),
             ),
-          ),
-        );
-      },
-    ),
-  );
-}
+          );
+        },
+      ),
+    );
+  }
 
   Widget _buildStarRating(double rating) {
     int fullStars = rating.floor();
@@ -421,33 +426,38 @@ Widget _buildServicesGrid() {
   }
 
   // Top Services Header Widget
-Widget _buildTopPopularHeader(BuildContext context) {
-  return Padding(
-    padding: const EdgeInsets.symmetric(horizontal: 20), // Add padding here
-    child: Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: [
-        Text(
-          'Popular Services',
-          style: GoogleFonts.poppins(
-            color: AppColors.mainColor,
-            fontSize: 20,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-        GestureDetector(
-          onTap: () {
-            _showAllServices(context);
-          },
-          child: const Icon(Icons.more_horiz, color: AppColors.mainColor),
-        ),
-      ],
-    ),
-  );
-}
+  Widget _buildTopPopularHeader(BuildContext context) {
+    final localizations = AppLocalizations.of(context);
+    if (localizations == null) return const SizedBox.shrink();
 
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 20), // Add padding here
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text(
+            localizations.popularServices,
+            style: GoogleFonts.poppins(
+              color: AppColors.mainColor,
+              fontSize: 20,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          GestureDetector(
+            onTap: () {
+              _showAllServices(context);
+            },
+            child: const Icon(Icons.more_horiz, color: AppColors.mainColor),
+          ),
+        ],
+      ),
+    );
+  }
 
   void _showAllServices(BuildContext context) {
+    final localizations = AppLocalizations.of(context);
+    if (localizations == null) return;
+
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -467,7 +477,7 @@ Widget _buildTopPopularHeader(BuildContext context) {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'All Services',
+                    localizations.allServices,
                     style: GoogleFonts.poppins(
                       color: AppColors.mainColor,
                       fontSize: 18,
@@ -534,8 +544,8 @@ Widget _buildTopPopularHeader(BuildContext context) {
       },
     );
   }
-  
- Column _servicesSection() {
+
+  Column _servicesSection() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -578,7 +588,8 @@ Widget _buildTopPopularHeader(BuildContext context) {
                       GestureDetector(
                         onTap: () {
                           // Find the NavbarPage widget
-                          final navbarPage = context.findAncestorWidgetOfExactType<NavbarPage>();
+                          final navbarPage = context
+                              .findAncestorWidgetOfExactType<NavbarPage>();
                           if (navbarPage != null) {
                             // Use a callback to update the navigation state
                             Navigator.pushReplacement(
@@ -586,8 +597,8 @@ Widget _buildTopPopularHeader(BuildContext context) {
                               MaterialPageRoute(
                                 builder: (context) => NavbarPage(
                                   initialIndex: 1, // Index for SearchPage
-                                  serviceName: service.name, // Pass the service name
-
+                                  serviceName:
+                                      service.name, // Pass the service name
                                 ),
                               ),
                             );
@@ -659,28 +670,28 @@ Widget _buildTopPopularHeader(BuildContext context) {
       body: _isLoading
           ? Center(child: CircularProgressIndicator())
           : SingleChildScrollView(
-                child: Column(
-                  children: [
+              child: Column(
+                children: [
                   const SizedBox(height: 12),
-                    // Ads slider at the top
-                    _buildAdsSlider([
-                      'assets/images/ads/first_page.png',
-                      'assets/images/ads/second_page.png',
-                      'assets/images/ads/third_page.png',
-                    ]),
-                    const SizedBox(height: 20),
-                    _buildTopPopularHeader(context),
-                    const SizedBox(height: 20),
-                    _servicesSection(),
-                    const SizedBox(height: 20),
-                    // Top Services Header
-                    _buildTopServicesHeader(),
-                    const SizedBox(height: 10),
-                    // Services Grid (no Expanded here)
-                    _buildServicesGrid(),
-                  ],
-                ),
-                ),
+                  // Ads slider at the top
+                  _buildAdsSlider([
+                    'assets/images/ads/first_page.png',
+                    'assets/images/ads/second_page.png',
+                    'assets/images/ads/third_page.png',
+                  ]),
+                  const SizedBox(height: 20),
+                  _buildTopPopularHeader(context),
+                  const SizedBox(height: 20),
+                  _servicesSection(),
+                  const SizedBox(height: 20),
+                  // Top Services Header
+                  _buildTopServicesHeader(),
+                  const SizedBox(height: 10),
+                  // Services Grid (no Expanded here)
+                  _buildServicesGrid(),
+                ],
+              ),
+            ),
       backgroundColor: const Color.fromARGB(255, 255, 255, 255),
     );
   }

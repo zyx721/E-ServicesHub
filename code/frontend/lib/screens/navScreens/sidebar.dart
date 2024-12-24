@@ -7,7 +7,6 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:hanini_frontend/models/colors.dart';
 
-
 Widget Sidebar(BuildContext context, AppLocalizations appLocalizations) {
   final GoogleSignIn _googleSignIn = GoogleSignIn();
 
@@ -30,7 +29,7 @@ Widget Sidebar(BuildContext context, AppLocalizations appLocalizations) {
     final prefs = await SharedPreferences.getInstance();
     try {
       final User? currentUser = FirebaseAuth.instance.currentUser;
-      
+
       if (currentUser != null) {
         await FirebaseFirestore.instance
             .collection('users')
@@ -55,8 +54,6 @@ Widget Sidebar(BuildContext context, AppLocalizations appLocalizations) {
       );
     }
   }
-
-
 
   return Drawer(
     child: Column(
@@ -115,13 +112,13 @@ Widget Sidebar(BuildContext context, AppLocalizations appLocalizations) {
                 ],
               );
             },
-          // child: ListView(
-          //   padding: EdgeInsets.zero,
+            // child: ListView(
+            //   padding: EdgeInsets.zero,
             // children: [
             //   _buildSidebarItem(
             //     context,
             //     icon: Icons.settings,
-                
+
             //     title: appLocalizations.settings,
             //     onTap: () => Navigator.pushNamed(context, '/settings'),
             //   ),
@@ -161,13 +158,13 @@ Widget _buildSidebarItem(
   required String title,
   required VoidCallback onTap,
   Color iconColor = AppColors.mainColor, // Default icon color
-  double iconSize = 24.0,             // Default icon size
+  double iconSize = 24.0, // Default icon size
 }) {
   return ListTile(
     leading: Icon(
       icon,
       color: iconColor, // Use the customizable icon color
-      size: iconSize,   // Use the customizable icon size
+      size: iconSize, // Use the customizable icon size
     ),
     title: Text(
       title,
@@ -182,8 +179,11 @@ Widget _buildSidebarItem(
   );
 }
 
+Future<void> _showLogoutDialog(
+    BuildContext context, Future<void> Function() onLogout) async {
+  final localizations = AppLocalizations.of(context);
+  if (localizations == null) return;
 
-Future<void> _showLogoutDialog(BuildContext context, Future<void> Function() onLogout) async {
   final shouldLogout = await showDialog<bool>(
     context: context,
     builder: (BuildContext context) {
@@ -192,21 +192,23 @@ Future<void> _showLogoutDialog(BuildContext context, Future<void> Function() onL
           borderRadius: BorderRadius.circular(15),
         ),
         title: Text(
-          'Confirm Logout',
+          localizations.logout,
           style: GoogleFonts.poppins(fontWeight: FontWeight.bold),
         ),
         content: Text(
-          'Are you sure you want to log out?',
+          localizations.areYouSureYouWantToLogout,
           style: GoogleFonts.poppins(),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(false),
-            child: Text('Cancel', style: GoogleFonts.poppins(color: Colors.red)),
+            child: Text(localizations.cancel,
+                style: GoogleFonts.poppins(color: Colors.red)),
           ),
           TextButton(
             onPressed: () => Navigator.of(context).pop(true),
-            child: Text('Logout', style: GoogleFonts.poppins(color: Colors.blue)),
+            child: Text(localizations.logout,
+                style: GoogleFonts.poppins(color: Colors.blue)),
           ),
         ],
       );

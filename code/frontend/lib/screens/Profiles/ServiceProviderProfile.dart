@@ -269,6 +269,7 @@ class _ServiceProviderProfileState extends State<ServiceProviderProfile> {
 
   Widget buildPortfolioSection() {
     final localizations = AppLocalizations.of(context);
+    if (localizations == null) return const SizedBox.shrink();
 
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -364,9 +365,7 @@ class _ServiceProviderProfileState extends State<ServiceProviderProfile> {
                     }).toList(),
                   ),
                 )
-              : Center(
-                  child: Text(localizations?.noPortfolioImagesAvailable ??
-                      'No portfolio images available')),
+              : Center(child: Text(localizations.noPortfolioImagesAvailable)),
           const SizedBox(height: 16),
           if (isEditMode)
             ElevatedButton(
@@ -392,7 +391,7 @@ class _ServiceProviderProfileState extends State<ServiceProviderProfile> {
                         strokeWidth: 2,
                       ),
                     )
-                  : const Text('Add Portfolio Image'),
+                  : Text(localizations.addPortfolioImage),
             ),
         ],
       ),

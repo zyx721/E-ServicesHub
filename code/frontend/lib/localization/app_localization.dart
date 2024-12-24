@@ -64,6 +64,38 @@ class AppLocalizations {
           ? "L'utilisateur n'est pas authentifié"
           : "User is not authenticated");
 
+  // Posted
+  String get posted =>
+      isArabic ? " نشر " : (isFrench ? " Publié " : " Posted ");
+
+  // Location
+  String get location =>
+      isArabic ? " الموقع " : (isFrench ? " Emplacement " : " Location ");
+
+  // Pay
+  String get pay => isArabic ? " الدفع " : (isFrench ? " Payer " : " Pay ");
+
+  // Popular Services
+  String get popularServices => isArabic
+      ? "الخدمات الشائعة"
+      : (isFrench ? "Services populaires" : "Popular Services");
+
+  // Top Services
+  String get topServices => isArabic
+      ? "أفضل الخدمات"
+      : (isFrench ? "Meilleurs services" : "Top Services");
+
+  // All Services
+  String get allServices => isArabic
+      ? "جميع الخدمات"
+      : (isFrench ? "Tous les services" : "All Services");
+
+  // Are you sure you want to log out?
+  String get areYouSureYouWantToLogout => isArabic
+      ? "هل أنت متأكد أنك تريد تسجيل الخروج؟"
+      : (isFrench
+          ? "Êtes-vous sûr de vouloir vous déconnecter?"
+          : "Are you sure you want to log out?");
   // Error fetching user data:
   String get errorFetchingUserData => isArabic
       ? "حدث خطأ أثناء جلب بيانات المستخدم"
@@ -108,6 +140,40 @@ class AppLocalizations {
   String get becomeProviderButton => isArabic
       ? "أصبح مقدم الخدمة"
       : (isFrench ? "Devenir fournisseur" : "Become a Provider");
+
+  // Listings
+  String get listings =>
+      isArabic ? "القوائم" : (isFrench ? "Listes" : "Listings");
+
+  // Reviews
+  String get reviews =>
+      isArabic ? "المراجعات" : (isFrench ? "Avis" : "Reviews");
+
+  // Sent
+  String get sent => isArabic ? "المرسل" : (isFrench ? "Envoyé" : "Sent");
+
+  //  Received
+  String get received =>
+      isArabic ? "المستلم" : (isFrench ? "Reçu" : "Received");
+
+  // No listings available
+  String get noListingsAvailable => isArabic
+      ? "لا توجد قوائم متاحة"
+      : (isFrench ? "Aucune liste disponible" : "No listings available");
+
+  // No reviews available
+  String get noReviewsAvailable => isArabic
+      ? "لا توجد مراجعات متاحة"
+      : (isFrench ? "Aucun avis disponible" : "No reviews available");
+
+  // Accept
+  String get accept => isArabic ? "قبول" : (isFrench ? "Accepter" : "Accept");
+
+  // Refuse
+  String get refuse => isArabic ? "رفض" : (isFrench ? "Refuser" : "Refuse");
+  // Negotiate
+  String get negotiate =>
+      isArabic ? "تفاوض" : (isFrench ? "Négocier" : "Negotiate");
 
   // step2Button
   String get step2Button =>
