@@ -89,15 +89,23 @@ class AppLocalizations {
   String get save => isArabic ? "حفظ" : (isFrench ? "Enregistrer" : "Save");
   String get cancel => isArabic ? "إلغاء" : (isFrench ? "Annuler" : "Cancel");
 
+  String get saveProfile => isArabic
+      ? "حفظ الملف الشخصي"
+      : (isFrench ? " Enregistrer le profil" : "Save Profile");
+
   // Error Messages
   String get error => isArabic
       ? "حدث خطأ"
       : (isFrench ? "Une erreur est survenue" : "An error occurred");
+
+  // Okay Messages
+  String get okay => isArabic ? "حسنا" : (isFrench ? "D'accord" : "OK");
+
   String get noInternet => isArabic
       ? "لا يوجد اتصال بالإنترنت"
       : (isFrench ? "Pas de connexion Internet" : "No Internet connection");
   String get aboutMe => isArabic
-      ? "اكتب عن نفسك"
+      ? "نبـذة نفسك"
       : (isFrench ? "Écrivez sur vous" : "Write about yourself");
 
   // New localization for no favorite services
@@ -127,6 +135,15 @@ class AppLocalizations {
       : (isFrench
           ? "Le prénom et le nom de famille sont obligatoires."
           : "First Name and Last Name are required.");
+
+  String get firstNameRequired => isArabic
+      ? "الاسم الأول مطلوب."
+      : (isFrench ? "Le prénom est obligatoires." : "First Name is required.");
+
+  String get LastNameRequired => isArabic
+      ? "اسم العائلة مطلوب."
+      : (isFrench ? "Le nom est obligatoires." : "Last Name is required.");
+
   String get selectTwoWorkChoices => isArabic
       ? "يرجى اختيار خيارين بالضبط."
       : (isFrench
@@ -235,8 +252,16 @@ class AppLocalizations {
       isArabic ? "المشاريع" : (isFrench ? "Projets" : "Projects");
   String get rating =>
       isArabic ? "التقييم" : (isFrench ? "Évaluation" : "Rating");
-  String get hourlyRate =>
-      isArabic ? "سعر الساعة" : (isFrench ? "Taux horaire" : "Hourly Rate");
+  String get hourlyRate => isArabic
+      ? "معدل الأجر بالساعة"
+      : (isFrench ? "Tarif horaire" : "Hourly Rate");
+
+  String get hourlyRateRequiredError => isArabic
+      ? "يرجى تحديد معدل الأجر بالساعة لإتمام العملية."
+      : (isFrench
+          ? "Veuillez préciser votre tarif horaire pour continuer."
+          : "Please specify your hourly rate to proceed.");
+
   String get aboutMeLabel =>
       isArabic ? "عني" : (isFrench ? "À propos de moi" : "About Me");
   String get writeAboutYourself => isArabic
@@ -279,6 +304,13 @@ class AppLocalizations {
   String get addPortfolioImage => isArabic
       ? "أضف صورة إلى المعرض"
       : (isFrench ? "Ajouter une image au portfolio" : "Add Portfolio Image");
+
+  String get noPortfolioImages => isArabic
+      ? "لا توجد صور متوفرة في المعرض."
+      : (isFrench
+          ? "Aucune image de portfolio disponible."
+          : "No portfolio images available");
+
   String get certifications =>
       isArabic ? "الشهادات" : (isFrench ? "Certifications" : "Certifications");
   String get addCertification => isArabic
@@ -326,6 +358,35 @@ class AppLocalizations {
           ? "Un e-mail de réinitialisation du mot de passe a été envoyé à votre boîte de réception."
           : "A password reset email has been sent to your inbox.");
 
+// Profile nameChangeLimit translations
+  String get nameChangeLimit => isArabic
+      ? "يمكنك تغيير حرفين فقط في إسمك."
+      : (isFrench
+          ? "Vous ne pouvez changer que deux caractères dans vos noms."
+          : "You can only change up to 2 characters in your names.");
+
+  // Profile Profession translations
+  String get profession =>
+      isArabic ? "المهنة" : (isFrench ? "Profession" : "Profession");
+  String get professionRequiredError => isArabic
+      ? "يرجى تحديد مهنتك"
+      : (isFrench
+          ? "Veuillez sélectionner votre profession."
+          : "Please select your profession.");
+  // Profile address translations
+  String get wilaya => isArabic ? "الولاية" : (isFrench ? "Wilaya" : "Wilaya");
+  String get wilayaRequiredError => isArabic
+      ? "يرجى اختيار ولايتك"
+      : (isFrench
+          ? "Veuillez sélectionner votre Wilaya."
+          : "Please select your Wilaya.");
+  String get commune =>
+      isArabic ? "البلدية" : (isFrench ? "Commune" : "Commune");
+  String get communeRequiredError => isArabic
+      ? "يرجى اختيار بلديتك"
+      : (isFrench
+          ? "Veuillez sélectionner votre Commune."
+          : "Please select your Commune.");
   // Onboarding translations
   // Get the language name based on the current locale
   String get englishLanguageName =>
@@ -460,8 +521,8 @@ class AppLocalizations {
           : "Please enter a valid email");
 
   String get fieldRequiredError => isArabic
-      ? "الرجاء إدخال اسمك"
-      : (isFrench ? "Veuillez entrer votre nom" : "Please enter your name");
+      ? "هذا الحقل مطلوب."
+      : (isFrench ? "Ce champ est requis." : "This field is required.");
 
   // Home Screen translations
 
@@ -478,6 +539,10 @@ class AppLocalizations {
 
   String get provider =>
       isArabic ? "المزود" : (isFrench ? "Fournisseur" : "Provider");
+
+  String get phone => isArabic
+      ? "رقم الهاتف"
+      : (isFrench ? "numéro de téléphone" : "phone number");
 
   String get phoneRequiredError => isArabic
       ? "يرجى إدخال رقم الهاتف"

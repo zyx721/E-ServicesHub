@@ -90,8 +90,9 @@ class _LocationSelectionFieldsState extends State<LocationSelectionFields> {
   List<MapEntry<String, String>> get uniqueWilayas {
     final wilayaMap = <String, String>{};
     for (var location in algeriaLocations) {
-      wilayaMap.putIfAbsent(
-          location.wilayaCode, () => location.wilayaNameAscii);
+      // if language is Arabic, use Arabic names
+      final isArabic = Localizations.localeOf(context).languageCode == 'ar';
+      wilayaMap.putIfAbsent(location.wilayaCode, () => isArabic ? location.wilayaName : location.wilayaNameAscii);
     }
     final wilayas = wilayaMap.entries.toList()
       ..sort((a, b) => a.value.compareTo(b.value));
@@ -104,6 +105,14 @@ class _LocationSelectionFieldsState extends State<LocationSelectionFields> {
         : [];
   }
 
+  // List<AlgeriaLocation> get communes {
+  //   final isArabic = Localizations.localeOf(context).languageCode == 'ar';
+  //   if (selectedWilayaCode != null) {
+  //     return locationsByWilaya[selectedWilayaCode] ?? [];
+  //   }
+  //   return selectedWilayaCode != null ? locationsByWilaya[selectedWilayaCode] ?? []: [];
+  // }
+
   @override
   void initState() {
     super.initState();
@@ -113,13 +122,16 @@ class _LocationSelectionFieldsState extends State<LocationSelectionFields> {
 
   @override
   Widget build(BuildContext context) {
+    final localizations = AppLocalizations.of(context);
+    if (localizations == null) return const SizedBox.shrink();
+
     return Column(
       children: [
         // Wilaya Dropdown
         DropdownButtonFormField<String>(
           value: selectedWilayaCode,
           decoration: InputDecoration(
-            labelText: 'Wilaya',
+            labelText: localizations.wilaya,
             border: const OutlineInputBorder(),
             labelStyle: GoogleFonts.poppins(),
           ),
@@ -136,22 +148,26 @@ class _LocationSelectionFieldsState extends State<LocationSelectionFields> {
               widget.onLocationSelected(null);
             });
           },
-          validator: (value) => value == null ? 'Please select a wilaya' : null,
+          validator: (value) =>
+              value == null ? localizations.wilayaRequiredError : null,
         ),
         const SizedBox(height: 10),
         // Commune Dropdown
         DropdownButtonFormField<int>(
           value: selectedCommuneId,
           decoration: InputDecoration(
-            labelText: 'Commune',
+            labelText: localizations.commune,
             border: const OutlineInputBorder(),
             labelStyle: GoogleFonts.poppins(),
           ),
           items: communes.map((commune) {
+            final isArabic = Localizations.localeOf(context).languageCode == 'ar';
             return DropdownMenuItem<int>(
               value: commune.id,
-              child:
-                  Text(commune.communeNameAscii, style: GoogleFonts.poppins()),
+              child: Text(
+                isArabic ? commune.communeName : commune.communeNameAscii,
+                style: GoogleFonts.poppins(),
+              ),
             );
           }).toList(),
           onChanged: selectedWilayaCode == null
@@ -166,7 +182,7 @@ class _LocationSelectionFieldsState extends State<LocationSelectionFields> {
                   });
                 },
           validator: (value) =>
-              value == null ? 'Please select a commune' : null,
+              value == null ? localizations.communeRequiredError : null,
         ),
       ],
     );
@@ -400,12 +416,15 @@ class _ServiceProviderProfileState extends State<SetProviderProfile> {
   }
 
   Future<void> _saveProfile() async {
+    final localizations = AppLocalizations.of(context);
+    if (localizations == null) return;
+
     final String firstName = _firstNameController.text.trim();
     final String lastName = _lastNameController.text.trim();
 
     if (_calculateDifference(_originalFirstName, firstName) > 2 ||
         _calculateDifference(_originalLastName, lastName) > 2) {
-      _showErrorDialog("You can only change up to 2 characters in your names.");
+      _showErrorDialog(localizations.nameChangeLimit);
       return;
     }
 
@@ -506,15 +525,18 @@ class _ServiceProviderProfileState extends State<SetProviderProfile> {
   }
 
   void _showErrorDialog(String message) {
+    final localizations = AppLocalizations.of(context);
+    if (localizations == null) return;
+
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: Text('Error'),
+        title: Text(localizations.error),
         content: Text(message),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: Text('OK'),
+            child: Text(localizations.okay),
           ),
         ],
       ),
@@ -544,7 +566,7 @@ class _ServiceProviderProfileState extends State<SetProviderProfile> {
           children: [
             _buildProfileImageUpload(),
             const SizedBox(height: 20),
-            _buildSectionTitle(AppLocalizations.of(context)!.BaicInfo),
+            _buildSectionTitle(localizations.BaicInfo),
             _buildBasicInfoFields(),
             const SizedBox(height: 20),
             _buildSectionTitle(localizations.skills),
@@ -565,7 +587,7 @@ class _ServiceProviderProfileState extends State<SetProviderProfile> {
                 padding: const EdgeInsets.symmetric(vertical: 15),
               ),
               child: Text(
-                'Save Profile',
+                localizations.saveProfile,
                 style: GoogleFonts.poppins(
                   fontSize: 16,
                   fontWeight: FontWeight.bold,
@@ -686,50 +708,53 @@ class _ServiceProviderProfileState extends State<SetProviderProfile> {
   }
 
   Widget _buildBasicInfoFields() {
+    final localizations = AppLocalizations.of(context);
+    if (localizations == null) return const SizedBox.shrink();
+
     return Column(
       children: [
         TextFormField(
           controller: _firstNameController,
           decoration: InputDecoration(
-            labelText: 'First Name',
+            labelText: localizations.firstName,
             border: OutlineInputBorder(),
             labelStyle: GoogleFonts.poppins(),
           ),
           validator: (value) =>
-              value!.isEmpty ? 'Please enter your first name' : null,
+              value!.isEmpty ? localizations.firstNameRequired : null,
         ),
         const SizedBox(height: 10),
         TextFormField(
           controller: _lastNameController,
           decoration: InputDecoration(
-            labelText: 'Last Name',
+            labelText: localizations.lastName,
             border: OutlineInputBorder(),
             labelStyle: GoogleFonts.poppins(),
           ),
           validator: (value) =>
-              value!.isEmpty ? 'Please enter your last name' : null,
+              value!.isEmpty ? localizations.LastNameRequired : null,
         ),
         const SizedBox(height: 10),
         TextFormField(
           controller: _professionController,
           decoration: InputDecoration(
-            labelText: 'Profession',
+            labelText: localizations.profession,
             border: OutlineInputBorder(),
             labelStyle: GoogleFonts.poppins(),
           ),
           validator: (value) =>
-              value!.isEmpty ? 'Please enter your profession' : null,
+              value!.isEmpty ? localizations.professionRequiredError : null,
         ),
         const SizedBox(height: 10),
         TextFormField(
           controller: _phoneController,
           decoration: InputDecoration(
-            labelText: 'Phone Number',
+            labelText: localizations.phone,
             border: OutlineInputBorder(),
             labelStyle: GoogleFonts.poppins(),
           ),
           validator: (value) =>
-              value!.isEmpty ? 'Please enter your phone number' : null,
+              value!.isEmpty ? localizations.phoneRequiredError : null,
         ),
         const SizedBox(height: 10),
         const SizedBox(height: 10),
@@ -749,30 +774,33 @@ class _ServiceProviderProfileState extends State<SetProviderProfile> {
           controller: _hourlyRateController,
           keyboardType: TextInputType.number,
           decoration: InputDecoration(
-            labelText: 'Hourly Rate (DZD)',
+            labelText: localizations.hourlyRate,
             border: OutlineInputBorder(),
             labelStyle: GoogleFonts.poppins(),
           ),
           validator: (value) =>
-              value!.isEmpty ? 'Please enter your hourly rate' : null,
+              value!.isEmpty ? localizations.hourlyRateRequiredError : null,
         ),
         const SizedBox(height: 10),
         TextFormField(
           controller: _descriptionController,
           maxLines: 3,
           decoration: InputDecoration(
-            labelText: 'About Me',
+            labelText: localizations.aboutMe,
             border: OutlineInputBorder(),
             labelStyle: GoogleFonts.poppins(),
           ),
           validator: (value) =>
-              value!.isEmpty ? 'Please provide a brief description' : null,
+              value!.isEmpty ? localizations.fieldRequiredError : null,
         ),
       ],
     );
   }
 
   Widget _buildSkillsSection() {
+    final localizations = AppLocalizations.of(context);
+    if (localizations == null) return const SizedBox.shrink();
+
     return Column(
       children: [
         Row(
@@ -781,7 +809,7 @@ class _ServiceProviderProfileState extends State<SetProviderProfile> {
               child: TextField(
                 controller: _skillController,
                 decoration: InputDecoration(
-                  labelText: 'Add Skill',
+                  labelText: localizations.addSkill,
                   border: OutlineInputBorder(),
                   labelStyle: GoogleFonts.poppins(),
                 ),
@@ -825,12 +853,15 @@ class _ServiceProviderProfileState extends State<SetProviderProfile> {
   }
 
   Widget _buildWorkExperienceSection() {
+    final localizations = AppLocalizations.of(context);
+    if (localizations == null) return const SizedBox.shrink();
+
     return Column(
       children: [
         TextField(
           controller: _companyController,
           decoration: InputDecoration(
-            labelText: 'Company Name',
+            labelText: localizations.companyName,
             border: OutlineInputBorder(),
             labelStyle: GoogleFonts.poppins(),
           ),
@@ -839,7 +870,7 @@ class _ServiceProviderProfileState extends State<SetProviderProfile> {
         TextField(
           controller: _positionController,
           decoration: InputDecoration(
-            labelText: 'Position',
+            labelText: localizations.position,
             border: OutlineInputBorder(),
             labelStyle: GoogleFonts.poppins(),
           ),
@@ -848,7 +879,7 @@ class _ServiceProviderProfileState extends State<SetProviderProfile> {
         TextField(
           controller: _durationController,
           decoration: InputDecoration(
-            labelText: 'Duration',
+            labelText: localizations.duration,
             border: OutlineInputBorder(),
             labelStyle: GoogleFonts.poppins(),
           ),
@@ -857,7 +888,7 @@ class _ServiceProviderProfileState extends State<SetProviderProfile> {
         ElevatedButton(
           onPressed: _addWorkExperience,
           child: Text(
-            'Add Experience',
+            localizations.addWorkExperience,
             style: GoogleFonts.poppins(),
           ),
         ),
@@ -916,6 +947,8 @@ class _ServiceProviderProfileState extends State<SetProviderProfile> {
   }
 
   Widget _buildCertificationsSection() {
+    final localizations = AppLocalizations.of(context);
+    if (localizations == null) return const SizedBox.shrink();
     return Column(
       children: [
         Row(
@@ -924,7 +957,7 @@ class _ServiceProviderProfileState extends State<SetProviderProfile> {
               child: TextField(
                 controller: _certificationController,
                 decoration: InputDecoration(
-                  labelText: 'Add Certification',
+                  labelText: localizations.skills,
                   border: OutlineInputBorder(),
                   labelStyle: GoogleFonts.poppins(),
                 ),
@@ -987,6 +1020,9 @@ class _ServiceProviderProfileState extends State<SetProviderProfile> {
   Set<String> deletingImages = {};
 
   Widget buildPortfolioSection() {
+    final localizations = AppLocalizations.of(context);
+    if (localizations == null) return const SizedBox.shrink();
+
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16),
       child: Column(
@@ -1081,7 +1117,7 @@ class _ServiceProviderProfileState extends State<SetProviderProfile> {
                     }).toList(),
                   ),
                 )
-              : const Center(child: Text('No portfolio images available')),
+              : Center(child: Text(localizations.noPortfolioImages)),
           const SizedBox(height: 16),
           ElevatedButton(
             onPressed: isAddingImage
@@ -1106,7 +1142,7 @@ class _ServiceProviderProfileState extends State<SetProviderProfile> {
                       strokeWidth: 2,
                     ),
                   )
-                : const Text('Add Portfolio Image'),
+                : Text(localizations.addPortfolioImage),
           ),
         ],
       ),
