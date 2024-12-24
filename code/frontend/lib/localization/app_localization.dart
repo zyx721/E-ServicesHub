@@ -206,7 +206,8 @@ class AppLocalizations {
       ? "بدء الكشف"
       : (isFrench ? "Commencer la détection" : "Start Detection");
   String get skip => isArabic ? "تخطي" : (isFrench ? "Sauter" : "Skip");
-  String get uploadLabel => isArabic ? "تحميل" : (isFrench ? "Télécharger" : "Upload");
+  String get uploadLabel =>
+      isArabic ? "تحميل" : (isFrench ? "Télécharger" : "Upload");
   String get retake => isArabic ? "إعادة" : (isFrench ? "Reprendre" : "Retake");
 
   // New localization for face_verification_screen

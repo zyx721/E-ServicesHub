@@ -20,7 +20,8 @@ import 'models/colors.dart';
 class NavbarPage extends StatefulWidget {
   final int initialIndex;
   final String? serviceName;
-  const NavbarPage({Key? key, required this.initialIndex, this.serviceName}) : super(key: key);
+  const NavbarPage({Key? key, required this.initialIndex, this.serviceName})
+      : super(key: key);
 
   @override
   State<NavbarPage> createState() => _NavbarPageState();
@@ -40,9 +41,8 @@ class _NavbarPageState extends State<NavbarPage> {
     _initializeScreens();
   }
 
-
   // Future<void> _initializeScreens() async {
-    // try {
+  // try {
   //     final isProvider = await _checkIfUserIsProvider();
   //     setState(() {
   //       screens = [
@@ -63,7 +63,7 @@ class _NavbarPageState extends State<NavbarPage> {
   //   }
   // }
 
-    final FirebaseAuth _auth = FirebaseAuth.instance;
+  final FirebaseAuth _auth = FirebaseAuth.instance;
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
   Future<bool> _checkIfUserIsProvider() async {
@@ -93,28 +93,26 @@ class _NavbarPageState extends State<NavbarPage> {
     }
   }
 
-  
-
-Future<bool> _checkIfUserIsAdmin() async {
-  final User? user = _auth.currentUser;
-  if (user != null) {
-    try {
-      final DocumentSnapshot userDoc =
-          await _firestore.collection('users').doc(user.uid).get();
-      if (userDoc.exists) {
-        final data = userDoc.data() as Map<String, dynamic>;
-        return data['isAdmin'] ?? false;
-      } else {
-        throw Exception("User not found in Firestore");
+  Future<bool> _checkIfUserIsAdmin() async {
+    final User? user = _auth.currentUser;
+    if (user != null) {
+      try {
+        final DocumentSnapshot userDoc =
+            await _firestore.collection('users').doc(user.uid).get();
+        if (userDoc.exists) {
+          final data = userDoc.data() as Map<String, dynamic>;
+          return data['isAdmin'] ?? false;
+        } else {
+          throw Exception("User not found in Firestore");
+        }
+      } catch (e) {
+        print("Error while fetching user: $e");
+        throw Exception("Failed to fetch user data");
       }
-    } catch (e) {
-      print("Error while fetching user: $e");
-      throw Exception("Failed to fetch user data");
+    } else {
+      throw Exception("No user is currently signed in");
     }
-  } else {
-    throw Exception("No user is currently signed in");
   }
-}
 
   Future<void> _initializeScreens() async {
     try {
@@ -122,17 +120,17 @@ Future<bool> _checkIfUserIsAdmin() async {
       final isAdminUser = await _checkIfUserIsAdmin();
       setState(() {
         isAdmin = isAdminUser;
-        screens = isAdminUser 
-          ? [
-              SearchPage(),
-              AdminProfile(),
-            ]
-          : [
-              HomePage(),
-              SearchPage(),
-              FavoritesPage(),
-              isProvider ? ServiceProviderProfile() : SimpleUserProfile(),
-            ];
+        screens = isAdminUser
+            ? [
+                SearchPage(),
+                AdminProfile(),
+              ]
+            : [
+                HomePage(),
+                SearchPage(),
+                FavoritesPage(),
+                isProvider ? ServiceProviderProfile() : SimpleUserProfile(),
+              ];
         // Reset selected index if it's out of bounds for admin
         if (isAdminUser && selectedIndex > 1) {
           selectedIndex = 0;
@@ -160,7 +158,7 @@ Future<bool> _checkIfUserIsAdmin() async {
                 preferredSize: Size.fromHeight(64.0),
                 child: Container(
                   decoration: BoxDecoration(
-                        gradient: AppColors.mainGradient,
+                    gradient: AppColors.mainGradient,
                   ),
                   child: AppBar(
                     title: Text(
@@ -170,7 +168,6 @@ Future<bool> _checkIfUserIsAdmin() async {
                         fontWeight: FontWeight.w600,
                         color: Colors.white,
                       ),
-                      
                     ),
                     backgroundColor: Colors.transparent,
                     elevation: 0,
@@ -255,32 +252,39 @@ Future<bool> _checkIfUserIsAdmin() async {
                     selectedIndex = index;
                   });
                 },
-                destinations: isAdmin 
-                  ? const [
-                      NavigationDestination(
-                          icon: Icon(Iconsax.search_normal), label: 'Search'),
-                      NavigationDestination(
-                          icon: Icon(Iconsax.user), label: 'Profile'),
-                    ]
-                  : const [
-                  NavigationDestination(
-                      icon: Icon(Iconsax.home,   color: AppColors.mainColor,), label: 'Home',),
-                  NavigationDestination(
-                      icon: Icon(Iconsax.search_normal,  color: AppColors.mainColor,), label: 'Search'),
-                  NavigationDestination(
-                      icon: Icon(Iconsax.save_2,   color: AppColors.mainColor,), label: 'Favorites'),
-                  NavigationDestination(
-                      icon: Icon(Iconsax.user,   color: AppColors.mainColor,), label: 'Profile'),
-                ],
-
+                destinations: isAdmin
+                    ? [
+                        NavigationDestination(
+                            icon: Icon(Iconsax.search_normal),
+                            label: appLocalizations.search),
+                        NavigationDestination(
+                            icon: Icon(Iconsax.user),
+                            label: appLocalizations.profile),
+                      ]
+                    : [
+                        NavigationDestination(
+                            icon:
+                                Icon(Iconsax.home, color: AppColors.mainColor),
+                            label: appLocalizations.home),
+                        NavigationDestination(
+                            icon: Icon(Iconsax.search_normal,
+                                color: AppColors.mainColor),
+                            label: appLocalizations.search),
+                        NavigationDestination(
+                            icon: Icon(Iconsax.save_2,
+                                color: AppColors.mainColor),
+                            label: appLocalizations.favorites),
+                        NavigationDestination(
+                            icon:
+                                Icon(Iconsax.user, color: AppColors.mainColor),
+                            label: appLocalizations.profile),
+                      ],
               ),
-
             ),
           );
   }
 
-
-    Widget _buildLanguageDropdown() {
+  Widget _buildLanguageDropdown() {
     final localizations = AppLocalizations.of(context);
     if (localizations == null) {
       return Padding(
@@ -303,13 +307,10 @@ Future<bool> _checkIfUserIsAdmin() async {
             _buildLanguageMenuItem('fr', localizations.frenchLanguageName,
                 'assets/images/sfr.png'),
           ];
-          
         },
       ),
     );
   }
-
-  
 
   PopupMenuItem<String> _buildLanguageMenuItem(
       String languageCode, String languageName, String flagPath) {
@@ -325,8 +326,7 @@ Future<bool> _checkIfUserIsAdmin() async {
     );
   }
 
-
-    void _changeLanguage(String languageCode) {
+  void _changeLanguage(String languageCode) {
     Locale newLocale;
     switch (languageCode) {
       case 'ar':
@@ -355,8 +355,8 @@ Future<bool> _checkIfUserIsAdmin() async {
             Navigator.push(
               context,
               MaterialPageRoute(
-                builder: (context) => NotificationsPage(
-                    userId: _auth.currentUser?.uid ?? ''),
+                builder: (context) =>
+                    NotificationsPage(userId: _auth.currentUser?.uid ?? ''),
               ),
             );
           },

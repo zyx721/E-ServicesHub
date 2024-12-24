@@ -20,7 +20,8 @@ class _SearchPageState extends State<SearchPage> {
   final TextEditingController _searchController = TextEditingController();
   double _minRating = 0.0;
   bool _isRatingFilterApplied = false;
-  RangeValues _priceRange = const RangeValues(0, 19999); // Set default max value to 19999
+  RangeValues _priceRange =
+      const RangeValues(0, 19999); // Set default max value to 19999
   bool _isPriceFilterApplied = false;
   List<String> _selectedWorkChoices = [];
   final List<String> _allWorkChoices = [
@@ -51,12 +52,12 @@ class _SearchPageState extends State<SearchPage> {
   Future<void> _initializeData() async {
     await _loadServicesFromFirestore();
     // await _loadLikedServices();
-    
+
     // This is the key part that makes the search automatic
     // Set initial search text and filter after data is loaded
     if (widget.serviceName != null) {
-      _searchController.text = widget.serviceName!;    // Sets the search text
-      _filterServices();     // Triggers the search
+      _searchController.text = widget.serviceName!; // Sets the search text
+      _filterServices(); // Triggers the search
     }
   }
 
@@ -71,7 +72,8 @@ class _SearchPageState extends State<SearchPage> {
           .get();
       if (userDoc.exists) {
         setState(() {
-          likedServiceIds = List<String>.from(userDoc.data()?['favorites'] ?? []);
+          likedServiceIds =
+              List<String>.from(userDoc.data()?['favorites'] ?? []);
         });
       }
     } catch (e) {
@@ -90,27 +92,32 @@ class _SearchPageState extends State<SearchPage> {
           .get();
 
 // <<<<<<< HEAD
-    final fetchedServices = snapshot.docs
-        .where((doc) => doc.id != currentUserId) // Exclude current user
-        .map((doc) {
-      final data = doc.data() as Map<String, dynamic>?;
-      final basicInfo = data?['basicInfo'] as Map<String, dynamic>?;
-      final price = basicInfo?['hourlyRate'] != null
-          ? (basicInfo?['hourlyRate'] is num
-              ? (basicInfo?['hourlyRate'] as num).toDouble()
-              : double.tryParse(basicInfo?['hourlyRate']?.toString() ?? '') ?? 0.0)
-          : 0.0;
-      debugPrint('Service: ${data?['name']}, Price: $price'); // Debug statement
-      return {
-        'uid': doc.id,
-        'name': data?['name'] ?? 'Unknown',
-        'profession': basicInfo?['profession'] ?? 'Not specified',
-        'photoURL': data?['photoURL'] ?? '',
-        'rating': (data?['rating'] is num) ? (data?['rating'] as num).toDouble() : 0.0,
-        'price': price, // Ensure price is fetched correctly
-        'selectedWorkChoices': data?['selectedWorkChoices'] ?? [], // Add selectedWorkChoices
-      };
-    }).toList();
+      final fetchedServices = snapshot.docs
+          .where((doc) => doc.id != currentUserId) // Exclude current user
+          .map((doc) {
+        final data = doc.data() as Map<String, dynamic>?;
+        final basicInfo = data?['basicInfo'] as Map<String, dynamic>?;
+        final price = basicInfo?['hourlyRate'] != null
+            ? (basicInfo?['hourlyRate'] is num
+                ? (basicInfo?['hourlyRate'] as num).toDouble()
+                : double.tryParse(basicInfo?['hourlyRate']?.toString() ?? '') ??
+                    0.0)
+            : 0.0;
+        debugPrint(
+            'Service: ${data?['name']}, Price: $price'); // Debug statement
+        return {
+          'uid': doc.id,
+          'name': data?['name'] ?? 'Unknown',
+          'profession': basicInfo?['profession'] ?? 'Not specified',
+          'photoURL': data?['photoURL'] ?? '',
+          'rating': (data?['rating'] is num)
+              ? (data?['rating'] as num).toDouble()
+              : 0.0,
+          'price': price, // Ensure price is fetched correctly
+          'selectedWorkChoices':
+              data?['selectedWorkChoices'] ?? [], // Add selectedWorkChoices
+        };
+      }).toList();
 // =======
 //       final fetchedServices = snapshot.docs
 //           .where((doc) => doc.id != currentUserId)
@@ -145,7 +152,8 @@ class _SearchPageState extends State<SearchPage> {
     }
 
     try {
-      final userDocRef = FirebaseFirestore.instance.collection('users').doc(userId);
+      final userDocRef =
+          FirebaseFirestore.instance.collection('users').doc(userId);
       final serviceId = service['uid'];
       final isCurrentlyFavorite = likedServiceIds.contains(serviceId);
 
@@ -167,7 +175,8 @@ class _SearchPageState extends State<SearchPage> {
     } catch (e) {
       debugPrint('Error updating favorites: $e');
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Failed to update favorites. Please try again!')),
+        const SnackBar(
+            content: Text('Failed to update favorites. Please try again!')),
       );
     }
   }
@@ -179,12 +188,22 @@ class _SearchPageState extends State<SearchPage> {
         final serviceName = service['profession'].toLowerCase();
         final matchesSearchTerm = serviceName.contains(searchTerm) ||
             _calculateLevenshteinDistance(serviceName, searchTerm) <= 2;
-        final matchesRating = !_isRatingFilterApplied || service['rating'] >= _minRating;
-        final matchesPrice = !_isPriceFilterApplied || (service['price'] >= _priceRange.start && (_priceRange.end == 19999 || service['price'] <= _priceRange.end));
+        final matchesRating =
+            !_isRatingFilterApplied || service['rating'] >= _minRating;
+        final matchesPrice = !_isPriceFilterApplied ||
+            (service['price'] >= _priceRange.start &&
+                (_priceRange.end == 19999 ||
+                    service['price'] <= _priceRange.end));
 
-        final matchesWorkChoices = _selectedWorkChoices.isEmpty || _selectedWorkChoices.any((choice) => service['selectedWorkChoices'].contains(choice));
-        debugPrint('Service: ${service['name']}, Price: ${service['price']}, Matches Price: $matchesPrice, Matches Work Choices: $matchesWorkChoices'); // Debug statement
-        return matchesSearchTerm && matchesRating && matchesPrice && matchesWorkChoices;
+        final matchesWorkChoices = _selectedWorkChoices.isEmpty ||
+            _selectedWorkChoices.any(
+                (choice) => service['selectedWorkChoices'].contains(choice));
+        debugPrint(
+            'Service: ${service['name']}, Price: ${service['price']}, Matches Price: $matchesPrice, Matches Work Choices: $matchesWorkChoices'); // Debug statement
+        return matchesSearchTerm &&
+            matchesRating &&
+            matchesPrice &&
+            matchesWorkChoices;
       }).toList();
     });
   }
@@ -218,9 +237,12 @@ class _SearchPageState extends State<SearchPage> {
 
     return Row(
       children: [
-        for (int i = 0; i < fullStars; i++) const Icon(Icons.star, color: Colors.amber, size: 20),
-        for (int i = 0; i < halfStars; i++) const Icon(Icons.star_half, color: Colors.amber, size: 20),
-        for (int i = 0; i < emptyStars; i++) const Icon(Icons.star_border, color: Colors.grey, size: 20),
+        for (int i = 0; i < fullStars; i++)
+          const Icon(Icons.star, color: Colors.amber, size: 20),
+        for (int i = 0; i < halfStars; i++)
+          const Icon(Icons.star_half, color: Colors.amber, size: 20),
+        for (int i = 0; i < emptyStars; i++)
+          const Icon(Icons.star_border, color: Colors.grey, size: 20),
       ],
     );
   }
@@ -252,7 +274,8 @@ class _SearchPageState extends State<SearchPage> {
                             });
                           },
                         ),
-                        Text('Minimum Rating: ${_minRating.toStringAsFixed(1)}'),
+                        Text(
+                            'Minimum Rating: ${_minRating.toStringAsFixed(1)}'),
                         const SizedBox(height: 20),
                         const Text('Price Range (DZD)'),
                         RangeSlider(
@@ -262,7 +285,9 @@ class _SearchPageState extends State<SearchPage> {
                           divisions: 1000,
                           labels: RangeLabels(
                             _priceRange.start.toStringAsFixed(0),
-                            _priceRange.end == 19999 ? '∞' : _priceRange.end.toStringAsFixed(0),
+                            _priceRange.end == 19999
+                                ? '∞'
+                                : _priceRange.end.toStringAsFixed(0),
                           ),
                           onChanged: (RangeValues values) {
                             setState(() {
@@ -270,7 +295,8 @@ class _SearchPageState extends State<SearchPage> {
                             });
                           },
                         ),
-                        Text('Price Range: ${_priceRange.start.toStringAsFixed(0)} - ${_priceRange.end == 19999 ? '∞' : _priceRange.end.toStringAsFixed(0)} DZD'),
+                        Text(
+                            'Price Range: ${_priceRange.start.toStringAsFixed(0)} - ${_priceRange.end == 19999 ? '∞' : _priceRange.end.toStringAsFixed(0)} DZD'),
                         const SizedBox(height: 20),
                         const Text('Work Domains'),
                         Container(
@@ -280,7 +306,8 @@ class _SearchPageState extends State<SearchPage> {
                               spacing: 8.0,
                               runSpacing: 4.0,
                               children: _allWorkChoices.map((choice) {
-                                final isSelected = _selectedWorkChoices.contains(choice);
+                                final isSelected =
+                                    _selectedWorkChoices.contains(choice);
                                 return FilterChip(
                                   label: Text(choice),
                                   selected: isSelected,
@@ -324,7 +351,8 @@ class _SearchPageState extends State<SearchPage> {
               onPressed: () {
                 setState(() {
                   _isRatingFilterApplied = _minRating > 0.0;
-                  _isPriceFilterApplied = _priceRange.start > 0 || _priceRange.end < 19999;
+                  _isPriceFilterApplied =
+                      _priceRange.start > 0 || _priceRange.end < 19999;
                   _filterServices();
                 });
                 Navigator.of(context).pop();
@@ -378,7 +406,7 @@ class _SearchPageState extends State<SearchPage> {
           child: TextField(
             controller: _searchController,
             decoration: InputDecoration(
-              hintText: "Search services...",
+              hintText: "Search services.........",
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(30),
               ),
@@ -397,7 +425,8 @@ class _SearchPageState extends State<SearchPage> {
   Widget _buildAppliedFilters() {
     List<Widget> filters = [];
     if (_isRatingFilterApplied && _minRating > 0.0) {
-      filters.add(_buildFilterChip('Min Rating: ${_minRating.toStringAsFixed(1)}', () {
+      filters.add(
+          _buildFilterChip('Min Rating: ${_minRating.toStringAsFixed(1)}', () {
         setState(() {
           _minRating = 0.0;
           _isRatingFilterApplied = false;
@@ -405,8 +434,11 @@ class _SearchPageState extends State<SearchPage> {
         });
       }));
     }
-    if (_isPriceFilterApplied && (_priceRange.start > 0 || _priceRange.end < 19999)) {
-      filters.add(_buildFilterChip('Price: ${_priceRange.start.toStringAsFixed(0)} - ${_priceRange.end == 19999 ? '∞' : _priceRange.end.toStringAsFixed(0)} DZD', () {
+    if (_isPriceFilterApplied &&
+        (_priceRange.start > 0 || _priceRange.end < 19999)) {
+      filters.add(_buildFilterChip(
+          'Price: ${_priceRange.start.toStringAsFixed(0)} - ${_priceRange.end == 19999 ? '∞' : _priceRange.end.toStringAsFixed(0)} DZD',
+          () {
         setState(() {
           _priceRange = const RangeValues(0, 19999);
           _isPriceFilterApplied = false;
@@ -415,12 +447,14 @@ class _SearchPageState extends State<SearchPage> {
       }));
     }
     if (_selectedWorkChoices.isNotEmpty) {
-      filters.addAll(_selectedWorkChoices.map((choice) => _buildFilterChip(choice, () {
-        setState(() {
-          _selectedWorkChoices.remove(choice);
-          _filterServices();
-        });
-      })).toList());
+      filters.addAll(_selectedWorkChoices
+          .map((choice) => _buildFilterChip(choice, () {
+                setState(() {
+                  _selectedWorkChoices.remove(choice);
+                  _filterServices();
+                });
+              }))
+          .toList());
     }
     return Wrap(
       spacing: 8.0,
@@ -437,13 +471,15 @@ class _SearchPageState extends State<SearchPage> {
     );
   }
 
-  Widget _buildServiceItem(Map<String, dynamic> service, bool isFavorite, String serviceId) {
+  Widget _buildServiceItem(
+      Map<String, dynamic> service, bool isFavorite, String serviceId) {
     return GestureDetector(
       onTap: () {
         Navigator.push(
           context,
           MaterialPageRoute(
-            builder: (context) => ServiceProviderFullProfile(providerId: serviceId),
+            builder: (context) =>
+                ServiceProviderFullProfile(providerId: serviceId),
           ),
         );
       },
@@ -458,14 +494,16 @@ class _SearchPageState extends State<SearchPage> {
               children: [
                 Expanded(
                   child: ClipRRect(
-                    borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
+                    borderRadius:
+                        const BorderRadius.vertical(top: Radius.circular(16)),
                     child: Image.network(
                       service['photoURL'],
                       fit: BoxFit.cover,
                       width: double.infinity,
                       errorBuilder: (context, error, stackTrace) {
                         return const Center(
-                          child: Icon(Icons.broken_image, size: 50, color: Colors.grey),
+                          child: Icon(Icons.broken_image,
+                              size: 50, color: Colors.grey),
                         );
                       },
                     ),
