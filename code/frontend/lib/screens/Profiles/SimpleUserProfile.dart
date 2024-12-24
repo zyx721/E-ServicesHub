@@ -108,6 +108,7 @@ class _SimpleUserProfileState extends State<SimpleUserProfile> {
   String aboutMe = '';
   bool isEditMode = false;
   bool isLoading = true;
+  bool hasError = false;
 
   final TextEditingController nameController = TextEditingController();
   final TextEditingController aboutController = TextEditingController();
@@ -115,41 +116,71 @@ class _SimpleUserProfileState extends State<SimpleUserProfile> {
   @override
   void initState() {
     super.initState();
-    fetchUserData();
+    // Move the data fetching to after the widget is built
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      fetchUserData();
+    });
   }
 
   Future<void> fetchUserData() async {
-    final localizations = AppLocalizations.of(context);
-    if (localizations == null) return;
-
     try {
       final User? user = _auth.currentUser;
       if (user != null) {
         final DocumentSnapshot userDoc =
             await _firestore.collection('users').doc(user.uid).get();
 
-        if (userDoc.exists) {
-          final data = userDoc.data() as Map<String, dynamic>;
+        if (mounted) {
           setState(() {
-            userName = data['name'] ?? 'Anonymous';
-            userEmail = data['email'] ?? 'No email';
-            userPhotoUrl = data['photoURL'] ?? '';
-            aboutMe = data['aboutMe'] ?? 'Tell us about yourself';
-            isStep1Complete = data['isSTEP_1'] ?? false;
-            isWaiting = data['isWaiting'] ?? false;
-            isStep2Complete = data['isSTEP_2'] ?? false;
-            nameController.text = userName;
-            aboutController.text = aboutMe;
+            if (userDoc.exists) {
+              final data = userDoc.data() as Map<String, dynamic>;
+              userName = data['name'] ?? 'Anonymous';
+              userEmail = data['email'] ?? 'No email';
+              userPhotoUrl = data['photoURL'] ?? '';
+              aboutMe = data['aboutMe'] ?? 'Tell us about yourself';
+              isStep1Complete = data['isSTEP_1'] ?? false;
+              isWaiting = data['isWaiting'] ?? false;
+              isStep2Complete = data['isSTEP_2'] ?? false;
+              nameController.text = userName;
+              aboutController.text = aboutMe;
+            } else {
+              // Handle case where user document doesn't exist
+              userName = user.displayName ?? 'Anonymous';
+              userEmail = user.email ?? 'No email';
+              userPhotoUrl = user.photoURL ?? '';
+              aboutMe = 'Tell us about yourself';
+              // Create a new user document
+              _firestore.collection('users').doc(user.uid).set({
+                'name': userName,
+                'email': userEmail,
+                'photoURL': userPhotoUrl,
+                'aboutMe': aboutMe,
+                'isSTEP_1': false,
+                'isWaiting': false,
+                'isSTEP_2': false,
+              });
+            }
             isLoading = false;
           });
         }
+      } else {
+        // Handle case where no user is logged in
+        setState(() {
+          isLoading = false;
+          hasError = true;
+        });
       }
     } catch (e) {
-      debugPrint(localizations.errorFetchingUserData + '$e');
+      if (mounted) {
+        setState(() {
+          isLoading = false;
+          hasError = true;
+        });
+      }
     }
   }
 
-  Future<void> saveUserData() async {
+
+    Future<void> saveUserData() async {
     final localizations = AppLocalizations.of(context);
     if (localizations == null) return;
 
@@ -174,9 +205,32 @@ class _SimpleUserProfileState extends State<SimpleUserProfile> {
 
   @override
   Widget build(BuildContext context) {
-    final AppLocalizations? localization =
-        AppLocalizations.of(context); // Get localization
+    final AppLocalizations? localization = AppLocalizations.of(context);
+    
+    if (localization == null) {
+      return const Scaffold(
+        body: Center(child: CircularProgressIndicator()),
+      );
+    }
 
+    if (hasError) {
+      return Scaffold(
+        body: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Text(localization.error),
+              ElevatedButton(
+                onPressed: () => fetchUserData(),
+                child: Text(localization.retry ?? 'Retry'),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
+    // Rest of the build method remains the same...
     return Scaffold(
       body: isLoading
           ? const Center(child: CircularProgressIndicator())
@@ -186,7 +240,7 @@ class _SimpleUserProfileState extends State<SimpleUserProfile> {
                   padding: EdgeInsets.zero,
                   children: [
                     const SizedBox(height: 50),
-                    buildTop(localization!),
+                    buildTop(localization),
                     const SizedBox(height: 30),
                     buildProfileInfo(localization),
                     const SizedBox(height: 60),
@@ -194,8 +248,8 @@ class _SimpleUserProfileState extends State<SimpleUserProfile> {
                   ],
                 ),
                 Positioned(
-                  top: 40, // Adjust this value to fine-tune the position
-                  right: 16, // Adjust this value to fine-tune the position
+                  top: 40,
+                  right: 16,
                   child: FloatingActionButton(
                     onPressed: toggleEditMode,
                     child: Icon(isEditMode ? Icons.check : Icons.edit),

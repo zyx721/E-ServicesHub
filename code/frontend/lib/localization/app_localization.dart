@@ -199,6 +199,10 @@ class AppLocalizations {
       : (isFrench
           ? "Le prénom et le nom de famille sont obligatoires."
           : "First Name and Last Name are required.");
+    // Add retry localization
+  String get retry => isArabic
+      ? "إعادة المحاولة"
+      : (isFrench ? "Réessayer" : "Retry");
 
   String get firstNameRequired => isArabic
       ? "الاسم الأول مطلوب."
@@ -274,11 +278,13 @@ class AppLocalizations {
   String get realTimeDetection => isArabic
       ? "الكشف في الوقت الحقيقي"
       : (isFrench ? "Détection en temps réel" : "Real-Time Detection");
+
+      
   String get support => isArabic ? "الدعم" : (isFrench ? "Soutien" : "Support");
   String get supportMessage => isArabic
       ? "إذا لم يتم اكتشاف بطاقتك، يرجى التأكد من أنها محاذية بشكل صحيح وحاول مرة أخرى."
       : (isFrench
-          ? "Si votre carte n'a pas été détectée, assurez-vous أن'elle est correctement alignée et réessayez."
+          ? "Si votre carte n'a pas été détectée, assurez-vous qu'elle est correctement alignée et réessayez."
           : "If your card was not detected, please make sure it is aligned correctly and try again.");
   String get stopDetection => isArabic
       ? "إيقاف الكشف"

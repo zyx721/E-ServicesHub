@@ -492,7 +492,7 @@ class _RealTimeDetectionState extends State<RealTimeDetection> with SingleTicker
                       onPressed: () => Navigator.pop(context),
                       child: Text(
                         appLocalizations.ok,
-                        style: TextStyle(fontSize: 16),
+                        style: TextStyle(fontSize: 13.5),
                       ),
                     ),
                     ElevatedButton(
@@ -506,14 +506,14 @@ class _RealTimeDetectionState extends State<RealTimeDetection> with SingleTicker
                         );
                       },
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: Theme.of(context).primaryColor,
+                        backgroundColor: Colors.purple,
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(30),
                         ),
                       ),
                       child: Text(
-                        'Manual Verification',
-                        style: TextStyle(fontSize: 16),
+                        appLocalizations.manualVerification ,
+                        style: TextStyle(fontSize: 11,color: Colors.white),
                       ),
                     ),
                   ],

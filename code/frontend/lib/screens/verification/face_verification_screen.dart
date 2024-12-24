@@ -10,6 +10,7 @@ import 'package:image/image.dart' as img; // Import the image package for image 
 import 'package:path_provider/path_provider.dart'; // Import the path_provider package for file storage
 import 'dart:io'; // Import the dart:io package for file operations
 import 'package:flutter/services.dart'; // Import the services package for rootBundle
+import 'package:hanini_frontend/screens/verification/manual_verification_screen.dart';
 
 class FaceCompareScreen extends StatefulWidget {
   @override
@@ -140,26 +141,75 @@ class _FaceCompareScreenState extends State<FaceCompareScreen> {
     ));
   }
 
-  void _showSupportDialog() {
-    final AppLocalizations appLocalizations = AppLocalizations.of(context)!;
+void _showSupportDialog(AppLocalizations appLocalizations) {
     showDialog(
       context: context,
       builder: (BuildContext context) {
-        return AlertDialog(
-          title: Text(appLocalizations.support),
-          content: Text(appLocalizations.faceVerificationSupportMessage),
-          actions: <Widget>[
-            TextButton(
-              onPressed: () {
-                Navigator.of(context).pop();
-              },
-              child: Text(appLocalizations.ok),
+        return Dialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20),
+          ),
+          child: Padding(
+            padding: EdgeInsets.all(24),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  appLocalizations.support,
+                  style: TextStyle(
+                    fontSize: 24,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                SizedBox(height: 16),
+                Text(
+                  appLocalizations.supportMessage,
+                  style: TextStyle(fontSize: 16),
+                  textAlign: TextAlign.center,
+                ),
+                SizedBox(height: 24),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                  children: [
+                    TextButton(
+                      onPressed: () => Navigator.pop(context),
+                      child: Text(
+                        appLocalizations.ok,
+                        style: TextStyle(fontSize: 13.5),
+                      ),
+                    ),
+                    ElevatedButton(
+                      onPressed: () {
+                        Navigator.pop(context);
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => ManualVerificationScreen(),
+                          ),
+                        );
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.purple,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(30),
+                        ),
+                      ),
+                      child: Text(
+                        appLocalizations.manualVerification ,
+                        style: TextStyle(fontSize: 11,color: Colors.white),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
             ),
-          ],
+          ),
         );
       },
     );
   }
+
+
 
   @override
   void dispose() {
@@ -210,7 +260,7 @@ class _FaceCompareScreenState extends State<FaceCompareScreen> {
                   color: Colors.white,
                   size: 28,
                 ),
-                onPressed: _showSupportDialog,
+                onPressed:() => _showSupportDialog(appLocalizations),
               ),
             ],
           ),

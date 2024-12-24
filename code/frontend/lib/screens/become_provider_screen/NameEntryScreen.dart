@@ -93,27 +93,12 @@ class _NameEntryScreenState extends State<NameEntryScreen> {
     final AppLocalizations appLocalizations = AppLocalizations.of(context)!;
 
     return Scaffold(
-      appBar: AppBar(title: Text(appLocalizations.enterYourDetails)),
+      appBar: AppBar(title: Text(appLocalizations.selectYourServices)),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16.0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
-            TextField(
-              controller: _firstNameController,
-              decoration:
-                  InputDecoration(labelText: appLocalizations.firstName),
-            ),
-            SizedBox(height: 20),
-            TextField(
-              controller: _lastNameController,
-              decoration: InputDecoration(labelText: appLocalizations.lastName),
-            ),
-            SizedBox(height: 30),
-            Text(
-              appLocalizations.selectYourServices,
-              style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
-            ),
             SizedBox(height: 10),
             StreamBuilder<List<WorkChoice>>(
               stream: _workChoicesStream,

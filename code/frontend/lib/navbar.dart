@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:hanini_frontend/main.dart';
 import 'package:hanini_frontend/screens/Profiles/SimpleUserProfile.dart';
-import 'package:hanini_frontend/screens/become_provider_screen/profilepage.dart';
 import 'package:iconsax/iconsax.dart';
 import 'package:hanini_frontend/screens/navScreens/searchpage.dart';
 import 'package:hanini_frontend/screens/Profiles/ServiceProviderProfile.dart';
@@ -172,72 +171,7 @@ class _NavbarPageState extends State<NavbarPage> {
                     backgroundColor: Colors.transparent,
                     elevation: 0,
                     actions: [
-// <<<<<<< HEAD
-                      // Only show notification bell for non-admin users
                       if (!isAdmin) _buildNotificationBell(),
-// =======
-                      // Stack(
-                      //   alignment: Alignment.center,
-                      //   children: [
-                      //     IconButton(
-                      //       icon: const Icon(
-                      //         Icons.home,
-                      //         color: Colors.white,
-                      //         size: 28,
-                      //       ),
-                      //       onPressed: () {
-                      //         Navigator.push(
-                      //           context,
-                      //           MaterialPageRoute(
-                      //             builder: (context) => NotificationsPage(
-                      //                 userId: _auth.currentUser?.uid ?? ''),
-                      //           ),
-                      //         );
-                      //       },
-                      //     ),
-                      //     Positioned(
-                      //       right: 4, // Adjust position to align badge properly
-                      //       top: 8,
-                      //       child: StreamBuilder<DocumentSnapshot>(
-                      //         stream: FirebaseFirestore.instance
-                      //             .collection('users')
-                      //             .doc(_auth.currentUser?.uid ?? '')
-                      //             .snapshots(),
-                      //         builder: (context, snapshot) {
-                      //           if (!snapshot.hasData ||
-                      //               snapshot.data == null) {
-                      //             return const SizedBox(); // Show nothing if no data
-                      //           }
-                      //           final data = snapshot.data!.data()
-                      //               as Map<String, dynamic>;
-                      //           final unreadCount =
-                      //               data['newCommentsCount'] ?? 0;
-
-                      //           if (unreadCount == 0) {
-                      //             return const SizedBox(); // Show nothing if no unread comments
-                      //           }
-
-                      //           return Container(
-                      //             padding: const EdgeInsets.all(5),
-                      //             decoration: BoxDecoration(
-                      //               color: Colors.red,
-                      //               shape: BoxShape.circle,
-                      //             ),
-                      //             child: Text(
-                      //               '$unreadCount',
-                      //               style: const TextStyle(
-                      //                 color: Colors.white,
-                      //                 fontSize: 12,
-                      //                 fontWeight: FontWeight.bold,
-                      //               ),
-                      //             ),
-                      //           );
-                      //         },
-                      //       ),
-                      //     ),
-                      //   ],
-                      // ),
-// >>>>>>> Anas_front
                       _buildLanguageDropdown(),
                     ],
                   ),
