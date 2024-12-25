@@ -93,19 +93,19 @@ class NotificationsPage extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
 
-    return DefaultTabController(
-      length: 2,
-      child: Scaffold(
-        appBar: PreferredSize(
-          preferredSize: Size.fromHeight(120),
-          child: Container(
-            decoration: BoxDecoration(
-              gradient: AppColors.mainGradient,
-            ),
+return DefaultTabController(
+  length: 2,
+  child: Scaffold(
+    appBar: PreferredSize(
+      preferredSize: const Size.fromHeight(120),
+      child: Container(
+        decoration: const BoxDecoration(
+          gradient: AppColors.mainGradient,
+        ),
             child: AppBar(
               elevation: 0,
               centerTitle: true,
-              backgroundColor: theme.colorScheme.primary,
+              backgroundColor: Colors.transparent,
               title: Padding(
                 padding: const EdgeInsets.only(
                     top: 14.0), // Added padding to shift the title down
@@ -135,51 +135,60 @@ class NotificationsPage extends StatelessWidget {
                     ],
                   ),
                   // padding: const EdgeInsets.symmetric(horizontal: 16), // Padding for tabs
-                  child: TabBar(
-                    indicator: BoxDecoration(
-                      borderRadius: BorderRadius.circular(20), // Rounded tabs
-                      color: theme.colorScheme.primary.withOpacity(0.2),
+                  child: Padding(
+                    padding: const EdgeInsets.only(top: 8.0),
+                    child: TabBar(
+                      indicator: BoxDecoration(
+                        borderRadius: BorderRadius.circular(20), // Rounded tabs
+                        color: theme.colorScheme.primary.withOpacity(0.2),
+                      ),
+                      labelColor: theme.colorScheme.primary,
+                      unselectedLabelColor: Colors.grey,
+                      labelStyle: GoogleFonts.poppins(
+                          fontWeight: FontWeight.w600, fontSize: 16),
+                      tabs: [
+                        Tab(
+                          child: Padding(
+                            padding: const EdgeInsets.all(8.0),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(
+                                  Icons.list_alt,
+                                  size: 22,
+                                  color: theme.colorScheme.primary,
+                                ),
+                                const SizedBox(width: 8),
+                                Text(
+                                  "Listings",
+                                  style: TextStyle(height: 1.2),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                        Tab(
+                          child: Padding(
+                            padding: const EdgeInsets.all(8.0),
+                            child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(
+                                Icons.star_outline,
+                                size: 22,
+                                color: theme.colorScheme.primary,
+                              ),
+                              const SizedBox(width: 8),
+                              Text(
+                                "Reviews",
+                                style: TextStyle(height: 1.2),
+                              ),
+                            ],
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
-                    labelColor: theme.colorScheme.primary,
-                    unselectedLabelColor: Colors.grey,
-                    labelStyle: GoogleFonts.poppins(
-                        fontWeight: FontWeight.w600, fontSize: 16),
-                    tabs: [
-                      Tab(
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Icon(
-                              Icons.list_alt,
-                              size: 22,
-                              color: theme.colorScheme.primary,
-                            ),
-                            const SizedBox(width: 8),
-                            Text(
-                              "Listings",
-                              style: TextStyle(height: 1.2),
-                            ),
-                          ],
-                        ),
-                      ),
-                      Tab(
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Icon(
-                              Icons.star_outline,
-                              size: 22,
-                              color: theme.colorScheme.primary,
-                            ),
-                            const SizedBox(width: 8),
-                            Text(
-                              "Reviews",
-                              style: TextStyle(height: 1.2),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
                   ),
                 ),
               ),
@@ -374,7 +383,11 @@ class ListingsList extends StatelessWidget {
             children: [
               Padding(
                 padding:
-                    const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                /////////////////////////-important-/////////////////////////////////////////////////
+                ///   if you make the padding 
+                ////////////////////////////////////////////////////////////////////////////////////////////
+
+                    const EdgeInsets.symmetric(horizontal: 6, vertical: 8),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: negotiations.asMap().entries.map((entry) {
