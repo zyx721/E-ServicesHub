@@ -36,12 +36,13 @@ dependencies:
   geolocator: ^9.0.2 # For GPS functionality
   flutter_rating_bar: ^4.0.1
   uuid: ^4.5.1
-  firebase_storage: ^12.3.7
   googleapis: ^13.2.0
   googleapis_auth: ^1.6.0
+  firebase_storage: ^12.3.7
+  firebase_messaging: ^15.1.6
   image: ^3.0.1
-  flutter_image_compress: ^2.3.0
-  
+  flutter_svg: ^1.0.0
+
 
 
 dev_dependencies:
@@ -55,50 +56,12 @@ flutter:
   uses-material-design: true
   generate: true  # This line enables localization code generation
   assets:
-    - assets/credentials/service_account.json
-    - assets/images/onboarding1.png
-    - assets/images/onboarding2.png
-    - assets/images/onboarding3.png
-    - assets/images/profile_picture.png
-    - assets/images/service1.png
-    - assets/images/service2.png
-    - assets/images/service3.png
-    - assets/images/service4.png
-    - assets/images/service5.png
-    - assets/images/service6.png
-    - assets/images/service7.png
-    - assets/images/service8.png
-    - assets/images/service9.png
-    - assets/images/service10.png
-    - assets/images/service11.png
-    - assets/images/service12.png
-    - assets/images/service13.png
-    - assets/images/service14.png
-    - assets/images/default_profile.png
-    
-    - assets/images/onboarding3_b.png
-    - assets/images/google_logo.png
-    - assets/images/sarab.png
-    - assets/images/sfr.png
-    - assets/images/sen.png
-    - assets/images/face_shape.png
-    - assets/images/id_things.png
-    - assets/images/work/pic1.jpeg
-    - assets/images/work/pic2.jpeg
-    - assets/images/work/provider.jpeg
-    - assets/images/work/painter.jpeg
-    - assets/images/work/portpfolio1.jpeg
-    - assets/images/work/portpfolio2.jpeg
-    - assets/images/work/portpfolio3.jpeg
-    - assets/images/work/portpfolio4.jpeg
-    - assets/images/ads/first_page.png
-    - assets/images/ads/second_page.png
-    - assets/images/ads/third_page.png
-    - assets/images/portfolio/
-    - assets/animation/animation1.json
-    - assets/animation/animation2.json
-    - assets/animation/animation3.json
-    - assets/animation/animation4.json
-    - assets/animation/animation5.json
-    - assets/animation/id_aproved.json
-    - assets/animation/flip.json
+    - assets/credentials/
+    # - assets/images/work/
+    # - assets/images/portfolio/
+    - assets/services_icon/
+    - assets/images/
+    - assets/images/ads/
+    - assets/animation/
+    - assets/search_icons/
+

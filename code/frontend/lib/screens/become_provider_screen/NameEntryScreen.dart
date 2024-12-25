@@ -9,30 +9,38 @@ class NameEntryScreen extends StatefulWidget {
 }
 
 class _NameEntryScreenState extends State<NameEntryScreen> {
-  // List of service categories
-  List<String> get _workChoices {
-    final AppLocalizations appLocalizations = AppLocalizations.of(context)!;
-    return [
-      appLocalizations.houseCleaning,
-      appLocalizations.electricity,
-      appLocalizations.plumbing,
-      appLocalizations.gardening,
-      appLocalizations.painting,
-      appLocalizations.carpentry,
-      appLocalizations.pestControl,
-      appLocalizations.acRepair,
-      appLocalizations.vehicleRepair,
-      appLocalizations.applianceInstallation,
-      appLocalizations.itSupport,
-      appLocalizations.homeSecurity,
-      appLocalizations.interiorDesign,
-      appLocalizations.windowCleaning,
-      appLocalizations.furnitureAssembly,
-    ];
+  final TextEditingController _firstNameController = TextEditingController();
+  final TextEditingController _lastNameController = TextEditingController();
+
+  // Stream for work choices with multilingual support
+  Stream<List<WorkChoice>> get _workChoicesStream {
+    return FirebaseFirestore.instance
+        .collection('Metadata')
+        .doc('WorkChoices')
+        .snapshots()
+        .map((snapshot) {
+      if (!snapshot.exists || !snapshot.data()!.containsKey('choices')) {
+        return [];
+      }
+
+      final List<dynamic> choices = snapshot.data()!['choices'];
+      return choices.map((choice) => WorkChoice.fromMap(choice)).toList();
+    });
   }
 
-  // To track selected services
   final Set<String> _selectedChoices = {};
+
+  String _getLocalizedWorkChoice(WorkChoice choice, BuildContext context) {
+    final locale = Localizations.localeOf(context).languageCode;
+    switch (locale) {
+      case 'ar':
+        return choice.ar;
+      case 'fr':
+        return choice.fr ?? choice.en; // Fallback to English if French not available
+      default:
+        return choice.en;
+    }
+  }
 
   void _saveProviderInfo() async {
     if (_selectedChoices.length != 2) {
@@ -41,26 +49,23 @@ class _NameEntryScreenState extends State<NameEntryScreen> {
     }
 
     try {
-      // Get the current user's UID
       final User? user = FirebaseAuth.instance.currentUser;
       if (user == null) {
         _showErrorDialog("User not authenticated.");
         return;
       }
 
-      // Reference Firestore document
       final DocumentReference userDoc =
           FirebaseFirestore.instance.collection('users').doc(user.uid);
 
-      // Update Firestore with the new information
       await userDoc.update({
         'selectedWorkChoices': _selectedChoices.toList(),
         'isSTEP_1': true,
       });
 
       Navigator.of(context).pushNamedAndRemoveUntil(
-        '/verification', // Your navbar route
-        (Route<dynamic> route) => false, // This removes all previous routes
+        '/verification',
+        (Route<dynamic> route) => false,
       );
     } catch (e) {
       _showErrorDialog("Failed to save data: $e");
@@ -88,60 +93,84 @@ class _NameEntryScreenState extends State<NameEntryScreen> {
     final AppLocalizations appLocalizations = AppLocalizations.of(context)!;
 
     return Scaffold(
-      appBar: AppBar(title: Text(appLocalizations.enterYourDetails)),
+      appBar: AppBar(title: Text(appLocalizations.selectYourServices)),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16.0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
-            // Work Choice Grid
-            Text(
-              appLocalizations.selectYourServices,
-              style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
-            ),
             SizedBox(height: 10),
-            Wrap(
-              spacing: 10,
-              runSpacing: 10,
-              children: _workChoices.map((choice) {
-                final isSelected = _selectedChoices.contains(choice);
-                return GestureDetector(
-                  onTap: () {
-                    setState(() {
-                      if (isSelected) {
-                        _selectedChoices.remove(choice);
-                      } else if (_selectedChoices.length < 2) {
-                        _selectedChoices.add(choice);
-                      } else {
-                        _showErrorDialog(appLocalizations.selectTwoChoices);
-                      }
-                    });
-                  },
-                  child: Container(
-                    padding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                    decoration: BoxDecoration(
-                      color: isSelected ? Colors.purple[300] : Colors.grey[200],
-                      borderRadius: BorderRadius.circular(20),
-                      border: Border.all(
-                        color: isSelected ? Colors.purple : Colors.grey[400]!,
-                        width: 1,
-                      ),
+            StreamBuilder<List<WorkChoice>>(
+              stream: _workChoicesStream,
+              builder: (context, snapshot) {
+                if (snapshot.hasError) {
+                  return Text('Error loading choices: ${snapshot.error}');
+                }
+
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return Center(
+                    child: Column(
+                      children: [
+                        CircularProgressIndicator(),
+                        SizedBox(height: 10),
+                        Text('Loading choices...')
+                      ],
                     ),
-                    child: Text(
-                      choice,
-                      style: TextStyle(
-                        color: isSelected ? Colors.white : Colors.black,
-                        fontWeight:
-                            isSelected ? FontWeight.w600 : FontWeight.w400,
+                  );
+                }
+
+                final workChoices = snapshot.data ?? [];
+
+                if (workChoices.isEmpty) {
+                  return Text('No choices available.');
+                }
+
+                return Wrap(
+                  spacing: 10,
+                  runSpacing: 10,
+                  children: workChoices.map((choice) {
+                    final isSelected = _selectedChoices.contains(choice.id);
+                    return GestureDetector(
+                      onTap: () {
+                        setState(() {
+                          if (isSelected) {
+                            _selectedChoices.remove(choice.id);
+                          } else if (_selectedChoices.length < 2) {
+                            _selectedChoices.add(choice.id);
+                          } else {
+                            _showErrorDialog(appLocalizations.selectTwoChoices);
+                          }
+                        });
+                      },
+                      child: Container(
+                        padding:
+                            EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                        decoration: BoxDecoration(
+                          color: isSelected
+                              ? Colors.purple[300]
+                              : Colors.grey[200],
+                          borderRadius: BorderRadius.circular(20),
+                          border: Border.all(
+                            color:
+                                isSelected ? Colors.purple : Colors.grey[400]!,
+                            width: 1,
+                          ),
+                        ),
+                        child: Text(
+                          _getLocalizedWorkChoice(choice, context),
+                          style: TextStyle(
+                            color: isSelected ? Colors.white : Colors.black,
+                            fontWeight:
+                                isSelected ? FontWeight.w600 : FontWeight.w400,
+                          ),
+                        ),
                       ),
-                    ),
-                  ),
+                    );
+                  }).toList(),
                 );
-              }).toList(),
+              },
             ),
             SizedBox(height: 40),
-
-            // Continue Button
             GestureDetector(
               onTap: _saveProviderInfo,
               child: Container(
@@ -149,8 +178,8 @@ class _NameEntryScreenState extends State<NameEntryScreen> {
                 decoration: BoxDecoration(
                   gradient: LinearGradient(
                     colors: [
-                      Color(0xFF6A1B9A), // Start color
-                      Color(0xFFAB47BC), // End color
+                      Color(0xFF6A1B9A),
+                      Color(0xFFAB47BC),
                     ],
                     begin: Alignment.centerLeft,
                     end: Alignment.centerRight,
@@ -177,6 +206,30 @@ class _NameEntryScreenState extends State<NameEntryScreen> {
           ],
         ),
       ),
+    );
+  }
+}
+
+// Model class for WorkChoice
+class WorkChoice {
+  final String id;
+  final String en;
+  final String ar;
+  final String? fr;
+
+  WorkChoice({
+    required this.id,
+    required this.en,
+    required this.ar,
+    this.fr,
+  });
+
+  factory WorkChoice.fromMap(Map<String, dynamic> map) {
+    return WorkChoice(
+      id: map['id'] as String,
+      en: map['en'] as String,
+      ar: map['ar'] as String,
+      fr: map['fr'] as String?,
     );
   }
 }

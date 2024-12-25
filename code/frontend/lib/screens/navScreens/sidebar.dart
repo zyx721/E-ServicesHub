@@ -5,6 +5,8 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:hanini_frontend/models/colors.dart';
+
 
 Widget Sidebar(BuildContext context, AppLocalizations appLocalizations) {
   final GoogleSignIn _googleSignIn = GoogleSignIn();
@@ -62,14 +64,7 @@ Widget Sidebar(BuildContext context, AppLocalizations appLocalizations) {
         Container(
           padding: EdgeInsets.only(top: 50, bottom: 30, left: 20, right: 20),
           decoration: BoxDecoration(
-            gradient: LinearGradient(
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-              colors: [
-                Color(0xFF1A237E),
-                Color(0xFF42A5F5),
-              ],
-            ),
+            gradient: AppColors.mainGradient,
           ),
           child: Row(
             children: [
@@ -101,6 +96,7 @@ Widget Sidebar(BuildContext context, AppLocalizations appLocalizations) {
                     _buildSidebarItem(
                       context,
                       icon: Icons.admin_panel_settings,
+                      // iconColor: AppColors.mainColor,
                       title: 'Add Admin',
                       onTap: () => Navigator.pushNamed(context, '/add-admin'),
                     )
@@ -120,6 +116,39 @@ Widget Sidebar(BuildContext context, AppLocalizations appLocalizations) {
                 ],
               );
             },
+          // child: ListView(
+          //   padding: EdgeInsets.zero,
+            // children: [
+            //   _buildSidebarItem(
+            //     context,
+            //     icon: Icons.settings,
+                
+            //     title: appLocalizations.settings,
+            //     onTap: () => Navigator.pushNamed(context, '/settings'),
+            //   ),
+            //   _buildSidebarItem(
+            //     context,
+            //     icon: Icons.logout,
+            //     title: appLocalizations.logout,
+            //     onTap: () => _showLogoutDialog(context, handleLogout),
+            //   ),
+            // ],
+// children: [
+//   _buildSidebarItem(
+//     context,
+//     icon: Icons.settings,
+//     iconColor: AppColors.mainColor, // Pass the color to the method
+//     title: appLocalizations.settings,
+//     onTap: () => Navigator.pushNamed(context, '/settings'),
+//   ),
+//   _buildSidebarItem(
+//     context,
+//     icon: Icons.logout,
+//     iconColor: AppColors.mainColor, // Use a different color for the logout icon
+//     title: appLocalizations.logout,
+//     onTap: () => _showLogoutDialog(context, handleLogout),
+//   ),
+// ],
           ),
         ),
       ],
@@ -132,9 +161,15 @@ Widget _buildSidebarItem(
   required IconData icon,
   required String title,
   required VoidCallback onTap,
+  Color iconColor = AppColors.secondaryColor, // Default icon color
+  double iconSize = 24.0,             // Default icon size
 }) {
   return ListTile(
-    leading: Icon(icon, color: Colors.blueAccent, size: 24),
+    leading: Icon(
+      icon,
+      color: iconColor, // Use the customizable icon color
+      size: iconSize,   // Use the customizable icon size
+    ),
     title: Text(
       title,
       style: GoogleFonts.poppins(
@@ -143,10 +178,11 @@ Widget _buildSidebarItem(
       ),
     ),
     onTap: onTap,
-    contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+    contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
     hoverColor: Colors.grey.shade100,
   );
 }
+
 
 Future<void> _showLogoutDialog(BuildContext context, Future<void> Function() onLogout) async {
   final shouldLogout = await showDialog<bool>(
