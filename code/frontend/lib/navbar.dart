@@ -12,13 +12,10 @@ import 'package:hanini_frontend/localization/app_localization.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:hanini_frontend/screens/navScreens/notificationspage.dart'; // Replace with actual file path
-
-
+import 'package:hanini_frontend/screens/navScreens/notificationspage.dart';
+import 'package:curved_navigation_bar/curved_navigation_bar.dart'; // Import CurvedNavigationBar
 
 class NavbarPage extends StatefulWidget {
-
-
   const NavbarPage({Key? key}) : super(key: key);
 
   @override
@@ -49,7 +46,6 @@ class _NavbarPageState extends State<NavbarPage> {
         isLoading = false;
       });
     } catch (e) {
-      // Handle error (e.g., show a message or log it)
       print('Error fetching user data: $e');
       setState(() {
         isLoading = false;
@@ -60,33 +56,25 @@ class _NavbarPageState extends State<NavbarPage> {
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
-Future<bool> _checkIfUserIsProvider() async {
-  final User? user = _auth.currentUser;
-  
-  // Check if the user is logged in
-  if (user != null) {
-    try {
-      final DocumentSnapshot userDoc =
-            await _firestore.collection('users').doc(user.uid).get();
-
-      // Check if the document exists and return the 'isProvider' field
-      if (userDoc.exists) {
-        final data = userDoc.data() as Map<String, dynamic>;
-        return data['isProvider'] ?? false;
-      } else {
-        throw Exception("User not found in Firestore");
+  Future<bool> _checkIfUserIsProvider() async {
+    final User? user = _auth.currentUser;
+    if (user != null) {
+      try {
+        final DocumentSnapshot userDoc = await _firestore.collection('users').doc(user.uid).get();
+        if (userDoc.exists) {
+          final data = userDoc.data() as Map<String, dynamic>;
+          return data['isProvider'] ?? false;
+        } else {
+          throw Exception("User not found in Firestore");
+        }
+      } catch (e) {
+        print("Error while fetching user: $e");
+        throw Exception("Failed to fetch user data");
       }
-    } catch (e) {
-      // Log error or handle it
-      print("Error while fetching user: $e");
-      throw Exception("Failed to fetch user data");
+    } else {
+      throw Exception("No user is currently signed in");
     }
-  } else {
-    // Handle the case where no user is signed in
-    throw Exception("No user is currently signed in");
   }
-}
-
 
   void _changeLanguage(String languageCode) {
     Locale newLocale;
@@ -110,20 +98,13 @@ Future<bool> _checkIfUserIsProvider() async {
     return isLoading
         ? Center(child: CircularProgressIndicator())
         : PopScope(
-          canPop: false,
-          child: Scaffold(
+            canPop: false,
+            child: Scaffold(
               appBar: PreferredSize(
                 preferredSize: Size.fromHeight(64.0),
                 child: Container(
                   decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      colors: [
-                        Color(0xFF3949AB),
-                        Color(0xFF1E88E5),
-                      ],
-                      begin: Alignment.topCenter,
-                      end: Alignment.bottomCenter,
-                    ),
+                    color: Color(0xFF6439FF), // Deep purple color for the top navbar
                   ),
                   child: AppBar(
                     title: Text(
@@ -136,91 +117,91 @@ Future<bool> _checkIfUserIsProvider() async {
                     ),
                     backgroundColor: Colors.transparent,
                     elevation: 0,
-actions: [
-  Stack(
-    alignment: Alignment.center,
-    children: [
-      IconButton(
-        icon: const Icon(
-          Icons.notifications_outlined,
-          color: Colors.white,
-          size: 28,
-        ),
-        onPressed: () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (context) => NotificationsPage(userId: _auth.currentUser?.uid ?? ''),
-            ),
-          );
-        },
-      ),
-      Positioned(
-        right: 4, // Adjust position to align badge properly
-        top: 8,
-        child: StreamBuilder<DocumentSnapshot>(
-          stream: FirebaseFirestore.instance
-              .collection('users')
-              .doc(_auth.currentUser?.uid ?? '')
-              .snapshots(),
-          builder: (context, snapshot) {
-            if (!snapshot.hasData || snapshot.data == null) {
-              return const SizedBox(); // Show nothing if no data
-            }
-            final data = snapshot.data!.data() as Map<String, dynamic>;
-            final unreadCount = data['newCommentsCount'] ?? 0;
+                    actions: [
+                      Stack(
+                        alignment: Alignment.center,
+                        children: [
+                          IconButton(
+                            icon: const Icon(
+                              Icons.notifications_outlined,
+                              color: Colors.white,
+                              size: 28,
+                            ),
+                            onPressed: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => NotificationsPage(userId: _auth.currentUser?.uid ?? ''),
+                                ),
+                              );
+                            },
+                          ),
+                          Positioned(
+                            right: 4,
+                            top: 8,
+                            child: StreamBuilder<DocumentSnapshot>(
+                              stream: FirebaseFirestore.instance
+                                  .collection('users')
+                                  .doc(_auth.currentUser?.uid ?? '')
+                                  .snapshots(),
+                              builder: (context, snapshot) {
+                                if (!snapshot.hasData || snapshot.data == null) {
+                                  return const SizedBox(); // Show nothing if no data
+                                }
+                                final data = snapshot.data!.data() as Map<String, dynamic>;
+                                final unreadCount = data['newCommentsCount'] ?? 0;
 
-            if (unreadCount == 0) {
-              return const SizedBox(); // Show nothing if no unread comments
-            }
+                                if (unreadCount == 0) {
+                                  return const SizedBox(); // Show nothing if no unread comments
+                                }
 
-            return Container(
-              padding: const EdgeInsets.all(5),
-              decoration: BoxDecoration(
-                color: Colors.red,
-                shape: BoxShape.circle,
-              ),
-              child: Text(
-                '$unreadCount',
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 12,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-            );
-          },
-        ),
-      ),
-    ],
-  ),
-  _buildLanguageDropdown(),
-],
-
-
+                                return Container(
+                                  padding: const EdgeInsets.all(5),
+                                  decoration: BoxDecoration(
+                                    color: Colors.red,
+                                    shape: BoxShape.circle,
+                                  ),
+                                  child: Text(
+                                    '$unreadCount',
+                                    style: const TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                );
+                              },
+                            ),
+                          ),
+                        ],
+                      ),
+                      _buildLanguageDropdown(),
+                    ],
                   ),
                 ),
               ),
               drawer: Sidebar(context, appLocalizations),
               body: screens[selectedIndex],
-              bottomNavigationBar: NavigationBar(
-                selectedIndex: selectedIndex,
-                onDestinationSelected: (int index) {
+              bottomNavigationBar: CurvedNavigationBar(
+                index: selectedIndex,
+                height: 60.0, // Height of the curved navbar
+                backgroundColor: Color(0xFFF8F8F8), // Off-white background color
+                color: Color(0xFF6439FF), // Purple navbar color
+                animationDuration: Duration(milliseconds: 300), // Animation time for switching
+                items: <Widget>[
+                  Icon(Iconsax.home, size: 30, color: Colors.white), // Home icon
+                  Icon(Iconsax.search_normal, size: 30, color: Colors.white), // Search icon
+                  Icon(Iconsax.save_2, size: 30, color: Colors.white), // Favorites icon
+                  Icon(Iconsax.user, size: 30, color: Colors.white), // Profile icon
+                ],
+                onTap: (index) {
                   setState(() {
-                    selectedIndex = index;
+                    selectedIndex = index; // Update the selected index
                   });
                 },
-                destinations: const [
-                  NavigationDestination(icon: Icon(Iconsax.home), label: 'Home'),
-                  NavigationDestination(
-                      icon: Icon(Iconsax.search_normal), label: 'Search'),
-                  NavigationDestination(
-                      icon: Icon(Iconsax.save_2), label: 'Favorites'),
-                  NavigationDestination(icon: Icon(Iconsax.user), label: 'Profile'),
-                ],
               ),
             ),
-        );
+          );
   }
 
   Widget _buildLanguageDropdown() {
@@ -239,12 +220,9 @@ actions: [
         icon: Icon(Icons.language, color: Colors.white, size: 28),
         itemBuilder: (BuildContext context) {
           return [
-            _buildLanguageMenuItem('en', localizations.englishLanguageName,
-                'assets/images/sen.png'),
-            _buildLanguageMenuItem('ar', localizations.arabicLanguageName,
-                'assets/images/sarab.png'),
-            _buildLanguageMenuItem('fr', localizations.frenchLanguageName,
-                'assets/images/sfr.png'),
+            _buildLanguageMenuItem('en', localizations.englishLanguageName, 'assets/images/sen.png'),
+            _buildLanguageMenuItem('ar', localizations.arabicLanguageName, 'assets/images/sarab.png'),
+            _buildLanguageMenuItem('fr', localizations.frenchLanguageName, 'assets/images/sfr.png'),
           ];
         },
       ),

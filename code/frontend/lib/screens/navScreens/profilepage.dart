@@ -148,6 +148,7 @@ class _ServiceProviderProfileState extends State<ServiceProviderProfile2> {
             hourlyRateController.text = hourlyRate;
             isLoading = false;
           });
+          debugPrint('User data fetched successfully');
         }
       }
     } catch (e) {
@@ -444,154 +445,166 @@ Widget buildPortfolioSection() {
   }
 
   @override
-Widget build(BuildContext context) {
-  final localizations = AppLocalizations.of(context); // Get localization instance
+  Widget build(BuildContext context) {
+    final localizations = AppLocalizations.of(context); // Get localization instance
 
-  return Scaffold(
-    body: isLoading
-        ? const Center(child: CircularProgressIndicator())
-        : Stack(
-            children: [
-              ListView(
-                padding: EdgeInsets.zero,
-                children: [
-                  buildTop(localizations!),
-                  buildProfileInfo(localizations),
-                  const SizedBox(height: 20),
-                  _buildSectionTitle(localizations.skills),
-                  _buildSkillsSection(localizations),
-                  const SizedBox(height: 20),
-                  _buildSectionTitle(localizations.workExperience),
-                  _buildWorkExperienceSection(localizations),
-                  const SizedBox(height: 20),
-                  buildPortfolioSection(),// A message to ziyed: you forgot to do the localization part for the portfolio -Fares
-                  const SizedBox(height: 20),
-                  _buildSectionTitle(localizations.certifications),
-                  _buildCertificationsSection(localizations),
-                ],
-              ),
-              Positioned(
-                top: 40, // Adjust this value to fine-tune the position
-                right: 16, // Adjust this value to fine-tune the position
-                child: FloatingActionButton(
-                  onPressed: toggleEditMode,
-                  child: Icon(isEditMode ? Icons.check : Icons.edit),
-                  tooltip: isEditMode ? localizations.save : localizations.editProfile,
-                  backgroundColor: const Color.fromARGB(255, 43, 133, 207),
+    return Scaffold(
+      body: isLoading
+          ? const Center(child: CircularProgressIndicator())
+          : Stack(
+              children: [
+                CustomScrollView(
+                  slivers: [
+                    SliverAppBar(
+                      expandedHeight: 200.0,
+                      floating: false,
+                      pinned: true,
+                      flexibleSpace: FlexibleSpaceBar(
+                        centerTitle: true,
+                        title: Text(
+                          userName,
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 16.0,
+                          ),
+                        ),
+                        background: Stack(
+                          fit: StackFit.expand,
+                          children: [
+                            Center(
+                              child: Container(
+                                width: 120,
+                                height: 120,
+                                decoration: BoxDecoration(
+                                  shape: BoxShape.circle,
+                                  gradient: LinearGradient(
+                                    colors: [Color(0xFF6439FF), Color(0xFF42A5F5)],
+                                    begin: Alignment.topLeft,
+                                    end: Alignment.bottomRight,
+                                  ),
+                                ),
+                                child: Stack(
+                                  children: [
+                                    Center(
+                                      child: CircleAvatar(
+                                        radius: 55,
+                                        backgroundColor: Colors.white,
+                                        backgroundImage: userPhotoUrl.isNotEmpty
+                                            ? NetworkImage(userPhotoUrl) as ImageProvider
+                                            : const AssetImage('assets/images/default_profile.png'),
+                                      ),
+                                    ),
+                                    if (isEditMode)
+                                      Positioned(
+                                        bottom: 0,
+                                        right: 0,
+                                        child: GestureDetector(
+                                          onTap: pickNewProfilePicture,
+                                          child: Container(
+                                            padding: const EdgeInsets.all(6),
+                                            decoration: BoxDecoration(
+                                              shape: BoxShape.circle,
+                                              color: Colors.blue,
+                                            ),
+                                            child: const Icon(
+                                              Icons.camera_alt,
+                                              size: 20,
+                                              color: Colors.white,
+                                            ),
+                                          ),
+                                        ),
+                                      ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                    SliverList(
+                      delegate: SliverChildListDelegate(
+                        [
+                          buildProfileInfo(localizations!),
+                          const SizedBox(height: 20),
+                          _buildSectionTitle(localizations.skills),
+                          _buildSkillsSection(localizations),
+                          const SizedBox(height: 20),
+                          _buildSectionTitle(localizations.workExperience),
+                          _buildWorkExperienceSection(localizations),
+                          const SizedBox(height: 20),
+                          buildPortfolioSection(),
+                          const SizedBox(height: 20),
+                          _buildSectionTitle(localizations.certifications),
+                          _buildCertificationsSection(localizations),
+                        ],
+                      ),
+                    ),
+                  ],
                 ),
-              ),
-            ],
-          ),
-    resizeToAvoidBottomInset: false,
-  );
-}
-
-  Widget buildTop(AppLocalizations localizations) {
-    return Center(
-      child: Column(
-        children: [
-          const SizedBox(height: 40),
-          Stack(
-            alignment: Alignment.bottomRight,
-            children: [
-              CircleAvatar(
-                radius: profileHeight / 2,
-                backgroundColor: Colors.grey.shade200,
-                backgroundImage: userPhotoUrl.isNotEmpty
-                    ? NetworkImage(userPhotoUrl) as ImageProvider
-                    : const AssetImage('assets/images/default_profile.png'),
-              ),
-              if (isEditMode)
-                GestureDetector(
-                  onTap: () {
-                    pickNewProfilePicture();
-                  },
-                  child: Container(
-                    padding: const EdgeInsets.all(6),
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      color: Colors.blue,
-                    ),
-                    child: const Icon(
-                      Icons.camera_alt,
-                      size: 20,
-                      color: Colors.white,
-                    ),
+                Positioned(
+                  top: 40,
+                  right: 16,
+                  child: FloatingActionButton(
+                    onPressed: toggleEditMode,
+                    child: Icon(isEditMode ? Icons.check : Icons.edit),
+                    tooltip: isEditMode ? localizations.save : localizations.editProfile,
+                    backgroundColor: const Color.fromARGB(255, 43, 133, 207),
                   ),
                 ),
-            ],
-          ),
-          const SizedBox(height: 20),
-            isEditMode
-            ? Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                child: TextField(
-                  controller: nameController,
-                  decoration: InputDecoration(
-                    border: const OutlineInputBorder(),
-                    labelText: localizations.name,
-                  ),
-                ),
-              )
-            :Text(
-            userName,
-            style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
-          ),
-          const SizedBox(height: 4),
-          Text(
-            profession,
-            style: TextStyle(fontSize: 16, color: Colors.grey.shade700),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            userEmail,
-            style: TextStyle(fontSize: 14, color: Colors.grey.shade600),
-          ),
-        ],
-      ),
+              ],
+            ),
+      resizeToAvoidBottomInset: false,
     );
   }
 
   Widget buildProfileInfo(AppLocalizations localizations) {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16),
-      child: Column(
-        children: [
-          const SizedBox(height: 20),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      child: Card(
+        elevation: 4,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Column(
             children: [
-              buildStat(localizations.projects, '0'),
-              buildStat(localizations.rating, _buildStarRating(rating)),
-              buildStat(localizations.hourlyRate,
-                  isEditMode ? buildHourlyRateEditor() : '$hourlyRate DZD'),
+              const SizedBox(height: 20),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  buildStat(localizations.projects, '0'),
+                  buildStat(localizations.rating, _buildStarRating(rating)),
+                  buildStat(localizations.hourlyRate,
+                      isEditMode ? buildHourlyRateEditor() : '$hourlyRate DZD'),
+                ],
+              ),
+              const SizedBox(height: 24),
+              Align(
+                alignment: Alignment.centerLeft,
+                child: Text(
+                  localizations.aboutMe,
+                  style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                ),
+              ),
+              const SizedBox(height: 8),
+              isEditMode
+                  ? TextField(
+                      controller: aboutMeController,
+                      onChanged: (value) => aboutMe = value,
+                      maxLines: 4,
+                      decoration: InputDecoration(
+                        border: const OutlineInputBorder(),
+                        hintText: localizations.writeAboutYourself,
+                      ),
+                    )
+                  : Text(
+                      aboutMe,
+                      style: TextStyle(fontSize: 14, color: Colors.grey.shade700),
+                      textAlign: TextAlign.justify,
+                    ),
             ],
           ),
-          const SizedBox(height: 24),
-          Align(
-            alignment: Alignment.centerLeft,
-            child: Text(
-              localizations.aboutMe,
-              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-            ),
-          ),
-          const SizedBox(height: 8),
-          isEditMode
-              ? TextField(
-                  controller: aboutMeController,
-                  onChanged: (value) => aboutMe = value,
-                  maxLines: 4,
-                  decoration: InputDecoration(
-                    border: const OutlineInputBorder(),
-                    hintText: localizations.writeAboutYourself,
-                  ),
-                )
-              : Text(
-                  aboutMe,
-                  style: TextStyle(fontSize: 14, color: Colors.grey.shade700),
-                  textAlign: TextAlign.justify,
-                ),
-        ],
+        ),
       ),
     );
   }

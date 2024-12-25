@@ -13,6 +13,7 @@ import 'package:flutter/services.dart'; // Import SystemChrome
 import 'package:firebase_core/firebase_core.dart';
 import 'package:shared_preferences/shared_preferences.dart'; // Import SharedPreferences
 import 'navbar.dart';
+import 'package:provider/provider.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -25,8 +26,7 @@ void main() async {
   final initialRoute =
       await _determineInitialRoute(); // Determine initial route
   
-  runApp(
-      MyApp(cameras: cameras, initialRoute: initialRoute));
+  runApp(MyApp(cameras: cameras, initialRoute: initialRoute));
 }
 
 Future<String> _determineInitialRoute() async {
@@ -44,7 +44,6 @@ Future<String> _determineInitialRoute() async {
   }
   return '/login'; // Default to login if not logged in
 }
-
 
 class MyApp extends StatefulWidget {
   final List<CameraDescription> cameras;
@@ -77,11 +76,8 @@ class _MyAppState extends State<MyApp> {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
       title: 'Hanini',
-      theme: ThemeData(
-        primarySwatch: Colors.blue,
-        textTheme: Theme.of(context).textTheme.apply(
-              fontFamily: 'Poppins',
-            ),
+      theme: ThemeData.light().copyWith(
+        textTheme: ThemeData.light().textTheme.apply(fontFamily: 'Poppins'),
       ),
       localizationsDelegates: const [
         GlobalMaterialLocalizations.delegate,
