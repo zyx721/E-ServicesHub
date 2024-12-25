@@ -101,106 +101,162 @@ def extract_face(image_path):
         cv2.imwrite(extracted_face_path, face)  # Save to a specific path
         print(f"Largest face saved to {extracted_face_path}")
         return extracted_face_path
+
 def extract_number_from_logo(image_path, logo_box, expected_length):
-    x1, y1, x2, y2 = logo_box
-    x, y = int(x1), int(y1)
-    w, h = int(x2 - x1), int(y2 - y1)
-    
-    image = cv2.imread(image_path)
-    logo_image = image[y:y+h, x:x+w]
-    gray_logo = cv2.cvtColor(logo_image, cv2.COLOR_BGR2GRAY)
-    
-    thresh_logo = cv2.adaptiveThreshold(
-        gray_logo, 255,
-        cv2.ADAPTIVE_THRESH_GAUSSIAN_C,
-        cv2.THRESH_BINARY_INV, 11, 2
-    )
-    
-    kernel = np.ones((1,1), np.uint8)
-    thresh_logo = cv2.morphologyEx(thresh_logo, cv2.MORPH_CLOSE, kernel)
-    
-    result = ocr_reader.readtext(
-        thresh_logo,
-        detail=0,
-        paragraph=False,
-        batch_size=1
-    )
-    
-    extracted_text = "".join(result).replace(" ", "")
-    pattern = rf'\b\d{{{expected_length}}}\b'
-    numbers = re.findall(pattern, extracted_text)
-    
-    print(f"Extracted text: {extracted_text}")
-    print(f"Found numbers: {numbers}")
-    
-    return numbers[0] if numbers else None
+    try:
+        x1, y1, x2, y2 = logo_box
+        padding = 30  # Increased padding
+        x = max(0, int(x1) - padding)
+        y = max(0, int(y1) - padding)
+        w = int(x2 - x1) + 2 * padding  
+        h = int(y2 - y1) + 2 * padding
+        
+        image = cv2.imread(image_path)
+        if image is None:
+            print("Failed to load image")
+            return None
+            
+        # Ensure coordinates are within image bounds
+        y2 = min(y + h, image.shape[0])
+        x2 = min(x + w, image.shape[1])
+        logo_image = image[y:y2, x:x2]
+        
+        # Convert to grayscale
+        gray_logo = cv2.cvtColor(logo_image, cv2.COLOR_BGR2GRAY)
+        
+        # Apply sharpening
+        kernel = np.array([[0, -1, 0], [-1, 5,-1], [0, -1, 0]])
+        sharpened_logo = cv2.filter2D(gray_logo, -1, kernel)
+        
+        # Save processed image for debugging
+        debug_path = f"debug_processed_{expected_length}.png"
+        cv2.imwrite(debug_path, sharpened_logo)
+        
+        # Perform OCR with adjusted parameters
+        result = ocr_reader.readtext(
+            sharpened_logo,
+            detail=0,
+            paragraph=False,
+            batch_size=1,
+            min_size=10,
+            contrast_ths=0.2,
+            adjust_contrast=0.5,
+            text_threshold=0.6
+        )
+        
+        # Join all results and clean up
+        extracted_text = "".join(result).replace(" ", "").replace(":", "").replace("+", "").replace("*", "")
+        print(f"Cleaned extracted text: {extracted_text}")
+        
+        # Extract numbers of expected length
+        pattern = rf'\d{{{expected_length}}}'
+        numbers = re.findall(pattern, extracted_text)
+        
+        if not numbers:
+            print(f"No valid {expected_length}-digit number found in: {extracted_text}")
+            return None
+            
+        return numbers[0]
+        
+    except Exception as e:
+        print(f"Error in extract_number_from_logo: {e}")
+        return None
 
 def check_logos(image_path):
     results = model.predict(source=image_path, save=False, imgsz=640, device=0)
     logos_found = {0: False, 1: False, 2: False, 3: False}
     logo_numbers = {'logo2': None, 'logo3': None}
     
-    for result in results:
-        boxes = result.boxes
-        if boxes is not None:
-            for box in boxes:
-                class_id = int(box.cls.item())
-                if class_id in logos_found:
-                    logos_found[class_id] = True
-                    
-                    if class_id == 2:
-                        number = extract_number_from_logo(image_path, box.xyxy[0].cpu().numpy(), 18)
-                        logo_numbers['logo2'] = number
-                    elif class_id == 3:
-                        number = extract_number_from_logo(image_path, box.xyxy[0].cpu().numpy(), 9)
-                        logo_numbers['logo3'] = number
-    
-    return logos_found, logo_numbers
+    try:
+        for result in results:
+            boxes = result.boxes
+            if boxes is not None:
+                for box in boxes:
+                    class_id = int(box.cls.item())
+                    if class_id in logos_found:
+                        logos_found[class_id] = True
+                        
+                        if class_id == 2:  # Main ID number
+                            number = extract_number_from_logo(image_path, box.xyxy[0].cpu().numpy(), 18)
+                            if number:  # Only update if a valid number was found
+                                logo_numbers['logo2'] = number
+                        elif class_id == 3:  # Compare ID
+                            number = extract_number_from_logo(image_path, box.xyxy[0].cpu().numpy(), 9)
+                            if number:  # Only update if a valid number was found
+                                logo_numbers['logo3'] = number
+        
+        print(f"Logos found: {logos_found}")
+        print(f"Extracted numbers: {logo_numbers}")
+        return logos_found, logo_numbers
+        
+    except Exception as e:
+        print(f"Error in check_logos: {e}")
+        return {0: False, 1: False, 2: False, 3: False}, {'logo2': None, 'logo3': None}
+
 @app.post("/upload-image/")
 async def upload_image(file: UploadFile = File(...)):
-    upload_dir = "uploaded_images"
-    os.makedirs(upload_dir, exist_ok=True)
-    file_location = f"{upload_dir}/{file.filename}"
-    
-    with open(file_location, "wb") as buffer:
-        shutil.copyfileobj(file.file, buffer)
-    
-    logos_found, logo_numbers = check_logos(file_location)
-    
-    # Check if all required logos are found
-    valid_id = (
-        (logos_found[0] and logos_found[1] and logos_found[2] and logos_found[3]) or
-        (logos_found[0] and logos_found[2] and logos_found[3]) or
-        (logos_found[1] and logos_found[2] and logos_found[3])
-    )
-    
-    if not valid_id:
+    try:
+        upload_dir = "uploaded_images"
+        os.makedirs(upload_dir, exist_ok=True)
+        file_location = f"{upload_dir}/{file.filename}"
+        
+        with open(file_location, "wb") as buffer:
+            shutil.copyfileobj(file.file, buffer)
+        
+        logos_found, logo_numbers = check_logos(file_location)
+        
+        # Check logo presence
+        valid_logo_combination = (
+            (logos_found[0] and logos_found[1] and logos_found[2] and logos_found[3]) or
+            (logos_found[0] and logos_found[2] and logos_found[3]) or
+            (logos_found[1] and logos_found[2] and logos_found[3])
+        )
+        
+        if not valid_logo_combination:
+            return JSONResponse(content={
+                "message": "Invalid ID: Missing required logos. Please retake the picture.",
+                "stop_capture": False
+            })
+        
+        # Validate ID numbers
+        id_number = logo_numbers.get('logo2')
+        compare_id = logo_numbers.get('logo3')
+        
+        if not id_number or len(id_number) != 18:
+            return JSONResponse(content={
+                "message": "Invalid ID: Main ID number not properly detected. Please retake the picture.",
+                "stop_capture": False
+            })
+            
+        if not compare_id or len(compare_id) != 9:
+            return JSONResponse(content={
+                "message": "Invalid ID: Compare ID not properly detected. Please retake the picture.",
+                "stop_capture": False
+            })
+        
+        # Extract face
+        face_image_path = extract_face(file_location)
+        if not face_image_path:
+            return JSONResponse(content={
+                "message": "Invalid ID: No face detected. Please retake the picture.",
+                "stop_capture": False
+            })
+        
         return JSONResponse(content={
-            "message": "Invalid ID: Please retake the picture.",
+            "message": "ID verified successfully.",
+            "id_number": id_number,
+            "compare_id": compare_id,
+            "face_image_path": face_image_path,
+            "stop_capture": True
+        })
+        
+    except Exception as e:
+        print(f"Error processing upload: {e}")
+        return JSONResponse(content={
+            "message": "Error processing ID. Please try again.",
             "stop_capture": False
         })
     
-    # Process ID numbers
-    if logos_found[2] and logos_found[3]:
-        id_number = logo_numbers['logo2']
-        compare_id = logo_numbers['logo3']
-        
-        if id_number and compare_id:
-            return JSONResponse(content={
-                "message": "ID Number and Compare ID found.",
-                "id_number": id_number,
-                "compare_id": compare_id,
-                "stop_capture": True
-            })
-    
-    # Extract face if ID is valid
-    face_image_path = extract_face(file_location)
-    return JSONResponse(content={
-        "message": "Face extracted." if face_image_path else "ID valid but no face detected.",
-        "face_image_path": face_image_path,
-        "compare_id": logo_numbers.get('logo3'),
-        "stop_capture": True
-    })
 @app.post("/upload-back-id/")
 async def upload_back_id(file: UploadFile = File(...)):
     upload_dir = "uploaded_back_ids"
