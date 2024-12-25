@@ -277,7 +277,7 @@ Widget _buildGoogleSignInButton() {
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(30.0),
       ),
-      padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 15),
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 15),
       elevation: 6,
     ),
     child: isLoading 

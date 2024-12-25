@@ -12,6 +12,109 @@ import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:googleapis_auth/auth_io.dart' as auth;
 import 'package:hanini_frontend/localization/app_localization.dart';
+import 'dart:ui';
+
+
+
+class FullScreenImage extends StatelessWidget {
+  final String imageUrl;
+
+  const FullScreenImage({Key? key, required this.imageUrl}) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: Colors.black,
+      body: SafeArea(
+        child: Stack(
+          children: [
+            Center(
+              child: InteractiveViewer(
+                minScale: 0.5,
+                maxScale: 4.0,
+                child: Hero(
+                  tag: imageUrl,
+                  child: Image.network(
+                    imageUrl,
+                    fit: BoxFit.contain,
+                    loadingBuilder: (context, child, loadingProgress) {
+                      if (loadingProgress == null) return child;
+                      return Center(
+                        child: CircularProgressIndicator(
+                          value: loadingProgress.expectedTotalBytes != null
+                              ? loadingProgress.cumulativeBytesLoaded /
+                                  loadingProgress.expectedTotalBytes!
+                              : null,
+                          color: Colors.white,
+                          strokeWidth: 2.5,
+                        ),
+                      );
+                    },
+                  ),
+                ),
+              ),
+            ),
+            Positioned(
+              top: 16,
+              left: 16,
+              child: Row(
+                children: [
+                  const Icon(Icons.image, color: Colors.white, size: 28),
+                  const SizedBox(width: 8),
+                  Text(
+                    "Image Viewer",
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.w600,
+                      color: Colors.white,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            Positioned(
+              top: 16,
+              right: 16,
+              child: IconButton(
+                icon: const Icon(Icons.close, color: Colors.white),
+                onPressed: () => Navigator.pop(context),
+                iconSize: 32,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+
+// Add this class to handle the persistent header
+class _SliverAppBarDelegate extends SliverPersistentHeaderDelegate {
+  final TabBar _tabBar;
+
+  _SliverAppBarDelegate(this._tabBar);
+
+  @override
+  double get minExtent => _tabBar.preferredSize.height;
+  
+  @override
+  double get maxExtent => _tabBar.preferredSize.height;
+
+  @override
+  Widget build(BuildContext context, double shrinkOffset, bool overlapsContent) {
+    return Container(
+      color: Theme.of(context).scaffoldBackgroundColor, // Or any color you want
+      child: _tabBar,
+    );
+  }
+
+  @override
+  bool shouldRebuild(_SliverAppBarDelegate oldDelegate) {
+    return false;
+  }
+}
+
 
 class PushNotificationService {
   static Future<String> getAccessToken() async {
@@ -89,7 +192,7 @@ class ServiceProviderFullProfile extends StatefulWidget {
 
 class _ServiceProviderFullProfileState
     extends State<ServiceProviderFullProfile> {
-  final double profileHeight = 150;
+  final double profileHeight = 100;
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   final String currentUserId = FirebaseAuth.instance.currentUser!.uid;
 
@@ -105,7 +208,6 @@ class _ServiceProviderFullProfileState
   String aboutMe = '';
   String hourlyRate = '';
   String phoneNubmber = '';
-  bool isEditMode = false;
   bool isVerified = true;
   bool isLoading = true;
   double rating =0.0;
@@ -168,69 +270,72 @@ class _ServiceProviderFullProfileState
     super.dispose();
   }
 
-  // Toggle edit mode and save changes
-  void toggleEditMode() {
-    setState(() {
-      if (isEditMode) {
-        // Save changes (you can save your form values here if needed)
-        hourlyRate = hourlyRateController.text;
-        aboutMe = aboutMeController.text;
-      }
-      isEditMode = !isEditMode;
-    });
 
-    // After saving changes, navigate to '/navbar'
-    if (!isEditMode) {
-      Navigator.pushReplacementNamed(context, '/navbar');
-    }
-  }
 
   void navigateBack() {
     Navigator.pop(context); // Navigate back to the previous screen or navbar
   }
 
   @override
-  Widget build(BuildContext context) {
-    final localizations = AppLocalizations.of(context);
-    if (localizations == null) return const SizedBox.shrink();
+Widget build(BuildContext context) {
+  final localizations = AppLocalizations.of(context);
+  if (localizations == null) return const SizedBox.shrink();
 
-    return DefaultTabController(
-      length: 2, // Number of tabs
-      child: Scaffold(
-        body: isLoading
-            ? const Center(child: CircularProgressIndicator())
-            : Column(
-                children: [
-                  buildTopProfileInfo(),
-                  const SizedBox(height: 20),
-                  TabBar(
-                    labelColor: Colors.black,
-                    unselectedLabelColor: Colors.grey,
-                    indicatorColor: Colors.blue,
-                    tabs: [
-                      Tab(text: localizations.profile),
-                      Tab(text: localizations.reviews),
+  return DefaultTabController(
+    length: 2,
+    child: Scaffold(
+      backgroundColor:  Colors.purple[25], 
+      body: isLoading
+          ? const Center(child: CircularProgressIndicator())
+          : NestedScrollView(
+              headerSliverBuilder: (context, innerBoxIsScrolled) => [
+                SliverToBoxAdapter(
+                  child: Column(
+                    children: [
+                      buildTop(localizations),
+                      buildProfileInfo(localizations),
                     ],
                   ),
-                  Expanded(
-                    child: TabBarView(
-                      children: [
-                        SingleChildScrollView(
-                          child: Column(
-                            children: [
-                              buildProfileTab(), // Profile content
-                            ],
-                          ),
-                        ),
-                        buildReviewsTab(), // Reviews content
-                      ],
-                    ),
+                ),
+                SliverPersistentHeader(
+                  delegate: _SliverAppBarDelegate(
+TabBar(
+  labelColor: Colors.purple,
+  unselectedLabelColor: Colors.grey,
+  indicatorColor: Colors.purple,
+  labelStyle: TextStyle(
+    fontWeight: FontWeight.bold,
+    fontSize: 16,
+  ), // Style for the selected tab
+  unselectedLabelStyle: TextStyle(
+    fontWeight: FontWeight.normal,
+    fontSize: 14,
+  ), // Style for unselected tabs
+  tabs: [
+    Tab(text: localizations.profile),
+    Tab(text: localizations.reviews),
+  ],
+)
+
                   ),
+                  pinned: true,
+                ),
+              ],
+              body: TabBarView(
+                children: [
+                  SingleChildScrollView(
+                    child: buildProfileTab(),
+                  ),
+
+                    buildReviewsTab(),
+
                 ],
               ),
-      ),
-    );
-  }
+            ),
+    ),
+  );
+}
+
 
   Widget buildReviewsTab() {
     final localizations = AppLocalizations.of(context);
@@ -382,7 +487,7 @@ class _ServiceProviderFullProfileState
                 padding: const EdgeInsets.all(
                     10), // Optional padding for touchable area
                 decoration: BoxDecoration(
-                  color: Colors.blue, // Button color
+                  color: Colors.purple, // Button color
                 ),
                 child: Center(
                   child: Text(
@@ -577,25 +682,18 @@ class _ServiceProviderFullProfileState
   Widget buildProfileTab() {
     final localizations = AppLocalizations.of(context);
     if (localizations == null) return Column();
-    return // Make sure everything is scrollable
-        Column(
+    return Column(
       children: [
-        // const SizedBox(height: 20),
-        buildAboutMeSection(),
         const SizedBox(height: 20),
-        _buildSectionTitle(localizations.skills),
-        _buildSkillsSection(),
+        buildAboutMeSection(localizations),
+        const SizedBox(height: 10),
+        _buildSkillsSection(localizations),
+        const SizedBox(height: 10),
+        _buildWorkExperienceSection(localizations),
+        const SizedBox(height: 10),
+         buildPortfolioSection (context), 
         const SizedBox(height: 20),
-        _buildSectionTitle(localizations.workExperience),
-        _buildWorkExperienceSection(),
-        const SizedBox(height: 20),
-        _buildSectionTitle(localizations.workDomain),
-        _buildWorkDomainsSection(),
-        const SizedBox(height: 20),
-        buildPortfolioSection(),
-        const SizedBox(height: 20),
-        _buildSectionTitle(localizations.certifications),
-        _buildCertificationsSection(),
+        _buildCertificationsSection( localizations),
         const SizedBox(height: 40),
         _buildContactButton(),
         const SizedBox(height: 40),
@@ -604,169 +702,632 @@ class _ServiceProviderFullProfileState
   }
 
 
-  Widget buildTopProfileInfo() {
-    final localizations = AppLocalizations.of(context);
-
-         final currentLocale = Localizations.localeOf(context).languageCode;
-
-     final displayWilaya = currentLocale == 'ar' ? wilayaArabic : wilayaLatin;
-    final displayCommune = currentLocale == 'ar' ? communeArabic : communeLatin;
-
-    if (localizations == null) return Column();
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.center,
-      children: [
-        const SizedBox(height: 40),
-        Stack(
-          alignment: Alignment.bottomRight,
-          children: [
-            CircleAvatar(
-              radius: profileHeight / 2,
-              backgroundColor: Colors.grey.shade200,
-              backgroundImage: userPhotoUrl.isNotEmpty
-                  ? NetworkImage(userPhotoUrl) as ImageProvider
-                  : const AssetImage('assets/images/default_profile.png'),
-            ),
-          ],
-        ),
-        const SizedBox(height: 20),
-        Text(
-          userName,
-          style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
-        ),
-        const SizedBox(height: 4),
-        Text(
-          profession,
-          style: TextStyle(fontSize: 16, color: Colors.grey.shade700),
-        ),
-        const SizedBox(height: 20),
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16),
-          child: Row(
-            mainAxisAlignment:
-                MainAxisAlignment.spaceAround, // Center items evenly
+ Widget buildTop(AppLocalizations localizations) {
+  return Container(
+    margin: const EdgeInsets.only(top: 20,bottom: 4,left: 16,right: 16), // Adds margin around the card
+    child: _buildInfoCard(
+      child: Column(
+        children: [
+          Stack(
+            alignment: Alignment.bottomRight,
             children: [
-              buildStat(displayCommune, displayWilaya),
-              buildStat(localizations.rating, _buildStarRating(rating)),
-              buildStat(localizations.hourlyRate,isEditMode ? buildHourlyRateEditor() : '$hourlyRate DZD',),
+              Container(
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  border: Border.all(color: Colors.white, width: 4),
+                  boxShadow: [
+                    BoxShadow(
+                      blurRadius: 10,
+                      color: Colors.black.withOpacity(0.1),
+                      spreadRadius: 5,
+                    ),
+                  ],
+                ),
+                child:   Container(
+                        height: 90, // Reduced height for the image container
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.vertical(
+                            top: Radius.circular(16),
+                          ),
+                          image: DecorationImage(
+                            image: NetworkImage(userPhotoUrl ?? ''),
+                            fit: BoxFit.cover,
+                          ),
+                        ),
+                        child: userPhotoUrl== null
+                            ? Center(
+                                child: Icon(Icons.broken_image,
+                                    size: 50, color: Colors.grey),
+                              )
+                            : null,
+                      ),
+              ),
             ],
           ),
-        ),
-      ],
-    );
-  }
+          const SizedBox(height: 16),
+            Text(
+              userName,
+              style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          const SizedBox(height: 12),
+Row(
+  mainAxisAlignment: MainAxisAlignment.center,
+  children: [
+    Container(
+      padding: const EdgeInsets.all(4),
+      decoration: BoxDecoration(
+        color: Colors.blue.withOpacity(0.1), // Light blue background
+        shape: BoxShape.rectangle, // Circular shape for the icon's background
+      ),
+      child: Icon(Icons.business_center, size: 20, color: Colors.blue.shade700),
+    ),
+    const SizedBox(width: 8),
+    Text(
+      profession,
+      style: TextStyle(fontSize: 16, color: Colors.grey.shade700),
+    ),
+  ],
+),
+const SizedBox(height: 8),
+Row(
+  mainAxisAlignment: MainAxisAlignment.center,
+  children: [
+    Container(
+      padding: const EdgeInsets.all(4),
+      decoration: BoxDecoration(
+        color: Colors.green.withOpacity(0.1), // Light green background
+        shape: BoxShape.rectangle, // Circular shape for the icon's background
+      ),
+      child: Icon(Icons.email, size: 20, color: Colors.green.shade700),
+    ),
+    const SizedBox(width: 8),
+    Text(
+      userEmail,
+      style: TextStyle(fontSize: 14, color: Colors.grey.shade600),
+    ),
+  ],
+),
 
-  Column buildAboutMeSection() {
-    final localizations = AppLocalizations.of(context);
-    if (localizations == null) return Column();
-    return Column(
+        ],
+      ),
+    ),
+  );
+}
+
+
+Widget buildProfileInfo(AppLocalizations localizations) {
+  final currentLocale = Localizations.localeOf(context).languageCode;
+  final displayWilaya = currentLocale == 'ar' ? wilayaArabic : wilayaLatin;
+  final displayCommune = currentLocale == 'ar' ? communeArabic : communeLatin;
+
+  return Container(
+    padding: const EdgeInsets.all(8),
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        _buildSectionTitle(localizations.aboutMe),
-        const SizedBox(height: 8),
-        Align(
-          alignment: Alignment.center,
-          child: Text(
-            aboutMe,
-            style: TextStyle(fontSize: 14, color: Colors.grey.shade700),
-            textAlign: TextAlign.justify,
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildSkillsSection() {
-    final localizations = AppLocalizations.of(context);
-    if (localizations == null) return Column();
-
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16.0),
-      child: Align(
-        alignment: Alignment.center,
-        child: Column(
+        Row(
           children: [
-            if (skills.isNotEmpty)
-              Wrap(
-                spacing: 8.0,
-                runSpacing: 4.0,
-                children: skills
-                    .map(
-                      (skill) => Padding(
-                        padding: const EdgeInsets.all(4.0),
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 12.0, vertical: 8.0),
+            Expanded(
+              child: _buildInfoCard(
+                child: Column(
+                  children: [
+                    Row(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(8),
                           decoration: BoxDecoration(
-                            color: Colors.blue.shade50,
-                            borderRadius: BorderRadius.circular(16.0),
+                            color: Colors.blue.withOpacity(0.1),
+                            borderRadius: BorderRadius.circular(8),
                           ),
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
+                          child: Icon(Icons.location_on, color: Colors.blue.shade700),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Text(skill, style: GoogleFonts.poppins()),
+                              Text(
+                                displayCommune,
+                                style: const TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                              Text(
+                                displayWilaya,
+                                style: TextStyle(
+                                  fontSize: 14,
+                                  color: Colors.grey.shade600,
+                                ),
+                              ),
                             ],
                           ),
                         ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 12),
+        Row(
+          children: [
+            Expanded(
+              child: _buildInfoCard(
+                child: Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: Colors.amber.withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(8),
                       ),
-                    )
-                    .toList(),
-              )
-            else
-              Center(child: Text(localizations.noSkillsAvailable)),
+                      child: Icon(Icons.star, color: Colors.amber.shade700),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          _buildStarRating(rating),
+                          Text(
+                            localizations.rating,
+                            style: TextStyle(
+                              fontSize: 14,
+                              color: Colors.grey.shade600,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: _buildInfoCard(
+                child: Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: Colors.green.withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Icon(Icons.monetization_on, color: Colors.green.shade700),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [Text(
+                                  '$hourlyRate DZD',
+                                  style: const TextStyle(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                          Text(
+                            localizations.hourlyRate,
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: Colors.grey.shade600,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
+
+      ],
+    ),
+  );
+}
+
+Widget _buildInfoCard({required Widget child}) {
+  return Container(
+    padding: const EdgeInsets.only(left: 16,right: 16,bottom: 10,top: 10),
+    decoration: BoxDecoration(
+      color: Colors.white,
+      borderRadius: BorderRadius.circular(12),
+      boxShadow: [
+        BoxShadow(
+          offset: const Offset(0, 2),
+          blurRadius: 8,
+          color: Colors.black.withOpacity(0.05),
+        ),
+      ],
+    ),
+    child: child,
+  );
+}
+
+ Widget buildAboutMeSection( AppLocalizations localizations) {
+
+    return         
+    
+    Container(
+    padding: const EdgeInsets.all(10),
+    margin: EdgeInsets.all(10),
+    decoration: BoxDecoration(
+      color: Colors.white,
+      borderRadius: BorderRadius.circular(12),
+      boxShadow: [
+        BoxShadow(
+          offset: const Offset(0, 2),
+          blurRadius: 8,
+          color: Colors.black.withOpacity(0.05),
+        ),
+      ],
+    ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+                    Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: Colors.blue.withOpacity(0.1),
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(Icons.person, size: 24, color: Colors.blue.shade700),
+              ),
+              const SizedBox(width: 8),
+              Text(
+                localizations.aboutMeLabel,
+                style: GoogleFonts.poppins(
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.grey.shade800,
+                ),
+              ),
+            ],
+                    ),
+              const SizedBox(height: 12), Text(
+                      aboutMe,
+                      style: TextStyle(
+                        fontSize: 14,
+                        height: 1.5,
+                        color: Colors.grey.shade700,
+                      ),
+                    ),
+            ],
+          ),
+        );
+  }
+
+  Widget _buildSkillsSection(AppLocalizations localizations) {
+  return Card(
+    margin: const EdgeInsets.all(16.0),
+    elevation: 4,
+    color: Colors.white,
+    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+    child: Padding(
+      padding: const EdgeInsets.all(16.0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Title with Icon
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: Colors.blue.withOpacity(0.1),
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(Icons.psychology, size: 24, color: Colors.blue.shade700),
+              ),
+              const SizedBox(width: 8),
+              Text(
+                localizations.skills,
+                style: GoogleFonts.poppins(
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.grey.shade800,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          // Skill Chips or Placeholder
+          if (skills.isNotEmpty)
+            Wrap(
+              spacing: 12.0,
+              runSpacing: 12.0,
+              children: skills.map((skill) => _buildSkillChip(skill)).toList(),
+            )
+          else
+            Center(
+              child: Padding(
+                padding: const EdgeInsets.all(32.0),
+                child: Column(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: Colors.orange.withOpacity(0.1),
+                        shape: BoxShape.circle,
+                      ),
+                      child: Icon(
+                        Icons.lightbulb_outline,
+                        size: 48,
+                        color: Colors.orange.shade400,
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    Text(
+                      localizations.noSkillsAvailable,
+                      style: TextStyle(
+                        color: Colors.grey.shade600,
+                        fontSize: 16,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+        ],
+      ),
+    ),
+  );
+}
+
+
+Widget _buildSkillChip(String skill) {
+  return Material(
+    color: Colors.transparent,
+    child: AnimatedContainer(
+      duration: const Duration(milliseconds: 200),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [Colors.blue.shade300, Colors.blue.shade400],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.blue.shade100,
+            blurRadius: 4,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              skill,
+              style: GoogleFonts.poppins(
+                color: Colors.white,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
           ],
         ),
       ),
-    );
+    ),
+  );
+}
+
+
+  Widget _buildWorkExperienceSection(AppLocalizations localizations) {
+  final companyController = TextEditingController();
+  final positionController = TextEditingController();
+  final durationController = TextEditingController();
+
+  void addWorkExperience() {
+    final company = companyController.text.trim();
+    final position = positionController.text.trim();
+    final duration = durationController.text.trim();
+
+    if (company.isNotEmpty && position.isNotEmpty && duration.isNotEmpty) {
+      setState(() {
+        workExperience.add({
+          'company': company,
+          'position': position,
+          'duration': duration,
+        });
+      });
+      companyController.clear();
+      positionController.clear();
+      durationController.clear();
+    }
   }
 
-  Widget _buildWorkExperienceSection() {
-    final localizations = AppLocalizations.of(context);
-    if (localizations == null) return Column();
+  void removeWorkExperience(int index) {
+    setState(() {
+      workExperience.removeAt(index);
+    });
+  }
 
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16.0),
-      child: Column(
-        children: workExperience.isNotEmpty
-            ? workExperience
-                .map((exp) => ListTile(
-                      contentPadding: EdgeInsets.zero,
-                      title: Text(
-                        '${localizations.companyName} : ${exp['company']}',
-                        style: GoogleFonts.poppins(fontWeight: FontWeight.w600),
+  return Container(
+    decoration: BoxDecoration(
+      color: Colors.white,
+      borderRadius: BorderRadius.circular(20),
+      boxShadow: [
+        BoxShadow(
+          color: Colors.grey.withOpacity(0.1),
+          spreadRadius: 5,
+          blurRadius: 15,
+          offset: const Offset(0, 3),
+        ),
+      ],
+    ),
+    margin: const EdgeInsets.all(16),
+    child: ClipRRect(
+      borderRadius: BorderRadius.circular(20),
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+                        Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: Colors.purple.withOpacity(0.1),
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(Icons.work, size: 24, color: Colors.purple),
+              ),
+              const SizedBox(width: 16),
+              Text(
+                localizations.workExperience,
+                style: GoogleFonts.poppins(
+                  fontSize: 24,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.grey.shade800,
+                ),
+              ),
+            ],
+          ),
+              if (workExperience.isNotEmpty)
+  SizedBox(
+    height: 150,
+    child: ListView.separated(
+      scrollDirection: Axis.horizontal,
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      itemCount: workExperience.length,
+      separatorBuilder: (_, __) => const SizedBox(width: 16),
+      itemBuilder: (context, index) {
+        final exp = workExperience[index];
+        return Container(
+          width: 250,
+          decoration: BoxDecoration(
+            color: Colors.grey[50],
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: Colors.grey.withOpacity(0.1)),
+          ),
+          child: Padding(
+            padding: const EdgeInsets.all(20),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Expanded(
+                      child: Text(
+                        exp['company'],
+                        style: GoogleFonts.poppins(
+                          fontSize: 18,
+                          fontWeight: FontWeight.w600,
+                        ),
                       ),
-                      subtitle: Text(
-                        '${localizations.position} : ${exp['position']}\n ${localizations.duration} : ${exp['duration']}',
-                        style: GoogleFonts.poppins(),
-                      ),
-                    ))
-                .toList()
-            : [
-                Center(
-                  child: Text(
-                    localizations.noWorkExperienceAvailable,
-                    style: GoogleFonts.poppins(),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  exp['position'],
+                  style: GoogleFonts.poppins(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w500,
+                    color: Theme.of(context).primaryColor,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  exp['duration'],
+                  style: GoogleFonts.poppins(
+                    color: Colors.grey[600],
                   ),
                 ),
               ],
+            ),
+          ),
+        );
+      },
+    ),
+  )
+else
+  Center(
+    child: Padding(
+      padding: const EdgeInsets.all(32),
+      child: Text(
+        localizations.noWorkExperienceAvailable,
+        style: GoogleFonts.poppins(
+          color: Colors.grey[500],
+          fontSize: 16,
+        ),
+        textAlign: TextAlign.center,
       ),
-    );
-  }
+    ),
+  ),
+            ],
+          ),
+        ),
+      ),
+    ),
+  );
+}
+ 
+  Widget buildPortfolioSection(BuildContext context) {
+  final localizations = AppLocalizations.of(context);
+  if (localizations == null) return const SizedBox.shrink();
 
-  Widget buildPortfolioSection() {
-    final localizations = AppLocalizations.of(context);
-    if (localizations == null) return Column();
-
-    return Padding(
+  return Container(
+    padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+      color: Colors.white,
+      borderRadius: BorderRadius.circular(20),
+      boxShadow: [
+        BoxShadow(
+          color: Colors.grey.withOpacity(0.1),
+          spreadRadius: 5,
+          blurRadius: 15,
+          offset: const Offset(0, 3),
+        ),
+      ],
+    ),
+    margin: const EdgeInsets.all(16),
+    child: Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            localizations.portfolio,
-            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+          Row(
+            children: [
+                Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: Colors.blue.withOpacity(0.1),
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(Icons.photo_album, size: 24, color: Colors.blue[600]),
+              ),
+              const SizedBox(width: 8),
+              Text(
+                localizations.portfolio,
+                style: GoogleFonts.poppins(
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.grey.shade800,
+                ),
+              ),
+            ],
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: 16),
           portfolioImages.isNotEmpty
               ? SingleChildScrollView(
                   scrollDirection: Axis.horizontal,
@@ -776,73 +1337,240 @@ class _ServiceProviderFullProfileState
                         padding: const EdgeInsets.only(right: 8),
                         child: Stack(
                           children: [
-                            GestureDetector(
-                              onTap: () {
-                                // Show image in full screen
-                              },
-                              child: Image.network(
-                                imageUrl,
-                                width: 100, // Fixed width for consistency
-                                height: 100, // Fixed height for consistency
-                                fit: BoxFit.cover,
-                                loadingBuilder: (BuildContext context,
-                                    Widget child,
-                                    ImageChunkEvent? loadingProgress) {
-                                  if (loadingProgress == null) {
-                                    return child;
-                                  }
-                                  return Center(
-                                    child: CircularProgressIndicator(
-                                      value:
-                                          loadingProgress.expectedTotalBytes !=
-                                                  null
-                                              ? loadingProgress
-                                                      .cumulativeBytesLoaded /
-                                                  loadingProgress
-                                                      .expectedTotalBytes!
-                                              : null,
+                            Hero(
+                              tag: imageUrl,
+                              child: Material(
+                                child: InkWell(
+                                  onTap: () {
+                                    Navigator.push(
+                                      context,
+                                      MaterialPageRoute(
+                                        builder: (context) => FullScreenImage(
+                                          imageUrl: imageUrl,
+                                        ),
+                                      ),
+                                    );
+                                  },
+                                  child: Container(
+                                    decoration: BoxDecoration(
+                                      borderRadius: BorderRadius.circular(12),
+                                      boxShadow: [
+                                        BoxShadow(
+                                          color: Colors.black.withOpacity(0.1),
+                                          blurRadius: 8,
+                                          offset: const Offset(0, 2),
+                                        ),
+                                      ],
                                     ),
-                                  );
-                                },
+                                    child: ClipRRect(
+                                      borderRadius: BorderRadius.circular(12),
+                                      child: Image.network(
+                                        imageUrl,
+                                        width: 120,
+                                        height: 120,
+                                        fit: BoxFit.cover,
+                                        loadingBuilder: (context, child, loadingProgress) {
+                                          if (loadingProgress == null) return child;
+                                          return Container(
+                                            width: 120,
+                                            height: 120,
+                                            decoration: BoxDecoration(
+                                              color: Colors.grey[200],
+                                              borderRadius: BorderRadius.circular(12),
+                                            ),
+                                            child: Center(
+                                              child: CircularProgressIndicator(
+                                                value: loadingProgress.expectedTotalBytes != null
+                                                    ? loadingProgress.cumulativeBytesLoaded /
+                                                        loadingProgress.expectedTotalBytes!
+                                                    : null,
+                                              ),
+                                            ),
+                                          );
+                                        },
+                                      ),
+                                    ),
+                                  ),
+                                ),
                               ),
-                            ),
+                            ),                      
                           ],
                         ),
                       );
                     }).toList(),
                   ),
                 )
-              : Center(child: Text(localizations.noPortfolioImages)),
+              : Center(
+                  child: Padding(
+                    padding: const EdgeInsets.all(32.0),
+                    child: Column(
+                      children: [
+                        Icon(
+                          Icons.broken_image,
+                          size: 48,
+                          color: Colors.grey.shade400,
+                        ),
+                        const SizedBox(height: 16),
+                        Text(
+                          localizations.noPortfolioImagesAvailable,
+                          style: TextStyle(color: Colors.grey.shade600, fontSize: 16),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+          const SizedBox(height: 16),
         ],
       ),
-    );
-  }
+    ),
+  );
+}
 
-  Widget _buildCertificationsSection() {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16.0),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: certifications
-            .map((cert) => Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 4.0),
-                  child: Row(
-                    children: [
-                      Icon(Icons.verified, color: Colors.green, size: 20),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: Text(
-                          cert,
-                          style: GoogleFonts.poppins(),
+ Widget _buildCertificationsSection(AppLocalizations localizations) {
+  return Container(
+    margin: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
+    decoration: BoxDecoration(
+      color: Colors.white,
+      borderRadius: BorderRadius.circular(16),
+      boxShadow: [
+        BoxShadow(
+          color: Colors.black.withOpacity(0.08),
+          blurRadius: 15,
+          offset: const Offset(0, 4),
+        ),
+      ],
+    ),
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // Title Section with Icon
+        Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            borderRadius: const BorderRadius.only(
+              topLeft: Radius.circular(16),
+              topRight: Radius.circular(16),
+            ),
+          ),
+          child: Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: Colors.green.shade100,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Icon(
+                  Icons.workspace_premium,
+                  color: Colors.green.shade700,
+                  size: 24,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Text(
+                localizations.certifications,
+                style: GoogleFonts.poppins(
+                  fontSize: 20,
+                  fontWeight: FontWeight.w600,
+                  color: Colors.black,
+                ),
+              ),
+            ],
+          ),
+        ),
+
+        Padding(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Add Certification Input
+              if (certifications.isNotEmpty)
+                ListView.separated(
+                  physics: const NeverScrollableScrollPhysics(),
+                  shrinkWrap: true,
+                  itemCount: certifications.length,
+                  separatorBuilder: (context, index) => const SizedBox(height: 12),
+                  itemBuilder: (context, index) {
+                    final cert = certifications[index];
+                    return Container(
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(
+                          color: Colors.green.shade200,
+                          width: 2,
                         ),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.green.withOpacity(0.1),
+                            blurRadius: 8,
+                            offset: const Offset(0, 3),
+                          ),
+                        ],
                       ),
-                    ],
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.center,
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.all(8),
+                            decoration: BoxDecoration(
+                              color: Colors.green.shade50,
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: Icon(
+                              Icons.verified,
+                              color: Colors.green.shade600,
+                              size: 20,
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Text(
+                              cert,
+                              style: GoogleFonts.poppins(
+                                fontSize: 15,
+                                color: Colors.black87,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    );
+                  },
+                )
+              else
+                Center(
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 24),
+                    child: Column(
+                      children: [
+                        Icon(
+                          Icons.card_membership,
+                          size: 48,
+                          color: Colors.grey.shade400,
+                        ),
+                        const SizedBox(height: 12),
+                        Text(
+                          localizations.noCertificationsAvailable,
+                          style: GoogleFonts.poppins(
+                            color: Colors.grey.shade600,
+                            fontSize: 15,
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
-                ))
-            .toList(),
-      ),
-    );
-  }
+                ),
+            ],
+          ),
+        ),
+      ],
+    ),
+  );
+}
 
   Widget buildHourlyRateEditor() {
     return SizedBox(
@@ -913,81 +1641,145 @@ class _ServiceProviderFullProfileState
     );
   }
 
-  Widget _buildContactButton() {
-    final localizations = AppLocalizations.of(context);
-    if (localizations == null) return const SizedBox.shrink();
 
-    return Center(
-      child: ElevatedButton.icon(
-        onPressed: _showContactBottomSheet,
+Widget _buildContactButton() {
+  final localizations = AppLocalizations.of(context);
+  if (localizations == null) return const SizedBox.shrink();
+
+  return Center(
+    child: Hero(
+      tag: 'contactButton',
+      child: FilledButton.icon(
+        onPressed: () {
+          HapticFeedback.mediumImpact();
+          _showContactBottomSheet();
+        },
         icon: const Icon(Icons.contact_mail),
         label: Text(
           localizations.contactProvider,
-          style: GoogleFonts.poppins(),
+          style: GoogleFonts.poppins(fontWeight: FontWeight.w500),
         ),
-        style: ElevatedButton.styleFrom(
-          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+        style: FilledButton.styleFrom(
+          backgroundColor: Colors.purple,
+          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         ),
       ),
-    );
-  }
+    ),
+  );
+}
 
-  void _showContactBottomSheet() {
-    final localizations = AppLocalizations.of(context);
-    if (localizations == null) return;
+void _showContactBottomSheet() {
+  final localizations = AppLocalizations.of(context);
+  if (localizations == null) return;
 
-    showModalBottomSheet(
-      context: context,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      builder: (context) => Padding(
-        padding: const EdgeInsets.all(20.0),
+  showModalBottomSheet(
+    context: context,
+    isScrollControlled: true,
+    backgroundColor: Theme.of(context).colorScheme.surface,
+    shape: const RoundedRectangleBorder(
+      borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+    ),
+    builder: (context) => SafeArea(
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(24, 20, 24, 24),
         child: Column(
           mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            Center(
+              child: Container(
+                width: 32,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: Theme.of(context).colorScheme.onSurfaceVariant.withOpacity(0.4),
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+            ),
+            const SizedBox(height: 24),
             Text(
               localizations.contactInformation,
               style: GoogleFonts.poppins(
-                fontSize: 20,
+                fontSize: 24,
                 fontWeight: FontWeight.bold,
+                color: Theme.of(context).colorScheme.onSurface,
               ),
             ),
-            const SizedBox(height: 20),
-            ListTile(
-              leading: const Icon(Icons.phone, color: Colors.blue),
-              title: Text(
-                phoneNubmber,
-                style: GoogleFonts.poppins(),
+            const SizedBox(height: 24),
+            Card(
+              elevation: 0,
+              color: Theme.of(context).colorScheme.surfaceVariant,
+              child: Column(
+                children: [
+                  ListTile(
+                    leading: Icon(Icons.phone, 
+                      color: Colors.purple),
+                    title: Text(
+                      phoneNubmber,
+                      style: GoogleFonts.poppins(),
+                    ),
+                    trailing: IconButton(
+                      icon: const Icon(Icons.content_copy),
+                      onPressed: () {
+                        Clipboard.setData(ClipboardData(text: phoneNubmber));
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(content: Text(localizations.copiedToClipboard)),
+                        );
+                      },
+                    ),
+                  ),
+                  Divider(height: 1, color: Theme.of(context).colorScheme.outline.withOpacity(0.2)),
+                  ListTile(
+                    leading: Icon(Icons.email,
+                      color: Colors.purple),
+                    title: Text(
+                      userEmail,
+                      style: GoogleFonts.poppins(fontSize: 12),
+                    ),
+                    trailing: IconButton(
+                      icon: const Icon(Icons.content_copy),
+                      onPressed: () {
+                        Clipboard.setData(ClipboardData(text: userEmail));
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(content: Text(localizations.copiedToClipboard)),
+                        );
+                      },
+                    ),
+                  ),
+                ],
               ),
             ),
-            ListTile(
-              leading: const Icon(Icons.email, color: Colors.blue),
-              title: Text(
-                userEmail,
-                style: GoogleFonts.poppins(),
-              ),
-            ),
-            const SizedBox(height: 20),
+            const SizedBox(height: 24),
             Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                ElevatedButton(
-                  onPressed: () => Navigator.pop(context),
-                  child: Text(
-                    localizations.close,
-                    style: GoogleFonts.poppins(),
+                Expanded(
+                  child: OutlinedButton(
+                    onPressed: () => Navigator.pop(context),
+                    style: OutlinedButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                    ),
+                    child: Text(
+                      localizations.close,
+                      style: GoogleFonts.poppins(color: Colors.purple),
+                    ),
                   ),
                 ),
-                ElevatedButton(
-                  style: ElevatedButton.styleFrom(backgroundColor: Colors.blue),
-                  onPressed: () {
-                    _showContactDialog(widget.providerId, currentUserId,
-                        _firestore); // Call your dialog function here
-                  },
-                  child: Text(
-                    localizations.sendDirectListing,
-                    style: GoogleFonts.poppins(color: Colors.white),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: FilledButton(
+                    onPressed: () {
+                      Navigator.pop(context);
+                      _showContactDialog(widget.providerId, currentUserId, _firestore);
+                    },
+                    style: FilledButton.styleFrom(
+                                            padding: const EdgeInsets.symmetric(vertical: 12),
+                      backgroundColor: Colors.purple,
+                    ),
+                    child: Text(
+                      localizations.sendDirectListing,
+                      style: GoogleFonts.poppins(fontSize: 14),
+                    ),
                   ),
                 ),
               ],
@@ -995,230 +1787,248 @@ class _ServiceProviderFullProfileState
           ],
         ),
       ),
-    );
-  }
+    ),
+  );
+}
 
-  void _showContactDialog(
-      String recipientUid, String senderUid, FirebaseFirestore firestore) {
-    final localizations = AppLocalizations.of(context);
-    if (localizations == null) return;
+void _showContactDialog(String recipientUid, String senderUid, FirebaseFirestore firestore) {
+  final localizations = AppLocalizations.of(context);
+  if (localizations == null) return;
 
-    final _formKey = GlobalKey<FormState>();
-    String mainTitle = '';
-    String description = '';
-    String pay = '';
-    String location = '';
-    bool isSubmitting = false; // Add loading state variable
+  final _formKey = GlobalKey<FormState>();
+  String mainTitle = '';
+  String description = '';
+  String pay = '';
+  String location = '';
+  bool isSubmitting = false;
 
-    showDialog(
-      context: context,
-      barrierDismissible: !isSubmitting, // Prevent dismissal while submitting
-      builder: (BuildContext dialogContext) {
-        return StatefulBuilder(
-          // Use StatefulBuilder to manage dialog state
-          builder: (context, setState) {
-            return AlertDialog(
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(20),
+  showDialog(
+    context: context,
+    barrierDismissible: !isSubmitting,
+    builder: (BuildContext dialogContext) => StatefulBuilder(
+      builder: (context, setState) => AlertDialog(
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(28),
+        ),
+        contentPadding: const EdgeInsets.all(24),
+        content: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                localizations.sendDirectJobListing,
+                style: GoogleFonts.poppins(
+                  fontSize: 24,
+                  fontWeight: FontWeight.bold,
+                  color: Theme.of(context).colorScheme.onSurface,
+                ),
               ),
-              content: SingleChildScrollView(
+              const SizedBox(height: 24),
+              Form(
+                key: _formKey,
                 child: Column(
-                  mainAxisSize: MainAxisSize.min,
                   children: [
-                    Text(
-                      localizations.sendDirectJobListing,
-                      style: GoogleFonts.poppins(
-                        fontSize: 20,
-                        fontWeight: FontWeight.bold,
+                    TextFormField(
+                      enabled: !isSubmitting,
+                      decoration: InputDecoration(
+                        labelText: localizations.mainTitle,
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        prefixIcon: const Icon(Icons.title),
                       ),
+                      validator: (value) => value!.isEmpty
+                          ? localizations.pleaseEnterTitle
+                          : null,
+                      onSaved: (value) => mainTitle = value!,
                     ),
-                    const SizedBox(height: 20),
-                    Form(
-                      key: _formKey,
-                      child: Column(
-                        children: [
-                          TextFormField(
-                            enabled: !isSubmitting,
-                            decoration: InputDecoration(
-                                labelText: localizations.mainTitle),
-                            validator: (value) => value!.isEmpty
-                                ? localizations.pleaseEnterTitle
-                                : null,
-                            onSaved: (value) => mainTitle = value!,
-                          ),
-                          TextFormField(
-                            enabled: !isSubmitting,
-                            decoration: InputDecoration(
-                                labelText: localizations.description),
-                            validator: (value) => value!.isEmpty
-                                ? localizations.pleaseEnterDescription
-                                : null,
-                            onSaved: (value) => description = value!,
-                          ),
-                          TextFormField(
-                            enabled: !isSubmitting,
-                            decoration:
-                                InputDecoration(labelText: localizations.pay),
-                            keyboardType: TextInputType.number,
-                            inputFormatters: [
-                              FilteringTextInputFormatter.digitsOnly
-                            ],
-                            validator: (value) => value!.isEmpty
-                                ? localizations.pleaseEnterPay
-                                : null,
-                            onSaved: (value) => pay = value!,
-                          ),
-                          TextFormField(
-                            enabled: !isSubmitting,
-                            decoration: InputDecoration(
-                                labelText: localizations.location),
-                            validator: (value) => value!.isEmpty
-                                ? localizations.locationRequiredError
-                                : null,
-                            onSaved: (value) => location = value!,
-                          ),
-                        ],
+                    const SizedBox(height: 16),
+                    TextFormField(
+                      enabled: !isSubmitting,
+                      maxLines: 3,
+                      decoration: InputDecoration(
+                        labelText: localizations.description,
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        prefixIcon: const Icon(Icons.description),
+                        alignLabelWithHint: true,
                       ),
+                      validator: (value) => value!.isEmpty
+                          ? localizations.pleaseEnterDescription
+                          : null,
+                      onSaved: (value) => description = value!,
                     ),
-                    if (isSubmitting)
-                      Padding(
-                        padding: const EdgeInsets.only(top: 16.0),
-                        child: Column(
-                          children: [
-                            const CircularProgressIndicator(),
-                            const SizedBox(height: 8),
-                            Text(
-                              localizations.sendingListing,
-                              style: GoogleFonts.poppins(
-                                color: Colors.grey[600],
-                                fontSize: 12,
-                              ),
-                            ),
-                          ],
+                    const SizedBox(height: 16),
+                    TextFormField(
+                      enabled: !isSubmitting,
+                      decoration: InputDecoration(
+                        labelText: localizations.pay,
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
                         ),
+                        prefixIcon: const Icon(Icons.attach_money),
                       ),
-                    const SizedBox(height: 20),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        ElevatedButton(
-                          onPressed: isSubmitting
-                              ? null
-                              : () => Navigator.pop(context),
-                          child: Text(
-                            localizations.close,
-                            style: GoogleFonts.poppins(),
-                          ),
+                      keyboardType: TextInputType.number,
+                      inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                      validator: (value) => value!.isEmpty
+                          ? localizations.pleaseEnterPay
+                          : null,
+                      onSaved: (value) => pay = value!,
+                    ),
+                    const SizedBox(height: 16),
+                    TextFormField(
+                      enabled: !isSubmitting,
+                      decoration: InputDecoration(
+                        labelText: localizations.location,
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
                         ),
-                        ElevatedButton(
-                          onPressed: isSubmitting
-                              ? null
-                              : () async {
-                                  if (_formKey.currentState!.validate()) {
-                                    setState(() {
-                                      isSubmitting = true;
-                                    });
-
-                                    try {
-                                      _formKey.currentState!.save();
-                                      final uniqueId = Uuid().v4();
-
-                                      final jobData = {
-                                        'id': uniqueId,
-                                        'mainTitle': mainTitle,
-                                        'description': description,
-                                        'pay': pay,
-                                        'location': location,
-                                        'status': 'pending',
-                                        'timestamp':
-                                            DateTime.now().toIso8601String(),
-                                        'receiverUid': recipientUid,
-                                        'senderUid': senderUid,
-                                      };
-
-                                      // Save to sender's listings
-                                      await FirebaseFirestore.instance
-                                          .collection('users')
-                                          .doc(senderUid)
-                                          .update({
-                                        'Listing_(sent)':
-                                            FieldValue.arrayUnion([jobData]),
-                                      });
-
-                                      // Save to recipient's listings
-                                      await FirebaseFirestore.instance
-                                          .collection('users')
-                                          .doc(recipientUid)
-                                          .update({
-                                        'Listing_(received)':
-                                            FieldValue.arrayUnion([jobData]),
-                                      });
-
-                                      final providerRef = firestore
-                                          .collection('users')
-                                          .doc(recipientUid);
-                                      final providerDoc =
-                                          await providerRef.get();
-                                      final providerData = providerDoc.data()
-                                          as Map<String, dynamic>;
-
-                                      final String deviceToken =
-                                          providerData['deviceToken'];
-                                      if (deviceToken.isNotEmpty) {
-                                        await PushNotificationService
-                                            .sendNotification(
-                                          deviceToken,
-                                          'New Job Listing',
-                                          'You have received a new job listing: $mainTitle',
-                                          jobData,
-                                        );
-                                      }
-
-                                      Navigator.pop(context);
-                                      ScaffoldMessenger.of(context)
-                                          .showSnackBar(
-                                        SnackBar(
-                                          content: Text(localizations
-                                              .jobListingSentSuccessfully),
-                                        ),
-                                      );
-                                    } catch (e) {
-                                      setState(() {
-                                        isSubmitting = false;
-                                      });
-                                      debugPrint('Error sending listing: $e');
-                                      ScaffoldMessenger.of(context)
-                                          .showSnackBar(
-                                        SnackBar(
-                                          content: Text(localizations
-                                              .failedToSendListing),
-                                        ),
-                                      );
-                                    }
-                                  }
-                                },
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor:
-                                const Color.fromARGB(255, 52, 141, 237),
-                            foregroundColor: Colors.white,
-                          ),
-                          child: Text(
-                            localizations.sendListing,
-                            style: GoogleFonts.poppins(),
-                          ),
-                        ),
-                      ],
+                        prefixIcon: const Icon(Icons.location_on),
+                      ),
+                      validator: (value) => value!.isEmpty
+                          ? localizations.locationRequiredError
+                          : null,
+                      onSaved: (value) => location = value!,
                     ),
                   ],
                 ),
               ),
-            );
-          },
-        );
-      },
-    );
-  }
+              if (isSubmitting) ...[
+                const SizedBox(height: 24),
+                Center(
+                  child: Column(
+                    children: [
+                      CircularProgressIndicator(
+                        color: Theme.of(context).colorScheme.primary,
+                      ),
+                      const SizedBox(height: 12),
+                      Text(
+                        localizations.sendingListing,
+                        style: GoogleFonts.poppins(
+                          color: Theme.of(context).colorScheme.onSurfaceVariant,
+                          fontSize: 14,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+              const SizedBox(height: 24),
+              Row(
+                children: [
+                  Expanded(
+                    child: OutlinedButton(
+                      onPressed: isSubmitting ? null : () => Navigator.pop(context),
+                      style: OutlinedButton.styleFrom(
+                        
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                      ),
+                      child: Text(
+                        localizations.close,
+                        style: GoogleFonts.poppins(color:Colors.purple),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: FilledButton(
+                      onPressed: isSubmitting ? null : () async {
+                        if (_formKey.currentState!.validate()) {
+                          setState(() {
+                            isSubmitting = true;
+                          });
 
+                          try {
+                            _formKey.currentState!.save();
+                            final uniqueId = const Uuid().v4();
+
+                            final jobData = {
+                              'id': uniqueId,
+                              'mainTitle': mainTitle,
+                              'description': description,
+                              'pay': pay,
+                              'location': location,
+                              'status': 'pending',
+                              'timestamp': DateTime.now().toIso8601String(),
+                              'receiverUid': recipientUid,
+                              'senderUid': senderUid,
+                            };
+
+                            await Future.wait([
+                              FirebaseFirestore.instance
+                                  .collection('users')
+                                  .doc(senderUid)
+                                  .update({
+                                'Listing_(sent)': FieldValue.arrayUnion([jobData]),
+                              }),
+                              FirebaseFirestore.instance
+                                  .collection('users')
+                                  .doc(recipientUid)
+                                  .update({
+                                'Listing_(received)': FieldValue.arrayUnion([jobData]),
+                              }),
+                            ]);
+
+                            final providerDoc = await firestore
+                                .collection('users')
+                                .doc(recipientUid)
+                                .get();
+                            
+                            final providerData = providerDoc.data() as Map<String, dynamic>;
+                            final String deviceToken = providerData['deviceToken'];
+                            
+                            if (deviceToken.isNotEmpty) {
+                              await PushNotificationService.sendNotification(
+                                deviceToken,
+                                'New Job Listing',
+                                'You have received a new job listing: $mainTitle',
+                                jobData,
+                              );
+                            }
+
+                            Navigator.pop(context);
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text(localizations.jobListingSentSuccessfully),
+                                behavior: SnackBarBehavior.floating,
+                              ),
+                            );
+                          } catch (e) {
+                            setState(() {
+                              isSubmitting = false;
+                            });
+                            debugPrint('Error sending listing: $e');
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text(localizations.failedToSendListing),
+                                behavior: SnackBarBehavior.floating,
+                                backgroundColor: Theme.of(context).colorScheme.error,
+                              ),
+                            );
+                          }
+                        }
+                      },
+                      style: FilledButton.styleFrom(
+                        backgroundColor: Colors.purple,
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                      ),
+                      child: Text(
+                        localizations.sendListing,
+                        style: GoogleFonts.poppins(),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
+    ),
+  );
+}
   Widget _buildWorkDomainsSection() {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16.0),

@@ -123,13 +123,13 @@ Widget _buildGoogleSignInButton() {
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(30.0),
       ),
-      padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 15),
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 15),
       elevation: 6,
     ),
     child: _isLoading 
       ? const SizedBox(
-          width: 24,
-          height: 24,
+          width: 30,
+          height: 30,
           child: CircularProgressIndicator(
             strokeWidth: 2.5,
             valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
@@ -143,7 +143,6 @@ Widget _buildGoogleSignInButton() {
               height: 24,
               width: 24,
             ),
-            const SizedBox(width: 12),
             Text(
               buttonText,
               style: GoogleFonts.poppins(

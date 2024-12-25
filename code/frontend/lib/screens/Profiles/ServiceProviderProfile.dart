@@ -9,6 +9,79 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:googleapis_auth/auth_io.dart';
 import 'package:googleapis/drive/v3.dart' as drive;
 import 'package:flutter/services.dart' show rootBundle;
+import 'dart:ui';
+
+class FullScreenImage extends StatelessWidget {
+  final String imageUrl;
+
+  const FullScreenImage({Key? key, required this.imageUrl}) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: Colors.black,
+      body: SafeArea(
+        child: Stack(
+          children: [
+            Center(
+              child: InteractiveViewer(
+                minScale: 0.5,
+                maxScale: 4.0,
+                child: Hero(
+                  tag: imageUrl,
+                  child: Image.network(
+                    imageUrl,
+                    fit: BoxFit.contain,
+                    loadingBuilder: (context, child, loadingProgress) {
+                      if (loadingProgress == null) return child;
+                      return Center(
+                        child: CircularProgressIndicator(
+                          value: loadingProgress.expectedTotalBytes != null
+                              ? loadingProgress.cumulativeBytesLoaded /
+                                  loadingProgress.expectedTotalBytes!
+                              : null,
+                          color: Colors.white,
+                          strokeWidth: 2.5,
+                        ),
+                      );
+                    },
+                  ),
+                ),
+              ),
+            ),
+            Positioned(
+              top: 16,
+              left: 16,
+              child: Row(
+                children: [
+                  const Icon(Icons.image, color: Colors.white, size: 28),
+                  const SizedBox(width: 8),
+                  Text(
+                    "Image Viewer",
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.w600,
+                      color: Colors.white,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            Positioned(
+              top: 16,
+              right: 16,
+              child: IconButton(
+                icon: const Icon(Icons.close, color: Colors.white),
+                onPressed: () => Navigator.pop(context),
+                iconSize: 32,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
 
 class GoogleDriveService {
   static const String _folderID =
@@ -279,62 +352,128 @@ class _ServiceProviderProfileState extends State<ServiceProviderProfile> {
   bool isAddingImage = false;
   Set<String> deletingImages = {};
 
-  Widget buildPortfolioSection() {
-    final localizations = AppLocalizations.of(context);
-    if (localizations == null) return const SizedBox.shrink();
+Widget buildPortfolioSection(BuildContext context) {
+  final localizations = AppLocalizations.of(context);
+  if (localizations == null) return const SizedBox.shrink();
 
-    return Padding(
+  return Container(
+    padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+      color: Colors.white,
+      borderRadius: BorderRadius.circular(20),
+      boxShadow: [
+        BoxShadow(
+          color: Colors.grey.withOpacity(0.1),
+          spreadRadius: 5,
+          blurRadius: 15,
+          offset: const Offset(0, 3),
+        ),
+      ],
+    ),
+    margin: const EdgeInsets.all(16),
+    child: Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const SizedBox(height: 8),
+          Row(
+            children: [
+                Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: Colors.blue.withOpacity(0.1),
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(Icons.photo_album, size: 24, color: Colors.blue[600]),
+              ),
+              const SizedBox(width: 8),
+              Text(
+                localizations.portfolio,
+                style: GoogleFonts.poppins(
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.grey.shade800,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
           portfolioImages.isNotEmpty
               ? SingleChildScrollView(
                   scrollDirection: Axis.horizontal,
                   child: Row(
                     children: portfolioImages.map((imageUrl) {
                       final isDeleting = deletingImages.contains(imageUrl);
-
+    
                       return Padding(
                         padding: const EdgeInsets.only(right: 8),
                         child: Stack(
                           children: [
-                            GestureDetector(
-                              onTap: () {
-                                // Show image in full screen
-                              },
-                              child: Image.network(
-                                imageUrl,
-                                width: 100,
-                                height: 100,
-                                fit: BoxFit.cover,
-                                loadingBuilder: (BuildContext context,
-                                    Widget child,
-                                    ImageChunkEvent? loadingProgress) {
-                                  if (loadingProgress == null) {
-                                    return child;
-                                  }
-                                  return Center(
-                                    child: CircularProgressIndicator(
-                                      value:
-                                          loadingProgress.expectedTotalBytes !=
-                                                  null
-                                              ? loadingProgress
-                                                      .cumulativeBytesLoaded /
-                                                  loadingProgress
-                                                      .expectedTotalBytes!
-                                              : null,
+                            Hero(
+                              tag: imageUrl,
+                              child: Material(
+                                child: InkWell(
+                                  onTap: () {
+                                    Navigator.push(
+                                      context,
+                                      MaterialPageRoute(
+                                        builder: (context) => FullScreenImage(
+                                          imageUrl: imageUrl,
+                                        ),
+                                      ),
+                                    );
+                                  },
+                                  child: Container(
+                                    decoration: BoxDecoration(
+                                      borderRadius: BorderRadius.circular(12),
+                                      boxShadow: [
+                                        BoxShadow(
+                                          color: Colors.black.withOpacity(0.1),
+                                          blurRadius: 8,
+                                          offset: const Offset(0, 2),
+                                        ),
+                                      ],
                                     ),
-                                  );
-                                },
+                                    child: ClipRRect(
+                                      borderRadius: BorderRadius.circular(12),
+                                      child: Image.network(
+                                        imageUrl,
+                                        width: 120,
+                                        height: 120,
+                                        fit: BoxFit.cover,
+                                        loadingBuilder: (context, child, loadingProgress) {
+                                          if (loadingProgress == null) return child;
+                                          return Container(
+                                            width: 120,
+                                            height: 120,
+                                            decoration: BoxDecoration(
+                                              color: Colors.grey[200],
+                                              borderRadius: BorderRadius.circular(12),
+                                            ),
+                                            child: Center(
+                                              child: CircularProgressIndicator(
+                                                value: loadingProgress.expectedTotalBytes != null
+                                                    ? loadingProgress.cumulativeBytesLoaded /
+                                                        loadingProgress.expectedTotalBytes!
+                                                    : null,
+                                              ),
+                                            ),
+                                          );
+                                        },
+                                      ),
+                                    ),
+                                  ),
+                                ),
                               ),
                             ),
                             if (isEditMode && isDeleting)
                               Container(
-                                width: 100,
-                                height: 100,
-                                color: Colors.black.withOpacity(0.5),
+                                width: 120,
+                                height: 120,
+                                decoration: BoxDecoration(
+                                  color: Colors.black.withOpacity(0.5),
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
                                 child: const Center(
                                   child: CircularProgressIndicator(
                                     color: Colors.white,
@@ -351,8 +490,7 @@ class _ServiceProviderProfileState extends State<ServiceProviderProfile> {
                                     shape: BoxShape.circle,
                                   ),
                                   child: IconButton(
-                                    icon: const Icon(Icons.delete,
-                                        color: Colors.white),
+                                    icon: const Icon(Icons.delete, color: Colors.white),
                                     iconSize: 20,
                                     padding: EdgeInsets.zero,
                                     constraints: const BoxConstraints(
@@ -377,38 +515,77 @@ class _ServiceProviderProfileState extends State<ServiceProviderProfile> {
                     }).toList(),
                   ),
                 )
-              : Center(child: Text(localizations.noPortfolioImagesAvailable)),
+              : Center(
+                  child: Padding(
+                    padding: const EdgeInsets.all(32.0),
+                    child: Column(
+                      children: [
+                        Icon(
+                          Icons.broken_image,
+                          size: 48,
+                          color: Colors.grey.shade400,
+                        ),
+                        const SizedBox(height: 16),
+                        Text(
+                          localizations.noPortfolioImagesAvailable,
+                          style: TextStyle(color: Colors.grey.shade600, fontSize: 16),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
           const SizedBox(height: 16),
           if (isEditMode)
-            ElevatedButton(
-              onPressed: isAddingImage
-                  ? null
-                  : () async {
-                      setState(() {
-                        isAddingImage = true;
-                      });
-                      try {
-                        await pickNewPortfolioImage();
-                      } finally {
-                        setState(() {
-                          isAddingImage = false;
-                        });
-                      }
-                    },
-              child: isAddingImage
-                  ? const SizedBox(
-                      height: 20,
-                      width: 20,
-                      child: CircularProgressIndicator(
-                        strokeWidth: 2,
-                      ),
-                    )
-                  : Text(localizations.addPortfolioImage),
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton.icon(
+onPressed: isAddingImage
+    ? null
+    : () async {
+        setState(() {
+          isAddingImage = true;
+        });
+        try {
+          await pickNewPortfolioImage();
+        } finally {
+          setState(() {
+            isAddingImage = false;
+          });
+        }
+      },
+icon: isAddingImage
+    ? const SizedBox(
+        height: 20,
+        width: 20,
+        child: CircularProgressIndicator(
+          strokeWidth: 2,
+          color: Colors.white, // Set spinner color to white
+        ),
+      )
+    : const Icon(
+        Icons.add_photo_alternate,
+        color: Colors.white, // Icon color set to white
+      ),
+label: Text(
+  localizations.addPortfolioImage,
+  style: const TextStyle(color: Colors.white), // Text color set to white
+),
+style: ElevatedButton.styleFrom(
+  backgroundColor: Colors.blue, // Button background color set to blue
+  foregroundColor: Colors.white, // Ensures all content inside is styled white
+  padding: const EdgeInsets.symmetric(vertical: 12),
+  shape: RoundedRectangleBorder(
+    borderRadius: BorderRadius.circular(8),
+  ),
+),
+             ),
             ),
         ],
       ),
-    );
-  }
+    ),
+  );
+}
+
 
   Future<void> saveUserData() async {
     try {
@@ -472,16 +649,12 @@ class _ServiceProviderProfileState extends State<ServiceProviderProfile> {
                     buildTop(localizations!),
                     buildProfileInfo(localizations),
                     const SizedBox(height: 20),
-                    _buildSectionTitle(localizations.skills),
                     _buildSkillsSection(localizations),
                     const SizedBox(height: 20),
-                    _buildSectionTitle(localizations.workExperience),
                     _buildWorkExperienceSection(localizations),
                     const SizedBox(height: 20),
-                    _buildSectionTitle(localizations.portfolio),
-                    buildPortfolioSection(),
+                    buildPortfolioSection(context),
                     const SizedBox(height: 20),
-                    _buildSectionTitle(localizations.certifications),
                     _buildCertificationsSection(localizations),
                     const SizedBox(
                       height: 20,
@@ -506,123 +679,331 @@ class _ServiceProviderProfileState extends State<ServiceProviderProfile> {
     );
   }
 
-  Widget buildTop(AppLocalizations localizations) {
-    return Center(
+Widget buildTop(AppLocalizations localizations) {
+  return Container(
+    margin: const EdgeInsets.all(16), // Adds margin around the card
+    child: _buildInfoCard(
       child: Column(
         children: [
-          const SizedBox(height: 40),
           Stack(
             alignment: Alignment.bottomRight,
             children: [
-              CircleAvatar(
-                radius: profileHeight / 2,
-                backgroundColor: Colors.grey.shade200,
-                backgroundImage: userPhotoUrl.isNotEmpty
-                    ? NetworkImage(userPhotoUrl) as ImageProvider
-                    : const AssetImage('assets/images/default_profile.png'),
+              Container(
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  border: Border.all(color: Colors.white, width: 4),
+                  boxShadow: [
+                    BoxShadow(
+                      blurRadius: 10,
+                      color: Colors.black.withOpacity(0.1),
+                      spreadRadius: 5,
+                    ),
+                  ],
+                ),
+                child: CircleAvatar(
+                  radius: profileHeight / 2,
+                  backgroundColor: Colors.grey.shade200,
+                  backgroundImage: userPhotoUrl.isNotEmpty
+                      ? NetworkImage(userPhotoUrl) as ImageProvider
+                      : const AssetImage('assets/images/default_profile.png'),
+                ),
               ),
               if (isEditMode)
-                GestureDetector(
-                  onTap: () {
-                    pickNewProfilePicture();
-                  },
-                  child: Container(
-                    padding: const EdgeInsets.all(6),
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      color: Colors.blue,
-                    ),
-                    child: const Icon(
-                      Icons.camera_alt,
-                      size: 20,
-                      color: Colors.white,
+                Material(
+                  elevation: 4,
+                  borderRadius: BorderRadius.circular(20),
+                  child: InkWell(
+                    onTap: pickNewProfilePicture,
+                    borderRadius: BorderRadius.circular(20),
+                    child: Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: Theme.of(context).primaryColor,
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: const Icon(Icons.camera_alt, size: 20, color: Colors.white),
                     ),
                   ),
                 ),
             ],
           ),
-          const SizedBox(height: 20),
-          isEditMode
-              ? Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
-                  child: TextField(
-                    controller: nameController,
-                    decoration: InputDecoration(
-                      border: const OutlineInputBorder(),
-                      labelText: localizations.name,
-                    ),
-                  ),
-                )
-              : Text(
-                  userName,
-                  style: const TextStyle(
-                      fontSize: 24, fontWeight: FontWeight.bold),
+          const SizedBox(height: 16),
+          if (isEditMode)
+            TextField(
+              controller: nameController,
+              textAlign: TextAlign.center,
+              decoration: InputDecoration(
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
                 ),
-          const SizedBox(height: 4),
-          Text(
-            profession,
-            style: TextStyle(fontSize: 16, color: Colors.grey.shade700),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            userEmail,
-            style: TextStyle(fontSize: 14, color: Colors.grey.shade600),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget buildProfileInfo(AppLocalizations localizations) {
-
-     final currentLocale = Localizations.localeOf(context).languageCode;
-
-     final displayWilaya = currentLocale == 'ar' ? wilayaArabic : wilayaLatin;
-    final displayCommune = currentLocale == 'ar' ? communeArabic : communeLatin;
-    
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16),
-      child: Column(
-        children: [
-          const SizedBox(height: 20),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              buildStat(displayCommune , displayWilaya ),
-              buildStat(localizations.rating, _buildStarRating(rating)),
-              buildStat(localizations.hourlyRate,
-                  isEditMode ? buildHourlyRateEditor() : '$hourlyRate DZD'),
-            ],
-          ),
-          const SizedBox(height: 24),
-          Align(
-          alignment:currentLocale == 'ar' ?Alignment.centerRight :Alignment.centerLeft ,
-            child: Text(
-              localizations.aboutMeLabel,
-              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                labelText: localizations.name,
+                filled: true,
+                fillColor: Colors.grey.shade50,
+              ),
+            )
+          else
+            Text(
+              userName,
+              style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                fontWeight: FontWeight.bold,
+              ),
             ),
-          ),
-          const SizedBox(height: 8),
-          isEditMode
-              ? TextField(
-                  controller: aboutMeController,
-                  onChanged: (value) => aboutMe = value,
-                  maxLines: 4,
-                  decoration: InputDecoration(
-                    border: const OutlineInputBorder(),
-                    hintText: localizations.aboutMeLabel,
-                  ),
-                )
-              : Text(
-                  aboutMe,
-                  style: TextStyle(fontSize: 14, color: Colors.grey.shade700),
-                  textAlign: TextAlign.justify,
-                ),
+          const SizedBox(height: 12),
+Row(
+  mainAxisAlignment: MainAxisAlignment.center,
+  children: [
+    Container(
+      padding: const EdgeInsets.all(4),
+      decoration: BoxDecoration(
+        color: Colors.blue.withOpacity(0.1), // Light blue background
+        shape: BoxShape.rectangle, // Circular shape for the icon's background
+      ),
+      child: Icon(Icons.business_center, size: 20, color: Colors.blue.shade700),
+    ),
+    const SizedBox(width: 8),
+    Text(
+      profession,
+      style: TextStyle(fontSize: 16, color: Colors.grey.shade700),
+    ),
+  ],
+),
+const SizedBox(height: 8),
+Row(
+  mainAxisAlignment: MainAxisAlignment.center,
+  children: [
+    Container(
+      padding: const EdgeInsets.all(4),
+      decoration: BoxDecoration(
+        color: Colors.green.withOpacity(0.1), // Light green background
+        shape: BoxShape.rectangle, // Circular shape for the icon's background
+      ),
+      child: Icon(Icons.email, size: 20, color: Colors.green.shade700),
+    ),
+    const SizedBox(width: 8),
+    Text(
+      userEmail,
+      style: TextStyle(fontSize: 14, color: Colors.grey.shade600),
+    ),
+  ],
+),
+
         ],
       ),
-    );
-  }
+    ),
+  );
+}
 
+
+Widget buildProfileInfo(AppLocalizations localizations) {
+  final currentLocale = Localizations.localeOf(context).languageCode;
+  final displayWilaya = currentLocale == 'ar' ? wilayaArabic : wilayaLatin;
+  final displayCommune = currentLocale == 'ar' ? communeArabic : communeLatin;
+
+  return Container(
+    padding: const EdgeInsets.all(16),
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Row(
+          children: [
+            Expanded(
+              child: _buildInfoCard(
+                child: Column(
+                  children: [
+                    Row(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(8),
+                          decoration: BoxDecoration(
+                            color: Colors.blue.withOpacity(0.1),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: Icon(Icons.location_on, color: Colors.blue.shade700),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                displayCommune,
+                                style: const TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                              Text(
+                                displayWilaya,
+                                style: TextStyle(
+                                  fontSize: 14,
+                                  color: Colors.grey.shade600,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 12),
+        Row(
+          children: [
+            Expanded(
+              child: _buildInfoCard(
+                child: Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: Colors.amber.withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Icon(Icons.star, color: Colors.amber.shade700),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          _buildStarRating(rating),
+                          Text(
+                            localizations.rating,
+                            style: TextStyle(
+                              fontSize: 14,
+                              color: Colors.grey.shade600,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: _buildInfoCard(
+                child: Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: Colors.green.withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Icon(Icons.monetization_on, color: Colors.green.shade700),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          isEditMode
+                              ? buildHourlyRateEditor()
+                              : Text(
+                                  '$hourlyRate DZD',
+                                  style: const TextStyle(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                          Text(
+                            localizations.hourlyRate,
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: Colors.grey.shade600,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 24),
+        _buildInfoCard(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+                    Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: Colors.blue.withOpacity(0.1),
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(Icons.person, size: 24, color: Colors.blue.shade700),
+              ),
+              const SizedBox(width: 8),
+              Text(
+                localizations.aboutMeLabel,
+                style: GoogleFonts.poppins(
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.grey.shade800,
+                ),
+              ),
+            ],
+                    ),
+              const SizedBox(height: 12),
+              isEditMode
+                  ? TextField(
+                      controller: aboutMeController,
+                      onChanged: (value) => aboutMe = value,
+                      maxLines: 4,
+                      decoration: InputDecoration(
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        hintText: localizations.aboutMeLabel,
+                        filled: true,
+                        fillColor: Colors.grey.shade50,
+                      ),
+                    )
+                  : Text(
+                      aboutMe,
+                      style: TextStyle(
+                        fontSize: 14,
+                        height: 1.5,
+                        color: Colors.grey.shade700,
+                      ),
+                    ),
+            ],
+          ),
+        ),
+      ],
+    ),
+  );
+}
+
+Widget _buildInfoCard({required Widget child}) {
+  return Container(
+    padding: const EdgeInsets.all(16),
+    decoration: BoxDecoration(
+      color: Colors.white,
+      borderRadius: BorderRadius.circular(12),
+      boxShadow: [
+        BoxShadow(
+          offset: const Offset(0, 2),
+          blurRadius: 8,
+          color: Colors.black.withOpacity(0.05),
+        ),
+      ],
+    ),
+    child: child,
+  );
+}
   Widget _buildSectionTitle(String title) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 16.0),
@@ -659,185 +1040,433 @@ class _ServiceProviderProfileState extends State<ServiceProviderProfile> {
     });
   }
 
-  Widget _buildSkillsSection(AppLocalizations localizations) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16.0),
+
+Widget _buildSkillsSection(AppLocalizations localizations) {
+  return Card(
+    margin: const EdgeInsets.all(16.0),
+    elevation: 4,
+    color: Colors.white,
+    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+    child: Padding(
+      padding: const EdgeInsets.all(16.0),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // If in edit mode, show the input field for new skills
+          // Title with Icon
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: Colors.blue.withOpacity(0.1),
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(Icons.psychology, size: 24, color: Colors.blue.shade700),
+              ),
+              const SizedBox(width: 8),
+              Text(
+                localizations.skills,
+                style: GoogleFonts.poppins(
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.grey.shade800,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          // Add Skill Section
           if (isEditMode)
-            Row(
-              children: [
-                Expanded(
-                  child: TextField(
-                    controller: skillController,
-                    decoration: InputDecoration(
-                      labelText: localizations.addSkill,
-                      border: const OutlineInputBorder(),
+            AnimatedContainer(
+              duration: const Duration(milliseconds: 300),
+              margin: const EdgeInsets.only(bottom: 16),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: TextField(
+                      controller: skillController,
+                      decoration: InputDecoration(
+                        labelText: localizations.addSkill,
+                        labelStyle: TextStyle(color: Colors.blue.shade700),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(8),
+                          borderSide: BorderSide(color: Colors.blue.shade200),
+                        ),
+                        focusedBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(8),
+                          borderSide: BorderSide(color: Colors.blue.shade400, width: 2),
+                        ),
+                        filled: true,
+                        fillColor: Colors.blue.shade50,
+                      ),
                     ),
                   ),
-                ),
-                IconButton(
-                  icon: const Icon(Icons.add_circle, color: Colors.blue),
-                  onPressed: () {
-                    String skill =
-                        skillController.text.trim(); // Get skill from input
-                    if (skill.isNotEmpty) {
-                      addSkill(skill); // Add skill to list
-                      skillController.clear(); // Clear the input field
-                    }
-                  },
-                ),
-              ],
+                  const SizedBox(width: 8),
+                  Material(
+                    color: Colors.blue.shade400,
+                    borderRadius: BorderRadius.circular(8),
+                    child: InkWell(
+                      borderRadius: BorderRadius.circular(8),
+                      onTap: () {
+                        final skill = skillController.text.trim();
+                        if (skill.isNotEmpty) {
+                          addSkill(skill);
+                          skillController.clear();
+                        }
+                      },
+                      child: Container(
+                        padding: const EdgeInsets.all(12),
+                        child: const Icon(Icons.add, color: Colors.white),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
             ),
 
-          // Display list of skills
+          // Skill Chips or Placeholder
           if (skills.isNotEmpty)
             Wrap(
-              spacing: 8.0,
-              runSpacing: 4.0,
-              children: skills
-                  .map(
-                    (skill) => Padding(
-                      padding: const EdgeInsets.all(4.0),
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 12.0, vertical: 8.0),
-                        decoration: BoxDecoration(
-                          color: Colors.blue.shade50,
-                          borderRadius: BorderRadius.circular(16.0),
+              spacing: 12.0,
+              runSpacing: 12.0,
+              children: skills.map((skill) => _buildSkillChip(skill)).toList(),
+            )
+          else
+            Center(
+              child: Padding(
+                padding: const EdgeInsets.all(32.0),
+                child: Column(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: Colors.orange.withOpacity(0.1),
+                        shape: BoxShape.circle,
+                      ),
+                      child: Icon(
+                        Icons.lightbulb_outline,
+                        size: 48,
+                        color: Colors.orange.shade400,
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    Text(
+                      localizations.noSkillsAvailable,
+                      style: TextStyle(
+                        color: Colors.grey.shade600,
+                        fontSize: 16,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+        ],
+      ),
+    ),
+  );
+}
+
+
+Widget _buildSkillChip(String skill) {
+  return Material(
+    color: Colors.transparent,
+    child: AnimatedContainer(
+      duration: const Duration(milliseconds: 200),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [Colors.blue.shade300, Colors.blue.shade400],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.blue.shade100,
+            blurRadius: 4,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              skill,
+              style: GoogleFonts.poppins(
+                color: Colors.white,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+            if (isEditMode) ...[
+              const SizedBox(width: 4),
+              InkWell(
+                borderRadius: BorderRadius.circular(12),
+                onTap: () => removeSkill(skills.indexOf(skill)),
+                child: const Padding(
+                  padding: EdgeInsets.all(4.0),
+                  child: Icon(
+                    Icons.close,
+                    color: Colors.white,
+                    size: 16,
+                  ),
+                ),
+              ),
+            ],
+          ],
+        ),
+      ),
+    ),
+  );
+}
+ Widget _buildWorkExperienceSection(AppLocalizations localizations) {
+  final companyController = TextEditingController();
+  final positionController = TextEditingController();
+  final durationController = TextEditingController();
+
+  void addWorkExperience() {
+    final company = companyController.text.trim();
+    final position = positionController.text.trim();
+    final duration = durationController.text.trim();
+
+    if (company.isNotEmpty && position.isNotEmpty && duration.isNotEmpty) {
+      setState(() {
+        workExperience.add({
+          'company': company,
+          'position': position,
+          'duration': duration,
+        });
+      });
+      companyController.clear();
+      positionController.clear();
+      durationController.clear();
+    }
+  }
+
+  void removeWorkExperience(int index) {
+    setState(() {
+      workExperience.removeAt(index);
+    });
+  }
+
+  return Container(
+    decoration: BoxDecoration(
+      color: Colors.white,
+      borderRadius: BorderRadius.circular(20),
+      boxShadow: [
+        BoxShadow(
+          color: Colors.grey.withOpacity(0.1),
+          spreadRadius: 5,
+          blurRadius: 15,
+          offset: const Offset(0, 3),
+        ),
+      ],
+    ),
+    margin: const EdgeInsets.all(16),
+    child: ClipRRect(
+      borderRadius: BorderRadius.circular(20),
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+                        Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: Colors.purple.withOpacity(0.1),
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(Icons.work, size: 24, color: Colors.purple),
+              ),
+              const SizedBox(width: 16),
+              Text(
+                localizations.workExperience,
+                style: GoogleFonts.poppins(
+                  fontSize: 24,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.grey.shade800,
+                ),
+              ),
+            ],
+          ),
+              const SizedBox(height: 24),
+              if (isEditMode) ...[
+                AnimatedContainer(
+                  duration: const Duration(milliseconds: 300),
+                  child: Column(
+                    children: [
+                      TextFormField(
+                        controller: companyController,
+                        decoration: InputDecoration(
+                          labelText: localizations.companyName,
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: BorderSide.none,
+                          ),
+                          filled: true,
+                          fillColor: Colors.grey[100],
+                          prefixIcon: const Icon(Icons.business),
+                          contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+                        ),
+                        textInputAction: TextInputAction.next,
+                      ),
+                      const SizedBox(height: 16),
+                      TextFormField(
+                        controller: positionController,
+                        decoration: InputDecoration(
+                          labelText: localizations.position,
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: BorderSide.none,
+                          ),
+                          filled: true,
+                          fillColor: Colors.grey[100],
+                          prefixIcon: const Icon(Icons.work),
+                          contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+                        ),
+                        textInputAction: TextInputAction.next,
+                      ),
+                      const SizedBox(height: 16),
+                      TextFormField(
+                        controller: durationController,
+                        decoration: InputDecoration(
+                          labelText: localizations.duration,
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: BorderSide.none,
+                          ),
+                          filled: true,
+                          fillColor: Colors.grey[100],
+                          prefixIcon: const Icon(Icons.calendar_today),
+                          hintText: 'e.g., Jan 2020 - Present',
+                          contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+                        ),
+                        textInputAction: TextInputAction.done,
+                        onFieldSubmitted: (_) => addWorkExperience(),
+                      ),
+                      const SizedBox(height: 24),
+                      ElevatedButton(
+
+                        onPressed: addWorkExperience,
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor:Colors.purple,
+                          padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          elevation: 0,
                         ),
                         child: Row(
-                          mainAxisSize: MainAxisSize.min,
+                          mainAxisAlignment: MainAxisAlignment.center,
                           children: [
-                            Text(skill, style: GoogleFonts.poppins()),
-                            if (isEditMode)
-                              IconButton(
-                                icon: const Icon(Icons.cancel,
-                                    color: Colors.red, size: 18),
-                                onPressed: () {
-                                  removeSkill(
-                                      skills.indexOf(skill)); // Remove skill
-                                },
+                            const Icon(Icons.add, color: Colors.white),
+                            const SizedBox(width: 8),
+                            Text(
+                              localizations.addWorkExperience,
+                              style: GoogleFonts.poppins(
+                                color: Colors.white,
+                                fontWeight: FontWeight.w600,
                               ),
+                            ),
                           ],
                         ),
                       ),
-                    ),
-                  )
-                  .toList(),
-            )
-          else
-            Center(child: Text(localizations.noSkillsAvailable)),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildWorkExperienceSection(AppLocalizations localizations) {
-    final TextEditingController companyController = TextEditingController();
-    final TextEditingController positionController = TextEditingController();
-    final TextEditingController durationController = TextEditingController();
-
-    void addWorkExperience() {
-      String company = companyController.text.trim();
-      String position = positionController.text.trim();
-      String duration = durationController.text.trim();
-
-      if (company.isNotEmpty && position.isNotEmpty && duration.isNotEmpty) {
-        setState(() {
-          workExperience.add({
-            'company': company,
-            'position': position,
-            'duration': duration,
-          });
-        });
-        // Clear input fields after adding
-        companyController.clear();
-        positionController.clear();
-        durationController.clear();
-      }
-    }
-
-    void removeWorkExperience(int index) {
-      setState(() {
-        workExperience.removeAt(index);
-      });
-    }
-
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16.0),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          if (isEditMode)
-            Column(
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 24),
+              ],
+              if (workExperience.isNotEmpty)
+  SizedBox(
+    height: 150,
+    child: ListView.separated(
+      scrollDirection: Axis.horizontal,
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      itemCount: workExperience.length,
+      separatorBuilder: (_, __) => const SizedBox(width: 16),
+      itemBuilder: (context, index) {
+        final exp = workExperience[index];
+        return Container(
+          width: 250,
+          decoration: BoxDecoration(
+            color: Colors.grey[50],
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: Colors.grey.withOpacity(0.1)),
+          ),
+          child: Padding(
+            padding: const EdgeInsets.all(20),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                TextField(
-                  controller: companyController,
-                  decoration: InputDecoration(
-                    labelText: localizations.companyName,
-                    border: const OutlineInputBorder(),
-                  ),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Expanded(
+                      child: Text(
+                        exp['company'],
+                        style: GoogleFonts.poppins(
+                          fontSize: 18,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                    if (isEditMode)
+                      IconButton(
+                        icon: Icon(Icons.delete, color: Colors.red[400]),
+                        onPressed: () => removeWorkExperience(index),
+                      ),
+                  ],
                 ),
                 const SizedBox(height: 8),
-                TextField(
-                  controller: positionController,
-                  decoration: InputDecoration(
-                    labelText: localizations.position,
-                    border: const OutlineInputBorder(),
+                Text(
+                  exp['position'],
+                  style: GoogleFonts.poppins(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w500,
+                    color: Theme.of(context).primaryColor,
                   ),
                 ),
-                const SizedBox(height: 8),
-                TextField(
-                  controller: durationController,
-                  decoration: InputDecoration(
-                    labelText: localizations.duration,
-                    border: const OutlineInputBorder(),
+                const SizedBox(height: 4),
+                Text(
+                  exp['duration'],
+                  style: GoogleFonts.poppins(
+                    color: Colors.grey[600],
                   ),
                 ),
-                const SizedBox(height: 8),
-                ElevatedButton(
-                  onPressed: addWorkExperience,
-                  child: Text(localizations.addWorkExperience),
-                ),
-                const SizedBox(height: 16),
               ],
             ),
-          if (workExperience.isNotEmpty)
-            ListView.builder(
-              shrinkWrap: true,
-              physics: const NeverScrollableScrollPhysics(),
-              itemCount: workExperience.length,
-              itemBuilder: (context, index) {
-                final exp = workExperience[index];
-                return ListTile(
-                  contentPadding: EdgeInsets.zero,
-                  title: Text(
-                    exp['company'],
-                    style: GoogleFonts.poppins(fontWeight: FontWeight.w600),
-                  ),
-                  subtitle: Text(
-                    '${exp['position']} | ${exp['duration']}',
-                    style: GoogleFonts.poppins(),
-                  ),
-                  trailing: isEditMode
-                      ? IconButton(
-                          icon: const Icon(Icons.delete, color: Colors.red),
-                          onPressed: () => removeWorkExperience(index),
-                        )
-                      : null,
-                );
-              },
-            )
-          else
-            Center(child: Text(localizations.noWorkExperienceAvailable)),
-        ],
+          ),
+        );
+      },
+    ),
+  )
+else
+  Center(
+    child: Padding(
+      padding: const EdgeInsets.all(32),
+      child: Text(
+        localizations.noWorkExperienceAvailable,
+        style: GoogleFonts.poppins(
+          color: Colors.grey[500],
+          fontSize: 16,
+        ),
+        textAlign: TextAlign.center,
       ),
-    );
-  }
-
+    ),
+  ),
+            ],
+          ),
+        ),
+      ),
+    ),
+  );
+}
   void addCertification(String certification) {
     if (certification.isNotEmpty) {
       setState(() {
@@ -859,77 +1488,229 @@ class _ServiceProviderProfileState extends State<ServiceProviderProfile> {
     });
   }
 
-  Widget _buildCertificationsSection(AppLocalizations localizations) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16.0),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const SizedBox(height: 8),
-          if (isEditMode)
-            Row(
-              children: [
-                Expanded(
-                  child: TextField(
-                    controller: certificationController,
-                    decoration: InputDecoration(
-                      labelText: localizations.addCertification,
-                      border: const OutlineInputBorder(),
-                    ),
+Widget _buildCertificationsSection(AppLocalizations localizations) {
+  return Container(
+    margin: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
+    decoration: BoxDecoration(
+      color: Colors.white,
+      borderRadius: BorderRadius.circular(16),
+      boxShadow: [
+        BoxShadow(
+          color: Colors.black.withOpacity(0.08),
+          blurRadius: 15,
+          offset: const Offset(0, 4),
+        ),
+      ],
+    ),
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // Title Section with Icon
+        Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            borderRadius: const BorderRadius.only(
+              topLeft: Radius.circular(16),
+              topRight: Radius.circular(16),
+            ),
+          ),
+          child: Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: Colors.green.shade100,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Icon(
+                  Icons.workspace_premium,
+                  color: Colors.green.shade700,
+                  size: 24,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Text(
+                localizations.certifications,
+                style: GoogleFonts.poppins(
+                  fontSize: 20,
+                  fontWeight: FontWeight.w600,
+                  color: Colors.black,
+                ),
+              ),
+            ],
+          ),
+        ),
+
+        Padding(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Add Certification Input
+              if (isEditMode)
+                AnimatedContainer(
+                  duration: const Duration(milliseconds: 300),
+                  margin: const EdgeInsets.only(bottom: 16),
+                  decoration: BoxDecoration(
+                    color: Colors.grey.shade50,
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: Colors.grey.shade200),
+                  ),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: TextField(
+                          controller: certificationController,
+                          style: GoogleFonts.poppins(
+                            fontSize: 15,
+                            color: Colors.black87,
+                          ),
+                          decoration: InputDecoration(
+                            labelText: localizations.addCertification,
+                            labelStyle: GoogleFonts.poppins(color: Colors.black54),
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                              borderSide: BorderSide.none,
+                            ),
+                            filled: true,
+                            fillColor: Colors.transparent,
+                            contentPadding: const EdgeInsets.symmetric(
+                              horizontal: 16,
+                              vertical: 14,
+                            ),
+                          ),
+                        ),
+                      ),
+                      Material(
+                        color: Colors.transparent,
+                        child: InkWell(
+                          borderRadius: BorderRadius.circular(30),
+                          onTap: () {
+                            String certification = certificationController.text.trim();
+                            if (certification.isNotEmpty) {
+                              addCertification(certification);
+                              certificationController.clear();
+                            }
+                          },
+                          child: Container(
+                            padding: const EdgeInsets.all(12),
+                            child: Icon(
+                              Icons.add_circle,
+                              color: Colors.green.shade600,
+                              size: 28,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
                 ),
-                IconButton(
-                  icon: const Icon(Icons.add_circle, color: Colors.blue),
-                  onPressed: () {
-                    String certification = certificationController.text.trim();
-                    if (certification.isNotEmpty) {
-                      addCertification(certification);
-                      certificationController.clear();
-                    }
-                  },
-                ),
-              ],
-            ),
 
-          // Display list of certifications
-          if (certifications.isNotEmpty)
-            Column(
-              children: certifications
-                  .map(
-                    (cert) => Padding(
-                      padding: const EdgeInsets.symmetric(vertical: 4.0),
+              // Certifications List
+              if (certifications.isNotEmpty)
+                ListView.separated(
+                  physics: const NeverScrollableScrollPhysics(),
+                  shrinkWrap: true,
+                  itemCount: certifications.length,
+                  separatorBuilder: (context, index) => const SizedBox(height: 12),
+                  itemBuilder: (context, index) {
+                    final cert = certifications[index];
+                    return Container(
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(
+                          color: Colors.green.shade200,
+                          width: 2,
+                        ),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.green.withOpacity(0.1),
+                            blurRadius: 8,
+                            offset: const Offset(0, 3),
+                          ),
+                        ],
+                      ),
                       child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.center,
                         children: [
-                          const Icon(Icons.verified,
-                              color: Colors.green, size: 20),
-                          const SizedBox(width: 8),
+                          Container(
+                            padding: const EdgeInsets.all(8),
+                            decoration: BoxDecoration(
+                              color: Colors.green.shade50,
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: Icon(
+                              Icons.verified,
+                              color: Colors.green.shade600,
+                              size: 20,
+                            ),
+                          ),
+                          const SizedBox(width: 12),
                           Expanded(
                             child: Text(
                               cert,
-                              style: GoogleFonts.poppins(),
+                              style: GoogleFonts.poppins(
+                                fontSize: 15,
+                                color: Colors.black87,
+                                fontWeight: FontWeight.w500,
+                              ),
                             ),
                           ),
                           if (isEditMode)
-                            IconButton(
-                              icon: const Icon(Icons.remove_circle,
-                                  color: Colors.red),
-                              onPressed: () {
-                                removeCertification(
-                                    certifications.indexOf(cert));
-                              },
+                            Material(
+                              color: Colors.transparent,
+                              child: InkWell(
+                                borderRadius: BorderRadius.circular(30),
+                                onTap: () => removeCertification(index),
+                                child: Container(
+                                  padding: const EdgeInsets.all(8),
+                                  child: Icon(
+                                    Icons.remove_circle,
+                                    color: Colors.red.shade400,
+                                    size: 24,
+                                  ),
+                                ),
+                              ),
                             ),
                         ],
                       ),
+                    );
+                  },
+                )
+              else
+                Center(
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 24),
+                    child: Column(
+                      children: [
+                        Icon(
+                          Icons.card_membership,
+                          size: 48,
+                          color: Colors.grey.shade400,
+                        ),
+                        const SizedBox(height: 12),
+                        Text(
+                          localizations.noCertificationsAvailable,
+                          style: GoogleFonts.poppins(
+                            color: Colors.grey.shade600,
+                            fontSize: 15,
+                          ),
+                        ),
+                      ],
                     ),
-                  )
-                  .toList(),
-            )
-          else
-            Center(child: Text(localizations.noCertificationsAvailable)),
-        ],
-      ),
-    );
-  }
+                  ),
+                ),
+            ],
+          ),
+        ),
+      ],
+    ),
+  );
+}
+
+
 
   Widget buildHourlyRateEditor() {
     return SizedBox(
@@ -943,24 +1724,7 @@ class _ServiceProviderProfileState extends State<ServiceProviderProfile> {
     );
   }
 
-  Widget buildStat(String title, dynamic value) {
-    return Column(
-      children: [
-        if (value is String)
-          Text(
-            value,
-            style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-          ),
-        if (value is Widget) value,
-        const SizedBox(height: 4),
-        Text(
-          title,
-          style: TextStyle(fontSize: 14, color: Colors.grey.shade600),
-        ),
-      ],
-    );
-  }
-
+  
   Widget _buildStarRating(double? rating) {
     if (rating == null || rating < 0.0) {
       rating = 0.0; // Default value for invalid or missing rating
@@ -974,13 +1738,13 @@ class _ServiceProviderProfileState extends State<ServiceProviderProfile> {
       children: List.generate(5, (index) {
         if (index < fullStars) {
           // Full star
-          return const Icon(Icons.star, color: Colors.yellow, size: 16);
+          return const Icon(Icons.star, color: Colors.yellow, size: 14.5);
         } else if (hasHalfStar && index == fullStars) {
           // Half star
-          return const Icon(Icons.star_half, color: Colors.yellow, size: 16);
+          return const Icon(Icons.star_half, color: Colors.yellow, size: 14.5);
         } else {
           // Empty star
-          return const Icon(Icons.star_border, color: Colors.yellow, size: 16);
+          return const Icon(Icons.star_border, color: Colors.yellow, size: 14.5);
         }
       }),
     );

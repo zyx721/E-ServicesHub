@@ -214,11 +214,14 @@ class AppLocalizations {
   String get step2Button =>
       isArabic ? "اخر خطوة" : (isFrench ? "Dernière étape" : "Final Step");
 
+
+    String get   copiedToClipboard =>
+       isArabic ? "تم نسخها إلى الحافظة" : (isFrench ? "Copié Dans Le Presse-papiers":"Copied To Clipboard ");
   // waitingButton
   String get waitingButton => isArabic
       ? "يتم التحقق من هويتك"
       : (isFrench
-          ? "Votre identité est en cours de vérification"
+          ? "identité en cours de vérification"
           : "Your identity is being verified");
 
   // waitingMessage "Wait For Manual Verifcation"
@@ -461,7 +464,7 @@ class AppLocalizations {
       : (isFrench ? "Aucune compétence disponible" : "No skills available");
   String get workExperience => isArabic
       ? "الخبرة العملية"
-      : (isFrench ? "Expérience professionnelle" : "Work Experience");
+      : (isFrench ? "Expérience\nprofessionnelle" : "Work Experience");
 
   String get companyName => isArabic
       ? "اسم الشركة"
@@ -472,7 +475,7 @@ class AppLocalizations {
   String get addWorkExperience => isArabic
       ? "أضف خبرة عمل"
       : (isFrench
-          ? "Ajouter une expérience professionnelle"
+          ? "Ajouter une expérience"
           : "Add Work Experience");
   String get noWorkExperienceAvailable => isArabic
       ? "لا توجد خبرة عمل متاحة"
@@ -520,7 +523,7 @@ class AppLocalizations {
   // Send Direct Listing
   String get sendDirectListing => isArabic
       ? "إرسال قائمة مباشرة"
-      : (isFrench ? "Envoyer une liste directe" : "Send Direct Listing");
+      : (isFrench ? "faire une demande" : "Send Direct Listing");
 
   // Send Direct Job Listing
   String get sendDirectJobListing => isArabic
