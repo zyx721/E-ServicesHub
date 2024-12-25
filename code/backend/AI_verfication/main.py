@@ -80,24 +80,6 @@ def resize_image(image_path, max_size=(640, 640)):
         print(f"Image resized to {new_size}")
     return image_path
 
-def check_logos(image_path):
-    # Perform logo detection using the YOLO model
-    results = model.predict(source=image_path, save=False, imgsz=640, device=0)
-    logos_found = {0: False, 1: False, 2: False}  # Assuming classes 0, 1, 2 correspond to the logos
-
-    for result in results:
-        boxes = result.boxes
-        if boxes is not None:
-            for box in boxes:
-                class_id = box.cls.item()
-                if class_id in logos_found:
-                    logos_found[class_id] = True  # Mark the logo as found
-
-    # Log the detection results for debugging purposes
-    print(f"Logos found: {logos_found}")
-
-    return logos_found  # Return a dictionary indicating which logos were found
-
 def extract_face(image_path):
     image = cv2.imread(image_path)
 
@@ -118,55 +100,106 @@ def extract_face(image_path):
         cv2.imwrite(extracted_face_path, face)  # Save to a specific path
         print(f"Largest face saved to {extracted_face_path}")
         return extracted_face_path
+def extract_number_from_logo(image_path, logo_box, expected_length):
+    x1, y1, x2, y2 = logo_box
+    x, y = int(x1), int(y1)
+    w, h = int(x2 - x1), int(y2 - y1)
+    
+    image = cv2.imread(image_path)
+    logo_image = image[y:y+h, x:x+w]
+    gray_logo = cv2.cvtColor(logo_image, cv2.COLOR_BGR2GRAY)
+    
+    thresh_logo = cv2.adaptiveThreshold(
+        gray_logo, 255,
+        cv2.ADAPTIVE_THRESH_GAUSSIAN_C,
+        cv2.THRESH_BINARY_INV, 11, 2
+    )
+    
+    kernel = np.ones((1,1), np.uint8)
+    thresh_logo = cv2.morphologyEx(thresh_logo, cv2.MORPH_CLOSE, kernel)
+    
+    result = ocr_reader.readtext(
+        thresh_logo,
+        detail=0,
+        paragraph=False,
+        batch_size=1
+    )
+    
+    extracted_text = "".join(result).replace(" ", "")
+    pattern = rf'\b\d{{{expected_length}}}\b'
+    numbers = re.findall(pattern, extracted_text)
+    
+    print(f"Extracted text: {extracted_text}")
+    print(f"Found numbers: {numbers}")
+    
+    return numbers[0] if numbers else None
 
+def check_logos(image_path):
+    results = model.predict(source=image_path, save=False, imgsz=640, device=0)
+    logos_found = {0: False, 1: False, 2: False, 3: False}
+    logo_numbers = {'logo2': None, 'logo3': None}
+    
+    for result in results:
+        boxes = result.boxes
+        if boxes is not None:
+            for box in boxes:
+                class_id = int(box.cls.item())
+                if class_id in logos_found:
+                    logos_found[class_id] = True
+                    
+                    if class_id == 2:
+                        number = extract_number_from_logo(image_path, box.xyxy[0].cpu().numpy(), 18)
+                        logo_numbers['logo2'] = number
+                    elif class_id == 3:
+                        number = extract_number_from_logo(image_path, box.xyxy[0].cpu().numpy(), 9)
+                        logo_numbers['logo3'] = number
+    
+    return logos_found, logo_numbers
 @app.post("/upload-image/")
 async def upload_image(file: UploadFile = File(...)):
     upload_dir = "uploaded_images"
     os.makedirs(upload_dir, exist_ok=True)
     file_location = f"{upload_dir}/{file.filename}"
-
-    with open(file_location, "wb") as buffer: 
+    
+    with open(file_location, "wb") as buffer:
         shutil.copyfileobj(file.file, buffer)
-
-    logos_found = check_logos(file_location)
-
-    # Check logo combinations
-    if logos_found[0] and logos_found[1] and logos_found[2]:
-        valid_id = True
-    elif (logos_found[0] and logos_found[2]) or (logos_found[1] and logos_found[2]):
-        valid_id = True
-    elif logos_found[0] and logos_found[1]:
-        valid_id = False
-    else:
-        valid_id = False
-
+    
+    logos_found, logo_numbers = check_logos(file_location)
+    
+    # Check if all required logos are found
+    valid_id = (
+        (logos_found[0] and logos_found[1] and logos_found[2] and logos_found[3]) or
+        (logos_found[0] and logos_found[2] and logos_found[3]) or
+        (logos_found[1] and logos_found[2] and logos_found[3])
+    )
+    
     if not valid_id:
-        print("Invalid ID: Missing required logos")
         return JSONResponse(content={
             "message": "Invalid ID: Please retake the picture.",
-            "stop_capture": False  # Indicate not to stop capturing
+            "stop_capture": False
         })
-
-    print(f"File saved at: {file_location}")
-    print("File exists:", os.path.exists(file_location))
-
-    print("Valid ID")
-
-    # Proceed with face extraction
+    
+    # Process ID numbers
+    if logos_found[2] and logos_found[3]:
+        id_number = logo_numbers['logo2']
+        compare_id = logo_numbers['logo3']
+        
+        if id_number and compare_id:
+            return JSONResponse(content={
+                "message": "ID Number and Compare ID found.",
+                "id_number": id_number,
+                "compare_id": compare_id,
+                "stop_capture": True
+            })
+    
+    # Extract face if ID is valid
     face_image_path = extract_face(file_location)
-
-    if face_image_path:
-        return JSONResponse(content={
-            "message": "Face extracted.",
-            "face_image_path": face_image_path,
-            "stop_capture": True  # Indicate to stop capturing
-        })
-    else:
-        return JSONResponse(content={
-            "message": "ID valid but no face detected.",
-            "stop_capture": True  # Indicate to stop capturing
-        })
-
+    return JSONResponse(content={
+        "message": "Face extracted." if face_image_path else "ID valid but no face detected.",
+        "face_image_path": face_image_path,
+        "compare_id": logo_numbers.get('logo3'),
+        "stop_capture": True
+    })
 @app.post("/upload-back-id/")
 async def upload_back_id(file: UploadFile = File(...)):
     upload_dir = "uploaded_back_ids"
@@ -178,7 +211,7 @@ async def upload_back_id(file: UploadFile = File(...)):
             shutil.copyfileobj(file.file, buffer)
 
         # Resize image to reduce memory usage
-        file_location = resize_image(file_location)
+        # file_location = resize_image(file_location)
 
         # Perform logo detection using the second model
         logos_found = check_logos_with_model(file_location, model_back)
