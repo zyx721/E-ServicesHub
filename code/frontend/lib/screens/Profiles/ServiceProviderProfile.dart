@@ -116,6 +116,11 @@ class _ServiceProviderProfileState extends State<ServiceProviderProfile> {
   double rating = 0.0;
   String wilaya = '';
   String commune = '';
+  
+  String wilayaArabic ="";
+  String wilayaLatin = "";
+  String communeArabic ="";
+  String communeLatin ="";
 
   final TextEditingController nameController = TextEditingController();
   final TextEditingController hourlyRateController = TextEditingController();
@@ -124,39 +129,46 @@ class _ServiceProviderProfileState extends State<ServiceProviderProfile> {
   final TextEditingController skillController = TextEditingController();
 
   Future<void> fetchUserData() async {
-    try {
-      final User? user = _auth.currentUser;
-      if (user != null) {
-        final DocumentSnapshot userDoc =
-            await _firestore.collection('users').doc(user.uid).get();
+  try {
+    final User? user = _auth.currentUser;
+    if (user != null) {
+      final DocumentSnapshot userDoc =
+          await _firestore.collection('users').doc(user.uid).get();
 
-        if (userDoc.exists) {
-          final data = userDoc.data() as Map<String, dynamic>;
-          setState(() {
-            userName = data['name'] ?? 'Anonymous';
-            userEmail = data['email'] ?? 'No email';
-            userPhotoUrl = data['photoURL'] ?? '';
-            aboutMe = data['aboutMe'] ?? 'Tell us about yourself';
-            hourlyRate = data['basicInfo']['hourlyRate'] ?? '';
-            profession = data['basicInfo']['profession'] ?? '';
-            wilaya = data['basicInfo']['wilaya'] ?? '';
-            commune = data['basicInfo']['commune'] ?? '';
-            skills = data['skills'];
-            certifications = data['certifications'];
-            workExperience = data['workExperience'];
-            rating = (data['rating'] ?? 0.0).toDouble();
-            portfolioImages = List<String>.from(data['portfolioImages'] ?? []);
-            nameController.text = userName;
-            aboutMeController.text = aboutMe;
-            hourlyRateController.text = hourlyRate;
-            isLoading = false;
-          });
-        }
+      if (userDoc.exists) {
+        final data = userDoc.data() as Map<String, dynamic>;
+        setState(() {
+          userName = data['name'] ?? 'Anonymous';
+          userEmail = data['email'] ?? 'No email';
+          userPhotoUrl = data['photoURL'] ?? '';
+          aboutMe = data['aboutMe'] ?? 'Tell us about yourself';
+          hourlyRate = data['basicInfo']['hourlyRate'] ?? '';
+          profession = data['basicInfo']['profession'] ?? '';
+
+          // Fetch both Arabic and Latin versions of wilaya and commune
+          wilayaArabic = data['basicInfo']['wilaya_arabic'] ?? '';
+          wilayaLatin = data['basicInfo']['wilaya_ascii'] ?? '';
+          communeArabic = data['basicInfo']['commune_arabic'] ?? '';
+          communeLatin = data['basicInfo']['commune_ascii'] ?? '';
+
+
+
+          skills = data['skills'];
+          certifications = data['certifications'];
+          workExperience = data['workExperience'];
+          rating = (data['rating'] ?? 0.0).toDouble();
+          portfolioImages = List<String>.from(data['portfolioImages'] ?? []);
+          nameController.text = userName;
+          aboutMeController.text = aboutMe;
+          hourlyRateController.text = hourlyRate;
+          isLoading = false;
+        });
       }
-    } catch (e) {
-      debugPrint('Error fetching user data: $e');
     }
+  } catch (e) {
+    debugPrint('Error fetching user data: $e');
   }
+}
 
   @override
   void initState() {
@@ -562,6 +574,12 @@ class _ServiceProviderProfileState extends State<ServiceProviderProfile> {
   }
 
   Widget buildProfileInfo(AppLocalizations localizations) {
+
+     final currentLocale = Localizations.localeOf(context).languageCode;
+
+     final displayWilaya = currentLocale == 'ar' ? wilayaArabic : wilayaLatin;
+    final displayCommune = currentLocale == 'ar' ? communeArabic : communeLatin;
+    
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16),
       child: Column(
@@ -570,7 +588,7 @@ class _ServiceProviderProfileState extends State<ServiceProviderProfile> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              buildStat(commune, wilaya),
+              buildStat(displayCommune , displayWilaya ),
               buildStat(localizations.rating, _buildStarRating(rating)),
               buildStat(localizations.hourlyRate,
                   isEditMode ? buildHourlyRateEditor() : '$hourlyRate DZD'),
@@ -578,9 +596,9 @@ class _ServiceProviderProfileState extends State<ServiceProviderProfile> {
           ),
           const SizedBox(height: 24),
           Align(
-            alignment: Alignment.centerLeft,
+          alignment:currentLocale == 'ar' ?Alignment.centerRight :Alignment.centerLeft ,
             child: Text(
-              localizations.aboutMe,
+              localizations.aboutMeLabel,
               style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
             ),
           ),
@@ -592,7 +610,7 @@ class _ServiceProviderProfileState extends State<ServiceProviderProfile> {
                   maxLines: 4,
                   decoration: InputDecoration(
                     border: const OutlineInputBorder(),
-                    hintText: localizations.writeAboutYourself,
+                    hintText: localizations.aboutMeLabel,
                   ),
                 )
               : Text(

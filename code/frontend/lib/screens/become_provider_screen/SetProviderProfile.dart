@@ -106,14 +106,6 @@ class _LocationSelectionFieldsState extends State<LocationSelectionFields> {
         : [];
   }
 
-  // List<AlgeriaLocation> get communes {
-  //   final isArabic = Localizations.localeOf(context).languageCode == 'ar';
-  //   if (selectedWilayaCode != null) {
-  //     return locationsByWilaya[selectedWilayaCode] ?? [];
-  //   }
-  //   return selectedWilayaCode != null ? locationsByWilaya[selectedWilayaCode] ?? []: [];
-  // }
-
   @override
   void initState() {
     super.initState();
@@ -129,63 +121,71 @@ class _LocationSelectionFieldsState extends State<LocationSelectionFields> {
     return Column(
       children: [
         // Wilaya Dropdown
-        DropdownButtonFormField<String>(
-          value: selectedWilayaCode,
-          decoration: InputDecoration(
-            labelText: localizations.wilaya,
-            border: const OutlineInputBorder(),
-            labelStyle: GoogleFonts.poppins(),
-          ),
-          items: uniqueWilayas.map((wilaya) {
-            return DropdownMenuItem<String>(
-              value: wilaya.key,
-              child: Text(wilaya.value, style: GoogleFonts.poppins()),
-            );
-          }).toList(),
-          onChanged: (String? newValue) {
-            setState(() {
-              selectedWilayaCode = newValue;
-              selectedCommuneId = null;
-              widget.onLocationSelected(null);
-            });
-          },
-          validator: (value) =>
-              value == null ? localizations.wilayaRequiredError : null,
-        ),
+   DropdownButtonFormField<String>(
+  value: selectedWilayaCode,
+  decoration: InputDecoration(
+    labelText: localizations.wilaya,
+    border: const OutlineInputBorder(),
+    labelStyle: GoogleFonts.poppins(),
+  ),
+  items: uniqueWilayas.map((wilaya) {
+    return DropdownMenuItem<String>(
+      value: wilaya.key, // wilayaCode
+      child: Text(
+        wilaya.value, // The name of the wilaya based on the locale
+        style: GoogleFonts.poppins(),
+      ),
+    );
+  }).toList(),
+  onChanged: (String? newValue) {
+    setState(() {
+      selectedWilayaCode = newValue;
+      selectedCommuneId = null; // Reset commune selection
+      widget.onLocationSelected(null);
+    });
+  },
+  validator: (value) => 
+      value == null ? localizations.wilayaRequiredError : null,
+),
+
         const SizedBox(height: 10),
         // Commune Dropdown
-        DropdownButtonFormField<int>(
-          value: selectedCommuneId,
-          decoration: InputDecoration(
-            labelText: localizations.commune,
-            border: const OutlineInputBorder(),
-            labelStyle: GoogleFonts.poppins(),
-          ),
-          items: communes.map((commune) {
-            final isArabic =
-                Localizations.localeOf(context).languageCode == 'ar';
-            return DropdownMenuItem<int>(
-              value: commune.id,
-              child: Text(
-                isArabic ? commune.communeName : commune.communeNameAscii,
-                style: GoogleFonts.poppins(),
-              ),
+      DropdownButtonFormField<int>(
+  value: selectedCommuneId,
+  decoration: InputDecoration(
+    labelText: localizations.commune,
+    border: const OutlineInputBorder(),
+    labelStyle: GoogleFonts.poppins(),
+  ),
+  items: communes.map((commune) {
+    return DropdownMenuItem<int>(
+      value: commune.id,
+      child: Text(
+        // Display based on current locale
+        Localizations.localeOf(context).languageCode == 'ar'
+            ? commune.communeName
+            : commune.communeNameAscii,
+        style: GoogleFonts.poppins(),
+      ),
+    );
+  }).toList(),
+  onChanged: selectedWilayaCode == null
+      ? null
+      : (int? newValue) {
+          setState(() {
+            selectedCommuneId = newValue;
+            final selectedLocation = communes.firstWhere(
+              (location) => location.id == newValue,
             );
-          }).toList(),
-          onChanged: selectedWilayaCode == null
-              ? null
-              : (int? newValue) {
-                  setState(() {
-                    selectedCommuneId = newValue;
-                    final selectedLocation = communes.firstWhere(
-                      (location) => location.id == newValue,
-                    );
-                    widget.onLocationSelected(selectedLocation);
-                  });
-                },
-          validator: (value) =>
-              value == null ? localizations.communeRequiredError : null,
-        ),
+
+            // Pass both Arabic and Latin names to the parent
+            widget.onLocationSelected(selectedLocation);
+          });
+        },
+  validator: (value) =>
+      value == null ? localizations.communeRequiredError : null,
+),
+
       ],
     );
   }
@@ -311,6 +311,12 @@ class _ServiceProviderProfileState extends State<SetProviderProfile> {
   String _originalFirstName = "";
   String _originalLastName = "";
 
+
+  String selectedWilayaAscii ="";
+  String selectedWilayaArabic="";
+  String selectedCommuneAscii ="";
+  String selectedCommuneArabic="";
+
   @override
   void initState() {
     super.initState();
@@ -339,84 +345,54 @@ class _ServiceProviderProfileState extends State<SetProviderProfile> {
       debugPrint('Error fetching user data: $e');
     }
   }
+  // Add these variables to track temporary images
+  List<File> _temporaryImageFiles = [];
+  bool _isUploading = false;
 
-  @override
-  void dispose() {
-    // Cleanup temporary uploads when widget is disposed
-    _cleanupTemporaryUploads();
-    super.dispose();
+  // Modify the pickNewPortfolioImage function to store files temporarily
+  Future<void> pickNewPortfolioImage() async {
+    final ImagePicker picker = ImagePicker();
+    final XFile? pickedFile = await picker.pickImage(source: ImageSource.gallery);
+
+    if (pickedFile != null) {
+      setState(() {
+        _temporaryImageFiles.add(File(pickedFile.path));
+      });
+    }
   }
 
-  Future<void> _cleanupTemporaryUploads() async {
-    for (String fileUrl in _temporaryUploads) {
-      try {
-        await _driveService.deleteFile(fileUrl);
-      } catch (e) {
-        debugPrint('Error cleaning up temporary upload: $e');
+  // Add function to upload all images at once
+  Future<List<String>> _uploadAllImages() async {
+    List<String> uploadedUrls = [];
+    setState(() {
+      _isUploading = true;
+    });
+
+    try {
+      for (File file in _temporaryImageFiles) {
+        final fileUrl = await _driveService.uploadFile(file);
+        uploadedUrls.add(fileUrl);
       }
-    }
-  }
-
-  Future<void> uploadToGoogleDrive(File file) async {
-    try {
-      final fileUrl = await _driveService.uploadFile(file);
-
-      setState(() {
-        _temporaryUploads.add(fileUrl); // Track as temporary upload
-        portfolioImages.add(fileUrl);
-      });
-
-      debugPrint('File uploaded temporarily: $fileUrl');
     } catch (e) {
-      debugPrint('Error uploading to Google Drive: $e');
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Failed to upload image')),
-      );
-    }
-  }
-
-  Future<void> deletePortfolioImage(String imageUrl) async {
-    try {
-      final bool? confirm = await showDialog<bool>(
-        context: context,
-        builder: (BuildContext context) {
-          return AlertDialog(
-            title: const Text('Delete Image'),
-            content: const Text('Are you sure you want to delete this image?'),
-            actions: <Widget>[
-              TextButton(
-                onPressed: () => Navigator.of(context).pop(false),
-                child: const Text('Cancel'),
-              ),
-              TextButton(
-                onPressed: () => Navigator.of(context).pop(true),
-                child: const Text('Delete'),
-              ),
-            ],
-          );
-        },
-      );
-
-      if (confirm != true) return;
-
-      await _driveService.deleteFile(imageUrl);
-
+      // If there's an error, cleanup any successful uploads
+      for (String url in uploadedUrls) {
+        try {
+          await _driveService.deleteFile(url);
+        } catch (e) {
+          debugPrint('Error cleaning up after failed upload: $e');
+        }
+      }
+      throw e;
+    } finally {
       setState(() {
-        portfolioImages.remove(imageUrl);
-        _temporaryUploads.remove(imageUrl); // Remove from temporary tracking
+        _isUploading = false;
       });
-
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Image deleted successfully')),
-      );
-    } catch (e) {
-      debugPrint('Error deleting portfolio image: $e');
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Failed to delete image')),
-      );
     }
+
+    return uploadedUrls;
   }
 
+  // Modify the _saveProfile function to include image uploads
   Future<void> _saveProfile() async {
     final localizations = AppLocalizations.of(context);
     if (localizations == null) return;
@@ -460,33 +436,45 @@ class _ServiceProviderProfileState extends State<SetProviderProfile> {
           },
         );
 
-        final DocumentReference userDoc =
-            FirebaseFirestore.instance.collection('users').doc(user.uid);
 
-        // Prepare the profile data
+        // Upload all images first
+        List<String> uploadedImages = [];
+        if (_temporaryImageFiles.isNotEmpty) {
+          uploadedImages = await _uploadAllImages();
+        }
+
+        final DocumentReference userDoc = FirebaseFirestore.instance.collection('users').doc(user.uid);
+
+
+        // Prepare the profile data with uploaded image URLs
         Map<String, dynamic> profileData = {
           'firstName': firstName,
           'lastName': lastName,
           'basicInfo': {
             'profession': _professionController.text,
             'phone': _phoneController.text,
-            'wilaya': selectedWilaya, // Store wilaya separately
-            'commune': selectedCommune, // Store commune separately
+            'wilaya': selectedWilayaAscii, // Latin name
+            'wilaya_arabic': selectedWilayaArabic, // Arabic name
+            'commune': selectedCommuneAscii, // Latin name
+            'commune_arabic': selectedCommuneArabic, // Arabic name
             'hourlyRate': _hourlyRateController.text,
           },
           'skills': _skills,
           'certifications': _certifications,
           'workExperience': _workExperience,
-          'portfolioImages': portfolioImages,
+          'portfolioImages': uploadedImages,
           'rating': 0.0,
           'isProvider': true,
           'aboutMe': _descriptionController.text,
         };
+
         // Update the Firestore document
         await userDoc.update(profileData);
 
+
         // Clear temporary uploads list since they're now saved
         _temporaryUploads.clear();
+
 
         // Close loading indicator
         Navigator.of(context).pop();
@@ -513,7 +501,9 @@ class _ServiceProviderProfileState extends State<SetProviderProfile> {
         );
       }
     }
-  }
+
+
+}
 
   int _calculateDifference(String original, String updated) {
     int difference = 0;
@@ -602,6 +592,88 @@ class _ServiceProviderProfileState extends State<SetProviderProfile> {
     );
   }
 
+bool isAddingImage = false;
+Set<String> deletingImages = {};
+
+// Modify the portfolio section UI to show temporary images
+  Widget buildPortfolioSection() {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            'Portfolio',
+            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+          ),
+          const SizedBox(height: 8),
+          _temporaryImageFiles.isNotEmpty
+              ? SingleChildScrollView(
+                  scrollDirection: Axis.horizontal,
+                  child: Row(
+                    children: _temporaryImageFiles.map((file) {
+                      return Padding(
+                        padding: const EdgeInsets.only(right: 8),
+                        child: Stack(
+                          children: [
+                            Image.file(
+                              file,
+                              width: 100,
+                              height: 100,
+                              fit: BoxFit.cover,
+                            ),
+                            Positioned(
+                              top: 4,
+                              right: 4,
+                              child: Container(
+                                decoration: BoxDecoration(
+                                  color: Colors.black.withOpacity(0.5),
+                                  shape: BoxShape.circle,
+                                ),
+                                child: IconButton(
+                                  icon: const Icon(Icons.delete, color: Colors.white),
+                                  iconSize: 20,
+                                  padding: EdgeInsets.zero,
+                                  constraints: const BoxConstraints(
+                                    minWidth: 32,
+                                    minHeight: 32,
+                                  ),
+                                  onPressed: () {
+                                    setState(() {
+                                      _temporaryImageFiles.remove(file);
+                                    });
+                                  },
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      );
+                    }).toList(),
+                  ),
+                )
+              : const Center(child: Text('No portfolio images selected')),
+          const SizedBox(height: 16),
+          ElevatedButton(
+            onPressed: _isUploading 
+              ? null 
+              : pickNewPortfolioImage,
+            child: _isUploading
+              ? const SizedBox(
+                  height: 20,
+                  width: 20,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                  ),
+                )
+              : const Text('Add Portfolio Image'),
+          ),
+        ],
+      ),
+    );
+  }
+
+
   Widget _buildSectionTitle(String title) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 10),
@@ -649,13 +721,22 @@ class _ServiceProviderProfileState extends State<SetProviderProfile> {
     );
   }
 
-  Future<void> pickNewProfilePicture() async {
-    try {
-      final ImagePicker picker = ImagePicker();
-      final XFile? pickedFile =
-          await picker.pickImage(source: ImageSource.gallery);
 
-      if (pickedFile == null) return;
+
+
+  final FirebaseAuth _auth = FirebaseAuth.instance;
+  
+  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+
+
+
+
+Future<void> pickNewProfilePicture() async {
+  try {
+    final ImagePicker picker = ImagePicker();
+    final XFile? pickedFile = await picker.pickImage(source: ImageSource.gallery);
+    
+    if (pickedFile == null) return;
 
       // Show loading indicator
       if (mounted) {
@@ -760,16 +841,19 @@ class _ServiceProviderProfileState extends State<SetProviderProfile> {
         ),
         const SizedBox(height: 10),
         const SizedBox(height: 10),
-        LocationSelectionFields(
-          onLocationSelected: (location) {
-            if (location != null) {
-              setState(() {
-                selectedWilaya = location.wilayaNameAscii;
-                selectedCommune = location.communeNameAscii;
-              });
-            }
-          },
-        ),
+LocationSelectionFields(
+  onLocationSelected: (location) {
+    if (location != null) {
+      setState(() {
+        selectedWilayaAscii = location.wilayaNameAscii; // Latin
+        selectedWilayaArabic = location.wilayaName;    // Arabic
+        selectedCommuneAscii = location.communeNameAscii; // Latin
+        selectedCommuneArabic = location.communeName;     // Arabic
+      });
+    }
+  },
+),
+
         const SizedBox(height: 10),
         const SizedBox(height: 10),
         TextFormField(
@@ -1002,152 +1086,10 @@ class _ServiceProviderProfileState extends State<SetProviderProfile> {
     });
   }
 
-  final FirebaseAuth _auth = FirebaseAuth.instance;
 
-  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
-
-  Future<void> pickNewPortfolioImage() async {
-    final ImagePicker picker = ImagePicker();
-    final XFile? pickedFile =
-        await picker.pickImage(source: ImageSource.gallery);
-
-    if (pickedFile != null) {
-      final file = File(pickedFile.path);
-      await uploadToGoogleDrive(file);
-    }
-  }
-
-  // Add these to your class state variables
-  bool isAddingImage = false;
-  Set<String> deletingImages = {};
-
-  Widget buildPortfolioSection() {
-    final localizations = AppLocalizations.of(context);
-    if (localizations == null) return const SizedBox.shrink();
-
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const SizedBox(height: 8),
-          portfolioImages.isNotEmpty
-              ? SingleChildScrollView(
-                  scrollDirection: Axis.horizontal,
-                  child: Row(
-                    children: portfolioImages.map((imageUrl) {
-                      final isDeleting = deletingImages.contains(imageUrl);
-
-                      return Padding(
-                        padding: const EdgeInsets.only(right: 8),
-                        child: Stack(
-                          children: [
-                            GestureDetector(
-                              onTap: () {
-                                // Show image in full screen
-                              },
-                              child: Image.network(
-                                imageUrl,
-                                width: 100,
-                                height: 100,
-                                fit: BoxFit.cover,
-                                loadingBuilder: (BuildContext context,
-                                    Widget child,
-                                    ImageChunkEvent? loadingProgress) {
-                                  if (loadingProgress == null) {
-                                    return child;
-                                  }
-                                  return Center(
-                                    child: CircularProgressIndicator(
-                                      value:
-                                          loadingProgress.expectedTotalBytes !=
-                                                  null
-                                              ? loadingProgress
-                                                      .cumulativeBytesLoaded /
-                                                  loadingProgress
-                                                      .expectedTotalBytes!
-                                              : null,
-                                    ),
-                                  );
-                                },
-                              ),
-                            ),
-                            if (isDeleting)
-                              Container(
-                                width: 100,
-                                height: 100,
-                                color: Colors.black.withOpacity(0.5),
-                                child: const Center(
-                                  child: CircularProgressIndicator(
-                                    color: Colors.white,
-                                  ),
-                                ),
-                              ),
-                            if (!isDeleting)
-                              Positioned(
-                                top: 4,
-                                right: 4,
-                                child: Container(
-                                  decoration: BoxDecoration(
-                                    color: Colors.black.withOpacity(0.5),
-                                    shape: BoxShape.circle,
-                                  ),
-                                  child: IconButton(
-                                    icon: const Icon(Icons.delete,
-                                        color: Colors.white),
-                                    iconSize: 20,
-                                    padding: EdgeInsets.zero,
-                                    constraints: const BoxConstraints(
-                                      minWidth: 32,
-                                      minHeight: 32,
-                                    ),
-                                    onPressed: () async {
-                                      setState(() {
-                                        deletingImages.add(imageUrl);
-                                      });
-                                      await deletePortfolioImage(imageUrl);
-                                      setState(() {
-                                        deletingImages.remove(imageUrl);
-                                      });
-                                    },
-                                  ),
-                                ),
-                              ),
-                          ],
-                        ),
-                      );
-                    }).toList(),
-                  ),
-                )
-              : Center(child: Text(localizations.noPortfolioImages)),
-          const SizedBox(height: 16),
-          ElevatedButton(
-            onPressed: isAddingImage
-                ? null
-                : () async {
-                    setState(() {
-                      isAddingImage = true;
-                    });
-                    try {
-                      await pickNewPortfolioImage();
-                    } finally {
-                      setState(() {
-                        isAddingImage = false;
-                      });
-                    }
-                  },
-            child: isAddingImage
-                ? const SizedBox(
-                    height: 20,
-                    width: 20,
-                    child: CircularProgressIndicator(
-                      strokeWidth: 2,
-                    ),
-                  )
-                : Text(localizations.addPortfolioImage),
-          ),
-        ],
-      ),
-    );
-  }
 }
+
+
+ 
+
+  

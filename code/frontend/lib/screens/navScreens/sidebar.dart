@@ -93,6 +93,7 @@ Widget Sidebar(BuildContext context, AppLocalizations appLocalizations) {
                     _buildSidebarItem(
                       context,
                       icon: Icons.admin_panel_settings,
+                      // iconColor: AppColors.mainColor,
                       title: 'Add Admin',
                       onTap: () => Navigator.pushNamed(context, '/add-admin'),
                     )
@@ -157,8 +158,8 @@ Widget _buildSidebarItem(
   required IconData icon,
   required String title,
   required VoidCallback onTap,
-  Color iconColor = AppColors.mainColor, // Default icon color
-  double iconSize = 24.0, // Default icon size
+  Color iconColor = AppColors.secondaryColor, // Default icon color
+  double iconSize = 24.0,             // Default icon size
 }) {
   return ListTile(
     leading: Icon(
