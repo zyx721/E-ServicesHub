@@ -134,15 +134,13 @@ class _ServiceProviderFullProfileState
           profession = data['basicInfo']['profession'] ?? '';
           phoneNubmber = data['basicInfo']['phone'] ?? '';
           skills = data['skills'];
-          wilaya = data['basicInfo']['wilaya'] ?? '';
-          commune = data['basicInfo']['commune'] ?? '';
           certifications = data['certifications'];
           workExperience = data['workExperience'];
           // Fetch both Arabic and Latin versions of wilaya and commune
           wilayaArabic = data['basicInfo']['wilaya_arabic'] ?? '';
-          wilayaLatin = data['basicInfo']['wilaya_ascii'] ?? '';
+          wilayaLatin = data['basicInfo']['wilaya'] ?? '';
           communeArabic = data['basicInfo']['commune_arabic'] ?? '';
-          communeLatin = data['basicInfo']['commune_ascii'] ?? '';
+          communeLatin = data['basicInfo']['commune'] ?? '';
           portfolioImages = List<String>.from(data['portfolioImages'] ?? []);
           selectedWorkChoices = data['selectedWorkChoices'] ?? [];
           rating = (data['rating'] ?? 0.0).toDouble();
@@ -594,7 +592,6 @@ class _ServiceProviderFullProfileState
         _buildSectionTitle(localizations.workDomain),
         _buildWorkDomainsSection(),
         const SizedBox(height: 20),
-         _buildSectionTitle('Portfolio'),
         buildPortfolioSection(),
         const SizedBox(height: 20),
         _buildSectionTitle(localizations.certifications),

@@ -147,9 +147,9 @@ class _ServiceProviderProfileState extends State<ServiceProviderProfile> {
 
           // Fetch both Arabic and Latin versions of wilaya and commune
           wilayaArabic = data['basicInfo']['wilaya_arabic'] ?? '';
-          wilayaLatin = data['basicInfo']['wilaya_ascii'] ?? '';
+          wilayaLatin = data['basicInfo']['wilaya'] ?? '';
           communeArabic = data['basicInfo']['commune_arabic'] ?? '';
-          communeLatin = data['basicInfo']['commune_ascii'] ?? '';
+          communeLatin = data['basicInfo']['commune'] ?? '';
 
 
 
