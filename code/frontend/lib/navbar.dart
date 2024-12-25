@@ -32,12 +32,57 @@ class _NavbarPageState extends State<NavbarPage> {
   List<Widget> screens = [];
   bool isLoading = true;
   bool isAdmin = false;
+  String currentLanguage = 'en'; // Default language
 
   @override
   void initState() {
     super.initState();
+    _loadUserLanguage();
     selectedIndex = widget.initialIndex;
     _initializeScreens();
+  }
+
+    Future<void> _loadUserLanguage() async {
+    try {
+      final user = _auth.currentUser;
+      if (user != null) {
+        final userDoc = await _firestore.collection('users').doc(user.uid).get();
+        if (userDoc.exists) {
+          final data = userDoc.data() as Map<String, dynamic>;
+          final savedLanguage = data['language'] as String?;
+          if (savedLanguage != null) {
+            setState(() {
+              currentLanguage = savedLanguage;
+              // Update app's locale
+              _updateAppLanguage(savedLanguage);
+            });
+          }
+        }
+      }
+    } catch (e) {
+      print('Error loading user language: $e');
+    }
+  }
+
+   Future<void> _updateLanguage(String languageCode) async {
+    try {
+      final user = _auth.currentUser;
+      if (user != null) {
+        // Update in Firestore
+        await _firestore.collection('users').doc(user.uid).update({
+          'language': languageCode,
+        });
+
+        // Update in UI
+        _updateAppLanguage(languageCode);
+
+        setState(() {
+          currentLanguage = languageCode;
+        });
+      }
+    } catch (e) {
+      print('Error updating language: $e');
+    }
   }
 
   // Future<void> _initializeScreens() async {
@@ -221,8 +266,8 @@ class _NavbarPageState extends State<NavbarPage> {
   Widget _buildLanguageDropdown() {
     final localizations = AppLocalizations.of(context);
     if (localizations == null) {
-      return Padding(
-        padding: const EdgeInsets.only(right: 20.0),
+      return const Padding(
+        padding: EdgeInsets.only(right: 20.0),
         child: CircularProgressIndicator(),
       );
     }
@@ -230,8 +275,8 @@ class _NavbarPageState extends State<NavbarPage> {
     return Padding(
       padding: const EdgeInsets.only(right: 20.0),
       child: PopupMenuButton<String>(
-        onSelected: _changeLanguage,
-        icon: Icon(Icons.language, color: Colors.white, size: 28),
+        onSelected: _updateLanguage,
+        icon: const Icon(Icons.language, color: Colors.white, size: 28),
         itemBuilder: (BuildContext context) {
           return [
             _buildLanguageMenuItem('en', localizations.englishLanguageName,
@@ -260,17 +305,17 @@ class _NavbarPageState extends State<NavbarPage> {
     );
   }
 
-  void _changeLanguage(String languageCode) {
+void _updateAppLanguage(String languageCode) {
     Locale newLocale;
     switch (languageCode) {
       case 'ar':
-        newLocale = Locale('ar', '');
+        newLocale = const Locale('ar', '');
         break;
       case 'fr':
-        newLocale = Locale('fr', '');
+        newLocale = const Locale('fr', '');
         break;
       default:
-        newLocale = Locale('en', '');
+        newLocale = const Locale('en', '');
     }
     MyApp.of(context)?.changeLanguage(newLocale);
   }
