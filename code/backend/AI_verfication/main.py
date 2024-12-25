@@ -36,6 +36,7 @@ extracted_face_path = 'extracted_largest_face.jpg'
 MOUTH_POINTS = list(range(48, 68))
 
 # Helper function to calculate mouth aspect ratio (MAR)
+#dsfsdf
 def mouth_aspect_ratio(landmarks):
     # Get the coordinates of the mouth landmarks
     mouth = [(landmarks.part(i).x, landmarks.part(i).y) for i in MOUTH_POINTS]
