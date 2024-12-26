@@ -38,7 +38,10 @@ app = FastAPI()
 face_cascade = cv2.CascadeClassifier('haarcascade_frontalface_default.xml')
 
 # Path to store extracted face images
-extracted_face_path = 'extracted_largest_face.jpg'
+extracted_faces_dir = 'extracted_faces'
+
+# Ensure the directory exists
+os.makedirs(extracted_faces_dir, exist_ok=True)
 
 # Define mouth landmarks (indices from the shape_predictor_68_face_landmarks.dat model)
 MOUTH_POINTS = list(range(48, 68))
@@ -89,7 +92,7 @@ def resize_image(image_path, max_size=(640, 640)):
         print(f"Image resized to {new_size}")
     return image_path
 
-def extract_face(image_path):
+def extract_face(image_path, compare_id):
     image = cv2.imread(image_path)
 
     if image is None:
@@ -105,10 +108,11 @@ def extract_face(image_path):
     else:
         largest_face = max(faces, key=lambda face: face[2] * face[3])  # Find the largest face
         x, y, w, h = largest_face
-        face = image[y:y + h, x:x + w]
-        cv2.imwrite(extracted_face_path, face)  # Save to a specific path
-        print(f"Largest face saved to {extracted_face_path}")
-        return extracted_face_path
+        face = image[y:y + h, x:x + w]  # Corrected coordinates for cropping the face
+        face_image_path = os.path.join(extracted_faces_dir, f"{compare_id}.jpg")
+        cv2.imwrite(face_image_path, face)  # Save to a specific path
+        print(f"Largest face saved to {face_image_path}")
+        return face_image_path
 
 def extract_number_from_logo(image_path, logo_box, expected_length, logo_type):
     try:
@@ -144,7 +148,7 @@ def extract_number_from_logo(image_path, logo_box, expected_length, logo_type):
         
         # Save processed image for debugging
         debug_path = f"debug_processed_{expected_length}.png"
-        cv2.imwrite(debug_path, sharpened_logo)
+
         
         # Perform OCR with adjusted parameters
         result = ocr_reader.readtext(
@@ -233,14 +237,15 @@ def check_id_and_compare_id_exist(id_number, compare_id):
 async def upload_image(file: UploadFile = File(...)):
     global compare_id_global, id_number_global
     try:
-        upload_dir = "uploaded_images"
-        os.makedirs(upload_dir, exist_ok=True)
-        file_location = f"{upload_dir}/{file.filename}"
+        # Generate a temporary file location to save the uploaded image
+        temp_dir = "uploaded_images"
+        os.makedirs(temp_dir, exist_ok=True)
+        temp_file_location = f"{temp_dir}/{file.filename}"
 
-        with open(file_location, "wb") as buffer:
+        with open(temp_file_location, "wb") as buffer:
             shutil.copyfileobj(file.file, buffer)
 
-        logos_found, logo_numbers = check_logos(file_location)
+        logos_found, logo_numbers = check_logos(temp_file_location)
 
         # Check logo presence
         valid_logo_combination = (
@@ -283,8 +288,14 @@ async def upload_image(file: UploadFile = File(...)):
         compare_id_global = compare_id
         id_number_global = id_number
 
+        # Save the uploaded image with the compare_id as part of the filename
+        uploaded_image_dir = "uploaded_images_with_id"
+        os.makedirs(uploaded_image_dir, exist_ok=True)
+        uploaded_image_path = os.path.join(uploaded_image_dir, f"{compare_id}_img.jpg")
+        shutil.move(temp_file_location, uploaded_image_path)
+
         # Extract face
-        face_image_path = extract_face(file_location)
+        face_image_path = extract_face(uploaded_image_path, compare_id)
         if not face_image_path:
             return JSONResponse(content={
                 "message": "Invalid ID: No face detected. Please retake the picture.",
@@ -309,19 +320,20 @@ async def upload_image(file: UploadFile = File(...)):
 @app.post("/upload-back-id/")
 async def upload_back_id(file: UploadFile = File(...)):
     global compare_id_global, id_number_global
-    upload_dir = "uploaded_back_ids"
-    os.makedirs(upload_dir, exist_ok=True)
-    file_location = f"{upload_dir}/{file.filename}"
-
     try:
-        with open(file_location, "wb") as buffer:
+        # Generate a temporary file location to save the uploaded back ID image
+        temp_dir = "uploaded_back_ids"
+        os.makedirs(temp_dir, exist_ok=True)
+        temp_file_location = f"{temp_dir}/{file.filename}"
+
+        with open(temp_file_location, "wb") as buffer:
             shutil.copyfileobj(file.file, buffer)
 
         # Resize image to reduce memory usage
-        # file_location = resize_image(file_location)
+        # temp_file_location = resize_image(temp_file_location)
 
         # Perform logo detection using the second model
-        logos_found = check_logos_with_model(file_location, model_back)
+        logos_found = check_logos_with_model(temp_file_location, model_back)
 
         # Check logo presence
         if not (logos_found[0] and logos_found[1]):
@@ -335,7 +347,7 @@ async def upload_back_id(file: UploadFile = File(...)):
         clear_gpu_memory()
 
         # Perform OCR to extract text from the back of the ID
-        extracted_text = extract_text(file_location)
+        extracted_text = extract_text(temp_file_location)
         last_name, first_name = extract_names(extracted_text)
 
         # Extract second_pair_id from the text
@@ -349,6 +361,12 @@ async def upload_back_id(file: UploadFile = File(...)):
 
             # Compare second_pair_id with the saved compare_id
             if second_pair_id == compare_id_global:
+                # Save the uploaded back ID image with the compare_id as part of the filename
+                uploaded_back_id_dir = "uploaded_back_ids_with_id"
+                os.makedirs(uploaded_back_id_dir, exist_ok=True)
+                uploaded_back_id_path = os.path.join(uploaded_back_id_dir, f"{compare_id_global}_back_img.jpg")
+                shutil.move(temp_file_location, uploaded_back_id_path)
+
                 # Hash the id_number and compare_id and save them to the Metadata collection
                 hashed_id_number = hash_id_number(id_number_global)
                 hashed_compare_id = hash_id_number(compare_id_global)
@@ -403,8 +421,9 @@ def check_logos_with_model(image_path, model):
     print(f"Logos found: {logos_found}")
     return logos_found  # Return a dictionary indicating which logos were found
 
-def compare_faces(face_image_path, tolerance=0.6):
-    # Load the two images for comparison
+def compare_faces(face_image_path, compare_id, tolerance=0.6):
+    # Load the extracted face image for the given compare_id
+    extracted_face_path = os.path.join(extracted_faces_dir, f"{compare_id}.jpg")
     extracted_face = cv2.imread(extracted_face_path)
     submitted_face = cv2.imread(face_image_path)
 
@@ -439,7 +458,7 @@ def compare_faces(face_image_path, tolerance=0.6):
     return results[0]  # Return the result of the comparison
 
 @app.post("/compare-face/")
-async def compare_face(file1: UploadFile = File(...), file2: UploadFile = File(...)):
+async def compare_face(compare_id: str, file1: UploadFile = File(...), file2: UploadFile = File(...)):
     upload_dir = "face_images"
     os.makedirs(upload_dir, exist_ok=True)
     file_location1 = f"{upload_dir}/{file1.filename}"
@@ -461,7 +480,7 @@ async def compare_face(file1: UploadFile = File(...), file2: UploadFile = File(.
         return JSONResponse(content={"message": "Second image should have mouth open."})
 
     # Proceed with face comparison
-    faces_match = compare_faces(file_location1, tolerance=0.6)
+    faces_match = compare_faces(file_location2, compare_id, tolerance=0.6)
 
     if faces_match:
         return JSONResponse(content={"message": "Faces match!"})
@@ -517,7 +536,7 @@ def preprocess_image(image_path):
 
     # Save the preprocessed image (for debugging or further inspection)
     preprocessed_image_path = "preprocessed_image_with_extra_sharpness.png"
-    cv2.imwrite(preprocessed_image_path, resized)
+
 
     return preprocessed_image_path, resized  # Return path and image data
 
