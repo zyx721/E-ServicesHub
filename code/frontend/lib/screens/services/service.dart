@@ -206,7 +206,7 @@ class _ServiceProviderFullProfileState
   String userEmail = '';
   String userPhotoUrl = '';
   String aboutMe = '';
-  String hourlyRate = '';
+  int hourlyRate = 0;
   String phoneNubmber = '';
   bool isVerified = true;
   bool isLoading = true;
@@ -257,25 +257,13 @@ class _ServiceProviderFullProfileState
   final TextEditingController hourlyRateController = TextEditingController();
   final TextEditingController aboutMeController = TextEditingController();
 
-  @override
-  void initState() {
-    super.initState();
-    fetchProviderData();
-  }
-
-  @override
-  void dispose() {
-    hourlyRateController.dispose();
-    aboutMeController.dispose();
-    super.dispose();
-  }
-
-
-
-  void navigateBack() {
-    Navigator.pop(context); // Navigate back to the previous screen or navbar
-  }
-
+// Update initState to properly set the hourlyRateController
+@override
+void initState() {
+  super.initState();
+  hourlyRateController.text = hourlyRate.toString();
+  fetchProviderData();
+}
   @override
 Widget build(BuildContext context) {
   final localizations = AppLocalizations.of(context);
@@ -419,10 +407,13 @@ TabBar(
                             final commenterPhoto =
                                 commenterData['photoURL'] ?? '';
 
-                            return Card(
-                              margin: const EdgeInsets.symmetric(vertical: 8),
-                              child: Padding(
-                                padding: const EdgeInsets.all(12.0),
+                            return     Card(
+    margin: const EdgeInsets.all(8.0),
+    elevation: 4,
+    color: Colors.white,
+    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+    child: Padding(
+      padding: const EdgeInsets.all(16.0),
                                 child: Row(
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
@@ -958,20 +949,13 @@ Widget _buildInfoCard({required Widget child}) {
 
     return         
     
-    Container(
-    padding: const EdgeInsets.all(10),
-    margin: EdgeInsets.all(10),
-    decoration: BoxDecoration(
-      color: Colors.white,
-      borderRadius: BorderRadius.circular(12),
-      boxShadow: [
-        BoxShadow(
-          offset: const Offset(0, 2),
-          blurRadius: 8,
-          color: Colors.black.withOpacity(0.05),
-        ),
-      ],
-    ),
+    Card(
+    margin: const EdgeInsets.all(16.0),
+    elevation: 4,
+    color: Colors.white,
+    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+    child: Padding(
+      padding: const EdgeInsets.all(16.0),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -1006,6 +990,7 @@ Widget _buildInfoCard({required Widget child}) {
                     ),
             ],
           ),
+    ),
         );
   }
 
@@ -1157,20 +1142,14 @@ Widget _buildSkillChip(String skill) {
     });
   }
 
-  return Container(
-    decoration: BoxDecoration(
-      color: Colors.white,
-      borderRadius: BorderRadius.circular(20),
-      boxShadow: [
-        BoxShadow(
-          color: Colors.grey.withOpacity(0.1),
-          spreadRadius: 5,
-          blurRadius: 15,
-          offset: const Offset(0, 3),
-        ),
-      ],
-    ),
-    margin: const EdgeInsets.all(16),
+  return     
+    Card(
+    margin: const EdgeInsets.all(16.0),
+    elevation: 4,
+    color: Colors.white,
+    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+    child: Padding(
+      padding: const EdgeInsets.all(16.0),
     child: ClipRRect(
       borderRadius: BorderRadius.circular(20),
       child: BackdropFilter(
@@ -1194,7 +1173,7 @@ Widget _buildSkillChip(String skill) {
               Text(
                 localizations.workExperience,
                 style: GoogleFonts.poppins(
-                  fontSize: 24,
+                  fontSize: 23,
                   fontWeight: FontWeight.bold,
                   color: Colors.grey.shade800,
                 ),
@@ -1279,6 +1258,7 @@ else
         ),
       ),
     ),
+    ),
   );
 }
  
@@ -1286,23 +1266,13 @@ else
   final localizations = AppLocalizations.of(context);
   if (localizations == null) return const SizedBox.shrink();
 
-  return Container(
-    padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-      color: Colors.white,
-      borderRadius: BorderRadius.circular(20),
-      boxShadow: [
-        BoxShadow(
-          color: Colors.grey.withOpacity(0.1),
-          spreadRadius: 5,
-          blurRadius: 15,
-          offset: const Offset(0, 3),
-        ),
-      ],
-    ),
-    margin: const EdgeInsets.all(16),
+  return     Card(
+    margin: const EdgeInsets.all(16.0),
+    elevation: 4,
+    color: Colors.white,
+    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
     child: Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16),
+      padding: const EdgeInsets.all(16.0),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -1427,19 +1397,13 @@ else
 }
 
  Widget _buildCertificationsSection(AppLocalizations localizations) {
-  return Container(
-    margin: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
-    decoration: BoxDecoration(
-      color: Colors.white,
-      borderRadius: BorderRadius.circular(16),
-      boxShadow: [
-        BoxShadow(
-          color: Colors.black.withOpacity(0.08),
-          blurRadius: 15,
-          offset: const Offset(0, 4),
-        ),
-      ],
-    ),
+  return     Card(
+    margin: const EdgeInsets.all(16.0),
+    elevation: 4,
+    color: Colors.white,
+    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+    child: Padding(
+      padding: const EdgeInsets.all(16.0),
     child: Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -1569,20 +1533,10 @@ else
         ),
       ],
     ),
+    ),
   );
 }
 
-  Widget buildHourlyRateEditor() {
-    return SizedBox(
-      width: 100,
-      child: TextField(
-        controller: hourlyRateController,
-        onChanged: (value) => hourlyRate = value,
-        decoration:
-            const InputDecoration(border: OutlineInputBorder(), isDense: true),
-      ),
-    );
-  }
 
   Widget buildStat(String title, dynamic value) {
     return Column(

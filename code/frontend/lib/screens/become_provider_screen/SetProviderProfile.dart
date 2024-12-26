@@ -457,7 +457,7 @@ class _ServiceProviderProfileState extends State<SetProviderProfile> {
             'wilaya_arabic': selectedWilayaArabic, // Arabic name
             'commune': selectedCommuneAscii, // Latin name
             'commune_arabic': selectedCommuneArabic, // Arabic name
-            'hourlyRate': _hourlyRateController.text,
+            'hourlyRate': int.parse(_hourlyRateController.text),
           },
           'skills': _skills,
           'certifications': _certifications,

@@ -10,6 +10,8 @@ import 'package:googleapis_auth/auth_io.dart';
 import 'package:googleapis/drive/v3.dart' as drive;
 import 'package:flutter/services.dart' show rootBundle;
 import 'dart:ui';
+import 'package:flutter/services.dart';
+
 
 class FullScreenImage extends StatelessWidget {
   final String imageUrl;
@@ -182,7 +184,7 @@ class _ServiceProviderProfileState extends State<ServiceProviderProfile> {
   String userEmail = '';
   String userPhotoUrl = '';
   String aboutMe = '';
-  String hourlyRate = '';
+  int hourlyRate = 0;
   bool isEditMode = false;
   bool isVerified = true;
   bool isLoading = true;
@@ -233,7 +235,7 @@ class _ServiceProviderProfileState extends State<ServiceProviderProfile> {
           portfolioImages = List<String>.from(data['portfolioImages'] ?? []);
           nameController.text = userName;
           aboutMeController.text = aboutMe;
-          hourlyRateController.text = hourlyRate;
+          hourlyRateController.text = hourlyRate.toString();
           isLoading = false;
         });
       }
@@ -243,11 +245,13 @@ class _ServiceProviderProfileState extends State<ServiceProviderProfile> {
   }
 }
 
-  @override
-  void initState() {
-    super.initState();
-    fetchUserData();
-  }
+// Update initState to properly set the hourlyRateController
+@override
+void initState() {
+  super.initState();
+  hourlyRateController.text = hourlyRate.toString();
+  fetchUserData();
+}
 
   @override
   void dispose() {
@@ -617,7 +621,7 @@ style: ElevatedButton.styleFrom(
       if (isEditMode) {
         // Save changes (you can save your form values here if needed)
         userName = nameController.text;
-        hourlyRate = hourlyRateController.text;
+       hourlyRate = int.tryParse(hourlyRateController.text) ?? 0; // Safe conversion
         aboutMe = aboutMeController.text;
         saveUserData();
       }
@@ -1711,19 +1715,24 @@ Widget _buildCertificationsSection(AppLocalizations localizations) {
 }
 
 
-
-  Widget buildHourlyRateEditor() {
-    return SizedBox(
-      width: 100,
-      child: TextField(
-        controller: hourlyRateController,
-        onChanged: (value) => hourlyRate = value,
-        decoration:
-            const InputDecoration(border: OutlineInputBorder(), isDense: true),
+// In buildHourlyRateEditor()
+Widget buildHourlyRateEditor() {
+  return SizedBox(
+    width: 100,
+    child: TextField(
+      controller: hourlyRateController,
+      keyboardType: TextInputType.number, // Numeric keyboard
+      inputFormatters: [FilteringTextInputFormatter.digitsOnly], // Only digits
+      onChanged: (value) {
+        hourlyRate = int.tryParse(value) ?? 0;
+      },
+      decoration: const InputDecoration(
+        border: OutlineInputBorder(),
+        isDense: true,
       ),
-    );
-  }
-
+    ),
+  );
+}
   
   Widget _buildStarRating(double? rating) {
     if (rating == null || rating < 0.0) {
