@@ -21,7 +21,7 @@ class RealTimeDetection extends StatefulWidget {
   _RealTimeDetectionState createState() => _RealTimeDetectionState();
 }
 
-class _RealTimeDetectionState extends State<RealTimeDetection> with SingleTickerProviderStateMixin {
+class _RealTimeDetectionState extends State<RealTimeDetection> with TickerProviderStateMixin {
   late CameraController _cameraController;
   XFile? _capturedImage;
   bool _isUploading = false;
@@ -34,21 +34,48 @@ class _RealTimeDetectionState extends State<RealTimeDetection> with SingleTicker
   bool _showBackIdMessage = false; // Flag to show back ID message
   bool _showFrontIdAnimation = false; // Flag to show front ID animation
   bool _showBackIdAnimation = false; // Flag to show back ID animation
+  late AnimationController _flipAnimationController;
+  bool _showFlipAnimation = false;
+  double _frozenProgress = 0.3; // Start at 30% for initial frame
+  late Animation<double> _scaleAnimation;
 
   @override
   void initState() {
     super.initState();
     _initializeCamera();
+    
+    // Initialize animation controllers with longer duration
     _flashAnimationController = AnimationController(
       duration: const Duration(milliseconds: 300),
       vsync: this,
     );
+
+    _flipAnimationController = AnimationController(
+      duration: const Duration(seconds: 2), // Longer duration for smoother animation
+      vsync: this,
+    );
+
+    // Add scale animation
+    _scaleAnimation = Tween<double>(begin: 0.8, end: 1.0).animate(
+      CurvedAnimation(
+        parent: _flipAnimationController,
+        curve: Curves.easeInOutBack, // Smoother curve
+      ),
+    );
+
     _flashAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
       CurvedAnimation(
         parent: _flashAnimationController,
         curve: Curves.easeInOut,
       ),
     );
+
+    // Show and freeze initial animation
+    setState(() {
+      _showFlipAnimation = true;
+      _frozenProgress = 0.1;
+      _flipAnimationController.value = _frozenProgress;
+    });
   }
 
   Future<void> _initializeCamera() async {
@@ -143,28 +170,44 @@ class _RealTimeDetectionState extends State<RealTimeDetection> with SingleTicker
           if (responseBody["stop_capture"]) {
             setState(() {
               _showBackIdAnimation = true;
+              _showFlipAnimation = false; // Hide flip animation
             });
             await Future.delayed(Duration(seconds: 2));
             await _saveProviderInfo(responseBody["first_name"], responseBody["last_name"]);
-            Navigator.push(
-              context,
-              MaterialPageRoute(builder: (context) => FaceCompareScreen()),
-            );
+            
+            // Add null check and error handling for compare_id
+            final compareId = responseBody["compare_id"];
+            if (compareId != null) {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => FaceCompareScreen(compareId: compareId),
+                ),
+              );
+            } else {
+              _showError("Error: Missing compare ID");
+            }
           } else {
             _showError(responseBody["message"]);
           }
         } else {
-          setState(() {
-            _isBackIdCaptured = true;
-            _capturedImage = null;
-            _showFrontIdMessage = false;
-            _showBackIdMessage = true;
-            _showFrontIdAnimation = true;
-          });
-          await Future.delayed(Duration(seconds: 2));
-          setState(() {
-            _showFrontIdAnimation = false;
-          });
+          if (responseBody["stop_capture"]) {
+            setState(() {
+              _isBackIdCaptured = true;
+              _capturedImage = null;
+              _showFrontIdMessage = false;
+              _showBackIdMessage = true;
+              _showFrontIdAnimation = true;
+              // Show and freeze flip animation at final frame
+              _handleFlipAnimation(freeze: true, freezeProgress: 1.0);
+            });
+            await Future.delayed(Duration(seconds: 2));
+            setState(() {
+              _showFrontIdAnimation = false;
+            });
+          } else {
+            _showError(responseBody["message"]);
+          }
         }
       } else {
         _showError("Upload failed. Please try again.");
@@ -173,7 +216,7 @@ class _RealTimeDetectionState extends State<RealTimeDetection> with SingleTicker
       setState(() {
         _isUploading = false;
       });
-      _showError("Network error. Please check your connection.");
+      _showError("Network error. Please check your connection. Error: $e"); // Add error details
     }
   }
 
@@ -205,6 +248,7 @@ class _RealTimeDetectionState extends State<RealTimeDetection> with SingleTicker
   void dispose() {
     _cameraController.dispose();
     _flashAnimationController.dispose();
+    _flipAnimationController.dispose();
     super.dispose();
   }
 
@@ -256,6 +300,9 @@ class _RealTimeDetectionState extends State<RealTimeDetection> with SingleTicker
                         ),
                 ),
                 if (_capturedImage == null) _buildCameraOverlay(),
+                // Show flip animation above camera preview
+                if (_showFlipAnimation)
+                  _buildLottieAnimation('assets/animation/flip.json', size: 300),
                 AnimatedBuilder(
                   animation: _flashAnimation,
                   builder: (context, child) {
@@ -337,12 +384,41 @@ class _RealTimeDetectionState extends State<RealTimeDetection> with SingleTicker
   }
 
   Widget _buildLottieAnimation(String assetPath, {double size = 200}) {
+    if (assetPath.contains('flip.json') && _showFlipAnimation) {
+      return Positioned(
+        top: MediaQuery.of(context).size.height * 0.08, // Higher position (8% from top)
+        left: 0,
+        right: 0,
+        child: AnimatedBuilder(
+          animation: _scaleAnimation,
+          builder: (context, child) {
+            return Transform.scale(
+              scale: _scaleAnimation.value,
+              child: Center(
+                child: Lottie.asset(
+                  assetPath,
+                  width: size,
+                  height: size,
+                  fit: BoxFit.contain,
+                  controller: _flipAnimationController,
+                  onLoaded: (composition) {
+                    _flipAnimationController.value = _frozenProgress;
+                  },
+                  frameRate: FrameRate.max, // Smoother frame rate
+                ),
+              ),
+            );
+          },
+        ),
+      );
+    }
     return Center(
       child: Lottie.asset(
         assetPath,
         width: size,
         height: size,
         fit: BoxFit.fill,
+        frameRate: FrameRate.max,
       ),
     );
   }
@@ -524,5 +600,22 @@ class _RealTimeDetectionState extends State<RealTimeDetection> with SingleTicker
         );
       },
     );
+  }
+
+  // Add this method to control flip animation
+  void _handleFlipAnimation({bool freeze = false, double? freezeProgress}) {
+    setState(() {
+      _showFlipAnimation = true;
+      if (freeze && freezeProgress != null) {
+        _frozenProgress = freezeProgress;
+        _flipAnimationController.animateTo(
+          _frozenProgress,
+          duration: Duration(seconds: 1),
+          curve: Curves.easeInOutCubic, // Smooth curve for transition
+        );
+      } else {
+        _flipAnimationController.forward();
+      }
+    });
   }
 }

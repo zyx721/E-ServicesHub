@@ -13,6 +13,9 @@ import 'package:flutter/services.dart'; // Import the services package for rootB
 import 'package:hanini_frontend/screens/verification/manual_verification_screen.dart';
 
 class FaceCompareScreen extends StatefulWidget {
+  final String compareId;
+  FaceCompareScreen({required this.compareId});
+
   @override
   _FaceCompareScreenState createState() => _FaceCompareScreenState();
 }
@@ -85,6 +88,7 @@ class _FaceCompareScreenState extends State<FaceCompareScreen> {
         Uri.parse('https://polite-schools-ask.loca.lt/compare-face/'), // Ensure this URL is correct
       );
 
+      request.fields['compare_id'] = widget.compareId; // Use the passed compare_id
       request.files.add(await http.MultipartFile.fromPath('file1', _firstImage!.path));
       request.files.add(await http.MultipartFile.fromPath('file2', _secondImage!.path));
       final response = await request.send();

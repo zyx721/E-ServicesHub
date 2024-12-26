@@ -6,6 +6,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:shared_preferences/shared_preferences.dart'; // Import SharedPreferences
 import 'package:firebase_messaging/firebase_messaging.dart';
+import 'package:geolocator/geolocator.dart'; // Import Geolocator
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({Key? key}) : super(key: key);
@@ -219,6 +220,7 @@ Future<void> _handleGoogleSignIn() async {
 
           final prefs = await SharedPreferences.getInstance();
           await prefs.setBool('isLoggedIn', true);
+          await _getCurrentLocation(); // Get current location
           Navigator.pushNamed(context, '/navbar');
         } else {
           ScaffoldMessenger.of(context).showSnackBar(
@@ -267,6 +269,7 @@ Future<void> _handleGoogleSignIn() async {
     });
   }
 }
+
   @override
   Widget build(BuildContext context) {
     final localizations =
@@ -503,7 +506,7 @@ Future<void> handleLogin(BuildContext context) async {
 
         final prefs = await SharedPreferences.getInstance();
         await prefs.setBool('isLoggedIn', true);
-
+        await _getCurrentLocation(); // Get current location
         Navigator.pushNamed(context, '/navbar');
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -602,4 +605,37 @@ void handleFirebaseAuthError(BuildContext context, Object error) {
       ),
     );
   }
+
+  Future<void> _getCurrentLocation() async {
+  bool serviceEnabled;
+  LocationPermission permission;
+
+  // Check if location services are enabled
+  serviceEnabled = await Geolocator.isLocationServiceEnabled();
+  if (!serviceEnabled) {
+    // Prompt the user to enable location services
+    await Geolocator.openLocationSettings();
+    return;
+  }
+
+  // Check for location permissions
+  permission = await Geolocator.checkPermission();
+  if (permission == LocationPermission.denied) {
+    permission = await Geolocator.requestPermission();
+    if (permission == LocationPermission.denied) {
+      // Permissions are denied, do nothing
+      return;
+    }
+  }
+
+  if (permission == LocationPermission.deniedForever) {
+    // Permissions are permanently denied, do nothing
+    return;
+  }
+
+  // Get the current position
+  Position position = await Geolocator.getCurrentPosition(
+      desiredAccuracy: LocationAccuracy.high);
+  print('Current position: ${position.latitude}, ${position.longitude}');
+}
 }
