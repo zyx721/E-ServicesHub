@@ -1,7 +1,7 @@
 import os
 import shutil
 import cv2
-from fastapi import FastAPI, UploadFile, File
+from fastapi import FastAPI, UploadFile, File, Form
 from fastapi.responses import JSONResponse
 from ultralytics import YOLO
 import face_recognition
@@ -202,7 +202,7 @@ def check_logos(image_path):
                             number = extract_number_from_logo(image_path, box.xyxy[0].cpu().numpy(), 9, 3)
                             if number:  # Only update if a valid number was found
                                 logo_numbers['logo3'] = number
-        
+
         print(f"Logos found: {logos_found}")
         print(f"Extracted numbers: {logo_numbers}")
         return logos_found, logo_numbers
@@ -233,6 +233,16 @@ def check_id_and_compare_id_exist(id_number, compare_id):
     
     return id_number_exists, compare_id_exists
 
+def delete_file(file_path):
+    try:
+        if os.path.exists(file_path):
+            os.remove(file_path)
+            print(f"Deleted file: {file_path}")
+        else:
+            print(f"File not found: {file_path}")
+    except Exception as e:
+        print(f"Error deleting file {file_path}: {e}")
+
 @app.post("/upload-image/")
 async def upload_image(file: UploadFile = File(...)):
     global compare_id_global, id_number_global
@@ -255,6 +265,7 @@ async def upload_image(file: UploadFile = File(...)):
         )
 
         if not valid_logo_combination:
+            delete_file(temp_file_location)
             return JSONResponse(content={
                 "message": "Invalid ID: Missing required logos or numbers. Please retake the picture.",
                 "stop_capture": False
@@ -265,12 +276,14 @@ async def upload_image(file: UploadFile = File(...)):
         compare_id = logo_numbers.get('logo3')
 
         if not id_number or len(id_number) != 18:
+            delete_file(temp_file_location)
             return JSONResponse(content={
                 "message": "Invalid ID: Main ID number not properly detected. Please retake the picture.",
                 "stop_capture": False
             })
 
         if not compare_id or len(compare_id) != 9:
+            delete_file(temp_file_location)
             return JSONResponse(content={
                 "message": "Invalid ID: Compare ID not properly detected. Please retake the picture.",
                 "stop_capture": False
@@ -279,6 +292,7 @@ async def upload_image(file: UploadFile = File(...)):
         # Check if id_number and compare_id already exist in the Metadata collection
         id_number_exists, compare_id_exists = check_id_and_compare_id_exist(id_number, compare_id)
         if id_number_exists or compare_id_exists:
+            delete_file(temp_file_location)
             return JSONResponse(content={
                 "message": "ID number or Compare ID already exists. Please use a different ID.",
                 "stop_capture": False
@@ -297,10 +311,14 @@ async def upload_image(file: UploadFile = File(...)):
         # Extract face
         face_image_path = extract_face(uploaded_image_path, compare_id)
         if not face_image_path:
+            delete_file(uploaded_image_path)
             return JSONResponse(content={
                 "message": "Invalid ID: No face detected. Please retake the picture.",
                 "stop_capture": False
             })
+
+        # Delete the uploaded image after extracting the face
+        delete_file(uploaded_image_path)
 
         return JSONResponse(content={
             "message": "ID verified successfully.",
@@ -337,6 +355,7 @@ async def upload_back_id(file: UploadFile = File(...)):
 
         # Check logo presence
         if not (logos_found[0] and logos_found[1]):
+            delete_file(temp_file_location)
             print("Invalid Back ID: Missing required logos")
             return JSONResponse(content={
                 "message": "Invalid Back ID: Please retake the picture.",
@@ -377,20 +396,27 @@ async def upload_back_id(file: UploadFile = File(...)):
                     'first_name': first_name,
                     'timestamp': datetime.now()
                 })
+
+                # Delete the back ID image after verification
+                delete_file(uploaded_back_id_path)
+
                 return JSONResponse(content={
                     "message": "Back ID verified successfully.",
                     "last_name": last_name,
                     "first_name": first_name,
                     "second_pair_id": second_pair_id,
+                    "compare_id": compare_id_global,  # Add this line
                     "stop_capture": True  # Indicate to stop capturing
                 })
             else:
+                delete_file(temp_file_location)
                 print("Back ID does not match the front ID.")
                 return JSONResponse(content={
                     "message": "Back ID does not match the front ID.",
                     "stop_capture": False  # Indicate not to stop capturing
                 })
         else:
+            delete_file(temp_file_location)
             print("Failed to verify back ID.")
             return JSONResponse(content={
                 "message": "Failed to verify back ID.",
@@ -458,7 +484,7 @@ def compare_faces(face_image_path, compare_id, tolerance=0.6):
     return results[0]  # Return the result of the comparison
 
 @app.post("/compare-face/")
-async def compare_face(compare_id: str, file1: UploadFile = File(...), file2: UploadFile = File(...)):
+async def compare_face(compare_id: str = Form(...), file1: UploadFile = File(...), file2: UploadFile = File(...)):
     upload_dir = "face_images"
     os.makedirs(upload_dir, exist_ok=True)
     file_location1 = f"{upload_dir}/{file1.filename}"
@@ -470,22 +496,40 @@ async def compare_face(compare_id: str, file1: UploadFile = File(...), file2: Up
     with open(file_location2, "wb") as buffer:
         shutil.copyfileobj(file2.file, buffer)
 
-    # Load the pre-trained facial landmark detector
-    predictor = dlib.shape_predictor("shape_predictor_68_face_landmarks.dat")  # Ensure you have the shape predictor file
+    try:
+        # Load the pre-trained facial landmark detector
+        predictor = dlib.shape_predictor("shape_predictor_68_face_landmarks.dat")  # Ensure you have the shape predictor file
 
-    # Verify mouth status
-    if not verify_mouth_status(file_location1, "closed", predictor):
-        return JSONResponse(content={"message": "First image should have mouth closed."})
-    if not verify_mouth_status(file_location2, "open", predictor):
-        return JSONResponse(content={"message": "Second image should have mouth open."})
+        # Verify mouth status
+        if not verify_mouth_status(file_location1, "closed", predictor):
+            delete_file(file_location1)
+            delete_file(file_location2)
+            return JSONResponse(content={"message": "First image should have mouth closed."})
+        if not verify_mouth_status(file_location2, "open", predictor):
+            delete_file(file_location1)
+            delete_file(file_location2)
+            return JSONResponse(content={"message": "Second image should have mouth open."})
 
-    # Proceed with face comparison
-    faces_match = compare_faces(file_location2, compare_id, tolerance=0.6)
+        # Proceed with face comparison
+        faces_match = compare_faces(file_location2, compare_id, tolerance=0.6)
 
-    if faces_match:
-        return JSONResponse(content={"message": "Faces match!"})
-    else:
-        return JSONResponse(content={"message": "Faces do not match."})
+        if faces_match:
+            # Delete the extracted face image after successful verification
+            extracted_face_path = os.path.join(extracted_faces_dir, f"{compare_id}.jpg")
+            delete_file(extracted_face_path)
+            delete_file(file_location1)
+            delete_file(file_location2)
+            return JSONResponse(content={"message": "Faces match!"})
+        else:
+            delete_file(file_location1)
+            delete_file(file_location2)
+            return JSONResponse(content={"message": "Faces do not match."})
+
+    except Exception as e:
+        print(f"Error comparing faces: {e}")
+        delete_file(file_location1)
+        delete_file(file_location2)
+        return JSONResponse(content={"message": "Error comparing faces."})
 
 def enhance_sharpness_and_blacks(image_path, sharpen_amount=2.0, black_boost=1.5):
     """

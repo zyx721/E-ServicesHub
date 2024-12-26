@@ -146,10 +146,19 @@ class _RealTimeDetectionState extends State<RealTimeDetection> with SingleTicker
             });
             await Future.delayed(Duration(seconds: 2));
             await _saveProviderInfo(responseBody["first_name"], responseBody["last_name"]);
-            Navigator.push(
-              context,
-              MaterialPageRoute(builder: (context) => FaceCompareScreen()),
-            );
+            
+            // Add null check and error handling for compare_id
+            final compareId = responseBody["compare_id"];
+            if (compareId != null) {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => FaceCompareScreen(compareId: compareId),
+                ),
+              );
+            } else {
+              _showError("Error: Missing compare ID");
+            }
           } else {
             _showError(responseBody["message"]);
           }
