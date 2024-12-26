@@ -217,14 +217,14 @@ async def upload_image(file: UploadFile = File(...)):
 
         # Check logo presence
         valid_logo_combination = (
-            (logos_found[0] and logos_found[1] and logos_found[2] and logos_found[3]) or
-            (logos_found[0] and logos_found[2] and logos_found[3]) or
-            (logos_found[1] and logos_found[2] and logos_found[3])
+            (logos_found[0] and logos_found[1] and logos_found[2] and logos_found[3] and logo_numbers['logo2'] and logo_numbers['logo3']) or
+            (logos_found[0] and logos_found[2] and logos_found[3] and logo_numbers['logo2'] and logo_numbers['logo3']) or
+            (logos_found[1] and logos_found[2] and logos_found[3] and logo_numbers['logo2'] and logo_numbers['logo3'])
         )
 
         if not valid_logo_combination:
             return JSONResponse(content={
-                "message": "Invalid ID: Missing required logos. Please retake the picture.",
+                "message": "Invalid ID: Missing required logos or numbers. Please retake the picture.",
                 "stop_capture": False
             })
 

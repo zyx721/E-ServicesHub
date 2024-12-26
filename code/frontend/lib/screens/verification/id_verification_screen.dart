@@ -154,17 +154,21 @@ class _RealTimeDetectionState extends State<RealTimeDetection> with SingleTicker
             _showError(responseBody["message"]);
           }
         } else {
-          setState(() {
-            _isBackIdCaptured = true;
-            _capturedImage = null;
-            _showFrontIdMessage = false;
-            _showBackIdMessage = true;
-            _showFrontIdAnimation = true;
-          });
-          await Future.delayed(Duration(seconds: 2));
-          setState(() {
-            _showFrontIdAnimation = false;
-          });
+          if (responseBody["stop_capture"]) {
+            setState(() {
+              _isBackIdCaptured = true;
+              _capturedImage = null;
+              _showFrontIdMessage = false;
+              _showBackIdMessage = true;
+              _showFrontIdAnimation = true;
+            });
+            await Future.delayed(Duration(seconds: 2));
+            setState(() {
+              _showFrontIdAnimation = false;
+            });
+          } else {
+            _showError(responseBody["message"]);
+          }
         }
       } else {
         _showError("Upload failed. Please try again.");
