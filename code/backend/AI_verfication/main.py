@@ -102,14 +102,20 @@ def extract_face(image_path):
         print(f"Largest face saved to {extracted_face_path}")
         return extracted_face_path
 
-def extract_number_from_logo(image_path, logo_box, expected_length):
+def extract_number_from_logo(image_path, logo_box, expected_length, logo_type):
     try:
         x1, y1, x2, y2 = logo_box
-        padding = 30  # Increased padding
-        x = max(0, int(x1) - padding)
-        y = max(0, int(y1) - padding)
-        w = int(x2 - x1) + 2 * padding  
-        h = int(y2 - y1) + 2 * padding
+        if logo_type == 2:
+            padding_left = 90  # Increased padding to the left for logo 2
+            padding_other = 10  # Minimal padding for other directions
+        else:
+            padding_left = 10  # Minimal padding for logo 3
+            padding_other = 10  # Minimal padding for all directions
+
+        x = max(0, int(x1) - padding_left)  # Increase padding to the left
+        y = max(0, int(y1) - padding_other)
+        w = int(x2 - x1) + padding_left + padding_other  # Increase padding on the right side
+        h = int(y2 - y1) + 2 * padding_other
         
         image = cv2.imread(image_path)
         if image is None:
@@ -177,11 +183,11 @@ def check_logos(image_path):
                         logos_found[class_id] = True
                         
                         if class_id == 2:  # Main ID number
-                            number = extract_number_from_logo(image_path, box.xyxy[0].cpu().numpy(), 18)
+                            number = extract_number_from_logo(image_path, box.xyxy[0].cpu().numpy(), 18, 2)
                             if number:  # Only update if a valid number was found
                                 logo_numbers['logo2'] = number
                         elif class_id == 3:  # Compare ID
-                            number = extract_number_from_logo(image_path, box.xyxy[0].cpu().numpy(), 9)
+                            number = extract_number_from_logo(image_path, box.xyxy[0].cpu().numpy(), 9, 3)
                             if number:  # Only update if a valid number was found
                                 logo_numbers['logo3'] = number
         
@@ -193,47 +199,54 @@ def check_logos(image_path):
         print(f"Error in check_logos: {e}")
         return {0: False, 1: False, 2: False, 3: False}, {'logo2': None, 'logo3': None}
 
+# Global variable to store compare_id
+compare_id_global = None
+
 @app.post("/upload-image/")
 async def upload_image(file: UploadFile = File(...)):
+    global compare_id_global
     try:
         upload_dir = "uploaded_images"
         os.makedirs(upload_dir, exist_ok=True)
         file_location = f"{upload_dir}/{file.filename}"
-        
+
         with open(file_location, "wb") as buffer:
             shutil.copyfileobj(file.file, buffer)
-        
+
         logos_found, logo_numbers = check_logos(file_location)
-        
+
         # Check logo presence
         valid_logo_combination = (
             (logos_found[0] and logos_found[1] and logos_found[2] and logos_found[3]) or
             (logos_found[0] and logos_found[2] and logos_found[3]) or
             (logos_found[1] and logos_found[2] and logos_found[3])
         )
-        
+
         if not valid_logo_combination:
             return JSONResponse(content={
                 "message": "Invalid ID: Missing required logos. Please retake the picture.",
                 "stop_capture": False
             })
-        
+
         # Validate ID numbers
         id_number = logo_numbers.get('logo2')
         compare_id = logo_numbers.get('logo3')
-        
+
         if not id_number or len(id_number) != 18:
             return JSONResponse(content={
                 "message": "Invalid ID: Main ID number not properly detected. Please retake the picture.",
                 "stop_capture": False
             })
-            
+
         if not compare_id or len(compare_id) != 9:
             return JSONResponse(content={
                 "message": "Invalid ID: Compare ID not properly detected. Please retake the picture.",
                 "stop_capture": False
             })
-        
+
+        # Save compare_id for later use
+        compare_id_global = compare_id
+
         # Extract face
         face_image_path = extract_face(file_location)
         if not face_image_path:
@@ -241,7 +254,7 @@ async def upload_image(file: UploadFile = File(...)):
                 "message": "Invalid ID: No face detected. Please retake the picture.",
                 "stop_capture": False
             })
-        
+
         return JSONResponse(content={
             "message": "ID verified successfully.",
             "id_number": id_number,
@@ -249,16 +262,17 @@ async def upload_image(file: UploadFile = File(...)):
             "face_image_path": face_image_path,
             "stop_capture": True
         })
-        
+
     except Exception as e:
         print(f"Error processing upload: {e}")
         return JSONResponse(content={
             "message": "Error processing ID. Please try again.",
             "stop_capture": False
         })
-    
+
 @app.post("/upload-back-id/")
 async def upload_back_id(file: UploadFile = File(...)):
+    global compare_id_global
     upload_dir = "uploaded_back_ids"
     os.makedirs(upload_dir, exist_ok=True)
     file_location = f"{upload_dir}/{file.filename}"
@@ -288,16 +302,32 @@ async def upload_back_id(file: UploadFile = File(...)):
         extracted_text = extract_text(file_location)
         last_name, first_name = extract_names(extracted_text)
 
-        if last_name and first_name:
+        # Extract second_pair_id from the text
+        second_pair_id_match = re.search(r'IDDZA(\d{9})', extracted_text, re.IGNORECASE)
+        second_pair_id = second_pair_id_match.group(1) if second_pair_id_match else None
+
+        if last_name and first_name and second_pair_id:
             print(f"Extracted Last Name: {last_name}")
             print(f"Extracted First Name: {first_name}")
-            return JSONResponse(content={
-                "message": "Back ID verified.",
-                "last_name": last_name,
-                "first_name": first_name,
-                "stop_capture": True  # Indicate to stop capturing
-            })
+            print(f"Extracted Second Pair ID: {second_pair_id}")
+
+            # Compare second_pair_id with the saved compare_id
+            if second_pair_id == compare_id_global:
+                return JSONResponse(content={
+                    "message": "Back ID verified successfully.",
+                    "last_name": last_name,
+                    "first_name": first_name,
+                    "second_pair_id": second_pair_id,
+                    "stop_capture": True  # Indicate to stop capturing
+                })
+            else:
+                print("Back ID does not match the front ID.")
+                return JSONResponse(content={
+                    "message": "Back ID does not match the front ID.",
+                    "stop_capture": False  # Indicate not to stop capturing
+                })
         else:
+            print("Failed to verify back ID.")
             return JSONResponse(content={
                 "message": "Failed to verify back ID.",
                 "stop_capture": False  # Indicate not to stop capturing

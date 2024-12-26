@@ -173,7 +173,7 @@ class _RealTimeDetectionState extends State<RealTimeDetection> with SingleTicker
       setState(() {
         _isUploading = false;
       });
-      _showError("Network error. Please check your connection.");
+      _showError("Network error. Please check your connection. Error: $e"); // Add error details
     }
   }
 
