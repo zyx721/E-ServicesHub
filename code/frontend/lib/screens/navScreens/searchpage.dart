@@ -10,6 +10,8 @@ import 'package:hanini_frontend/localization/app_localization.dart'; // Import l
 
 class SearchPage extends StatefulWidget {
   final String? serviceName;
+    // final String? initialSearchTerm;
+
   const SearchPage({Key? key, this.serviceName}) : super(key: key);
 
   @override

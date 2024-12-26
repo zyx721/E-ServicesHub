@@ -591,8 +591,7 @@ class _HomePageState extends State<HomePage> {
                               MaterialPageRoute(
                                 builder: (context) => NavbarPage(
                                   initialIndex: 1, // Index for SearchPage
-                                  serviceName:
-                                      service.name, // Pass the service name
+                                  serviceName: service.name, // Pass the service name
                                 ),
                               ),
                             );

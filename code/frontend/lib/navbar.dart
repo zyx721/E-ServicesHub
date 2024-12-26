@@ -146,12 +146,12 @@ class _NavbarPageState extends State<NavbarPage> {
         isAdmin = isAdminUser;
         screens = isAdminUser
             ? [
-                SearchPage(),
+              SearchPage(serviceName: widget.serviceName),  // Pass the search term
                 AdminProfile(),
               ]
             : [
                 HomePage(),
-                SearchPage(),
+              SearchPage(serviceName: widget.serviceName),  // Pass the search term
                 FavoritesPage(),
                 isProvider ? ServiceProviderProfile() : SimpleUserProfile(),
               ];
