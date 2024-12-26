@@ -213,7 +213,7 @@ id_number_global = None
 
 def hash_id_number(id_number):
     return hashlib.sha256(id_number.encode()).hexdigest()
-
+ 
 def check_id_and_compare_id_exist(id_number, compare_id):
     hashed_id_number = hash_id_number(id_number)
     hashed_compare_id = hash_id_number(compare_id)
