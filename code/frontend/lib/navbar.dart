@@ -85,27 +85,7 @@ class _NavbarPageState extends State<NavbarPage> {
     }
   }
 
-  // Future<void> _initializeScreens() async {
-  // try {
-  //     final isProvider = await _checkIfUserIsProvider();
-  //     setState(() {
-  //       screens = [
-  //         HomePage(),
-  //         // SearchPage(),
-  //         SearchPage(serviceName: widget.serviceName), // Pass serviceName here
-  //         FavoritesPage(),
-  //         isProvider ? ServiceProviderProfile2() : SimpleUserProfile(),
-  //       ];
-  //       isLoading = false;
-  //     });
-  //   } catch (e) {
-  //     // Handle error (e.g., show a message or log it)
-  //     print('Error fetching user data: $e');
-  //     setState(() {
-  //       isLoading = false;
-  //     });
-  //   }
-  // }
+
 
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
