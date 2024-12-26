@@ -13,6 +13,14 @@ import re
 from datetime import datetime
 import torch  # Import torch to manage GPU memory
 import dlib  # Import dlib for facial landmark detection
+import firebase_admin
+from firebase_admin import credentials, firestore
+import hashlib  # Import hashlib for hashing
+
+# Initialize Firebase Admin SDK
+cred = credentials.Certificate("firebase-adminsdk-key.json")
+firebase_admin.initialize_app(cred)
+db = firestore.client()
 
 # Suppress the FutureWarning for torch.load
 warnings.filterwarnings("ignore")
@@ -199,12 +207,31 @@ def check_logos(image_path):
         print(f"Error in check_logos: {e}")
         return {0: False, 1: False, 2: False, 3: False}, {'logo2': None, 'logo3': None}
 
-# Global variable to store compare_id
+# Global variable to store compare_id and id_number
 compare_id_global = None
+id_number_global = None
+
+def hash_id_number(id_number):
+    return hashlib.sha256(id_number.encode()).hexdigest()
+
+def check_id_and_compare_id_exist(id_number, compare_id):
+    hashed_id_number = hash_id_number(id_number)
+    hashed_compare_id = hash_id_number(compare_id)
+    metadata_ref = db.collection('Metadata')
+    
+    id_number_exists = any(metadata_ref.where('id_number', '==', hashed_id_number).stream())
+    compare_id_exists = any(metadata_ref.where('compare_id', '==', hashed_compare_id).stream())
+    
+    print(f"Checking database for ID number: {id_number} (hashed: {hashed_id_number})")
+    print(f"ID number exists: {id_number_exists}")
+    print(f"Checking database for Compare ID: {compare_id} (hashed: {hashed_compare_id})")
+    print(f"Compare ID exists: {compare_id_exists}")
+    
+    return id_number_exists, compare_id_exists
 
 @app.post("/upload-image/")
 async def upload_image(file: UploadFile = File(...)):
-    global compare_id_global
+    global compare_id_global, id_number_global
     try:
         upload_dir = "uploaded_images"
         os.makedirs(upload_dir, exist_ok=True)
@@ -244,8 +271,17 @@ async def upload_image(file: UploadFile = File(...)):
                 "stop_capture": False
             })
 
-        # Save compare_id for later use
+        # Check if id_number and compare_id already exist in the Metadata collection
+        id_number_exists, compare_id_exists = check_id_and_compare_id_exist(id_number, compare_id)
+        if id_number_exists or compare_id_exists:
+            return JSONResponse(content={
+                "message": "ID number or Compare ID already exists. Please use a different ID.",
+                "stop_capture": False
+            })
+
+        # Save compare_id and id_number for later use
         compare_id_global = compare_id
+        id_number_global = id_number
 
         # Extract face
         face_image_path = extract_face(file_location)
@@ -272,7 +308,7 @@ async def upload_image(file: UploadFile = File(...)):
 
 @app.post("/upload-back-id/")
 async def upload_back_id(file: UploadFile = File(...)):
-    global compare_id_global
+    global compare_id_global, id_number_global
     upload_dir = "uploaded_back_ids"
     os.makedirs(upload_dir, exist_ok=True)
     file_location = f"{upload_dir}/{file.filename}"
@@ -313,6 +349,16 @@ async def upload_back_id(file: UploadFile = File(...)):
 
             # Compare second_pair_id with the saved compare_id
             if second_pair_id == compare_id_global:
+                # Hash the id_number and compare_id and save them to the Metadata collection
+                hashed_id_number = hash_id_number(id_number_global)
+                hashed_compare_id = hash_id_number(compare_id_global)
+                db.collection('Metadata').add({
+                    'id_number': hashed_id_number,
+                    'compare_id': hashed_compare_id,
+                    'last_name': last_name,
+                    'first_name': first_name,
+                    'timestamp': datetime.now()
+                })
                 return JSONResponse(content={
                     "message": "Back ID verified successfully.",
                     "last_name": last_name,
