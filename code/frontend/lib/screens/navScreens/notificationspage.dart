@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:hanini_frontend/models/colors.dart';
 import 'package:intl/intl.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter/cupertino.dart';
@@ -8,6 +9,7 @@ import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:googleapis_auth/auth_io.dart' as auth;
 import 'package:hanini_frontend/localization/app_localization.dart';
+
 
 // Add this method to fetch device token
 Future<String?> _getDeviceToken(String userId) async {
@@ -96,110 +98,206 @@ class NotificationsPage extends StatelessWidget {
 
     final theme = Theme.of(context);
 
-    return DefaultTabController(
-      length: 2,
-      child: Scaffold(
-        appBar: AppBar(
-          elevation: 2,
-          shadowColor: Colors.black.withOpacity(0.1),
-          centerTitle: true,
-          backgroundColor: theme.colorScheme.surface,
-          title: Text(
-            localizations.notifications,
-            style: TextStyle(
-              color: theme.colorScheme.onSurface,
-              fontWeight: FontWeight.w700,
-              fontSize: 20,
-              letterSpacing: -0.5,
-            ),
-          ),
-          bottom: PreferredSize(
-            preferredSize: const Size.fromHeight(65),
-            child: Container(
-              decoration: BoxDecoration(
-                border: Border(
-                  bottom: BorderSide(
-                    color: theme.colorScheme.outline.withOpacity(0.1),
-                    width: 1,
+// <<<<<<< HEAD
+//     return DefaultTabController(
+//       length: 2,
+//       child: Scaffold(
+//         appBar: AppBar(
+//           elevation: 2,
+//           shadowColor: Colors.black.withOpacity(0.1),
+//           centerTitle: true,
+//           backgroundColor: theme.colorScheme.surface,
+//           title: Text(
+//             localizations.notifications,
+//             style: TextStyle(
+//               color: theme.colorScheme.onSurface,
+//               fontWeight: FontWeight.w700,
+//               fontSize: 20,
+//               letterSpacing: -0.5,
+//             ),
+//           ),
+//           bottom: PreferredSize(
+//             preferredSize: const Size.fromHeight(65),
+//             child: Container(
+//               decoration: BoxDecoration(
+//                 border: Border(
+//                   bottom: BorderSide(
+//                     color: theme.colorScheme.outline.withOpacity(0.1),
+//                     width: 1,
+//                   ),
+//                 ),
+//               ),
+//               child: TabBar(
+//                 indicatorWeight: 3,
+//                 indicatorColor: theme.colorScheme.primary,
+//                 labelColor: theme.colorScheme.primary,
+//                 unselectedLabelColor:
+//                     theme.colorScheme.onSurface.withOpacity(0.5),
+//                 labelStyle: const TextStyle(
+//                   fontWeight: FontWeight.w600,
+//                   fontSize: 16,
+//                 ),
+//                 unselectedLabelStyle: const TextStyle(
+//                   fontWeight: FontWeight.w500,
+//                   fontSize: 16,
+//                 ),
+//                 indicatorSize: TabBarIndicatorSize.label,
+//                 labelPadding: const EdgeInsets.symmetric(horizontal: 24),
+//                 tabs: [
+//                   Tab(
+//                     height: 56,
+//                     child: Row(
+//                       mainAxisSize: MainAxisSize.min,
+//                       children: [
+//                         Icon(
+//                           Icons.list_alt,
+//                           size: 22,
+//                         ),
+//                         const SizedBox(width: 10),
+//                         Text(
+//                           localizations.listings,
+//                           style: TextStyle(
+//                             height: 1.2,
+// =======
+return DefaultTabController(
+  length: 2,
+  child: Scaffold(
+    appBar: PreferredSize(
+      preferredSize: const Size.fromHeight(120),
+      child: Container(
+        decoration: const BoxDecoration(
+          gradient: AppColors.mainGradient,
+        ),
+            child: AppBar(
+              elevation: 0,
+              centerTitle: true,
+              backgroundColor: Colors.transparent,
+              title: Padding(
+                padding: const EdgeInsets.only(
+                    top: 14.0), // Added padding to shift the title down
+                child: Text(
+                  "Notifications",
+                  style: GoogleFonts.poppins(
+                    color: Colors.white,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 20,
                   ),
                 ),
               ),
-              child: TabBar(
-                indicatorWeight: 3,
-                indicatorColor: theme.colorScheme.primary,
-                labelColor: theme.colorScheme.primary,
-                unselectedLabelColor:
-                    theme.colorScheme.onSurface.withOpacity(0.5),
-                labelStyle: const TextStyle(
-                  fontWeight: FontWeight.w600,
-                  fontSize: 16,
-                ),
-                unselectedLabelStyle: const TextStyle(
-                  fontWeight: FontWeight.w500,
-                  fontSize: 16,
-                ),
-                indicatorSize: TabBarIndicatorSize.label,
-                labelPadding: const EdgeInsets.symmetric(horizontal: 24),
-                tabs: [
-                  Tab(
-                    height: 56,
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(
-                          Icons.list_alt,
-                          size: 22,
+              bottom: PreferredSize(
+                preferredSize: const Size.fromHeight(
+                    60), // Adjusted size for better spacing
+                child: Container(
+                  decoration: BoxDecoration(
+                    color: theme.colorScheme.surface,
+                    borderRadius:
+                        const BorderRadius.vertical(top: Radius.circular(20)),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.1),
+                        blurRadius: 8,
+                        offset: const Offset(0, 2),
+                      ),
+                    ],
+                  ),
+                  // padding: const EdgeInsets.symmetric(horizontal: 16), // Padding for tabs
+                  child: Padding(
+                    padding: const EdgeInsets.only(top: 8.0),
+                    child: TabBar(
+                      indicator: BoxDecoration(
+                        borderRadius: BorderRadius.circular(20), // Rounded tabs
+                        color: theme.colorScheme.primary.withOpacity(0.2),
+                      ),
+                      labelColor: theme.colorScheme.primary,
+                      unselectedLabelColor: Colors.grey,
+                      labelStyle: GoogleFonts.poppins(
+                          fontWeight: FontWeight.w600, fontSize: 16),
+                      tabs: [
+                        Tab(
+                          child: Padding(
+                            padding: const EdgeInsets.all(8.0),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(
+                                  Icons.list_alt,
+                                  size: 22,
+                                  color: theme.colorScheme.primary,
+                                ),
+                                const SizedBox(width: 8),
+                                Text(
+                                  "Listings",
+                                  style: TextStyle(height: 1.2),
+                                ),
+                              ],
+                            ),
+                          ),
                         ),
-                        const SizedBox(width: 10),
-                        Text(
-                          localizations.listings,
-                          style: TextStyle(
-                            height: 1.2,
+                        Tab(
+                          child: Padding(
+                            padding: const EdgeInsets.all(8.0),
+                            child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(
+                                Icons.star_outline,
+                                size: 22,
+                                color: theme.colorScheme.primary,
+                              ),
+                              const SizedBox(width: 8),
+                              Text(
+                                "Reviews",
+                                style: TextStyle(height: 1.2),
+                              ),
+                            ],
+                            ),
+// >>>>>>> Anas_front
                           ),
                         ),
                       ],
                     ),
                   ),
-                  Tab(
-                    height: 56,
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(
-                          Icons.star_outline,
-                          size: 22,
-                        ),
-                        const SizedBox(width: 10),
-                        Text(
-                          localizations.reviews,
-                          style: TextStyle(
-                            height: 1.2,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
+// <<<<<<< HEAD
+//                   Tab(
+//                     height: 56,
+//                     child: Row(
+//                       mainAxisSize: MainAxisSize.min,
+//                       children: [
+//                         Icon(
+//                           Icons.star_outline,
+//                           size: 22,
+//                         ),
+//                         const SizedBox(width: 10),
+//                         Text(
+//                           localizations.reviews,
+//                           style: TextStyle(
+//                             height: 1.2,
+//                           ),
+//                         ),
+//                       ],
+//                     ),
+//                   ),
+//                 ],
+// =======
+                ),
+// >>>>>>> Anas_front
               ),
             ),
           ),
         ),
-        body: Container(
-          color: theme.colorScheme.surface.withOpacity(0.95),
-          child: TabBarView(
-            children: [
-              Container(
-                color: theme.colorScheme.surface.withOpacity(0.95),
-                child: ListingsTab(userId: userId),
-              ),
-              Container(
-                color: theme.colorScheme.surface.withOpacity(0.95),
-                child: ReviewsTab(userId: userId),
-              ),
-            ],
-          ),
+        body:
+            // Padding(
+            // padding: const EdgeInsets.only(top: 8, bottom: 8), // Padding to prevent content from touching edges
+            // child:
+
+            TabBarView(
+          children: [
+            ListingsTab(userId: userId),
+            ReviewsTab(userId: userId),
+          ],
         ),
       ),
+      // ),
     );
   }
 }
@@ -378,7 +476,7 @@ class ListingsList extends StatelessWidget {
             children: [
               Padding(
                 padding:
-                    const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                    const EdgeInsets.symmetric(horizontal: 6, vertical: 8),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: negotiations.asMap().entries.map((entry) {
@@ -659,10 +757,8 @@ class ListingsList extends StatelessWidget {
   ) {
     final userHasCounterOffer =
         (status.toLowerCase().contains('counter_offer_received'));
-
     final localizations = AppLocalizations.of(context);
     if (localizations == null) return const SizedBox.shrink();
-
     if (type == "received" && status.toLowerCase() == 'pending') {
       return Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -913,7 +1009,6 @@ class ListingsList extends StatelessWidget {
   Widget build(BuildContext context) {
     final localizations = AppLocalizations.of(context);
     if (localizations == null) return const SizedBox.shrink();
-
     final collectionKey =
         type == "sent" ? 'Listing_(sent)' : 'Listing_(received)';
     final theme = Theme.of(context);

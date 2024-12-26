@@ -118,9 +118,11 @@ class _FavoritesPageState extends State<FavoritesPage> {
     final AppLocalizations appLocalizations = AppLocalizations.of(context)!;
 
     return Scaffold(
-      body: Padding(
-        padding: const EdgeInsets.all(20.0),
-        child: Column(
+      body: 
+      Padding(
+        padding: const EdgeInsets.only(left: 20.0, right: 20.0),
+        child: 
+        Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             const SizedBox(height: 20),

@@ -1085,11 +1085,4 @@ LocationSelectionFields(
       _certifications.remove(certification);
     });
   }
-
-
 }
-
-
- 
-
-  
