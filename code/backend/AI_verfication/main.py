@@ -1,7 +1,7 @@
 import os
 import shutil
 import cv2
-from fastapi import FastAPI, UploadFile, File
+from fastapi import FastAPI, UploadFile, File, Form
 from fastapi.responses import JSONResponse
 from ultralytics import YOLO
 import face_recognition
@@ -13,6 +13,14 @@ import re
 from datetime import datetime
 import torch  # Import torch to manage GPU memory
 import dlib  # Import dlib for facial landmark detection
+import firebase_admin
+from firebase_admin import credentials, firestore
+import hashlib  # Import hashlib for hashing
+
+# Initialize Firebase Admin SDK
+cred = credentials.Certificate("firebase-adminsdk-key.json")
+firebase_admin.initialize_app(cred)
+db = firestore.client()
 
 # Suppress the FutureWarning for torch.load
 warnings.filterwarnings("ignore")
@@ -30,12 +38,16 @@ app = FastAPI()
 face_cascade = cv2.CascadeClassifier('haarcascade_frontalface_default.xml')
 
 # Path to store extracted face images
-extracted_face_path = 'extracted_largest_face.jpg'
+extracted_faces_dir = 'extracted_faces'
+
+# Ensure the directory exists
+os.makedirs(extracted_faces_dir, exist_ok=True)
 
 # Define mouth landmarks (indices from the shape_predictor_68_face_landmarks.dat model)
 MOUTH_POINTS = list(range(48, 68))
 
 # Helper function to calculate mouth aspect ratio (MAR)
+#dsfsdf
 def mouth_aspect_ratio(landmarks):
     # Get the coordinates of the mouth landmarks
     mouth = [(landmarks.part(i).x, landmarks.part(i).y) for i in MOUTH_POINTS]
@@ -80,25 +92,7 @@ def resize_image(image_path, max_size=(640, 640)):
         print(f"Image resized to {new_size}")
     return image_path
 
-def check_logos(image_path):
-    # Perform logo detection using the YOLO model
-    results = model.predict(source=image_path, save=False, imgsz=640, device=0)
-    logos_found = {0: False, 1: False, 2: False}  # Assuming classes 0, 1, 2 correspond to the logos
-
-    for result in results:
-        boxes = result.boxes
-        if boxes is not None:
-            for box in boxes:
-                class_id = box.cls.item()
-                if class_id in logos_found:
-                    logos_found[class_id] = True  # Mark the logo as found
-
-    # Log the detection results for debugging purposes
-    print(f"Logos found: {logos_found}")
-
-    return logos_found  # Return a dictionary indicating which logos were found
-
-def extract_face(image_path):
+def extract_face(image_path, compare_id):
     image = cv2.imread(image_path)
 
     if image is None:
@@ -114,77 +108,254 @@ def extract_face(image_path):
     else:
         largest_face = max(faces, key=lambda face: face[2] * face[3])  # Find the largest face
         x, y, w, h = largest_face
-        face = image[y:y + h, x:x + w]
-        cv2.imwrite(extracted_face_path, face)  # Save to a specific path
-        print(f"Largest face saved to {extracted_face_path}")
-        return extracted_face_path
+        face = image[y:y + h, x:x + w]  # Corrected coordinates for cropping the face
+        face_image_path = os.path.join(extracted_faces_dir, f"{compare_id}.jpg")
+        cv2.imwrite(face_image_path, face)  # Save to a specific path
+        print(f"Largest face saved to {face_image_path}")
+        return face_image_path
+
+def extract_number_from_logo(image_path, logo_box, expected_length, logo_type):
+    try:
+        x1, y1, x2, y2 = logo_box
+        if logo_type == 2:
+            padding_left = 90  # Increased padding to the left for logo 2
+            padding_other = 10  # Minimal padding for other directions
+        else:
+            padding_left = 10  # Minimal padding for logo 3
+            padding_other = 10  # Minimal padding for all directions
+
+        x = max(0, int(x1) - padding_left)  # Increase padding to the left
+        y = max(0, int(y1) - padding_other)
+        w = int(x2 - x1) + padding_left + padding_other  # Increase padding on the right side
+        h = int(y2 - y1) + 2 * padding_other
+        
+        image = cv2.imread(image_path)
+        if image is None:
+            print("Failed to load image")
+            return None
+            
+        # Ensure coordinates are within image bounds
+        y2 = min(y + h, image.shape[0])
+        x2 = min(x + w, image.shape[1])
+        logo_image = image[y:y2, x:x2]
+        
+        # Convert to grayscale
+        gray_logo = cv2.cvtColor(logo_image, cv2.COLOR_BGR2GRAY)
+        
+        # Apply sharpening
+        kernel = np.array([[0, -1, 0], [-1, 5,-1], [0, -1, 0]])
+        sharpened_logo = cv2.filter2D(gray_logo, -1, kernel)
+        
+        # Save processed image for debugging
+        debug_path = f"debug_processed_{expected_length}.png"
+
+        
+        # Perform OCR with adjusted parameters
+        result = ocr_reader.readtext(
+            sharpened_logo,
+            detail=0,
+            paragraph=False,
+            batch_size=1,
+            min_size=10,
+            contrast_ths=0.2,
+            adjust_contrast=0.5,
+            text_threshold=0.6
+        )
+        
+        # Join all results and clean up
+        extracted_text = "".join(result).replace(" ", "").replace(":", "").replace("+", "").replace("*", "")
+        print(f"Cleaned extracted text: {extracted_text}")
+        
+        # Extract numbers of expected length
+        pattern = rf'\d{{{expected_length}}}'
+        numbers = re.findall(pattern, extracted_text)
+        
+        if not numbers:
+            print(f"No valid {expected_length}-digit number found in: {extracted_text}")
+            return None
+            
+        return numbers[0]
+        
+    except Exception as e:
+        print(f"Error in extract_number_from_logo: {e}")
+        return None
+
+def check_logos(image_path):
+    results = model.predict(source=image_path, save=False, imgsz=640, device=0)
+    logos_found = {0: False, 1: False, 2: False, 3: False}
+    logo_numbers = {'logo2': None, 'logo3': None}
+    
+    try:
+        for result in results:
+            boxes = result.boxes
+            if boxes is not None:
+                for box in boxes:
+                    class_id = int(box.cls.item())
+                    if class_id in logos_found:
+                        logos_found[class_id] = True
+                        
+                        if class_id == 2:  # Main ID number
+                            number = extract_number_from_logo(image_path, box.xyxy[0].cpu().numpy(), 18, 2)
+                            if number:  # Only update if a valid number was found
+                                logo_numbers['logo2'] = number
+                        elif class_id == 3:  # Compare ID
+                            number = extract_number_from_logo(image_path, box.xyxy[0].cpu().numpy(), 9, 3)
+                            if number:  # Only update if a valid number was found
+                                logo_numbers['logo3'] = number
+
+        print(f"Logos found: {logos_found}")
+        print(f"Extracted numbers: {logo_numbers}")
+        return logos_found, logo_numbers
+        
+    except Exception as e:
+        print(f"Error in check_logos: {e}")
+        return {0: False, 1: False, 2: False, 3: False}, {'logo2': None, 'logo3': None}
+
+# Global variable to store compare_id and id_number
+compare_id_global = None
+id_number_global = None
+
+def hash_id_number(id_number):
+    return hashlib.sha256(id_number.encode()).hexdigest()
+ 
+def check_id_and_compare_id_exist(id_number, compare_id):
+    hashed_id_number = hash_id_number(id_number)
+    hashed_compare_id = hash_id_number(compare_id)
+    metadata_ref = db.collection('Metadata')
+    
+    id_number_exists = any(metadata_ref.where('id_number', '==', hashed_id_number).stream())
+    compare_id_exists = any(metadata_ref.where('compare_id', '==', hashed_compare_id).stream())
+    
+    print(f"Checking database for ID number: {id_number} (hashed: {hashed_id_number})")
+    print(f"ID number exists: {id_number_exists}")
+    print(f"Checking database for Compare ID: {compare_id} (hashed: {hashed_compare_id})")
+    print(f"Compare ID exists: {compare_id_exists}")
+    
+    return id_number_exists, compare_id_exists
+
+def delete_file(file_path):
+    try:
+        if os.path.exists(file_path):
+            os.remove(file_path)
+            print(f"Deleted file: {file_path}")
+        else:
+            print(f"File not found: {file_path}")
+    except Exception as e:
+        print(f"Error deleting file {file_path}: {e}")
 
 @app.post("/upload-image/")
 async def upload_image(file: UploadFile = File(...)):
-    upload_dir = "uploaded_images"
-    os.makedirs(upload_dir, exist_ok=True)
-    file_location = f"{upload_dir}/{file.filename}"
+    global compare_id_global, id_number_global
+    try:
+        # Generate a temporary file location to save the uploaded image
+        temp_dir = "uploaded_images"
+        os.makedirs(temp_dir, exist_ok=True)
+        temp_file_location = f"{temp_dir}/{file.filename}"
 
-    with open(file_location, "wb") as buffer: 
-        shutil.copyfileobj(file.file, buffer)
+        with open(temp_file_location, "wb") as buffer:
+            shutil.copyfileobj(file.file, buffer)
 
-    logos_found = check_logos(file_location)
+        logos_found, logo_numbers = check_logos(temp_file_location)
 
-    # Check logo combinations
-    if logos_found[0] and logos_found[1] and logos_found[2]:
-        valid_id = True
-    elif (logos_found[0] and logos_found[2]) or (logos_found[1] and logos_found[2]):
-        valid_id = True
-    elif logos_found[0] and logos_found[1]:
-        valid_id = False
-    else:
-        valid_id = False
+        # Check logo presence
+        valid_logo_combination = (
+            (logos_found[0] and logos_found[1] and logos_found[2] and logos_found[3] and logo_numbers['logo2'] and logo_numbers['logo3']) or
+            (logos_found[0] and logos_found[2] and logos_found[3] and logo_numbers['logo2'] and logo_numbers['logo3']) or
+            (logos_found[1] and logos_found[2] and logos_found[3] and logo_numbers['logo2'] and logo_numbers['logo3'])
+        )
 
-    if not valid_id:
-        print("Invalid ID: Missing required logos")
+        if not valid_logo_combination:
+            delete_file(temp_file_location)
+            return JSONResponse(content={
+                "message": "Invalid ID: Missing required logos or numbers. Please retake the picture.",
+                "stop_capture": False
+            })
+
+        # Validate ID numbers
+        id_number = logo_numbers.get('logo2')
+        compare_id = logo_numbers.get('logo3')
+
+        if not id_number or len(id_number) != 18:
+            delete_file(temp_file_location)
+            return JSONResponse(content={
+                "message": "Invalid ID: Main ID number not properly detected. Please retake the picture.",
+                "stop_capture": False
+            })
+
+        if not compare_id or len(compare_id) != 9:
+            delete_file(temp_file_location)
+            return JSONResponse(content={
+                "message": "Invalid ID: Compare ID not properly detected. Please retake the picture.",
+                "stop_capture": False
+            })
+
+        # Check if id_number and compare_id already exist in the Metadata collection
+        id_number_exists, compare_id_exists = check_id_and_compare_id_exist(id_number, compare_id)
+        if id_number_exists or compare_id_exists:
+            delete_file(temp_file_location)
+            return JSONResponse(content={
+                "message": "ID number or Compare ID already exists. Please use a different ID.",
+                "stop_capture": False
+            })
+
+        # Save compare_id and id_number for later use
+        compare_id_global = compare_id
+        id_number_global = id_number
+
+        # Save the uploaded image with the compare_id as part of the filename
+        uploaded_image_dir = "uploaded_images_with_id"
+        os.makedirs(uploaded_image_dir, exist_ok=True)
+        uploaded_image_path = os.path.join(uploaded_image_dir, f"{compare_id}_img.jpg")
+        shutil.move(temp_file_location, uploaded_image_path)
+
+        # Extract face
+        face_image_path = extract_face(uploaded_image_path, compare_id)
+        if not face_image_path:
+            delete_file(uploaded_image_path)
+            return JSONResponse(content={
+                "message": "Invalid ID: No face detected. Please retake the picture.",
+                "stop_capture": False
+            })
+
+        # Delete the uploaded image after extracting the face
+        delete_file(uploaded_image_path)
+
         return JSONResponse(content={
-            "message": "Invalid ID: Please retake the picture.",
-            "stop_capture": False  # Indicate not to stop capturing
-        })
-
-    print(f"File saved at: {file_location}")
-    print("File exists:", os.path.exists(file_location))
-
-    print("Valid ID")
-
-    # Proceed with face extraction
-    face_image_path = extract_face(file_location)
-
-    if face_image_path:
-        return JSONResponse(content={
-            "message": "Face extracted.",
+            "message": "ID verified successfully.",
+            "id_number": id_number,
+            "compare_id": compare_id,
             "face_image_path": face_image_path,
-            "stop_capture": True  # Indicate to stop capturing
+            "stop_capture": True
         })
-    else:
+
+    except Exception as e:
+        print(f"Error processing upload: {e}")
         return JSONResponse(content={
-            "message": "ID valid but no face detected.",
-            "stop_capture": True  # Indicate to stop capturing
+            "message": "Error processing ID. Please try again.",
+            "stop_capture": False
         })
 
 @app.post("/upload-back-id/")
 async def upload_back_id(file: UploadFile = File(...)):
-    upload_dir = "uploaded_back_ids"
-    os.makedirs(upload_dir, exist_ok=True)
-    file_location = f"{upload_dir}/{file.filename}"
-
+    global compare_id_global, id_number_global
     try:
-        with open(file_location, "wb") as buffer:
+        # Generate a temporary file location to save the uploaded back ID image
+        temp_dir = "uploaded_back_ids"
+        os.makedirs(temp_dir, exist_ok=True)
+        temp_file_location = f"{temp_dir}/{file.filename}"
+
+        with open(temp_file_location, "wb") as buffer:
             shutil.copyfileobj(file.file, buffer)
 
         # Resize image to reduce memory usage
-        file_location = resize_image(file_location)
+        # temp_file_location = resize_image(temp_file_location)
 
         # Perform logo detection using the second model
-        logos_found = check_logos_with_model(file_location, model_back)
+        logos_found = check_logos_with_model(temp_file_location, model_back)
 
         # Check logo presence
         if not (logos_found[0] and logos_found[1]):
+            delete_file(temp_file_location)
             print("Invalid Back ID: Missing required logos")
             return JSONResponse(content={
                 "message": "Invalid Back ID: Please retake the picture.",
@@ -195,19 +366,58 @@ async def upload_back_id(file: UploadFile = File(...)):
         clear_gpu_memory()
 
         # Perform OCR to extract text from the back of the ID
-        extracted_text = extract_text(file_location)
+        extracted_text = extract_text(temp_file_location)
         last_name, first_name = extract_names(extracted_text)
 
-        if last_name and first_name:
+        # Extract second_pair_id from the text
+        second_pair_id_match = re.search(r'IDDZA(\d{9})', extracted_text, re.IGNORECASE)
+        second_pair_id = second_pair_id_match.group(1) if second_pair_id_match else None
+
+        if last_name and first_name and second_pair_id:
             print(f"Extracted Last Name: {last_name}")
             print(f"Extracted First Name: {first_name}")
-            return JSONResponse(content={
-                "message": "Back ID verified.",
-                "last_name": last_name,
-                "first_name": first_name,
-                "stop_capture": True  # Indicate to stop capturing
-            })
+            print(f"Extracted Second Pair ID: {second_pair_id}")
+
+            # Compare second_pair_id with the saved compare_id
+            if second_pair_id == compare_id_global:
+                # Save the uploaded back ID image with the compare_id as part of the filename
+                uploaded_back_id_dir = "uploaded_back_ids_with_id"
+                os.makedirs(uploaded_back_id_dir, exist_ok=True)
+                uploaded_back_id_path = os.path.join(uploaded_back_id_dir, f"{compare_id_global}_back_img.jpg")
+                shutil.move(temp_file_location, uploaded_back_id_path)
+
+                # Hash the id_number and compare_id and save them to the Metadata collection
+                hashed_id_number = hash_id_number(id_number_global)
+                hashed_compare_id = hash_id_number(compare_id_global)
+                db.collection('Metadata').add({
+                    'id_number': hashed_id_number,
+                    'compare_id': hashed_compare_id,
+                    'last_name': last_name,
+                    'first_name': first_name,
+                    'timestamp': datetime.now()
+                })
+
+                # Delete the back ID image after verification
+                delete_file(uploaded_back_id_path)
+
+                return JSONResponse(content={
+                    "message": "Back ID verified successfully.",
+                    "last_name": last_name,
+                    "first_name": first_name,
+                    "second_pair_id": second_pair_id,
+                    "compare_id": compare_id_global,  # Add this line
+                    "stop_capture": True  # Indicate to stop capturing
+                })
+            else:
+                delete_file(temp_file_location)
+                print("Back ID does not match the front ID.")
+                return JSONResponse(content={
+                    "message": "Back ID does not match the front ID.",
+                    "stop_capture": False  # Indicate not to stop capturing
+                })
         else:
+            delete_file(temp_file_location)
+            print("Failed to verify back ID.")
             return JSONResponse(content={
                 "message": "Failed to verify back ID.",
                 "stop_capture": False  # Indicate not to stop capturing
@@ -237,8 +447,9 @@ def check_logos_with_model(image_path, model):
     print(f"Logos found: {logos_found}")
     return logos_found  # Return a dictionary indicating which logos were found
 
-def compare_faces(face_image_path, tolerance=0.6):
-    # Load the two images for comparison
+def compare_faces(face_image_path, compare_id, tolerance=0.6):
+    # Load the extracted face image for the given compare_id
+    extracted_face_path = os.path.join(extracted_faces_dir, f"{compare_id}.jpg")
     extracted_face = cv2.imread(extracted_face_path)
     submitted_face = cv2.imread(face_image_path)
 
@@ -273,7 +484,7 @@ def compare_faces(face_image_path, tolerance=0.6):
     return results[0]  # Return the result of the comparison
 
 @app.post("/compare-face/")
-async def compare_face(file1: UploadFile = File(...), file2: UploadFile = File(...)):
+async def compare_face(compare_id: str = Form(...), file1: UploadFile = File(...), file2: UploadFile = File(...)):
     upload_dir = "face_images"
     os.makedirs(upload_dir, exist_ok=True)
     file_location1 = f"{upload_dir}/{file1.filename}"
@@ -285,22 +496,40 @@ async def compare_face(file1: UploadFile = File(...), file2: UploadFile = File(.
     with open(file_location2, "wb") as buffer:
         shutil.copyfileobj(file2.file, buffer)
 
-    # Load the pre-trained facial landmark detector
-    predictor = dlib.shape_predictor("shape_predictor_68_face_landmarks.dat")  # Ensure you have the shape predictor file
+    try:
+        # Load the pre-trained facial landmark detector
+        predictor = dlib.shape_predictor("shape_predictor_68_face_landmarks.dat")  # Ensure you have the shape predictor file
 
-    # Verify mouth status
-    if not verify_mouth_status(file_location1, "closed", predictor):
-        return JSONResponse(content={"message": "First image should have mouth closed."})
-    if not verify_mouth_status(file_location2, "open", predictor):
-        return JSONResponse(content={"message": "Second image should have mouth open."})
+        # Verify mouth status
+        if not verify_mouth_status(file_location1, "closed", predictor):
+            delete_file(file_location1)
+            delete_file(file_location2)
+            return JSONResponse(content={"message": "First image should have mouth closed."})
+        if not verify_mouth_status(file_location2, "open", predictor):
+            delete_file(file_location1)
+            delete_file(file_location2)
+            return JSONResponse(content={"message": "Second image should have mouth open."})
 
-    # Proceed with face comparison
-    faces_match = compare_faces(file_location1, tolerance=0.6)
+        # Proceed with face comparison
+        faces_match = compare_faces(file_location2, compare_id, tolerance=0.6)
 
-    if faces_match:
-        return JSONResponse(content={"message": "Faces match!"})
-    else:
-        return JSONResponse(content={"message": "Faces do not match."})
+        if faces_match:
+            # Delete the extracted face image after successful verification
+            extracted_face_path = os.path.join(extracted_faces_dir, f"{compare_id}.jpg")
+            delete_file(extracted_face_path)
+            delete_file(file_location1)
+            delete_file(file_location2)
+            return JSONResponse(content={"message": "Faces match!"})
+        else:
+            delete_file(file_location1)
+            delete_file(file_location2)
+            return JSONResponse(content={"message": "Faces do not match."})
+
+    except Exception as e:
+        print(f"Error comparing faces: {e}")
+        delete_file(file_location1)
+        delete_file(file_location2)
+        return JSONResponse(content={"message": "Error comparing faces."})
 
 def enhance_sharpness_and_blacks(image_path, sharpen_amount=2.0, black_boost=1.5):
     """
@@ -351,7 +580,7 @@ def preprocess_image(image_path):
 
     # Save the preprocessed image (for debugging or further inspection)
     preprocessed_image_path = "preprocessed_image_with_extra_sharpness.png"
-    cv2.imwrite(preprocessed_image_path, resized)
+
 
     return preprocessed_image_path, resized  # Return path and image data
 
@@ -373,6 +602,7 @@ def extract_text(image_path):
 
     return extracted_text
 
+# Improved extract_names function to handle the extracted text correctly
 def extract_names(extracted_text):
     """
     Extract last name and first name from complex ID text patterns.
@@ -390,8 +620,8 @@ def extract_names(extracted_text):
     # Look for patterns that match our expected format
     name_pattern = None
     for word in words:
-        # Check if the word contains '<<' and ends with multiple '<'s
-        if '<<' in word and any(c in word for c in ['<', 'K']):  # Include 'K' as it might appear
+        # Check if the word contains '<<' and word ends with multiple '<'s
+        if '<<' in word and word.endswith('<<<<<'):
             # Make sure it's not just a sequence of numbers and '<<'
             parts = word.split('<<')
             if len(parts) >= 2 and any(part.isalpha() for part in parts[:2]):
