@@ -362,7 +362,11 @@ class ListingsList extends StatelessWidget {
     }
   }
 
-  Widget _buildNegotiationHistory(Map<String, dynamic> listing) {
+  Widget _buildNegotiationHistory(
+      BuildContext context, Map<String, dynamic> listing) {
+    final localizations = AppLocalizations.of(context);
+    if (localizations == null) return const SizedBox.shrink();
+
     final negotiations = listing['negotiation_history'] as List<dynamic>? ?? [];
     if (negotiations.isEmpty) return const SizedBox.shrink();
 
@@ -384,7 +388,7 @@ class ListingsList extends StatelessWidget {
                 const Icon(Icons.history, size: 20),
                 const SizedBox(width: 2),
                 Text(
-                  'Negotiation History',
+                  localizations.negotiationHistory,
                   style: GoogleFonts.inter(
                     fontSize: 12,
                     fontWeight: FontWeight.w600,
@@ -461,8 +465,9 @@ class ListingsList extends StatelessWidget {
                                   children: [
                                     Text(
                                       proposedBy == "sender"
-                                          ? "Offer sent"
-                                          : "Counter offer received",
+                                          ? localizations.counterOfferSent
+                                          : localizations
+                                              .counterOfferReceivedText,
                                       style: GoogleFonts.inter(
                                         fontSize: 11,
                                         fontWeight: FontWeight.w600,
@@ -544,7 +549,7 @@ class ListingsList extends StatelessWidget {
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(8),
                 ),
-                prefixText: localizations.dzd,
+                prefixText: "DZD",
               ),
             ),
           ],
@@ -675,7 +680,8 @@ class ListingsList extends StatelessWidget {
 
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Counter offer of \DZD$newPay sent successfully'),
+          content: Text(
+              '${localizations.youSentCounterOfferOf} ${newPay} ${localizations.dzd} ${localizations.successfully}'),
           backgroundColor: Colors.green,
         ),
       );
@@ -704,8 +710,7 @@ class ListingsList extends StatelessWidget {
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           TextButton(
-            onPressed: () =>
-                _updateListingStatus(context, localizations.refuse, listing),
+            onPressed: () => _updateListingStatus(context, 'refused', listing),
             style: TextButton.styleFrom(
               foregroundColor: Colors.red,
             ),
@@ -735,11 +740,11 @@ class ListingsList extends StatelessWidget {
             style: TextButton.styleFrom(
               foregroundColor: Colors.red,
             ),
-            child: const Text('Refuse'),
+            child: Text(localizations.refuse), // one
           ),
           TextButton(
             onPressed: () => _showNegotiationDialog(context, listing),
-            child: Text(localizations.yourCounterOffer),
+            child: Text(localizations.negotiate),
           ),
           // The Accept button should appear only for the party with counter_offer_received
           ElevatedButton(
@@ -1053,7 +1058,32 @@ class ListingsList extends StatelessWidget {
                                           style: const TextStyle(fontSize: 12),
                                         ),
                                         Text(
-                                          status.toUpperCase(),
+                                          status.toLowerCase() == 'active'
+                                              ? localizations.active
+                                              : status.toLowerCase() ==
+                                                      'refused'
+                                                  ? localizations.refuse
+                                                  : status.toLowerCase() ==
+                                                          'pending'
+                                                      ? localizations.pending
+                                                      : status.toLowerCase() ==
+                                                              'completed'
+                                                          ? localizations
+                                                              .completed
+                                                          : status.toLowerCase() ==
+                                                                  'cancelled'
+                                                              ? localizations
+                                                                  .canceled
+                                                              : status.toLowerCase() ==
+                                                                      'counter_offer_sent'
+                                                                  ? localizations
+                                                                      .counterOfferSent
+                                                                  : status.toLowerCase() ==
+                                                                          'counter_offer_received'
+                                                                      ? localizations
+                                                                          .counterOfferReceived
+                                                                      : status
+                                                                          .toUpperCase(),
                                           style: GoogleFonts.inter(
                                             fontSize: 10,
                                             fontWeight: FontWeight.w500,
@@ -1093,7 +1123,9 @@ class ListingsList extends StatelessWidget {
                                   ),
                                   const SizedBox(width: 4),
                                   Text(
-                                    type == "sent" ? "Sent" : "Received",
+                                    type == "sent"
+                                        ? localizations.sent
+                                        : localizations.received,
                                     style: GoogleFonts.inter(
                                       fontSize: 12,
                                       fontWeight: FontWeight.w500,
@@ -1141,7 +1173,7 @@ class ListingsList extends StatelessWidget {
                           ],
                         ),
                         const SizedBox(height: 16),
-                        _buildNegotiationHistory(listing),
+                        _buildNegotiationHistory(context, listing),
                         const SizedBox(height: 16),
                         _buildActionButtons(context, listing, status),
                       ],

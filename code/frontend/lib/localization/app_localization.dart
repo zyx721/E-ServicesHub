@@ -223,18 +223,35 @@ class AppLocalizations {
       : (isFrench ? "Négocier le prix" : "Negotiate Price");
   // Listing Refused
   String get listingRefused => isArabic
-      ? "لقد تم رفض عرضك"
+      ? "لقد قمت برفض العرض "
       : (isFrench ? "Liste refusée" : "Listing Refused");
-
+  // counter_offer_sent
+  String get counterOfferSent => isArabic
+      ? "تم إرسال طلبك "
+      : (isFrench ? "Contre-offre envoyée" : "Counter Offer Sent");
+  // counter_offer_received
+  String get counterOfferReceived => isArabic
+      ? "تم استلام عرض "
+      : (isFrench ? "Contre-offre reçue" : "Counter Offer Received");
   //  Listing accepted successfully
   String get listingAcceptedSuccessfully => isArabic
-      ? "تم قبول عرضك بنجاح"
+      ? "لقد قمت بقبول العرض "
       : (isFrench
           ? "Liste acceptée avec succès"
           : "Listing accepted successfully");
+  // Negotiation History
+  String get negotiationHistory => isArabic
+      ? "تاريخ التفاوض"
+      : (isFrench ? "Historique de négociation" : "Negotiation History");
+
+  // Counter offer received
+  String get counterOfferReceivedText => isArabic
+      ? "تم استلام عرض "
+      : (isFrench ? "Contre-offre reçue" : "Counter Offer Received");
+
   // Listing status updated successfully
   String get listingStatusUpdatedSuccessfully => isArabic
-      ? "تم تحديث عرضك بنجاح"
+      ? "لقد تم تحديث العرض "
       : (isFrench
           ? "Statut de la liste mis à jour avec succès"
           : "Listing status updated successfully");
@@ -243,8 +260,7 @@ class AppLocalizations {
       ? " سعر عرضك"
       : (isFrench ? "Votre contre-offre" : "Your Counter Offer");
   // active
-  String get active =>
-      isArabic ? "العرض ساري" : (isFrench ? "Actif" : "Active");
+  String get active => isArabic ? "مقبول" : (isFrench ? "Actif" : "Active");
 
   // pending
   String get pending =>
@@ -262,16 +278,26 @@ class AppLocalizations {
 
   // You received a counter offer of
   String get youReceivedCounterOfferOf => isArabic
-      ? "لقد تلقيت عرضًا مضادًا بقيمة"
+      ? "لقد تلقيت عرضًا بقيمة"
       : (isFrench
           ? "Vous avez reçu une contre-offre de"
           : "You received a counter offer of");
+  // You received a counter offer of
+  String get youSentCounterOfferOf => isArabic
+      ? "تم إرسال عرضك بقيمة"
+      : (isFrench
+          ? "Vous avez reçu une contre-offre de"
+          : "You received a counter offer of");
+  // // You received a counter offer of
+  String get successfully =>
+      isArabic ? "بنجاح !" : (isFrench ? " avec succès !" : "successfully !");
+
   // for
   String get forText => isArabic ? "لـ" : (isFrench ? "pour" : "for");
 
   // Failed to send counter offer. Please try again.
   String get failedToSendCounterOffer => isArabic
-      ? "فشل إرسال العرض المضاد. يرجى المحاولة مرة أخرى."
+      ? "فشل إرسال العرض . يرجى المحاولة مرة أخرى."
       : (isFrench
           ? "Échec de l'envoi de la contre-offre. Veuillez réessayer."
           : "Failed to send counter offer. Please try again.");
@@ -648,7 +674,7 @@ class AppLocalizations {
 
   // Failed to send listing. Please try again.
   String get failedToSendListing => isArabic
-      ? "فشل إرسال القائمة. يرجى المحاولة مرة أخرى."
+      ? "فشل إرسال. يرجى المحاولة مرة أخرى."
       : (isFrench
           ? "Échec de l'envoi de la liste. Veuillez réessayer."
           : "Failed to send listing. Please try again.");
@@ -656,7 +682,7 @@ class AppLocalizations {
   String get jobListingSentSuccessfully => isArabic
       ? "تم إرسال قائمة الوظائف بنجاح!"
       : (isFrench
-          ? "Liste d'emplois envoyée avec succès!"
+          ? "Liste d's envoyée avec succès!"
           : "Job listing sent successfully!");
 
   // close
