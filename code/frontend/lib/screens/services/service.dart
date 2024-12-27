@@ -613,11 +613,12 @@ void _showAddReviewDialog(
                           batch.update(providerRef, {
                             'reviews': FieldValue.arrayUnion([review]),
                             'newCommentsCount': FieldValue.increment(1),
+                            'review_count': FieldValue.increment(1),
                           });
 
                           // Update reviewer's reviewed_providers array
                           batch.update(reviewerRef, {
-                            'reviewed_providers':
+                            'reviewed_service_ids':
                                 FieldValue.arrayUnion([providerId]),
                           });
 
