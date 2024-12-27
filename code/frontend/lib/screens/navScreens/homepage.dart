@@ -321,17 +321,30 @@ class _HomePageState extends State<HomePage> {
 
   Widget _buildServiceCard(Map<String, dynamic> service, bool isFavorite, String serviceId) {
     return  GestureDetector(
-            onTap: () {
-              // Navigate to FullProfilePage with the selected service's ID
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => ServiceProviderFullProfile(
-                    providerId: serviceId,
-                  ),
-                ),
-              );
-            },
+      onTap: () async {
+        // Print message in terminal
+        debugPrint('Navigating to FullProfilePage with providerId: $serviceId');
+        
+        // Increment the provider's click_count in the database
+        try {
+        final providerDoc = FirebaseFirestore.instance.collection('users').doc(serviceId);
+        await providerDoc.update({
+          'click_count': FieldValue.increment(1),
+        });
+        } catch (e) {
+        debugPrint('Error incrementing click_count: $e');
+        }
+
+        // Navigate to FullProfilePage with the selected service's ID
+        Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => ServiceProviderFullProfile(
+          providerId: serviceId,
+          ),
+        ),
+        );
+      },
             child:Card(
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(16),
