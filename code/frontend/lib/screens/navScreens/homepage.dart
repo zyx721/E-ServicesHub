@@ -43,7 +43,11 @@ class _HomePageState extends State<HomePage> {
   bool _isLoading = true;
   bool _isFetching = false;
   DocumentSnapshot? _lastDocument; // Tracks the last document for pagination
-  final int _pageSize = 10; // Number of items to fetch per request
+  final int _pageSize =7; // Number of items to fetch per 
+  
+   bool _hasMoreData = true;
+
+
 
   @override
   void initState() {
@@ -117,18 +121,18 @@ class _HomePageState extends State<HomePage> {
     }
   }
 
-  Future<void> _fetchServices() async {
-    if (_isFetching) return;
+
+ Future<void> _fetchServices() async {
+    if (_isFetching || !_hasMoreData) return;
     setState(() => _isFetching = true);
 
     try {
-      // Fetch services only for providers, excluding the current user
       Query query = FirebaseFirestore.instance
           .collection('users')
           .where('isProvider', isEqualTo: true)
+          .orderBy('rating', descending: true)  // Sort by rating descending
           .limit(_pageSize);
 
-      // Start after the last document if it exists
       if (_lastDocument != null) {
         query = query.startAfterDocument(_lastDocument!);
       }
@@ -136,27 +140,27 @@ class _HomePageState extends State<HomePage> {
       final QuerySnapshot snapshot = await query.get();
 
       if (snapshot.docs.isNotEmpty) {
-        setState(() {
-          _lastDocument = snapshot.docs.last;
-
-          services.addAll(
-            snapshot.docs.map((doc) {
+        _lastDocument = snapshot.docs.last;
+        final newServices = snapshot.docs
+            .map((doc) {
               final service = doc.data() as Map<String, dynamic>;
               final serviceId = doc.id;
-              // Exclude the current user from the list of services
-              if (serviceId != currentUserId) {
-                return {
-                  ...service,
-                  'docId': serviceId,
-                };
-              } else {
-                return null;
-              }
-            }).whereType<
-                Map<String,
-                    dynamic>>(), // Use `whereType` to filter non-null values
-          );
-        });
+              return serviceId != currentUserId
+                  ? {...service, 'docId': serviceId}
+                  : null;
+            })
+            .whereType<Map<String, dynamic>>()
+            .toList();
+
+        if (newServices.isEmpty) {
+          _hasMoreData = false;
+        } else {
+          setState(() {
+            services.addAll(newServices);
+          });
+        }
+      } else {
+        setState(() => _hasMoreData = false);
       }
     } catch (e) {
       debugPrint('Error fetching services: $e');
@@ -164,7 +168,6 @@ class _HomePageState extends State<HomePage> {
       setState(() => _isFetching = false);
     }
   }
-
   Future<void> toggleFavorite(Map<String, dynamic> service) async {
     if (currentUserId == null) {
       // Show a dialog or snackbar to prompt login
@@ -288,33 +291,36 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-  Widget _buildServicesGrid() {
-    return Padding(
+   Widget _buildServicesGrid() {
+    return GridView.builder(
+      controller: _scrollController,
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-      child: GridView.builder(
-        shrinkWrap: true, // Ensures the grid only takes as much space as needed
-        physics:
-            NeverScrollableScrollPhysics(), // Disables internal scrolling for GridView
-        controller: _scrollController,
-        itemCount: services.length + (_isFetching ? 1 : 0),
-        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-          crossAxisCount: 2,
-          mainAxisSpacing: 20,
-          crossAxisSpacing: 20,
-          childAspectRatio: 0.9, // Control the aspect ratio of the grid cells
-        ),
-        itemBuilder: (context, index) {
-          if (index >= services.length) {
-            return Center(child: CircularProgressIndicator());
-          }
+      itemCount: services.length + (_hasMoreData ? 1 : 0),
+      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+        crossAxisCount: 2,
+        mainAxisSpacing: 20,
+        crossAxisSpacing: 20,
+        childAspectRatio: 0.9,
+      ),
+      itemBuilder: (context, index) {
+        if (index >= services.length) {
+          return _isFetching
+              ? const Center(child: CircularProgressIndicator())
+              : const SizedBox();
+        }
 
-          final service = services[index];
-          final serviceId = service['docId'] ?? service['uid'];
-          final isFavorite = favoriteServices.contains(serviceId);
+        final service = services[index];
+        final serviceId = service['docId'] ?? service['uid'];
+        final isFavorite = favoriteServices.contains(serviceId);
 
-          return GestureDetector(
+        return _buildServiceCard(service, isFavorite, serviceId);
+      },
+    );
+  }
+
+  Widget _buildServiceCard(Map<String, dynamic> service, bool isFavorite, String serviceId) {
+    return  GestureDetector(
             onTap: () {
-              // Navigate to FullProfilePage with the selected service's ID
               Navigator.push(
                 context,
                 MaterialPageRoute(
@@ -324,90 +330,76 @@ class _HomePageState extends State<HomePage> {
                 ),
               );
             },
-            child: Card(
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(16),
+            child:Card(
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: Stack(
+        children: [
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Container(
+                height: 90,
+                decoration: BoxDecoration(
+                  borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
+                  image: DecorationImage(
+                    image: NetworkImage(service['photoURL'] ?? ''),
+                    fit: BoxFit.cover,
+                  ),
+                ),
               ),
-              child: Stack(
-                children: [
-                  Column(
+              Container(
+                decoration: BoxDecoration(
+                  color: AppColors.tempColor,
+                  borderRadius: const BorderRadius.vertical(bottom: Radius.circular(16)),
+                ),
+                child: Padding(
+                  padding: const EdgeInsets.all(8.0),
+                  child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      // Set a reduced height for the image container
-                      Container(
-                        height: 90, // Reduced height for the image container
-                        decoration: BoxDecoration(
-                          borderRadius: BorderRadius.vertical(
-                            top: Radius.circular(16),
-                          ),
-                          image: DecorationImage(
-                            image: NetworkImage(service['photoURL'] ?? ''),
-                            fit: BoxFit.cover,
-                          ),
+                      Text(
+                        service['basicInfo']['profession'] ?? 'N/A',
+                        style: GoogleFonts.poppins(
+                          fontSize: 14,
+                          fontWeight: FontWeight.bold,
                         ),
-                        child: service['photoURL'] == null
-                            ? Center(
-                                child: Icon(Icons.broken_image,
-                                    size: 50, color: Colors.grey),
-                              )
-                            : null,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
                       ),
-                      Container(
-                        decoration: BoxDecoration(
-                          color: AppColors.tempColor,
-                          borderRadius: BorderRadius.vertical(
-                            bottom: Radius.circular(16),
-                          ),
+                      Text(
+                        service['name'] ?? 'Unknown',
+                        style: GoogleFonts.poppins(
+                          fontSize: 12,
+                          color: AppColors.mainColor,
                         ),
-                        child: Padding(
-                          padding: const EdgeInsets.all(8.0),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                service['basicInfo']['profession'] ?? 'N/A',
-                                style: GoogleFonts.poppins(
-                                  fontSize: 14,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                              Text(
-                                service['name'] ?? 'Unknown',
-                                style: GoogleFonts.poppins(
-                                  fontSize: 12,
-                                  color: AppColors.mainColor,
-                                ),
-                                maxLines: 1,
-                              ),
-                              _buildStarRating(service['rating'].toDouble()),
-                            ],
-                          ),
-                        ),
+                        maxLines: 1,
                       ),
+                      _buildStarRating(service['rating']?.toDouble() ?? 0.0),
                     ],
                   ),
-                  Positioned(
-                    top: 8,
-                    right: 8,
-                    child: IconButton(
-                      icon: Icon(
-                        isFavorite ? Icons.favorite : Icons.favorite_border,
-                        color: isFavorite ? Colors.red : Colors.grey,
-                      ),
-                      onPressed: () => toggleFavorite(service),
-                    ),
-                  ),
-                ],
+                ),
               ),
+            ],
+          ),
+          Positioned(
+            top: 8,
+            right: 8,
+            child: IconButton(
+              icon: Icon(
+                isFavorite ? Icons.favorite : Icons.favorite_border,
+                color: isFavorite ? Colors.red : Colors.grey,
+              ),
+              onPressed: () => toggleFavorite(service),
             ),
-          );
-        },
+          ),
+        ],
       ),
+    ),
     );
+    
   }
-
   Widget _buildStarRating(double rating) {
     int fullStars = rating.floor();
     int halfStars = (rating % 1 >= 0.5) ? 1 : 0;
@@ -425,10 +417,11 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-  void _onScroll() {
+void _onScroll() {
     if (_scrollController.position.pixels >=
             _scrollController.position.maxScrollExtent - 200 &&
-        !_isFetching) {
+        !_isFetching &&
+        _hasMoreData) {
       _fetchServices();
     }
   }
@@ -766,35 +759,66 @@ String _getWorkDomainIdForService(String serviceName) {
 
 
 
-  @override
+@override
   Widget build(BuildContext context) {
     return Scaffold(
       body: _isLoading
-          ? Center(child: CircularProgressIndicator())
-          : SingleChildScrollView(
-              child: Column(
-                children: [
-                  const SizedBox(height: 12),
-                  // Ads slider at the top
-                  _buildAdsSlider([
-                    'assets/images/ads/first_page.png',
-                    'assets/images/ads/second_page.png',
-                    'assets/images/ads/third_page.png',
-                  ]),
-                  const SizedBox(height: 20),
-                  _buildTopPopularHeader(context),
-                  const SizedBox(height: 20),
-                  _servicesSection(),
-                  const SizedBox(height: 20),
-                  // Top Services Header
-                  _buildTopServicesHeader(),
-                  const SizedBox(height: 10),
-                  // Services Grid (no Expanded here)
-                  _buildServicesGrid(),
-                ],
-              ),
+          ? const Center(child: CircularProgressIndicator())
+          : CustomScrollView(
+              controller: _scrollController,
+              slivers: [
+                SliverToBoxAdapter(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const SizedBox(height: 12),
+                      _buildAdsSlider([
+                        'assets/images/ads/first_page.png',
+                        'assets/images/ads/second_page.png',
+                        'assets/images/ads/third_page.png',
+                      ]),
+                      const SizedBox(height: 20),
+                      _buildTopPopularHeader(context),
+                      const SizedBox(height: 20),
+                      SizedBox(
+                        height: 180,
+                        child: _servicesSection(),
+                      ),
+                      const SizedBox(height: 20),
+                      _buildTopServicesHeader(),
+                      const SizedBox(height: 10),
+                    ],
+                  ),
+                ),
+                SliverGrid(
+                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                    crossAxisCount: 2,
+                    mainAxisSpacing: 20,
+                    crossAxisSpacing: 20,
+                    childAspectRatio: 0.9,
+                  ),
+                  delegate: SliverChildBuilderDelegate(
+                    (context, index) {
+                      if (index >= services.length) {
+                        return _isFetching
+                            ? const Center(child: CircularProgressIndicator())
+                            : const SizedBox();
+                      }
+
+                      final service = services[index];
+                      final serviceId = service['docId'] ?? service['uid'];
+                      final isFavorite = favoriteServices.contains(serviceId);
+
+                      return _buildServiceCard(service, isFavorite, serviceId);
+                    },
+                    childCount: services.length + (_hasMoreData ? 1 : 0),
+                  ),
+                ),
+              ],
             ),
       backgroundColor: const Color.fromARGB(255, 255, 255, 255),
     );
   }
+
+  
 }
