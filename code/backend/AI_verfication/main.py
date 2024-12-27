@@ -370,8 +370,7 @@ async def upload_back_id(file: UploadFile = File(...)):
         last_name, first_name = extract_names(extracted_text)
 
         # Extract second_pair_id from the text
-        second_pair_id_match = re.search(r'IDDZA(\d{9})', extracted_text, re.IGNORECASE)
-        second_pair_id = second_pair_id_match.group(1) if second_pair_id_match else None
+        second_pair_id = extract_second_pair_id(extracted_text)
 
         if last_name and first_name and second_pair_id:
             print(f"Extracted Last Name: {last_name}")
@@ -628,33 +627,62 @@ def extract_names(extracted_text):
                 name_pattern = word
                 break
 
-    if not name_pattern:
-        print("Could not find valid name pattern")
-        return None, None
+    if name_pattern:
+        try:
+            # Split by '<<' and take only the first two parts
+            name_components = name_pattern.split('<<')
+            if len(name_components) >= 2:
+                last_name = name_components[0]
+                first_name = ' '.join(name_components[1:])
 
+                # Clean the names (remove any non-alphabetic characters)
+                last_name = ''.join(c for c in last_name if c.isalpha()).upper()
+                first_name = ' '.join(''.join(c for c in part if c.isalpha()).upper() for part in first_name.split())
+
+                # Additional validation
+                if len(last_name) >= 2 and len(first_name) >= 2:
+                    return last_name, first_name
+
+        except Exception as e:
+            print(f"Error processing names: {e}")
+
+    # Alternative method: Look for "Nom:" and "Prenom(s):"
     try:
-        # Split by '<<' and take only the first two parts
-        name_components = name_pattern.split('<<')
-        if len(name_components) >= 2:
-            last_name = name_components[0]
-            first_name = ' '.join(name_components[1:])
+        last_name_match = re.search(r'Nom:\s*([A-Z]+)', extracted_text, re.IGNORECASE)
+        first_name_match = re.search(r'Prenom\(s\):\s*([A-Z\s]+)', extracted_text, re.IGNORECASE)
 
-            # Clean the names (remove any non-alphabetic characters)
-            last_name = ''.join(c for c in last_name if c.isalpha()).upper()
-            first_name = ' '.join(''.join(c for c in part if c.isalpha()).upper() for part in first_name.split())
+        if last_name_match and first_name_match:
+            last_name = last_name_match.group(1).upper()
+            first_name = ' '.join(first_name_match.group(1).split()).upper()
 
             # Additional validation
-            if len(last_name) < 2 or len(first_name) < 2:
-                print("Extracted names are too short to be valid")
-                return None, None
-
-            return last_name, first_name
+            if len(last_name) >= 2 and len(first_name) >= 2:
+                return last_name, first_name
 
     except Exception as e:
-        print(f"Error processing names: {e}")
-        return None, None
+        print(f"Error processing names with alternative method: {e}")
 
+    print("Could not find valid name pattern")
     return None, None
+
+def extract_second_pair_id(extracted_text):
+    """
+    Extract second_pair_id from the text and ensure it contains only digits.
+
+    Args:
+        extracted_text (str): The text extracted from the image
+
+    Returns:
+        str: The cleaned second_pair_id or None if not found
+    """
+    second_pair_id_match = re.search(r'IDDZA(\w{9})', extracted_text, re.IGNORECASE)
+    if second_pair_id_match:
+        second_pair_id = second_pair_id_match.group(1)
+        # Replace alphabetic characters with similar-looking digits
+        second_pair_id = second_pair_id.replace('O', '0').replace('o', '0').replace('I', '1').replace('l', '1')
+        if second_pair_id.isdigit():
+            return second_pair_id
+    return None
 
 # To run the server, use:
 # uvicorn main:app --host 0.0.0.0 --port 8000 --reload 
