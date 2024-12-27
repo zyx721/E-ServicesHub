@@ -19,8 +19,14 @@ import 'models/colors.dart';
 class NavbarPage extends StatefulWidget {
   final int initialIndex;
   final String? serviceName;
-  const NavbarPage({Key? key, required this.initialIndex, this.serviceName})
-      : super(key: key);
+  final String? preSelectedWorkDomain;
+
+  const NavbarPage({
+    Key? key, 
+    required this.initialIndex, 
+    this.serviceName,
+    this.preSelectedWorkDomain,
+  }) : super(key: key);
 
   @override
   State<NavbarPage> createState() => _NavbarPageState();
@@ -32,17 +38,61 @@ class _NavbarPageState extends State<NavbarPage> {
   List<Widget> screens = [];
   bool isLoading = true;
   bool isAdmin = false;
-  String currentLanguage = 'en'; // Default language
+  String currentLanguage = 'en';
+  String? _currentPreSelectedWorkDomain;
 
   @override
   void initState() {
     super.initState();
     _loadUserLanguage();
     selectedIndex = widget.initialIndex;
+    _currentPreSelectedWorkDomain = widget.preSelectedWorkDomain;
     _initializeScreens();
   }
 
-    Future<void> _loadUserLanguage() async {
+  Future<void> _initializeScreens() async {
+    try {
+      final isProvider = await _checkIfUserIsProvider();
+      final isAdminUser = await _checkIfUserIsAdmin();
+      setState(() {
+        isAdmin = isAdminUser;
+        screens = isAdminUser
+            ? [
+                SearchPage(
+                  preSelectedWorkDomain: _currentPreSelectedWorkDomain,
+                ),
+                AdminProfile(),
+              ]
+            : [
+                HomePage(),
+                SearchPage(
+                  preSelectedWorkDomain: _currentPreSelectedWorkDomain,
+                ),
+                FavoritesPage(),
+                isProvider ? ServiceProviderProfile() : SimpleUserProfile(),
+              ];
+        isLoading = false;
+      });
+    } catch (e) {
+      print('Error fetching user data: $e');
+      setState(() {
+        isLoading = false;
+      });
+    }
+  }
+
+  void _onDestinationSelected(int index) {
+    if (selectedIndex != index) {
+      setState(() {
+        selectedIndex = index;
+        // Reset preSelectedWorkDomain when switching away from search page
+        if (_currentPreSelectedWorkDomain != null) {
+          _currentPreSelectedWorkDomain = null;
+          _initializeScreens(); // Rebuild screens with null preSelectedWorkDomain
+        }
+      });
+    }
+  }    Future<void> _loadUserLanguage() async {
     try {
       final user = _auth.currentUser;
       if (user != null) {
@@ -138,36 +188,6 @@ class _NavbarPageState extends State<NavbarPage> {
     }
   }
 
-  Future<void> _initializeScreens() async {
-    try {
-      final isProvider = await _checkIfUserIsProvider();
-      final isAdminUser = await _checkIfUserIsAdmin();
-      setState(() {
-        isAdmin = isAdminUser;
-        screens = isAdminUser
-            ? [
-              SearchPage(serviceName: widget.serviceName),  // Pass the search term
-                AdminProfile(),
-              ]
-            : [
-                HomePage(),
-              SearchPage(serviceName: widget.serviceName),  // Pass the search term
-                FavoritesPage(),
-                isProvider ? ServiceProviderProfile() : SimpleUserProfile(),
-              ];
-        // Reset selected index if it's out of bounds for admin
-        if (isAdminUser && selectedIndex > 1) {
-          selectedIndex = 0;
-        }
-        isLoading = false;
-      });
-    } catch (e) {
-      print('Error fetching user data: $e');
-      setState(() {
-        isLoading = false;
-      });
-    }
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -206,11 +226,7 @@ class _NavbarPageState extends State<NavbarPage> {
               body: screens[selectedIndex],
               bottomNavigationBar: NavigationBar(
                 selectedIndex: selectedIndex,
-                onDestinationSelected: (int index) {
-                  setState(() {
-                    selectedIndex = index;
-                  });
-                },
+                onDestinationSelected: _onDestinationSelected, // Use new method
                 destinations: isAdmin
                     ? [
                         NavigationDestination(

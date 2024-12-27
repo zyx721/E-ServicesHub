@@ -6,13 +6,17 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:hanini_frontend/models/colors.dart';
 import 'package:hanini_frontend/screens/services/service.dart';
-import 'package:hanini_frontend/localization/app_localization.dart'; // Import localization
+import 'package:hanini_frontend/localization/app_localization.dart'; // Import 
+
+
 
 class SearchPage extends StatefulWidget {
-  final String? serviceName;
-    // final String? initialSearchTerm;
+  final String? preSelectedWorkDomain;
 
-  const SearchPage({Key? key, this.serviceName}) : super(key: key);
+  const SearchPage({
+    Key? key,
+    this.preSelectedWorkDomain, 
+  }) : super(key: key);
 
   @override
   State<SearchPage> createState() => _SearchPageState();
@@ -454,14 +458,47 @@ Widget _buildPriceBadge(String text, Color bgColor, Color textColor) {
     ),
   );
 }  
+
+  Set<String> favoriteServices = {};
+  String? currentUserId;
+
+
+Future<void> _fetchUserData() async {
+    try {
+      final User? user = FirebaseAuth.instance.currentUser;
+
+      if (user == null) {
+        debugPrint('No user logged in');
+        return;
+      }
+
+      currentUserId = user.uid;
+      final userDoc = await FirebaseFirestore.instance
+          .collection('users')
+          .doc(currentUserId)
+          .get();
+
+      if (userDoc.exists) {
+        setState(() {
+          favoriteServices = Set<String>.from(
+            userDoc.data()?['favorites'] ?? [],
+          );
+        });
+      }
+    } catch (e) {
+      debugPrint('Error fetching user data: $e');
+    }
+  }
+
+
 Future<void> _initializeData() async {
     await _loadServicesFromFirestore();
     // await _loadLikedServices();
-
+     await _fetchUserData();
     // This is the key part that makes the search automatic
     // Set initial search text and filter after data is loaded
-    if (widget.serviceName != null) {
-      _searchController.text = widget.serviceName!; // Sets the search text
+    if (widget.preSelectedWorkDomain != null) {
+      _selectedWorkChoices.add(widget.preSelectedWorkDomain!); // Sets the search text
       _filterServices(); // Triggers the search
     }
   }
@@ -633,6 +670,8 @@ void _filterServices() {
 
   @override
   Widget build(BuildContext context) {
+      final localizations = AppLocalizations.of(context);
+          if (localizations == null) return Text("Nothing");
     return Scaffold(
       body:
        Padding(
@@ -642,25 +681,25 @@ void _filterServices() {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             const SizedBox(height: 10),
-            _buildSearchBar(),
+            _buildSearchBar(localizations),
             const SizedBox(height: 10),
             _buildAppliedFilters(),
             const SizedBox(height: 20),
             Expanded(
-              child: GridView.builder(
-                itemCount: filteredServices.length,
-                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                  crossAxisCount: 2,
-                  mainAxisSpacing: 20,
-                  crossAxisSpacing: 20,
-                  childAspectRatio: 0.8,
-                ),
-                itemBuilder: (context, index) {
-                  final service = filteredServices[index];
-                  final isFavorite = likedServiceIds.contains(service['uid']);
-                  return _buildServiceItem(service, isFavorite, service['uid']);
-                },
-              ),
+              child:GridView.builder(
+  itemCount: filteredServices.length,
+  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+    crossAxisCount: 2,
+    mainAxisSpacing: 20,
+    crossAxisSpacing: 20,
+    childAspectRatio: 0.8,
+  ),
+  itemBuilder: (context, index) {
+    final service = filteredServices[index];
+    final serviceId = service['uid'];
+    return _buildServiceItem(service, false, serviceId);
+  },
+),
             ),
           ],
         ),
@@ -669,7 +708,7 @@ void _filterServices() {
   }
 
 
-  Widget _buildSearchBar() {
+  Widget _buildSearchBar(AppLocalizations localizations) {
     return Container(
       margin: EdgeInsets.only(top: 10, left: 18, right: 18),
       decoration: BoxDecoration(
@@ -687,7 +726,7 @@ void _filterServices() {
           filled: true,
           fillColor: Colors.white,
           contentPadding: EdgeInsets.all(15),
-          hintText: 'Search services...',
+          hintText: localizations.searchHint,
           hintStyle: TextStyle(
             color: const Color.fromARGB(153, 170, 71, 188),
             fontSize: 14,
@@ -859,94 +898,140 @@ Widget _buildFilterChip(String label, VoidCallback onDeleted) {
 }
 
   Widget _buildServiceItem(
-      Map<String, dynamic> service, bool isFavorite, String serviceId) {
-    return GestureDetector(
-      onTap: () {
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (context) =>
-                ServiceProviderFullProfile(providerId: serviceId),
-          ),
-        );
-      },
-      child: Card(
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
+    Map<String, dynamic> service, bool isFavorite, String serviceId) {
+  // Use favoriteServices instead of isFavorite parameter
+  final isServiceFavorite = favoriteServices.contains(serviceId);
+  
+  return GestureDetector(
+    onTap: () {
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) =>
+              ServiceProviderFullProfile(providerId: serviceId),
         ),
-        child: Stack(
-          children: [
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Expanded(
-                  child: ClipRRect(
-                    borderRadius:
-                        const BorderRadius.vertical(top: Radius.circular(16)),
-                    child: Image.network(
-                      service['photoURL'],
-                      fit: BoxFit.cover,
-                      width: double.infinity,
-                      errorBuilder: (context, error, stackTrace) {
-                        return const Center(
-                          child: Icon(Icons.broken_image,
-                              size: 50, color: Colors.grey),
-                        );
-                      },
-                    ),
-                  ),
-                ),
-                Padding(
-                  padding: const EdgeInsets.all(8.0),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        service['profession'],
-                        style: GoogleFonts.poppins(
-                          fontSize: 14,
-                          fontWeight: FontWeight.bold,
-                        ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                      Text(
-                        service['name'],
-                        style: GoogleFonts.poppins(
-                          fontSize: 12,
-                          color: Colors.grey[600],
-                        ),
-                        maxLines: 1,
-                      ),
-                      _buildStarRating(service['rating']),
-                      Text(
-                        'Price: \DZD ${service['price'].toStringAsFixed(2)}',
-                        style: GoogleFonts.poppins(
-                          fontSize: 12,
-                          color: Colors.grey[600],
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-            // Positioned(
-            //   top: 8,
-            //   right: 8,
-            //   child: IconButton(
-            //     icon: Icon(
-            //       isFavorite ? Icons.favorite : Icons.favorite_border,
-            //       color: isFavorite ? Colors.red : Colors.grey,
-            //     ),
-            //      onPressed: () => ??toggleFavorite(service),
-            //   ),
-            // ),
-          ],
-        ),
+      );
+    },
+    child: Card(
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16),
       ),
-    );
+      child: Stack(
+        children: [
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Expanded(
+                child: ClipRRect(
+                  borderRadius:
+                      const BorderRadius.vertical(top: Radius.circular(16)),
+                  child: Image.network(
+                    service['photoURL'],
+                    fit: BoxFit.cover,
+                    width: double.infinity,
+                    errorBuilder: (context, error, stackTrace) {
+                      return const Center(
+                        child: Icon(Icons.broken_image,
+                            size: 50, color: Colors.grey),
+                      );
+                    },
+                  ),
+                ),
+              ),
+              Padding(
+                padding: const EdgeInsets.all(8.0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      service['profession'],
+                      style: GoogleFonts.poppins(
+                        fontSize: 14,
+                        fontWeight: FontWeight.bold,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    Text(
+                      service['name'],
+                      style: GoogleFonts.poppins(
+                        fontSize: 12,
+                        color: AppColors.mainColor,
+                      ),
+                      maxLines: 1,
+                    ),
+                    _buildStarRating(service['rating']),
+                    SizedBox(height: 2,),
+                    Text(
+                      'DZD ${service['price'].toStringAsFixed(0)}',
+                      style: GoogleFonts.poppins(
+                        fontSize: 12,
+                        color: Colors.grey[600],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          Positioned(
+            top: 8,
+            right: 8,
+            child: IconButton(
+              icon: Icon(
+                isServiceFavorite ? Icons.favorite : Icons.favorite_border,
+                color: isServiceFavorite ? Colors.red : Colors.grey,
+              ),
+              onPressed: () => toggleFavorite(service),
+            ),
+          ),
+        ],
+      ),
+    ),
+  );
+}
+
+
+    Future<void> toggleFavorite(Map<String, dynamic> service) async {
+    if (currentUserId == null) {
+      // Show a dialog or snackbar to prompt login
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Please log in to add favorites')),
+      );
+      return;
+    }
+
+    try {
+      final userDoc =
+          FirebaseFirestore.instance.collection('users').doc(currentUserId);
+
+      final serviceId = service['docId'] ?? service['uid'];
+
+      if (favoriteServices.contains(serviceId)) {
+        // Remove from favorites
+        await userDoc.update({
+          'favorites': FieldValue.arrayRemove([serviceId]),
+        });
+        setState(() {
+          favoriteServices.remove(serviceId);
+        });
+      } else {
+        // Add to favorites
+        await userDoc.update({
+          'favorites': FieldValue.arrayUnion([serviceId]),
+        });
+        setState(() {
+          favoriteServices.add(serviceId);
+        });
+      }
+    } catch (e) {
+      debugPrint('Error updating favorites: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Failed to update favorites')),
+      );
+    }
   }
+
 
   @override
   void dispose() {

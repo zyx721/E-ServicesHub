@@ -12,6 +12,16 @@ import 'package:hanini_frontend/models/colors.dart';
 import 'package:hanini_frontend/models/servicesWeHave.dart';
 import 'package:hanini_frontend/localization/app_localization.dart';
 
+
+// Helper class to structure service data
+class ServiceCategory {
+  final String id;
+  final String localizedName;
+
+  const ServiceCategory(this.id, this.localizedName);
+}
+
+
 class HomePage extends StatefulWidget {
   const HomePage({Key? key}) : super(key: key);
 
@@ -56,6 +66,8 @@ class _HomePageState extends State<HomePage> {
       }
     });
   }
+
+  
 
   @override
   void dispose() {
@@ -221,10 +233,7 @@ class _HomePageState extends State<HomePage> {
                   child: ClipRRect(
                     borderRadius: BorderRadius.circular(20),
                     child: Image.asset(
-                      adImages[index],
-                      fit: BoxFit.cover,
-                      width: double.infinity,
-                    ),
+                      adImages[index],                    ),
                   ),
                 ),
               );
@@ -455,207 +464,308 @@ class _HomePageState extends State<HomePage> {
   }
 
   void _showAllServices(BuildContext context) {
-    final localizations = AppLocalizations.of(context);
-    if (localizations == null) return;
+  final localizations = AppLocalizations.of(context);
+  if (localizations == null) return;
 
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      builder: (context) {
-        return DraggableScrollableSheet(
+  showModalBottomSheet(
+    context: context,
+    isScrollControlled: true,
+    backgroundColor: Colors.transparent,
+    builder: (context) {
+      return Container(
+        decoration: BoxDecoration(
+          color: Theme.of(context).scaffoldBackgroundColor,
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.05),
+              blurRadius: 20,
+              offset: const Offset(0, -5),
+            ),
+          ],
+        ),
+        child: DraggableScrollableSheet(
           expand: false,
-          initialChildSize: 0.5,
+          initialChildSize: 0.6,
           minChildSize: 0.4,
-          maxChildSize: 0.8,
+          maxChildSize: 0.9,
           builder: (context, scrollController) {
-            return Container(
-              padding: const EdgeInsets.all(16.0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    localizations.allServices,
-                    style: GoogleFonts.poppins(
-                      color: AppColors.mainColor,
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                    ),
+            return Column(
+              children: [
+                // Drag handle
+                Container(
+                  margin: const EdgeInsets.only(top: 12, bottom: 16),
+                  width: 40,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: Colors.grey.withOpacity(0.3),
+                    borderRadius: BorderRadius.circular(2),
                   ),
-                  const SizedBox(height: 10),
-                  Expanded(
-                    child: GridView.builder(
-                      controller: scrollController,
-                      gridDelegate:
-                          const SliverGridDelegateWithFixedCrossAxisCount(
-                        crossAxisCount: 2,
-                        crossAxisSpacing: 10,
-                        mainAxisSpacing: 10,
-                      ),
-                      itemCount:
-                          PopularServicesModel.getPopularServices(context)
-                              .length,
-                      itemBuilder: (context, index) {
-                        final service = PopularServicesModel.getPopularServices(
-                            context)[index];
-                        return Container(
-                          decoration: BoxDecoration(
-                            color: service.color.withOpacity(0.1),
-                            borderRadius: BorderRadius.circular(15),
-                          ),
-                          child: Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              SvgPicture.asset(
-                                service.iconPath,
-                                width: 40,
-                                height: 40,
-                              ),
-                              const SizedBox(height: 8),
-                              Text(
-                                service.name,
-                                textAlign: TextAlign.center,
-                                style: TextStyle(
-                                  color:
-                                      Colors.black, // Ensure text color is set
-                                  fontSize: 14, // Set a default font size
-                                ),
-                              ),
-                            ],
-                          ),
-                        );
-                      },
-                    ),
-                  ),
-                ],
-              ),
-            );
-          },
-        );
-      },
-    );
-  }
-
-  Column _servicesSection() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Container(
-          height: 140,
-          child: ListView.separated(
-            itemBuilder: (context, index) {
-              final service =
-                  PopularServicesModel.getPopularServices(context)[index];
-              return Container(
-                width: 150,
-                decoration: BoxDecoration(
-                  color: service.color.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(20),
                 ),
-                child: Padding(
-                  padding: const EdgeInsets.all(8.0),
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 24),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      SvgPicture.asset(
-                        service.iconPath,
-                        width: 35,
-                        height: 35,
-                      ),
-                      Expanded(
-                        child: Center(
-                          child: Text(
-                            service.name,
-                            textAlign: TextAlign.center,
-                            maxLines: 2,
-                            overflow: TextOverflow.ellipsis,
-                            style: const TextStyle(
-                              fontWeight: FontWeight.bold,
-                              color: AppColors.mainColor,
-                              fontSize: 13,
-                            ),
-                          ),
-                        ),
-                      ),
-                      GestureDetector(
-                        onTap: () {
-                          // Find the NavbarPage widget
-                          final navbarPage = context
-                              .findAncestorWidgetOfExactType<NavbarPage>();
-                          if (navbarPage != null) {
-                            // Use a callback to update the navigation state
-                            Navigator.pushReplacement(
-                              context,
-                              MaterialPageRoute(
-                                builder: (context) => NavbarPage(
-                                  initialIndex: 1, // Index for SearchPage
-                                  serviceName: service.name, // Pass the service name
-                                ),
-                              ),
-                            );
-                          } else {
-                            // Fallback navigation if we're not inside NavbarPage
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (context) => const NavbarPage(
-                                  initialIndex: 1,
-                                  //serviceName: service.name, // Pass the service name
-                                ),
-                              ),
-                            );
-                          }
-                        },
-                        child: Container(
-                          height: 35,
-                          width: 80,
-                          decoration: BoxDecoration(
-                            gradient: const LinearGradient(
-                              colors: [
-                                Color(0xff9DCEFF),
-                                Color(0xff92A3FD),
-                              ],
-                            ),
-                            borderRadius: BorderRadius.circular(50),
-                          ),
-                          child: const Center(
-                            child: Text(
-                              'Search',
-                              style: TextStyle(
-                                color: Colors.white,
-                                fontWeight: FontWeight.w600,
-                                fontSize: 12,
-                              ),
-                            ),
-                          ),
-                        ),
-                      ),
-                      SizedBox(height: 3),
                       Text(
-                        '${service.availableProviders} Providers',
-                        textAlign: TextAlign.center,
-                        style: const TextStyle(
-                          color: Color(0xff7B6F72),
-                          fontSize: 13,
-                          fontWeight: FontWeight.w400,
+                        localizations.allServices,
+                        style: GoogleFonts.poppins(
+                          color: AppColors.mainColor,
+                          fontSize: 24,
+                          fontWeight: FontWeight.w600,
+                          letterSpacing: -0.5,
+                        ),
+                      ),
+                      IconButton(
+                        onPressed: () => Navigator.pop(context),
+                        icon: const Icon(Icons.close),
+                        style: IconButton.styleFrom(
+                          backgroundColor: Colors.grey.withOpacity(0.1),
+                          padding: const EdgeInsets.all(8),
                         ),
                       ),
                     ],
                   ),
                 ),
-              );
-            },
-            separatorBuilder: (context, index) => const SizedBox(width: 25),
-            itemCount: PopularServicesModel.getPopularServices(context).length,
-            scrollDirection: Axis.horizontal,
-            padding: const EdgeInsets.only(left: 10, right: 10),
-          ),
+                const SizedBox(height: 16),
+                Expanded(
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 20),
+                    child: GridView.builder(
+                      controller: scrollController,
+                      physics: const BouncingScrollPhysics(),
+                      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                        crossAxisCount: 2,
+                        crossAxisSpacing: 16,
+                        mainAxisSpacing: 16,
+                        childAspectRatio: 1.1,
+                      ),
+                      itemCount: PopularServicesModel.getPopularServices(context).length,
+                      itemBuilder: (context, index) {
+                        final service = PopularServicesModel.getPopularServices(context)[index];
+                        return Material(
+                          color: Colors.transparent,
+                          child: InkWell(
+                            onTap: () {
+                              // Handle service selection
+                              Navigator.pop(context);
+                              // Add your navigation or selection logic here
+                            },
+                            borderRadius: BorderRadius.circular(20),
+                            child: Container(
+                              padding: const EdgeInsets.all(16),
+                              decoration: BoxDecoration(
+                                color: service.color.withOpacity(0.08),
+                                borderRadius: BorderRadius.circular(20),
+                                border: Border.all(
+                                  color: service.color.withOpacity(0.12),
+                                  width: 1,
+                                ),
+                              ),
+                              child: Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Container(
+                                    padding: const EdgeInsets.all(12),
+                                    decoration: BoxDecoration(
+                                      color: service.color.withOpacity(0.1),
+                                      shape: BoxShape.circle,
+                                    ),
+                                    child: SvgPicture.asset(
+  service.iconPath,
+  width: 32,
+  height: 32,
+  color: service.color, // Set the color directly
+),
+
+                                  ),
+                                  const SizedBox(height: 12),
+                                  Text(
+                                    service.name,
+                                    textAlign: TextAlign.center,
+                                    style: GoogleFonts.poppins(
+                                      color: Colors.black87,
+                                      fontSize: 15,
+                                      fontWeight: FontWeight.w500,
+                                      height: 1.2,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        );
+                      },
+                    ),
+                  ),
+                ),
+              ],
+            );
+          },
         ),
-      ],
-    );
+      );
+    },
+  );
+}
+
+Column _servicesSection() {
+  return Column(
+    crossAxisAlignment: CrossAxisAlignment.start,
+    children: [
+
+      Container(
+        height: 180, // Increased height for better visibility
+        child: ListView.separated(
+          itemBuilder: (context, index) {
+            final service = PopularServicesModel.getPopularServices(context)[index];
+            return AnimatedContainer(
+              duration: Duration(milliseconds: 200),
+              width: 170, // Slightly wider cards
+              decoration: BoxDecoration(
+                color: service.color.withOpacity(0.15),
+                borderRadius: BorderRadius.circular(24),
+                boxShadow: [
+                  BoxShadow(
+                    color: service.color.withOpacity(0.1),
+                    blurRadius: 8,
+                    offset: Offset(0, 4),
+                  ),
+                ],
+              ),
+              child: Material(
+                color: Colors.transparent,
+                child: InkWell(
+                  borderRadius: BorderRadius.circular(24),
+                  onTap: () {
+                    final workDomainId = _getWorkDomainIdForService(service.name);
+                    final navbarPage = context.findAncestorWidgetOfExactType<NavbarPage>();
+                    
+                    if (navbarPage != null) {
+                      Navigator.pushReplacement(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => NavbarPage(
+                            initialIndex: 1,
+                            preSelectedWorkDomain: workDomainId,
+                          ),
+                        ),
+                      );
+                    }
+                  },
+                  child: Padding(
+                    padding: const EdgeInsets.all(12.0),
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Container(
+                          padding: EdgeInsets.all(12),
+                          decoration: BoxDecoration(
+                            color: Colors.white.withOpacity(0.9),
+                            shape: BoxShape.circle,
+                          ),
+                          child: SvgPicture.asset(
+                            service.iconPath,
+                            width: 40,
+                            height: 40,
+                            color: service.color,
+                          ),
+                        ),
+                        SizedBox(height: 12),
+                        Text(
+                          service.name,
+                          textAlign: TextAlign.center,
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                            fontWeight: FontWeight.w600,
+                            color: AppColors.mainColor,
+                            fontSize: 15,
+                          ),
+                        ),
+                        SizedBox(height: 8),
+                        Container(
+                          padding: EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                          decoration: BoxDecoration(
+                            color: Colors.white.withOpacity(0.9),
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(
+                                Icons.person_outline,
+                                size: 16,
+                                color: service.color,
+                              ),
+                              SizedBox(width: 4),
+                              Text(
+                                '${service.availableProviders}',
+                                style: TextStyle(
+                                  color: service.color,
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            );
+          },
+          separatorBuilder: (context, index) => const SizedBox(width: 16),
+          itemCount: PopularServicesModel.getPopularServices(context).length,
+          scrollDirection: Axis.horizontal,
+          padding: const EdgeInsets.symmetric(horizontal: 16),
+        ),
+      ),
+    ],
+  );
+}
+
+  // Updated helper function to map service names to work domain IDs based on your Firestore data
+String _getWorkDomainIdForService(String serviceName) {
+  final local = AppLocalizations.of(context);
+  if (local == null) return '';
+
+  // Define service mappings in a more structured way
+  final serviceCategories = [
+    ServiceCategory('houseCleaning', local.houseCleaning),
+    ServiceCategory('electricity', local.electricity),
+    ServiceCategory('plumbing', local.plumbing),
+    ServiceCategory('gardening', local.gardening),
+    ServiceCategory('painting', local.painting),
+    ServiceCategory('carpentry', local.carpentry),
+    ServiceCategory('pestControl', local.pestControl),
+    ServiceCategory('acRepair', local.acRepair),
+    ServiceCategory('vehicleRepair', local.vehicleRepair),
+    ServiceCategory('applianceInstallation', local.applianceInstallation),
+    ServiceCategory('itSupport', local.itSupport),
+    ServiceCategory('homeSecurity', local.homeSecurity),
+    ServiceCategory('interiorDesign', local.interiorDesign),
+    ServiceCategory('windowCleaning', local.windowCleaning),
+    ServiceCategory('furnitureAssembly', local.furnitureAssembly),
+  ];
+
+  // Create map from the categories
+  final serviceToWorkDomain = Map.fromEntries(
+    serviceCategories.map((category) => MapEntry(category.localizedName, category.id)),
+  );
+
+  // Add error logging for debugging
+  final workDomainId = serviceToWorkDomain[serviceName];
+  if (workDomainId == null) {
+    debugPrint('Warning: No work domain ID found for service: $serviceName');
+    debugPrint('Available services: ${serviceToWorkDomain.keys.join(', ')}');
   }
+
+  return workDomainId ?? '';
+}
+
+
 
   @override
   Widget build(BuildContext context) {

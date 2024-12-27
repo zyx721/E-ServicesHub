@@ -5,13 +5,13 @@ class PopularServicesModel {
   String name;
   Color color;
   int availableProviders;
-  String iconPath; // Added iconPath for each service's image
+  String iconPath;
 
   PopularServicesModel({
     required this.name,
     required this.color,
     required this.availableProviders,
-    required this.iconPath, // Include iconPath in the constructor
+    required this.iconPath,
   });
 
   static List<PopularServicesModel> getPopularServices(BuildContext context) {
@@ -20,7 +20,7 @@ class PopularServicesModel {
     popularServices.add(
       PopularServicesModel(
         name: AppLocalizations.of(context)?.houseCleaning ?? 'House Cleaning',
-        color: Colors.blue, // Example color
+        color: Colors.blue,
         availableProviders: 12,
         iconPath: 'assets/services_icon/House_Cleaning.svg',
       ),
@@ -29,7 +29,7 @@ class PopularServicesModel {
     popularServices.add(
       PopularServicesModel(
         name: AppLocalizations.of(context)?.electricity ?? 'Electricity',
-        color: Colors.orange, // Example color
+        color: Colors.orange,
         availableProviders: 8,
         iconPath: 'assets/services_icon/Electricity.svg',
       ),
@@ -38,7 +38,7 @@ class PopularServicesModel {
     popularServices.add(
       PopularServicesModel(
         name: AppLocalizations.of(context)?.plumbing ?? 'Plumbing',
-        color: Colors.green, // Example color
+        color: Colors.green,
         availableProviders: 10,
         iconPath: 'assets/services_icon/Plumbing.svg',
       ),
@@ -47,7 +47,7 @@ class PopularServicesModel {
     popularServices.add(
       PopularServicesModel(
         name: AppLocalizations.of(context)?.gardening ?? 'Gardening',
-        color: Colors.greenAccent, // Example color
+        color: Colors.greenAccent,
         availableProviders: 7,
         iconPath: 'assets/services_icon/Gardening.svg',
       ),
@@ -56,7 +56,7 @@ class PopularServicesModel {
     popularServices.add(
       PopularServicesModel(
         name: AppLocalizations.of(context)?.painting ?? 'Painting',
-        color: Colors.red, // Example color
+        color: Colors.red,
         availableProviders: 5,
         iconPath: 'assets/services_icon/Painting.svg',
       ),
@@ -65,7 +65,7 @@ class PopularServicesModel {
     popularServices.add(
       PopularServicesModel(
         name: AppLocalizations.of(context)?.carpentry ?? 'Carpentry',
-        color: Colors.brown, // Example color
+        color: Colors.brown,
         availableProviders: 6,
         iconPath: 'assets/services_icon/Carpentry.svg',
       ),
@@ -73,8 +73,17 @@ class PopularServicesModel {
 
     popularServices.add(
       PopularServicesModel(
+        name: AppLocalizations.of(context)?.pestControl ?? 'Pest Control',
+        color: Colors.purple,
+        availableProviders: 4,
+        iconPath: 'assets/services_icon/Pest_Control.svg',
+      ),
+    );
+
+    popularServices.add(
+      PopularServicesModel(
         name: AppLocalizations.of(context)?.acRepair ?? 'AC Repair',
-        color: Colors.blueAccent, // Example color
+        color: Colors.blueAccent,
         availableProviders: 9,
         iconPath: 'assets/services_icon/air-conditioner-svgrepo-com.svg',
       ),
@@ -83,7 +92,7 @@ class PopularServicesModel {
     popularServices.add(
       PopularServicesModel(
         name: AppLocalizations.of(context)?.vehicleRepair ?? 'Vehicle Repair',
-        color: Colors.cyan, // Example color
+        color: Colors.cyan,
         availableProviders: 3,
         iconPath: 'assets/services_icon/Vehicle_Repair.svg',
       ),
@@ -91,8 +100,26 @@ class PopularServicesModel {
 
     popularServices.add(
       PopularServicesModel(
+        name: AppLocalizations.of(context)?.applianceInstallation ?? 'Appliance Installation',
+        color: Colors.teal,
+        availableProviders: 5,
+        iconPath: 'assets/services_icon/Appliance_Installation.svg',
+      ),
+    );
+
+    popularServices.add(
+      PopularServicesModel(
+        name: AppLocalizations.of(context)?.itSupport ?? 'IT Support',
+        color: Colors.indigo,
+        availableProviders: 7,
+        iconPath: 'assets/services_icon/IT_Support.svg',
+      ),
+    );
+
+    popularServices.add(
+      PopularServicesModel(
         name: AppLocalizations.of(context)?.homeSecurity ?? 'Home Security',
-        color: Colors.grey, // Example color
+        color: Colors.grey,
         availableProviders: 6,
         iconPath: 'assets/services_icon/Home_Security.svg',
       ),
@@ -100,10 +127,28 @@ class PopularServicesModel {
 
     popularServices.add(
       PopularServicesModel(
+        name: AppLocalizations.of(context)?.interiorDesign ?? 'Interior Design',
+        color: Colors.deepPurple,
+        availableProviders: 4,
+        iconPath: 'assets/services_icon/Interior_Design.svg',
+      ),
+    );
+
+    popularServices.add(
+      PopularServicesModel(
         name: AppLocalizations.of(context)?.windowCleaning ?? 'Window Cleaning',
-        color: Colors.lightBlue, // Example color
+        color: Colors.lightBlue,
         availableProviders: 8,
         iconPath: 'assets/services_icon/Window_Cleaning.svg',
+      ),
+    );
+
+    popularServices.add(
+      PopularServicesModel(
+        name: AppLocalizations.of(context)?.furnitureAssembly ?? 'Furniture Assembly',
+        color: Colors.amber,
+        availableProviders: 5,
+        iconPath: 'assets/services_icon/Furniture_Assembly.svg',
       ),
     );
 
