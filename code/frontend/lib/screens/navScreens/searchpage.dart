@@ -935,6 +935,16 @@ class _SearchPageState extends State<SearchPage> {
           await providerDoc.update({
             'click_count': FieldValue.increment(1),
           });
+
+          // Increment the click count for the provider in the user's document
+          if (currentUserId != null) {
+            final userDoc = FirebaseFirestore.instance
+                .collection('users')
+                .doc(currentUserId);
+            await userDoc.update({
+              'click_count_per_service.$serviceId': FieldValue.increment(1),
+            });
+          }
         } catch (e) {
           debugPrint('Error incrementing click_count: $e');
         }

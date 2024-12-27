@@ -12,7 +12,6 @@ import 'package:hanini_frontend/models/colors.dart';
 import 'package:hanini_frontend/models/servicesWeHave.dart';
 import 'package:hanini_frontend/localization/app_localization.dart';
 
-
 // Helper class to structure service data
 class ServiceCategory {
   final String id;
@@ -20,7 +19,6 @@ class ServiceCategory {
 
   const ServiceCategory(this.id, this.localizedName);
 }
-
 
 class HomePage extends StatefulWidget {
   const HomePage({Key? key}) : super(key: key);
@@ -43,12 +41,10 @@ class _HomePageState extends State<HomePage> {
   bool _isLoading = true;
   bool _isFetching = false;
   DocumentSnapshot? _lastDocument; // Tracks the last document for pagination
-  final int _pageSize =7; // Number of items to fetch per 
-  
-   bool _hasMoreData = true;
+  final int _pageSize = 7; // Number of items to fetch per
+
+  bool _hasMoreData = true;
   late Future<List<PopularServicesModel>> _popularServicesFuture;
-
-
 
   @override
   void initState() {
@@ -56,7 +52,7 @@ class _HomePageState extends State<HomePage> {
     _pageController = PageController();
     _scrollController = ScrollController()..addListener(_onScroll);
     _initializeData();
-     _popularServicesFuture = PopularServicesModel.getPopularServices(context);
+    _popularServicesFuture = PopularServicesModel.getPopularServices(context);
     // Auto-slide logic
     _adTimer = Timer.periodic(Duration(seconds: 3), (Timer timer) {
       if (_pageController.hasClients) {
@@ -71,8 +67,6 @@ class _HomePageState extends State<HomePage> {
       }
     });
   }
-
-  
 
   @override
   void dispose() {
@@ -122,8 +116,7 @@ class _HomePageState extends State<HomePage> {
     }
   }
 
-
-   Future<void> _fetchServices() async {
+  Future<void> _fetchServices() async {
     if (_isFetching || !_hasMoreData) return;
     setState(() => _isFetching = true);
 
@@ -237,7 +230,8 @@ class _HomePageState extends State<HomePage> {
                   child: ClipRRect(
                     borderRadius: BorderRadius.circular(20),
                     child: Image.asset(
-                      adImages[index],                    ),
+                      adImages[index],
+                    ),
                   ),
                 ),
               );
@@ -292,7 +286,7 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-   Widget _buildServicesGrid() {
+  Widget _buildServicesGrid() {
     return GridView.builder(
       controller: _scrollController,
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
@@ -319,102 +313,116 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-  Widget _buildServiceCard(Map<String, dynamic> service, bool isFavorite, String serviceId) {
-    return  GestureDetector(
+  Widget _buildServiceCard(
+      Map<String, dynamic> service, bool isFavorite, String serviceId) {
+    return GestureDetector(
       onTap: () async {
         // Print message in terminal
         debugPrint('Navigating to FullProfilePage with providerId: $serviceId');
-        
+
         // Increment the provider's click_count in the database
         try {
-        final providerDoc = FirebaseFirestore.instance.collection('users').doc(serviceId);
-        await providerDoc.update({
-          'click_count': FieldValue.increment(1),
-        });
+          final providerDoc =
+              FirebaseFirestore.instance.collection('users').doc(serviceId);
+          await providerDoc.update({
+            'click_count': FieldValue.increment(1),
+          });
+
+          // Increment the click count for the provider in the user's document
+          if (currentUserId != null) {
+            final userDoc = FirebaseFirestore.instance
+                .collection('users')
+                .doc(currentUserId);
+            await userDoc.update({
+              'click_count_per_service.$serviceId': FieldValue.increment(1),
+            });
+          }
         } catch (e) {
-        debugPrint('Error incrementing click_count: $e');
+          debugPrint('Error incrementing click_count: $e');
         }
 
         // Navigate to FullProfilePage with the selected service's ID
         Navigator.push(
-        context,
-        MaterialPageRoute(
-          builder: (context) => ServiceProviderFullProfile(
-          providerId: serviceId,
-          ),
-        ),
-        );
-      },
-            child:Card(
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16),
-      ),
-      child: Stack(
-        children: [
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Container(
-                height: 90,
-                decoration: BoxDecoration(
-                  borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
-                  image: DecorationImage(
-                    image: NetworkImage(service['photoURL'] ?? ''),
-                    fit: BoxFit.cover,
-                  ),
-                ),
-              ),
-              Container(
-                decoration: BoxDecoration(
-                  color: AppColors.tempColor,
-                  borderRadius: const BorderRadius.vertical(bottom: Radius.circular(16)),
-                ),
-                child: Padding(
-                  padding: const EdgeInsets.all(8.0),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        service['basicInfo']['profession'] ?? 'N/A',
-                        style: GoogleFonts.poppins(
-                          fontSize: 14,
-                          fontWeight: FontWeight.bold,
-                        ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                      Text(
-                        service['name'] ?? 'Unknown',
-                        style: GoogleFonts.poppins(
-                          fontSize: 12,
-                          color: AppColors.mainColor,
-                        ),
-                        maxLines: 1,
-                      ),
-                      _buildStarRating(service['rating']?.toDouble() ?? 0.0),
-                    ],
-                  ),
-                ),
-              ),
-            ],
-          ),
-          Positioned(
-            top: 8,
-            right: 8,
-            child: IconButton(
-              icon: Icon(
-                isFavorite ? Icons.favorite : Icons.favorite_border,
-                color: isFavorite ? Colors.red : Colors.grey,
-              ),
-              onPressed: () => toggleFavorite(service),
+          context,
+          MaterialPageRoute(
+            builder: (context) => ServiceProviderFullProfile(
+              providerId: serviceId,
             ),
           ),
-        ],
+        );
+      },
+      child: Card(
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(16),
+        ),
+        child: Stack(
+          children: [
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Container(
+                  height: 90,
+                  decoration: BoxDecoration(
+                    borderRadius:
+                        const BorderRadius.vertical(top: Radius.circular(16)),
+                    image: DecorationImage(
+                      image: NetworkImage(service['photoURL'] ?? ''),
+                      fit: BoxFit.cover,
+                    ),
+                  ),
+                ),
+                Container(
+                  decoration: BoxDecoration(
+                    color: AppColors.tempColor,
+                    borderRadius: const BorderRadius.vertical(
+                        bottom: Radius.circular(16)),
+                  ),
+                  child: Padding(
+                    padding: const EdgeInsets.all(8.0),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          service['basicInfo']['profession'] ?? 'N/A',
+                          style: GoogleFonts.poppins(
+                            fontSize: 14,
+                            fontWeight: FontWeight.bold,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        Text(
+                          service['name'] ?? 'Unknown',
+                          style: GoogleFonts.poppins(
+                            fontSize: 12,
+                            color: AppColors.mainColor,
+                          ),
+                          maxLines: 1,
+                        ),
+                        _buildStarRating(service['rating']?.toDouble() ?? 0.0),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            Positioned(
+              top: 8,
+              right: 8,
+              child: IconButton(
+                icon: Icon(
+                  isFavorite ? Icons.favorite : Icons.favorite_border,
+                  color: isFavorite ? Colors.red : Colors.grey,
+                ),
+                onPressed: () => toggleFavorite(service),
+              ),
+            ),
+          ],
+        ),
       ),
-    ),
     );
-    
   }
+
   Widget _buildStarRating(double rating) {
     int fullStars = rating.floor();
     int halfStars = (rating % 1 >= 0.5) ? 1 : 0;
@@ -432,7 +440,7 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-void _onScroll() {
+  void _onScroll() {
     if (_scrollController.position.pixels >=
             _scrollController.position.maxScrollExtent - 200 &&
         !_isFetching &&
@@ -483,7 +491,7 @@ void _onScroll() {
               if (snapshot.connectionState == ConnectionState.waiting) {
                 return const Center(child: CircularProgressIndicator());
               }
-              
+
               if (snapshot.hasError) {
                 return Center(child: Text('Error: ${snapshot.error}'));
               }
@@ -497,104 +505,107 @@ void _onScroll() {
                 itemBuilder: (context, index) {
                   final service = services[index];
                   return AnimatedContainer(
-                  duration: Duration(milliseconds: 200),
-                  width: 170,
-                  decoration: BoxDecoration(
-                    color: service.color.withOpacity(0.15),
-                    borderRadius: BorderRadius.circular(24),
-                    boxShadow: [
-                      BoxShadow(
-                        color: service.color.withOpacity(0.1),
-                        blurRadius: 8,
-                        offset: Offset(0, 4),
-                      ),
-                    ],
-                  ),
-                  child: Material(
-                    color: Colors.transparent,
-                    child: InkWell(
+                    duration: Duration(milliseconds: 200),
+                    width: 170,
+                    decoration: BoxDecoration(
+                      color: service.color.withOpacity(0.15),
                       borderRadius: BorderRadius.circular(24),
-                      onTap: () {
-                        final workDomainId = _getWorkDomainIdForService(service.name);
-                        final navbarPage = context.findAncestorWidgetOfExactType<NavbarPage>();
-                        
-                        if (navbarPage != null) {
-                          Navigator.pushReplacement(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => NavbarPage(
-                                initialIndex: 1,
-                                preSelectedWorkDomain: workDomainId,
+                      boxShadow: [
+                        BoxShadow(
+                          color: service.color.withOpacity(0.1),
+                          blurRadius: 8,
+                          offset: Offset(0, 4),
+                        ),
+                      ],
+                    ),
+                    child: Material(
+                      color: Colors.transparent,
+                      child: InkWell(
+                        borderRadius: BorderRadius.circular(24),
+                        onTap: () {
+                          final workDomainId =
+                              _getWorkDomainIdForService(service.name);
+                          final navbarPage = context
+                              .findAncestorWidgetOfExactType<NavbarPage>();
+
+                          if (navbarPage != null) {
+                            Navigator.pushReplacement(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => NavbarPage(
+                                  initialIndex: 1,
+                                  preSelectedWorkDomain: workDomainId,
+                                ),
                               ),
-                            ),
-                          );
-                        }
-                      },
-                      child: Padding(
-                        padding: const EdgeInsets.all(12.0),
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Container(
-                              padding: EdgeInsets.all(12),
-                              decoration: BoxDecoration(
-                                color: Colors.white.withOpacity(0.9),
-                                shape: BoxShape.circle,
+                            );
+                          }
+                        },
+                        child: Padding(
+                          padding: const EdgeInsets.all(12.0),
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Container(
+                                padding: EdgeInsets.all(12),
+                                decoration: BoxDecoration(
+                                  color: Colors.white.withOpacity(0.9),
+                                  shape: BoxShape.circle,
+                                ),
+                                child: SvgPicture.asset(
+                                  service.iconPath,
+                                  width: 40,
+                                  height: 40,
+                                  color: service.color,
+                                ),
                               ),
-                              child: SvgPicture.asset(
-                                service.iconPath,
-                                width: 40,
-                                height: 40,
-                                color: service.color,
+                              SizedBox(height: 12),
+                              Text(
+                                service.name,
+                                textAlign: TextAlign.center,
+                                maxLines: 2,
+                                overflow: TextOverflow.ellipsis,
+                                style: TextStyle(
+                                  fontWeight: FontWeight.w600,
+                                  color: AppColors.mainColor,
+                                  fontSize: 15,
+                                ),
                               ),
-                            ),
-                            SizedBox(height: 12),
-                            Text(
-                              service.name,
-                              textAlign: TextAlign.center,
-                              maxLines: 2,
-                              overflow: TextOverflow.ellipsis,
-                              style: TextStyle(
-                                fontWeight: FontWeight.w600,
-                                color: AppColors.mainColor,
-                                fontSize: 15,
-                              ),
-                            ),
-                            SizedBox(height: 8),
-                            Container(
-                              padding: EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-                              decoration: BoxDecoration(
-                                color: Colors.white.withOpacity(0.9),
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                              child: Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  Icon(
-                                    Icons.person_outline,
-                                    size: 16,
-                                    color: service.color,
-                                  ),
-                                  SizedBox(width: 4),
-                                  Text(
-                                    '${service.availableProviders}',
-                                    style: TextStyle(
+                              SizedBox(height: 8),
+                              Container(
+                                padding: EdgeInsets.symmetric(
+                                    horizontal: 12, vertical: 4),
+                                decoration: BoxDecoration(
+                                  color: Colors.white.withOpacity(0.9),
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Icon(
+                                      Icons.person_outline,
+                                      size: 16,
                                       color: service.color,
-                                      fontSize: 14,
-                                      fontWeight: FontWeight.w500,
                                     ),
-                                  ),
-                                ],
+                                    SizedBox(width: 4),
+                                    Text(
+                                      '${service.availableProviders}',
+                                      style: TextStyle(
+                                        color: service.color,
+                                        fontSize: 14,
+                                        fontWeight: FontWeight.w500,
+                                      ),
+                                    ),
+                                  ],
+                                ),
                               ),
-                            ),
-                          ],
+                            ],
+                          ),
                         ),
                       ),
                     ),
-                  ),
-                );
-              },
-                  separatorBuilder: (context, index) => const SizedBox(width: 16),
+                  );
+                },
+                separatorBuilder: (context, index) => const SizedBox(width: 16),
                 itemCount: services.length,
                 scrollDirection: Axis.horizontal,
                 padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -606,7 +617,7 @@ void _onScroll() {
     );
   }
 
- // Update the _showAllServices to use the cached future
+  // Update the _showAllServices to use the cached future
   void _showAllServices(BuildContext context) {
     final localizations = AppLocalizations.of(context);
     if (localizations == null) return;
@@ -618,17 +629,17 @@ void _onScroll() {
       builder: (context) {
         return Container(
           decoration: BoxDecoration(
-          color: Theme.of(context).scaffoldBackgroundColor,
-          borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.05),
-              blurRadius: 20,
-              offset: const Offset(0, -5),
-            ),
-          ],
-        ),
-        child: DraggableScrollableSheet(
+            color: Theme.of(context).scaffoldBackgroundColor,
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.05),
+                blurRadius: 20,
+                offset: const Offset(0, -5),
+              ),
+            ],
+          ),
+          child: DraggableScrollableSheet(
             expand: false,
             initialChildSize: 0.6,
             minChildSize: 0.4,
@@ -636,137 +647,143 @@ void _onScroll() {
             builder: (context, scrollController) {
               return Column(
                 children: [
-                Container(
-                  margin: const EdgeInsets.only(top: 12, bottom: 16),
-                  width: 40,
-                  height: 4,
-                  decoration: BoxDecoration(
-                    color: Colors.grey.withOpacity(0.3),
-                    borderRadius: BorderRadius.circular(2),
+                  Container(
+                    margin: const EdgeInsets.only(top: 12, bottom: 16),
+                    width: 40,
+                    height: 4,
+                    decoration: BoxDecoration(
+                      color: Colors.grey.withOpacity(0.3),
+                      borderRadius: BorderRadius.circular(2),
+                    ),
                   ),
-                ),
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 24),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text(
-                        localizations.allServices,
-                        style: GoogleFonts.poppins(
-                          color: AppColors.mainColor,
-                          fontSize: 24,
-                          fontWeight: FontWeight.w600,
-                          letterSpacing: -0.5,
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 24),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
+                          localizations.allServices,
+                          style: GoogleFonts.poppins(
+                            color: AppColors.mainColor,
+                            fontSize: 24,
+                            fontWeight: FontWeight.w600,
+                            letterSpacing: -0.5,
+                          ),
                         ),
-                      ),
-                      IconButton(
-                        onPressed: () => Navigator.pop(context),
-                        icon: const Icon(Icons.close),
-                        style: IconButton.styleFrom(
-                          backgroundColor: Colors.grey.withOpacity(0.1),
-                          padding: const EdgeInsets.all(8),
+                        IconButton(
+                          onPressed: () => Navigator.pop(context),
+                          icon: const Icon(Icons.close),
+                          style: IconButton.styleFrom(
+                            backgroundColor: Colors.grey.withOpacity(0.1),
+                            padding: const EdgeInsets.all(8),
+                          ),
                         ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
-                ),
-                const SizedBox(height: 16),
-                   Expanded(
+                  const SizedBox(height: 16),
+                  Expanded(
                     child: FutureBuilder<List<PopularServicesModel>>(
                       future: _popularServicesFuture, // Use the cached future
                       builder: (context, snapshot) {
-                      if (snapshot.connectionState == ConnectionState.waiting) {
-                        return const Center(child: CircularProgressIndicator());
-                      }
-                      
-                      if (snapshot.hasError) {
-                        return Center(child: Text('Error: ${snapshot.error}'));
-                      }
+                        if (snapshot.connectionState ==
+                            ConnectionState.waiting) {
+                          return const Center(
+                              child: CircularProgressIndicator());
+                        }
 
-                      if (!snapshot.hasData || snapshot.data!.isEmpty) {
-                        return const Center(child: Text('No services available'));
-                      }
+                        if (snapshot.hasError) {
+                          return Center(
+                              child: Text('Error: ${snapshot.error}'));
+                        }
 
-                      final services = snapshot.data!;
-                      return Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 20),
-                        child: GridView.builder(
-                          controller: scrollController,
-                          physics: const BouncingScrollPhysics(),
-                          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                            crossAxisCount: 2,
-                            crossAxisSpacing: 16,
-                            mainAxisSpacing: 16,
-                            childAspectRatio: 1.1,
-                          ),
-                          itemCount: services.length,
-                          itemBuilder: (context, index) {
-                            final service = services[index];
-                            return Material(
-                              color: Colors.transparent,
-                              child: InkWell(
-                                onTap: () {
-                                  Navigator.pop(context);
-                                  // Add your navigation or selection logic here
-                                },
-                                borderRadius: BorderRadius.circular(20),
-                                child: Container(
-                                  padding: const EdgeInsets.all(16),
-                                  decoration: BoxDecoration(
-                                    color: service.color.withOpacity(0.08),
-                                    borderRadius: BorderRadius.circular(20),
-                                    border: Border.all(
-                                      color: service.color.withOpacity(0.12),
-                                      width: 1,
+                        if (!snapshot.hasData || snapshot.data!.isEmpty) {
+                          return const Center(
+                              child: Text('No services available'));
+                        }
+
+                        final services = snapshot.data!;
+                        return Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 20),
+                          child: GridView.builder(
+                            controller: scrollController,
+                            physics: const BouncingScrollPhysics(),
+                            gridDelegate:
+                                const SliverGridDelegateWithFixedCrossAxisCount(
+                              crossAxisCount: 2,
+                              crossAxisSpacing: 16,
+                              mainAxisSpacing: 16,
+                              childAspectRatio: 1.1,
+                            ),
+                            itemCount: services.length,
+                            itemBuilder: (context, index) {
+                              final service = services[index];
+                              return Material(
+                                color: Colors.transparent,
+                                child: InkWell(
+                                  onTap: () {
+                                    Navigator.pop(context);
+                                    // Add your navigation or selection logic here
+                                  },
+                                  borderRadius: BorderRadius.circular(20),
+                                  child: Container(
+                                    padding: const EdgeInsets.all(16),
+                                    decoration: BoxDecoration(
+                                      color: service.color.withOpacity(0.08),
+                                      borderRadius: BorderRadius.circular(20),
+                                      border: Border.all(
+                                        color: service.color.withOpacity(0.12),
+                                        width: 1,
+                                      ),
+                                    ),
+                                    child: Column(
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.center,
+                                      children: [
+                                        Container(
+                                          padding: const EdgeInsets.all(12),
+                                          decoration: BoxDecoration(
+                                            color:
+                                                service.color.withOpacity(0.1),
+                                            shape: BoxShape.circle,
+                                          ),
+                                          child: SvgPicture.asset(
+                                            service.iconPath,
+                                            width: 32,
+                                            height: 32,
+                                            color: service.color,
+                                          ),
+                                        ),
+                                        const SizedBox(height: 12),
+                                        Text(
+                                          service.name,
+                                          textAlign: TextAlign.center,
+                                          style: GoogleFonts.poppins(
+                                            color: Colors.black87,
+                                            fontSize: 15,
+                                            fontWeight: FontWeight.w500,
+                                            height: 1.2,
+                                          ),
+                                        ),
+                                      ],
                                     ),
                                   ),
-                                  child: Column(
-                                    mainAxisAlignment: MainAxisAlignment.center,
-                                    children: [
-                                      Container(
-                                        padding: const EdgeInsets.all(12),
-                                        decoration: BoxDecoration(
-                                          color: service.color.withOpacity(0.1),
-                                          shape: BoxShape.circle,
-                                        ),
-                                        child: SvgPicture.asset(
-                                          service.iconPath,
-                                          width: 32,
-                                          height: 32,
-                                          color: service.color,
-                                        ),
-                                      ),
-                                      const SizedBox(height: 12),
-                                      Text(
-                                        service.name,
-                                        textAlign: TextAlign.center,
-                                        style: GoogleFonts.poppins(
-                                          color: Colors.black87,
-                                          fontSize: 15,
-                                          fontWeight: FontWeight.w500,
-                                          height: 1.2,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
                                 ),
-                              ),
-                            );
-                          },
-                        ),
-                      );
-                    },
+                              );
+                            },
+                          ),
+                        );
+                      },
+                    ),
                   ),
-                ),
-              ],
-            );
-          },
-        ),
-      );
-    },
-  );
-}
-
+                ],
+              );
+            },
+          ),
+        );
+      },
+    );
+  }
 
   // Method to refresh the services data when needed
   void refreshServices() {
@@ -775,49 +792,47 @@ void _onScroll() {
     });
   }
 
-
   // Updated helper function to map service names to work domain IDs based on your Firestore data
-String _getWorkDomainIdForService(String serviceName) {
-  final local = AppLocalizations.of(context);
-  if (local == null) return '';
+  String _getWorkDomainIdForService(String serviceName) {
+    final local = AppLocalizations.of(context);
+    if (local == null) return '';
 
-  // Define service mappings in a more structured way
-  final serviceCategories = [
-    ServiceCategory('houseCleaning', local.houseCleaning),
-    ServiceCategory('electricity', local.electricity),
-    ServiceCategory('plumbing', local.plumbing),
-    ServiceCategory('gardening', local.gardening),
-    ServiceCategory('painting', local.painting),
-    ServiceCategory('carpentry', local.carpentry),
-    ServiceCategory('pestControl', local.pestControl),
-    ServiceCategory('acRepair', local.acRepair),
-    ServiceCategory('vehicleRepair', local.vehicleRepair),
-    ServiceCategory('applianceInstallation', local.applianceInstallation),
-    ServiceCategory('itSupport', local.itSupport),
-    ServiceCategory('homeSecurity', local.homeSecurity),
-    ServiceCategory('interiorDesign', local.interiorDesign),
-    ServiceCategory('windowCleaning', local.windowCleaning),
-    ServiceCategory('furnitureAssembly', local.furnitureAssembly),
-  ];
+    // Define service mappings in a more structured way
+    final serviceCategories = [
+      ServiceCategory('houseCleaning', local.houseCleaning),
+      ServiceCategory('electricity', local.electricity),
+      ServiceCategory('plumbing', local.plumbing),
+      ServiceCategory('gardening', local.gardening),
+      ServiceCategory('painting', local.painting),
+      ServiceCategory('carpentry', local.carpentry),
+      ServiceCategory('pestControl', local.pestControl),
+      ServiceCategory('acRepair', local.acRepair),
+      ServiceCategory('vehicleRepair', local.vehicleRepair),
+      ServiceCategory('applianceInstallation', local.applianceInstallation),
+      ServiceCategory('itSupport', local.itSupport),
+      ServiceCategory('homeSecurity', local.homeSecurity),
+      ServiceCategory('interiorDesign', local.interiorDesign),
+      ServiceCategory('windowCleaning', local.windowCleaning),
+      ServiceCategory('furnitureAssembly', local.furnitureAssembly),
+    ];
 
-  // Create map from the categories
-  final serviceToWorkDomain = Map.fromEntries(
-    serviceCategories.map((category) => MapEntry(category.localizedName, category.id)),
-  );
+    // Create map from the categories
+    final serviceToWorkDomain = Map.fromEntries(
+      serviceCategories
+          .map((category) => MapEntry(category.localizedName, category.id)),
+    );
 
-  // Add error logging for debugging
-  final workDomainId = serviceToWorkDomain[serviceName];
-  if (workDomainId == null) {
-    debugPrint('Warning: No work domain ID found for service: $serviceName');
-    debugPrint('Available services: ${serviceToWorkDomain.keys.join(', ')}');
+    // Add error logging for debugging
+    final workDomainId = serviceToWorkDomain[serviceName];
+    if (workDomainId == null) {
+      debugPrint('Warning: No work domain ID found for service: $serviceName');
+      debugPrint('Available services: ${serviceToWorkDomain.keys.join(', ')}');
+    }
+
+    return workDomainId ?? '';
   }
 
-  return workDomainId ?? '';
-}
-
-
-
-@override
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
       body: _isLoading
@@ -877,6 +892,4 @@ String _getWorkDomainIdForService(String serviceName) {
       backgroundColor: const Color.fromARGB(255, 255, 255, 255),
     );
   }
-
-  
 }
