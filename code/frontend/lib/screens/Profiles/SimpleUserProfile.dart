@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:hanini_frontend/localization/app_localization.dart';
+import 'package:hanini_frontend/models/colors.dart';
 import 'package:hanini_frontend/screens/become_provider_screen/onboarding2.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:googleapis/drive/v3.dart' as drive;
@@ -489,14 +490,8 @@ class _SimpleUserProfileState extends State<SimpleUserProfile> {
           width: MediaQuery.of(context).size.width * 0.8,
           padding: const EdgeInsets.symmetric(vertical: 16),
           decoration: BoxDecoration(
-            gradient: LinearGradient(
-              colors: [
-                startColor,
-                endColor,
-              ],
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-            ),
+            gradient: AppColors.mainGradient,
+            // ),
             borderRadius: BorderRadius.circular(30),
             boxShadow: [
               BoxShadow(
