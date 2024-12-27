@@ -283,7 +283,6 @@ class _HomePageState extends State<HomePage> {
               fontWeight: FontWeight.bold,
             ),
           ),
-          const Icon(Icons.more_horiz, color: AppColors.mainColor),
         ],
       ),
     );

@@ -682,18 +682,39 @@ class _ServiceProviderProfileState extends State<ServiceProviderProfile> {
                     )
                   ],
                 ),
-                Positioned(
-                  bottom: 40, // Adjust this value to fine-tune the position
-                  right: 16, // Adjust this value to fine-tune the position
-                  child: FloatingActionButton(
-                    onPressed: toggleEditMode,
-                    child: Icon(isEditMode ? Icons.check : Icons.edit),
-                    tooltip: isEditMode
-                        ? localizations.save
-                        : localizations.editProfile,
-                    backgroundColor: const Color.fromARGB(255, 43, 133, 207),
+               Positioned(
+                top: 40,
+                right: 16,
+                child: GestureDetector(
+                  onTap: toggleEditMode,
+                  child: Container(
+                    height: 56, // Match default FAB size
+                    width: 56,
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        colors: [
+                          Colors.deepPurple.shade700,
+                          Colors.purple.shade400,
+                        ],
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                      ),
+                      shape: BoxShape.circle,
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.2),
+                          blurRadius: 10,
+                          offset: const Offset(0, 5),
+                        ),
+                      ],
+                    ),
+                    child: Icon(
+                      isEditMode ? Icons.check : Icons.edit,
+                      color: Colors.white,
+                    ),
                   ),
                 ),
+              ),
               ],
             ),
       resizeToAvoidBottomInset: false,

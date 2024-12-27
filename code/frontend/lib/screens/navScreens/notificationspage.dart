@@ -115,7 +115,7 @@ class NotificationsPage extends StatelessWidget {
                 child: Text(
                   localizations.notifications,
                   style: GoogleFonts.poppins(
-                    color: Colors.white,
+                    color: const Color.fromARGB(255, 255, 255, 255),
                     fontWeight: FontWeight.bold,
                     fontSize: 20,
                   ),
@@ -138,95 +138,58 @@ class NotificationsPage extends StatelessWidget {
                     ],
                   ),
                   // padding: const EdgeInsets.symmetric(horizontal: 16), // Padding for tabs
-                  child: Padding(
+                  child: Container(
                     padding: const EdgeInsets.only(top: 8.0),
                     child: TabBar(
-                      indicator: BoxDecoration(
-                        borderRadius: BorderRadius.circular(20), // Rounded tabs
-                        color: theme.colorScheme.primary.withOpacity(0.2),
+                indicator: BoxDecoration(
+                  borderRadius: BorderRadius.circular(30),
+                  color: Colors.purple,
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black12,
+                      blurRadius: 4,
+                      offset: Offset(0, 2),
+                    ),
+                  ],
+                ),
+                labelColor: Colors.white,
+                unselectedLabelColor: Colors.purple,
+                tabs: [
+                  Tab(
+                    child: Container(
+                      padding: EdgeInsets.symmetric(horizontal: 16),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(Icons.list_alt),
+                          SizedBox(width: 8),
+                          Text(localizations.listings),
+                        ],
                       ),
-                      labelColor: theme.colorScheme.primary,
-                      unselectedLabelColor: Colors.grey,
-                      labelStyle: GoogleFonts.poppins(
-                          fontWeight: FontWeight.w600, fontSize: 16),
-                      tabs: [
-                        Tab(
-                          child: Padding(
-                            padding: const EdgeInsets.all(8.0),
-                            child: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Icon(
-                                  Icons.list_alt,
-                                  size: 22,
-                                  color: theme.colorScheme.primary,
-                                ),
-                                const SizedBox(width: 8),
-                                Text(
-                                  localizations.listings,
-                                  style: TextStyle(height: 1.2),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
-                        Tab(
-                          child: Padding(
-                            padding: const EdgeInsets.all(8.0),
-                            child: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Icon(
-                                  Icons.star_outline,
-                                  size: 22,
-                                  color: theme.colorScheme.primary,
-                                ),
-                                const SizedBox(width: 8),
-                                Text(
-                                  localizations.reviews,
-                                  style: TextStyle(height: 1.2),
-                                ),
-                              ],
-                            ),
-// >>>>>>> Anas_front
-                          ),
-                        ),
-                      ],
                     ),
                   ),
-// <<<<<<< HEAD
-//                   Tab(
-//                     height: 56,
-//                     child: Row(
-//                       mainAxisSize: MainAxisSize.min,
-//                       children: [
-//                         Icon(
-//                           Icons.star_outline,
-//                           size: 22,
-//                         ),
-//                         const SizedBox(width: 10),
-//                         Text(
-//                           localizations.reviews,
-//                           style: TextStyle(
-//                             height: 1.2,
-//                           ),
-//                         ),
-//                       ],
-//                     ),
-//                   ),
-//                 ],
-// =======
+                  Tab(
+                    child: Container(
+                      padding: EdgeInsets.symmetric(horizontal: 16),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(Icons.star_outline),
+                          SizedBox(width: 8),
+                          Text(localizations.reviews),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+                  ),
                 ),
-// >>>>>>> Anas_front
               ),
             ),
           ),
         ),
         body:
-            // Padding(
-            // padding: const EdgeInsets.only(top: 8, bottom: 8), // Padding to prevent content from touching edges
-            // child:
-
             TabBarView(
           children: [
             ListingsTab(userId: userId),
@@ -265,32 +228,52 @@ class ListingsTab extends StatelessWidget {
                 ),
               ],
             ),
-            child: TabBar(
-              labelColor: Theme.of(context).primaryColor,
-              unselectedLabelColor: Colors.grey[600],
-              indicatorColor: Theme.of(context).primaryColor,
-              indicatorWeight: 3,
-              labelStyle: const TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.w600,
-              ),
-              unselectedLabelStyle: const TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.w400,
-              ),
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              tabs: [
-                Tab(
-                  text: localizations.sent,
-                  icon: Icon(Icons.send_outlined),
-                  height: 56,
+            child: Container(
+              margin: EdgeInsets.only(top: 8),
+              padding: EdgeInsets.all(16),
+              child: TabBar(
+                  indicator: BoxDecoration(
+                    borderRadius: BorderRadius.circular(30),
+                    color: Colors.purple,
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black12,
+                        blurRadius: 4,
+                        offset: Offset(0, 2),
+                      ),
+                    ],
+                  ),
+                  labelColor: Colors.white,
+                  unselectedLabelColor: Colors.purple,
+                  tabs: [
+                    Tab(
+                      child: Container(
+                        padding: EdgeInsets.symmetric(horizontal: 16),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(Icons.send_outlined),
+                            SizedBox(width: 8),
+                            Text(localizations.sent),
+                          ],
+                        ),
+                      ),
+                    ),
+                    Tab( 
+                      child: Container(
+                        padding: EdgeInsets.symmetric(horizontal: 16),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(Icons.download_outlined),
+                            SizedBox(width: 8),
+                            Text(localizations.received),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
-                Tab(
-                  text: localizations.received,
-                  icon: Icon(Icons.download_outlined),
-                  height: 56,
-                ),
-              ],
             ),
           ),
           Expanded(
@@ -377,37 +360,38 @@ class ListingsList extends StatelessWidget {
         return Container(
           decoration: BoxDecoration(
             border: Border.all(
-              color: Theme.of(context).dividerColor.withOpacity(0.1),
+              color: Colors.purple.withOpacity(0.1),
               width: 1,
             ),
             borderRadius: BorderRadius.circular(8),
           ),
           child: ExpansionTile(
             title: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                const Icon(Icons.history, size: 20),
+                const Icon(Icons.history, size: 18,color: Colors.purple,),
                 const SizedBox(width: 2),
                 Text(
                   localizations.negotiationHistory,
                   style: GoogleFonts.inter(
-                    fontSize: 12,
+                    fontSize: 10.5,
                     fontWeight: FontWeight.w600,
                   ),
                 ),
-                const SizedBox(width: 8),
+                const SizedBox(width: 4),
                 Container(
                   padding:
-                      const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                      const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
                   decoration: BoxDecoration(
                     color:
-                        Theme.of(context).colorScheme.primary.withOpacity(0.1),
+                        Colors.purple.withOpacity(0.1),
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Text(
                     '${negotiations.length}',
                     style: GoogleFonts.inter(
                       fontSize: 12,
-                      color: Theme.of(context).colorScheme.primary,
+                      color: Colors.purple,
                       fontWeight: FontWeight.w500,
                     ),
                   ),
@@ -437,9 +421,7 @@ class ListingsList extends StatelessWidget {
                             width: 24,
                             height: 24,
                             decoration: BoxDecoration(
-                              color: Theme.of(context)
-                                  .colorScheme
-                                  .primary
+                              color: Colors.purple
                                   .withOpacity(0.1),
                               shape: BoxShape.circle,
                             ),
@@ -448,7 +430,7 @@ class ListingsList extends StatelessWidget {
                                 '${index + 1}',
                                 style: GoogleFonts.inter(
                                   fontSize: 12,
-                                  color: Theme.of(context).colorScheme.primary,
+                                  color: Colors.purple,
                                   fontWeight: FontWeight.w500,
                                 ),
                               ),
@@ -479,9 +461,7 @@ class ListingsList extends StatelessWidget {
                                         vertical: 2,
                                       ),
                                       decoration: BoxDecoration(
-                                        color: Theme.of(context)
-                                            .colorScheme
-                                            .primary
+                                        color: Colors.purple
                                             .withOpacity(0.1),
                                         borderRadius: BorderRadius.circular(4),
                                       ),
@@ -489,9 +469,7 @@ class ListingsList extends StatelessWidget {
                                         '\DZD $amount',
                                         style: GoogleFonts.inter(
                                           fontSize: 10,
-                                          color: Theme.of(context)
-                                              .colorScheme
-                                              .primary,
+                                          color: Colors.purple                                             ,
                                           fontWeight: FontWeight.w500,
                                         ),
                                       ),
@@ -1104,8 +1082,8 @@ class ListingsList extends StatelessWidget {
                               ),
                               decoration: BoxDecoration(
                                 color: type == "sent"
-                                    ? theme.colorScheme.primary.withOpacity(0.1)
-                                    : theme.colorScheme.secondary
+                                    ? Colors.purple.withOpacity(0.1)
+                                    : Colors.purple
                                         .withOpacity(0.1),
                                 borderRadius: BorderRadius.circular(20),
                               ),
@@ -1118,8 +1096,8 @@ class ListingsList extends StatelessWidget {
                                         : Icons.arrow_downward,
                                     size: 16,
                                     color: type == "sent"
-                                        ? theme.colorScheme.primary
-                                        : theme.colorScheme.secondary,
+                                        ? Colors.purple
+                                        : Colors.purple,
                                   ),
                                   const SizedBox(width: 4),
                                   Text(
@@ -1130,8 +1108,8 @@ class ListingsList extends StatelessWidget {
                                       fontSize: 12,
                                       fontWeight: FontWeight.w500,
                                       color: type == "sent"
-                                          ? theme.colorScheme.primary
-                                          : theme.colorScheme.secondary,
+                                          ? Colors.purple
+                                          : Colors.purple,
                                     ),
                                   ),
                                 ],
@@ -1244,13 +1222,10 @@ class _ReviewsTabState extends State<ReviewsTab> {
   }
 
   Future<void> _loadLastViewedTimestamp() async {
-    // Fetch the last viewed timestamp from Firestore (or local storage)
-    final userDoc =
-        await _firestore.collection('users').doc(widget.userId).get();
+    final userDoc = await _firestore.collection('users').doc(widget.userId).get();
     final userData = userDoc.data() as Map<String, dynamic>? ?? {};
     setState(() {
-      final timestampString = userData['last_viewed_reviews']
-          as String?; // Stored as ISO 8601 string
+      final timestampString = userData['last_viewed_reviews'] as String?;
       if (timestampString != null) {
         lastViewedTimestamp = DateTime.parse(timestampString);
       }
@@ -1258,7 +1233,6 @@ class _ReviewsTabState extends State<ReviewsTab> {
   }
 
   Future<void> _updateLastViewedTimestamp() async {
-    // Update the last viewed timestamp in Firestore
     final now = DateTime.now();
     await _firestore.collection('users').doc(widget.userId).update({
       'last_viewed_reviews': now.toIso8601String(),
@@ -1268,10 +1242,52 @@ class _ReviewsTabState extends State<ReviewsTab> {
 
   @override
   void dispose() {
-    // Update the timestamp when the user leaves the page
     _updateLastViewedTimestamp();
     super.dispose();
   }
+
+  Widget _buildNewTag() {
+    return Container(
+      margin: const EdgeInsets.only(left: 8),
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(
+          colors: [Color(0xFFFF6B6B), Color(0xFFFF8E8E)],
+          begin: Alignment.centerLeft,
+          end: Alignment.centerRight,
+        ),
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.red.withOpacity(0.3),
+            blurRadius: 4,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(
+            Icons.fiber_new_rounded,
+            color: Colors.white,
+            size: 16,
+          ),
+          const SizedBox(width: 4),
+          Text(
+            'NEW',
+            style: GoogleFonts.poppins(
+              color: Colors.white,
+              fontSize: 12,
+              fontWeight: FontWeight.w600,
+              letterSpacing: 0.5,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
 
   @override
   Widget build(BuildContext context) {
@@ -1298,8 +1314,7 @@ class _ReviewsTabState extends State<ReviewsTab> {
           return Center(
             child: Text(
               localizations.noReviewsAvailable,
-              style: GoogleFonts.poppins(
-                  fontSize: 16, fontStyle: FontStyle.italic),
+              style: GoogleFonts.poppins(fontSize: 16, fontStyle: FontStyle.italic),
             ),
           );
         }
@@ -1314,8 +1329,7 @@ class _ReviewsTabState extends State<ReviewsTab> {
                   ? Center(
                       child: Text(
                         localizations.noReviewsAvailable,
-                        style: GoogleFonts.poppins(
-                            fontSize: 16, fontStyle: FontStyle.italic),
+                        style: GoogleFonts.poppins(fontSize: 16, fontStyle: FontStyle.italic),
                       ),
                     )
                   : ListView.builder(
@@ -1323,8 +1337,7 @@ class _ReviewsTabState extends State<ReviewsTab> {
                       itemCount: reviews.length,
                       itemBuilder: (context, index) {
                         final review = reviews[index] as Map<String, dynamic>;
-                        final comment =
-                            review['comment'] ?? 'No comment provided';
+                        final comment = review['comment'] ?? 'No comment provided';
                         final commenterId = review['id_commentor'] ?? 'Unknown';
                         final rating = review['rating']?.toDouble() ?? 0.0;
                         final timestamp = review['timestamp'] ?? '';
@@ -1332,36 +1345,25 @@ class _ReviewsTabState extends State<ReviewsTab> {
                             ? DateTime.parse(timestamp)
                             : null;
 
-                        // Determine if the review is "new"
                         final isNew = lastViewedTimestamp != null &&
                             reviewTimestamp != null &&
                             reviewTimestamp.isAfter(lastViewedTimestamp!);
 
-                        // Parse and format the timestamp
                         final formattedTimestamp = reviewTimestamp != null
-                            ? DateFormat('MMM d, yyyy • h:mm a')
-                                .format(reviewTimestamp)
+                            ? DateFormat('MMM d, yyyy • h:mm a').format(reviewTimestamp)
                             : 'Unknown time';
 
                         return FutureBuilder<DocumentSnapshot>(
-                          future: _firestore
-                              .collection('users')
-                              .doc(commenterId)
-                              .get(),
+                          future: _firestore.collection('users').doc(commenterId).get(),
                           builder: (context, commenterSnapshot) {
-                            if (commenterSnapshot.connectionState ==
-                                ConnectionState.waiting) {
-                              return const Center(
-                                  child: CircularProgressIndicator());
+                            if (commenterSnapshot.connectionState == ConnectionState.waiting) {
+                              return const Center(child: CircularProgressIndicator());
                             }
 
-                            final commenterData = commenterSnapshot.data?.data()
-                                    as Map<String, dynamic>? ??
-                                {};
-                            final commenterName =
-                                commenterData['name'] ?? 'Anonymous';
-                            final commenterPhoto =
-                                commenterData['photoURL'] ?? '';
+                            final commenterData =
+                                commenterSnapshot.data?.data() as Map<String, dynamic>? ?? {};
+                            final commenterName = commenterData['name'] ?? 'Anonymous';
+                            final commenterPhoto = commenterData['photoURL'] ?? '';
 
                             return Card(
                               margin: const EdgeInsets.symmetric(vertical: 8),
@@ -1374,86 +1376,52 @@ class _ReviewsTabState extends State<ReviewsTab> {
                                       radius: 20,
                                       backgroundImage: commenterPhoto.isNotEmpty
                                           ? NetworkImage(commenterPhoto)
-                                          : const AssetImage(
-                                                  'assets/images/default_profile.png')
+                                          : const AssetImage('assets/images/default_profile.png')
                                               as ImageProvider,
                                     ),
                                     const SizedBox(width: 12),
                                     Expanded(
                                       child: Column(
-                                        crossAxisAlignment:
-                                            CrossAxisAlignment.start,
+                                        crossAxisAlignment: CrossAxisAlignment.start,
                                         children: [
                                           Row(
-                                            mainAxisAlignment:
-                                                MainAxisAlignment.spaceBetween,
-                                            crossAxisAlignment:
-                                                CrossAxisAlignment.start,
+                                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                            crossAxisAlignment: CrossAxisAlignment.start,
                                             children: [
-                                              Column(
-                                                crossAxisAlignment:
-                                                    CrossAxisAlignment.start,
-                                                children: [
-                                                  Text(
-                                                    commenterName,
-                                                    style: GoogleFonts.poppins(
-                                                      fontWeight:
-                                                          FontWeight.w600,
-                                                      fontSize: 13,
-                                                    ),
-                                                  ),
-                                                  const SizedBox(height: 6),
-                                                  _buildStarRating(rating),
-                                                  const SizedBox(height: 8),
-                                                ],
-                                              ),
-                                              Column(
-                                                crossAxisAlignment:
-                                                    CrossAxisAlignment.end,
-                                                children: [
-                                                  Text(
-                                                    formattedTimestamp,
-                                                    style: GoogleFonts.poppins(
-                                                      fontSize: 12,
-                                                      color: Colors.grey[500],
-                                                    ),
-                                                  ),
-                                                  if (isNew)
-                                                    Row(
-                                                      children: [
-                                                        Container(
-                                                          margin:
-                                                              const EdgeInsets
-                                                                  .only(top: 4),
-                                                          padding:
-                                                              const EdgeInsets
-                                                                  .symmetric(
-                                                                  horizontal: 8,
-                                                                  vertical: 4),
-                                                          decoration:
-                                                              BoxDecoration(
-                                                            color: Colors.red,
-                                                            borderRadius:
-                                                                BorderRadius
-                                                                    .circular(
-                                                                        4),
-                                                          ),
-                                                          child: Text(
-                                                            'NEW',
-                                                            style: GoogleFonts
-                                                                .poppins(
-                                                              fontSize: 10,
-                                                              color:
-                                                                  Colors.white,
-                                                            ),
-                                                          ),
+                                              Expanded(
+                                                child: Row(
+                                                  children: [
+                                                    Flexible(
+                                                      child: Text(
+                                                        commenterName,
+                                                        style: GoogleFonts.poppins(
+                                                          fontWeight: FontWeight.w600,
+                                                          fontSize: 13,
                                                         ),
-                                                      ],
+                                                      ),
                                                     ),
-                                                ],
+                                                  ],
+                                                ),
                                               ),
+                                              Text(
+                                                formattedTimestamp,
+                                                style: GoogleFonts.poppins(
+                                                  fontSize: 12,
+                                                  color: Colors.grey[500],
+                                                ),
+                                              ),
+
                                             ],
                                           ),
+                                          const SizedBox(height: 6),
+                                          Row(
+                                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                            children: [
+                                              _buildStarRating(rating),
+                                              if (isNew) _buildNewTag(),
+                                            ],
+                                          ),
+                                          const SizedBox(height: 8),
                                           Text(
                                             comment,
                                             style: GoogleFonts.poppins(

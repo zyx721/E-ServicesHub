@@ -113,7 +113,7 @@ void _showFilterDialog() {
                   Text(
                     localizations.filterServices,
                     style: GoogleFonts.poppins(
-                      fontSize: 26,
+                      fontSize: 24,
                       fontWeight: FontWeight.w700,
                       color: Colors.grey.shade800,
                     ),
@@ -365,7 +365,7 @@ void _showFilterDialog() {
                       child: Text(
                         localizations.applyFilters,
                         style: GoogleFonts.poppins(
-                          fontSize: 15,
+                          fontSize: 13,
                           fontWeight: FontWeight.w600,
                         ),
                       ),
@@ -913,6 +913,7 @@ Widget _buildFilterChip(String label, VoidCallback onDeleted) {
       );
     },
     child: Card(
+      color: AppColors.tempColor,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(16),
       ),

@@ -203,63 +203,86 @@ class _SimpleUserProfileState extends State<SimpleUserProfile> {
     }
   }
 
-  @override
-  Widget build(BuildContext context) {
-    final AppLocalizations? localization = AppLocalizations.of(context);
+ @override
+Widget build(BuildContext context) {
+  final AppLocalizations? localization = AppLocalizations.of(context);
 
-    if (localization == null) {
-      return const Scaffold(
-        body: Center(child: CircularProgressIndicator()),
-      );
-    }
+  if (localization == null) {
+    return const Scaffold(
+      body: Center(child: CircularProgressIndicator()),
+    );
+  }
 
-    if (hasError) {
-      return Scaffold(
-        body: Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
+  if (hasError) {
+    return Scaffold(
+      body: Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Text(localization.error),
+            ElevatedButton(
+              onPressed: () => fetchUserData(),
+              child: Text(localization.retry ?? 'Retry'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  return Scaffold(
+    body: isLoading
+        ? const Center(child: CircularProgressIndicator())
+        : Stack(
             children: [
-              Text(localization.error),
-              ElevatedButton(
-                onPressed: () => fetchUserData(),
-                child: Text(localization.retry ?? 'Retry'),
+              ListView(
+                padding: EdgeInsets.zero,
+                children: [
+                  const SizedBox(height: 50),
+                  buildTop(localization),
+                  const SizedBox(height: 30),
+                  buildProfileInfo(localization),
+                  const SizedBox(height: 60),
+                  buildBecomeProviderButton(localization),
+                ],
+              ),
+              Positioned(
+                top: 40,
+                right: 16,
+                child: GestureDetector(
+                  onTap: toggleEditMode,
+                  child: Container(
+                    height: 56, // Match default FAB size
+                    width: 56,
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        colors: [
+                          Colors.deepPurple.shade700,
+                          Colors.purple.shade400,
+                        ],
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                      ),
+                      shape: BoxShape.circle,
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.2),
+                          blurRadius: 10,
+                          offset: const Offset(0, 5),
+                        ),
+                      ],
+                    ),
+                    child: Icon(
+                      isEditMode ? Icons.check : Icons.edit,
+                      color: Colors.white,
+                    ),
+                  ),
+                ),
               ),
             ],
           ),
-        ),
-      );
-    }
-
-    // Rest of the build method remains the same...
-    return Scaffold(
-      body: isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : Stack(
-              children: [
-                ListView(
-                  padding: EdgeInsets.zero,
-                  children: [
-                    const SizedBox(height: 50),
-                    buildTop(localization),
-                    const SizedBox(height: 30),
-                    buildProfileInfo(localization),
-                    const SizedBox(height: 60),
-                    buildBecomeProviderButton(localization),
-                  ],
-                ),
-                Positioned(
-                  top: 40,
-                  right: 16,
-                  child: FloatingActionButton(
-                    onPressed: toggleEditMode,
-                    child: Icon(isEditMode ? Icons.check : Icons.edit),
-                    backgroundColor: const Color.fromARGB(255, 43, 133, 207),
-                  ),
-                ),
-              ],
-            ),
-    );
-  }
+  );
+}
 
   void toggleEditMode() {
     setState(() {
@@ -359,7 +382,7 @@ class _SimpleUserProfileState extends State<SimpleUserProfile> {
                   padding: const EdgeInsets.all(6),
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
-                    color: Colors.blue,
+                    color: Colors.purple,
                   ),
                   child: const Icon(
                     Icons.camera_alt,
@@ -436,83 +459,90 @@ class _SimpleUserProfileState extends State<SimpleUserProfile> {
   }
 
   Widget buildBecomeProviderButton(AppLocalizations localization) {
-    final localizations = AppLocalizations.of(context);
-    if (localizations == null) return const SizedBox.shrink();
+  final localizations = AppLocalizations.of(context);
+  if (localizations == null) return const SizedBox.shrink();
 
-    // Determine button text and action based on status
-    String buttonText;
-    VoidCallback? onTapAction;
-    Color startColor;
-    Color endColor;
+  // Determine button text, style, and action based on status
+  String buttonText;
+  VoidCallback? onTapAction;
+  Gradient buttonGradient;
+  Color textColor;
 
-    if (isStep2Complete) {
-      buttonText = localization.step2Button;
-      startColor = Colors.green.shade600;
-      endColor = Colors.green.shade800;
-      onTapAction = () {
-        Navigator.pushNamed(context, '/set-up');
-      };
-    } else if (isWaiting) {
-      buttonText = localization.waitingButton;
-      startColor = Colors.orange.shade600;
-      endColor = Colors.orange.shade800;
-      onTapAction = () {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(localization.waitingMessage),
-            duration: const Duration(seconds: 3),
-          ),
-        );
-      };
-    } else if (isStep1Complete) {
-      buttonText = localization.verificationButton;
-      startColor = const Color(0xFF3949AB);
-      endColor = const Color(0xFF1E88E5);
-      onTapAction = () {
-        Navigator.pushNamed(context, '/verification');
-      };
-    } else {
-      buttonText = localization.becomeProviderButton;
-      startColor = const Color(0xFF3949AB);
-      endColor = const Color(0xFF1E88E5);
-      onTapAction = () {
-        Navigator.push(
-          context,
-          MaterialPageRoute(builder: (context) => OnboardingScreen2()),
-        );
-      };
-    }
+  if (isStep2Complete) {
+    buttonText = localization.step2Button;
+    buttonGradient = LinearGradient(
+      colors: [Colors.green.shade600, Colors.green.shade800],
+    );
+    textColor = Colors.white;
+    onTapAction = () {
+      Navigator.pushNamed(context, '/set-up');
+    };
+  } else if (isWaiting) {
+    buttonText = localization.waitingButton;
+    buttonGradient = LinearGradient(
+      colors: [Colors.orange.shade600, Colors.orange.shade800],
+    );
+    textColor = Colors.white;
+    onTapAction = () {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(localization.waitingMessage),
+          duration: const Duration(seconds: 3),
+        ),
+      );
+    };
+  } else if (isStep1Complete) {
+    buttonText = localization.verificationButton;
+    buttonGradient = const LinearGradient(
+      colors: [Color(0xFF3949AB), Color(0xFF1E88E5)],
+    );
+    textColor = Colors.white;
+    onTapAction = () {
+      Navigator.pushNamed(context, '/verification');
+    };
+  } else {
+    buttonText = localization.becomeProviderButton;
+    buttonGradient = const LinearGradient(
+      colors: [Color(0xFF3949AB), Color(0xFF1E88E5)],
+    );
+    textColor = Colors.white;
+    onTapAction = () {
+      Navigator.push(
+        context,
+        MaterialPageRoute(builder: (context) => OnboardingScreen2()),
+      );
+    };
+  }
 
-    return Center(
-      child: InkWell(
-        onTap: onTapAction,
-        child: Container(
-          width: MediaQuery.of(context).size.width * 0.8,
-          padding: const EdgeInsets.symmetric(vertical: 16),
-          decoration: BoxDecoration(
-            gradient: AppColors.mainGradient,
-            // ),
-            borderRadius: BorderRadius.circular(30),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withOpacity(0.2),
-                blurRadius: 10,
-                offset: const Offset(0, 5),
-              ),
-            ],
-          ),
-          child: Center(
-            child: Text(
-              buttonText,
-              style: const TextStyle(
-                color: Colors.white,
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-              ),
+  return Center(
+    child: InkWell(
+      onTap: onTapAction,
+      child: Container(
+        width: MediaQuery.of(context).size.width * 0.8,
+        padding: const EdgeInsets.symmetric(vertical: 16),
+        decoration: BoxDecoration(
+          gradient: buttonGradient,
+          borderRadius: BorderRadius.circular(30),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.2),
+              blurRadius: 10,
+              offset: const Offset(0, 5),
+            ),
+          ],
+        ),
+        child: Center(
+          child: Text(
+            buttonText,
+            style: TextStyle(
+              color: textColor,
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
             ),
           ),
         ),
       ),
-    );
-  }
+    ),
+  );
+}
 }

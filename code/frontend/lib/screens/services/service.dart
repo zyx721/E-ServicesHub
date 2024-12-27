@@ -702,19 +702,7 @@ TabBar(
           Stack(
             alignment: Alignment.bottomRight,
             children: [
-              Container(
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  border: Border.all(color: Colors.white, width: 4),
-                  boxShadow: [
-                    BoxShadow(
-                      blurRadius: 10,
-                      color: Colors.black.withOpacity(0.1),
-                      spreadRadius: 5,
-                    ),
-                  ],
-                ),
-                child:   Container(
+ Container(
                         height: 90, // Reduced height for the image container
                         decoration: BoxDecoration(
                           borderRadius: BorderRadius.vertical(
@@ -732,7 +720,7 @@ TabBar(
                               )
                             : null,
                       ),
-              ),
+
             ],
           ),
           const SizedBox(height: 16),
@@ -1113,34 +1101,6 @@ Widget _buildSkillChip(String skill) {
 
 
   Widget _buildWorkExperienceSection(AppLocalizations localizations) {
-  final companyController = TextEditingController();
-  final positionController = TextEditingController();
-  final durationController = TextEditingController();
-
-  void addWorkExperience() {
-    final company = companyController.text.trim();
-    final position = positionController.text.trim();
-    final duration = durationController.text.trim();
-
-    if (company.isNotEmpty && position.isNotEmpty && duration.isNotEmpty) {
-      setState(() {
-        workExperience.add({
-          'company': company,
-          'position': position,
-          'duration': duration,
-        });
-      });
-      companyController.clear();
-      positionController.clear();
-      durationController.clear();
-    }
-  }
-
-  void removeWorkExperience(int index) {
-    setState(() {
-      workExperience.removeAt(index);
-    });
-  }
 
   return     
     Card(
@@ -1173,7 +1133,7 @@ Widget _buildSkillChip(String skill) {
               Text(
                 localizations.workExperience,
                 style: GoogleFonts.poppins(
-                  fontSize: 23,
+                  fontSize: 21,
                   fontWeight: FontWeight.bold,
                   color: Colors.grey.shade800,
                 ),
