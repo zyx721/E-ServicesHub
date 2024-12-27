@@ -10,7 +10,6 @@ import 'dart:convert';
 import 'package:googleapis_auth/auth_io.dart' as auth;
 import 'package:hanini_frontend/localization/app_localization.dart';
 
-
 // Add this method to fetch device token
 Future<String?> _getDeviceToken(String userId) async {
   try {
@@ -97,77 +96,15 @@ class NotificationsPage extends StatelessWidget {
     if (localizations == null) return const SizedBox.shrink();
 
     final theme = Theme.of(context);
-
-// <<<<<<< HEAD
-//     return DefaultTabController(
-//       length: 2,
-//       child: Scaffold(
-//         appBar: AppBar(
-//           elevation: 2,
-//           shadowColor: Colors.black.withOpacity(0.1),
-//           centerTitle: true,
-//           backgroundColor: theme.colorScheme.surface,
-//           title: Text(
-//             localizations.notifications,
-//             style: TextStyle(
-//               color: theme.colorScheme.onSurface,
-//               fontWeight: FontWeight.w700,
-//               fontSize: 20,
-//               letterSpacing: -0.5,
-//             ),
-//           ),
-//           bottom: PreferredSize(
-//             preferredSize: const Size.fromHeight(65),
-//             child: Container(
-//               decoration: BoxDecoration(
-//                 border: Border(
-//                   bottom: BorderSide(
-//                     color: theme.colorScheme.outline.withOpacity(0.1),
-//                     width: 1,
-//                   ),
-//                 ),
-//               ),
-//               child: TabBar(
-//                 indicatorWeight: 3,
-//                 indicatorColor: theme.colorScheme.primary,
-//                 labelColor: theme.colorScheme.primary,
-//                 unselectedLabelColor:
-//                     theme.colorScheme.onSurface.withOpacity(0.5),
-//                 labelStyle: const TextStyle(
-//                   fontWeight: FontWeight.w600,
-//                   fontSize: 16,
-//                 ),
-//                 unselectedLabelStyle: const TextStyle(
-//                   fontWeight: FontWeight.w500,
-//                   fontSize: 16,
-//                 ),
-//                 indicatorSize: TabBarIndicatorSize.label,
-//                 labelPadding: const EdgeInsets.symmetric(horizontal: 24),
-//                 tabs: [
-//                   Tab(
-//                     height: 56,
-//                     child: Row(
-//                       mainAxisSize: MainAxisSize.min,
-//                       children: [
-//                         Icon(
-//                           Icons.list_alt,
-//                           size: 22,
-//                         ),
-//                         const SizedBox(width: 10),
-//                         Text(
-//                           localizations.listings,
-//                           style: TextStyle(
-//                             height: 1.2,
-// =======
-return DefaultTabController(
-  length: 2,
-  child: Scaffold(
-    appBar: PreferredSize(
-      preferredSize: const Size.fromHeight(120),
-      child: Container(
-        decoration: const BoxDecoration(
-          gradient: AppColors.mainGradient,
-        ),
+    return DefaultTabController(
+      length: 2,
+      child: Scaffold(
+        appBar: PreferredSize(
+          preferredSize: const Size.fromHeight(120),
+          child: Container(
+            decoration: const BoxDecoration(
+              gradient: AppColors.mainGradient,
+            ),
             child: AppBar(
               elevation: 0,
               centerTitle: true,
@@ -176,7 +113,7 @@ return DefaultTabController(
                 padding: const EdgeInsets.only(
                     top: 14.0), // Added padding to shift the title down
                 child: Text(
-                  "Notifications",
+                  localizations.notifications,
                   style: GoogleFonts.poppins(
                     color: Colors.white,
                     fontWeight: FontWeight.bold,
@@ -226,7 +163,7 @@ return DefaultTabController(
                                 ),
                                 const SizedBox(width: 8),
                                 Text(
-                                  "Listings",
+                                  localizations.listings,
                                   style: TextStyle(height: 1.2),
                                 ),
                               ],
@@ -237,19 +174,19 @@ return DefaultTabController(
                           child: Padding(
                             padding: const EdgeInsets.all(8.0),
                             child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Icon(
-                                Icons.star_outline,
-                                size: 22,
-                                color: theme.colorScheme.primary,
-                              ),
-                              const SizedBox(width: 8),
-                              Text(
-                                "Reviews",
-                                style: TextStyle(height: 1.2),
-                              ),
-                            ],
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(
+                                  Icons.star_outline,
+                                  size: 22,
+                                  color: theme.colorScheme.primary,
+                                ),
+                                const SizedBox(width: 8),
+                                Text(
+                                  localizations.reviews,
+                                  style: TextStyle(height: 1.2),
+                                ),
+                              ],
                             ),
 // >>>>>>> Anas_front
                           ),
@@ -475,8 +412,7 @@ class ListingsList extends StatelessWidget {
             ),
             children: [
               Padding(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 6, vertical: 8),
+                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 8),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: negotiations.asMap().entries.map((entry) {
@@ -586,27 +522,29 @@ class ListingsList extends StatelessWidget {
     Map<String, dynamic> listing,
   ) async {
     final TextEditingController payController = TextEditingController();
-
+    final localizations = AppLocalizations.of(context);
+    if (localizations == null) return;
     return showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: Text('Negotiate Price',
+        title: Text(localizations.negotiatePrice,
             style: GoogleFonts.inter(fontWeight: FontWeight.w600)),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Text('Current offer: ${listing['pay']}',
+            Text(
+                '${localizations.currentOffer} ${listing['pay']} ${localizations.dzd}',
                 style: GoogleFonts.inter()),
             const SizedBox(height: 16),
             TextField(
               controller: payController,
               keyboardType: TextInputType.number,
               decoration: InputDecoration(
-                labelText: 'Your Counter Offer',
+                labelText: localizations.yourCounterOffer,
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(8),
                 ),
-                prefixText: 'DZD',
+                prefixText: localizations.dzd,
               ),
             ),
           ],
@@ -614,7 +552,7 @@ class ListingsList extends StatelessWidget {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
+            child: Text(localizations.cancel),
           ),
           ElevatedButton(
             onPressed: () async {
@@ -627,7 +565,7 @@ class ListingsList extends StatelessWidget {
                 Navigator.pop(context);
               }
             },
-            child: const Text('Send Offer'),
+            child: Text(localizations.sendOffer),
           ),
         ],
       ),
@@ -639,6 +577,8 @@ class ListingsList extends StatelessWidget {
     Map<String, dynamic> listing,
     String newPay,
   ) async {
+    final localizations = AppLocalizations.of(context);
+    if (localizations == null) return;
     try {
       final batch = FirebaseFirestore.instance.batch();
 
@@ -720,9 +660,9 @@ class ListingsList extends StatelessWidget {
 
       // Send notification about counter offer
       if (targetToken != null) {
-        final notificationTitle = 'New Counter Offer';
+        final notificationTitle = localizations.newCounterOffer;
         final notificationBody =
-            'You received a counter offer of DZD$newPay for "${listing['mainTitle']}"';
+            '${localizations.youReceivedCounterOfferOf} ${localizations.dzd}$newPay ${localizations.forText} "${listing['mainTitle']}"';
         final notificationData = {
           'type': 'counter_offer',
           'listingId': listing['id'],
@@ -741,8 +681,8 @@ class ListingsList extends StatelessWidget {
       );
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Failed to send counter offer. Please try again.'),
+        SnackBar(
+          content: Text(localizations.failedToSendCounterOffer),
           backgroundColor: Colors.red,
         ),
       );
@@ -799,7 +739,7 @@ class ListingsList extends StatelessWidget {
           ),
           TextButton(
             onPressed: () => _showNegotiationDialog(context, listing),
-            child: const Text('Counter Offer'),
+            child: Text(localizations.yourCounterOffer),
           ),
           // The Accept button should appear only for the party with counter_offer_received
           ElevatedButton(
@@ -822,6 +762,9 @@ class ListingsList extends StatelessWidget {
     String status,
     Map<String, dynamic> listing,
   ) async {
+    final localizations = AppLocalizations.of(context);
+    if (localizations == null) return;
+
     try {
       // Use the current userId as fallback for senderUid
       final String senderUid =
@@ -924,7 +867,7 @@ class ListingsList extends StatelessWidget {
         case 'refused':
           // Notify receiver
           if (receiverToken != null) {
-            notificationTitle = 'Listing Refused';
+            notificationTitle = localizations.listingRefused;
             notificationBody =
                 'Your listing "${listing['mainTitle']}" has been refused';
             await PushNotificationService.sendNotification(receiverToken,
@@ -947,15 +890,15 @@ class ListingsList extends StatelessWidget {
 
       switch (status.toLowerCase()) {
         case 'active':
-          statusMessage = 'Listing accepted successfully';
+          statusMessage = localizations.listingAcceptedSuccessfully;
           statusColor = Colors.green;
           break;
         case 'refused':
-          statusMessage = 'Listing refused';
+          statusMessage = localizations.listingRefused;
           statusColor = Colors.red;
           break;
         default:
-          statusMessage = 'Listing status updated successfully';
+          statusMessage = localizations.listingStatusUpdatedSuccessfully;
           statusColor = Colors.blue;
       }
 
