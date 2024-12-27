@@ -272,17 +272,19 @@ Future<void> _handleGoogleSignIn() async {
         AppLocalizations.of(context)!; // Access localized strings
 
     return Scaffold(
-      body: Container(
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [
-              Color(0xFF1A237E), // Deep indigo
-              Color(0xFF42A5F5), // Lighter blue
-            ],
-          ),
-        ),
+
+  body: Container(
+    decoration: const BoxDecoration(
+      gradient: LinearGradient(
+        begin: Alignment.topCenter,
+        end: Alignment.bottomCenter,
+        colors: [
+          Color.fromARGB(255, 106, 27, 154), // Rich Amethyst
+          Color.fromARGB(255, 171, 71, 188), // Orchid
+          Color.fromARGB(255, 145, 41, 140), // Wild Strawberry
+        ],
+      ),
+    ),
         child: Center(
           child: SingleChildScrollView(
             child: Padding(
@@ -307,11 +309,11 @@ Future<void> _handleGoogleSignIn() async {
                               ),
                             ],
                           ),
-                          child: Image.asset(
-                            'assets/images/onboarding3_b.png', // Replace with your logo path
-                            height: 220,
-                            width: 220,
-                          ),
+                          // child: Image.asset(
+                          //   'assets/images/onboarding3_b.png', // Replace with your logo path
+                          //   height: 220,
+                          //   width: 220,
+                          // ),
                         ),
                       ),
                     ),

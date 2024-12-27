@@ -196,23 +196,30 @@ Widget _buildSignUpButton(BuildContext context) {
   return SlideTransition(
     position: _slideAnimation,
     child: ElevatedButton(
-      onPressed: _isLoading ? null : _signup,
+      onPressed: isLoading || !_isChecked ? null : _signup,
       style: ElevatedButton.styleFrom(
-        backgroundColor: Colors.blue,
-        foregroundColor: Colors.black,
-        padding: const EdgeInsets.symmetric(vertical: 15, horizontal: 30),
+        backgroundColor: (isLoading || !_isChecked) ? Colors.grey : const Color(0xFFFFFFFF),
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(10),
+          borderRadius: BorderRadius.circular(30.0),
         ),
+        padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 15),
+        elevation: 6,
       ),
-      child: _isLoading
-          ? CircularProgressIndicator(
-              valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+      child: isLoading
+          ? const CircularProgressIndicator(
+              valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF1A237E)),
             )
-          : Text(signupButton),
+          : Text(
+              signupButton,
+              style: GoogleFonts.poppins(
+                fontSize: 18,
+                color: const Color(0xFF1A237E),
+              ),
+            ),
     ),
   );
 }
+
 
   bool _isChecked = false;
   final TextEditingController _phoneController = TextEditingController();
@@ -270,7 +277,9 @@ Widget _buildGoogleSignInButton() {
   final localizations = AppLocalizations.of(context)!;
   final buttonText = localizations.googleSignIn;
 
-  return ElevatedButton(
+  return  SlideTransition(
+    position: _slideAnimation,
+    child:ElevatedButton(
     onPressed: isLoading ? null : _handleGoogleSignIn,
     style: ElevatedButton.styleFrom(
       backgroundColor: Colors.white,
@@ -307,7 +316,8 @@ Widget _buildGoogleSignInButton() {
             ),
           ],
         ),
-  );
+  ),
+   );
 }
 
 
@@ -425,19 +435,21 @@ Future<void> _handleGoogleSignIn() async {
 
   @override
   Widget build(BuildContext context) {
+
     return Scaffold(
-      backgroundColor: Colors.transparent,
-      body: Container(
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            colors: [
-              Color(0xFF1A237E), // Deep indigo
-              Color(0xFF42A5F5), // Lighter blue
-            ],
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-          ),
-        ),
+
+  body: Container(
+    decoration: const BoxDecoration(
+      gradient: LinearGradient(
+        begin: Alignment.topCenter,
+        end: Alignment.bottomCenter,
+        colors: [
+          Color.fromARGB(255, 106, 27, 154), // Rich Amethyst
+          Color.fromARGB(255, 171, 71, 188), // Orchid
+          Color.fromARGB(255, 145, 41, 140), // Wild Strawberry
+        ],
+      ),
+      ),
         child: Center(
           child: SingleChildScrollView(
             child: Padding(
@@ -449,11 +461,11 @@ Future<void> _handleGoogleSignIn() async {
                   children: [
                     FadeTransition(
                       opacity: _fadeAnimation,
-                      child: Image.asset(
-                        'assets/images/onboarding3_b.png',
-                        height: 150,
-                        width: 150,
-                      ),
+                      // child: Image.asset(
+                      //   'assets/images/onboarding3_b.png',
+                      //   height: 150,
+                      //   width: 150,
+                      // ),
                     ),
                     const SizedBox(height: 20),
                     SlideTransition(

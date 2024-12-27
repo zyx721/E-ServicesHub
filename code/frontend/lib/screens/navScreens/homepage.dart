@@ -46,6 +46,7 @@ class _HomePageState extends State<HomePage> {
   final int _pageSize =7; // Number of items to fetch per 
   
    bool _hasMoreData = true;
+  late Future<List<PopularServicesModel>> _popularServicesFuture;
 
 
 
@@ -55,7 +56,7 @@ class _HomePageState extends State<HomePage> {
     _pageController = PageController();
     _scrollController = ScrollController()..addListener(_onScroll);
     _initializeData();
-
+     _popularServicesFuture = PopularServicesModel.getPopularServices(context);
     // Auto-slide logic
     _adTimer = Timer.periodic(Duration(seconds: 3), (Timer timer) {
       if (_pageController.hasClients) {
@@ -122,7 +123,7 @@ class _HomePageState extends State<HomePage> {
   }
 
 
- Future<void> _fetchServices() async {
+   Future<void> _fetchServices() async {
     if (_isFetching || !_hasMoreData) return;
     setState(() => _isFetching = true);
 
@@ -130,7 +131,6 @@ class _HomePageState extends State<HomePage> {
       Query query = FirebaseFirestore.instance
           .collection('users')
           .where('isProvider', isEqualTo: true)
-          .orderBy('rating', descending: true)  // Sort by rating descending
           .limit(_pageSize);
 
       if (_lastDocument != null) {
@@ -168,6 +168,7 @@ class _HomePageState extends State<HomePage> {
       setState(() => _isFetching = false);
     }
   }
+
   Future<void> toggleFavorite(Map<String, dynamic> service) async {
     if (currentUserId == null) {
       // Show a dialog or snackbar to prompt login
@@ -321,6 +322,7 @@ class _HomePageState extends State<HomePage> {
   Widget _buildServiceCard(Map<String, dynamic> service, bool isFavorite, String serviceId) {
     return  GestureDetector(
             onTap: () {
+              // Navigate to FullProfilePage with the selected service's ID
               Navigator.push(
                 context,
                 MaterialPageRoute(
@@ -455,17 +457,154 @@ void _onScroll() {
     );
   }
 
-  void _showAllServices(BuildContext context) {
-  final localizations = AppLocalizations.of(context);
-  if (localizations == null) return;
+// Update the _servicesSection to use the cached future
+  Widget _servicesSection() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Container(
+          height: 180,
+          child: FutureBuilder<List<PopularServicesModel>>(
+            future: _popularServicesFuture, // Use the cached future
+            builder: (context, snapshot) {
+              if (snapshot.connectionState == ConnectionState.waiting) {
+                return const Center(child: CircularProgressIndicator());
+              }
+              
+              if (snapshot.hasError) {
+                return Center(child: Text('Error: ${snapshot.error}'));
+              }
 
-  showModalBottomSheet(
-    context: context,
-    isScrollControlled: true,
-    backgroundColor: Colors.transparent,
-    builder: (context) {
-      return Container(
-        decoration: BoxDecoration(
+              if (!snapshot.hasData || snapshot.data!.isEmpty) {
+                return const Center(child: Text('No services available'));
+              }
+
+              final services = snapshot.data!;
+              return ListView.separated(
+                itemBuilder: (context, index) {
+                  final service = services[index];
+                  return AnimatedContainer(
+                  duration: Duration(milliseconds: 200),
+                  width: 170,
+                  decoration: BoxDecoration(
+                    color: service.color.withOpacity(0.15),
+                    borderRadius: BorderRadius.circular(24),
+                    boxShadow: [
+                      BoxShadow(
+                        color: service.color.withOpacity(0.1),
+                        blurRadius: 8,
+                        offset: Offset(0, 4),
+                      ),
+                    ],
+                  ),
+                  child: Material(
+                    color: Colors.transparent,
+                    child: InkWell(
+                      borderRadius: BorderRadius.circular(24),
+                      onTap: () {
+                        final workDomainId = _getWorkDomainIdForService(service.name);
+                        final navbarPage = context.findAncestorWidgetOfExactType<NavbarPage>();
+                        
+                        if (navbarPage != null) {
+                          Navigator.pushReplacement(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => NavbarPage(
+                                initialIndex: 1,
+                                preSelectedWorkDomain: workDomainId,
+                              ),
+                            ),
+                          );
+                        }
+                      },
+                      child: Padding(
+                        padding: const EdgeInsets.all(12.0),
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Container(
+                              padding: EdgeInsets.all(12),
+                              decoration: BoxDecoration(
+                                color: Colors.white.withOpacity(0.9),
+                                shape: BoxShape.circle,
+                              ),
+                              child: SvgPicture.asset(
+                                service.iconPath,
+                                width: 40,
+                                height: 40,
+                                color: service.color,
+                              ),
+                            ),
+                            SizedBox(height: 12),
+                            Text(
+                              service.name,
+                              textAlign: TextAlign.center,
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
+                              style: TextStyle(
+                                fontWeight: FontWeight.w600,
+                                color: AppColors.mainColor,
+                                fontSize: 15,
+                              ),
+                            ),
+                            SizedBox(height: 8),
+                            Container(
+                              padding: EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                              decoration: BoxDecoration(
+                                color: Colors.white.withOpacity(0.9),
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Icon(
+                                    Icons.person_outline,
+                                    size: 16,
+                                    color: service.color,
+                                  ),
+                                  SizedBox(width: 4),
+                                  Text(
+                                    '${service.availableProviders}',
+                                    style: TextStyle(
+                                      color: service.color,
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.w500,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                );
+              },
+                  separatorBuilder: (context, index) => const SizedBox(width: 16),
+                itemCount: services.length,
+                scrollDirection: Axis.horizontal,
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+              );
+            },
+          ),
+        ),
+      ],
+    );
+  }
+
+ // Update the _showAllServices to use the cached future
+  void _showAllServices(BuildContext context) {
+    final localizations = AppLocalizations.of(context);
+    if (localizations == null) return;
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) {
+        return Container(
+          decoration: BoxDecoration(
           color: Theme.of(context).scaffoldBackgroundColor,
           borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
           boxShadow: [
@@ -477,14 +616,13 @@ void _onScroll() {
           ],
         ),
         child: DraggableScrollableSheet(
-          expand: false,
-          initialChildSize: 0.6,
-          minChildSize: 0.4,
-          maxChildSize: 0.9,
-          builder: (context, scrollController) {
-            return Column(
-              children: [
-                // Drag handle
+            expand: false,
+            initialChildSize: 0.6,
+            minChildSize: 0.4,
+            maxChildSize: 0.9,
+            builder: (context, scrollController) {
+              return Column(
+                children: [
                 Container(
                   margin: const EdgeInsets.only(top: 12, bottom: 16),
                   width: 40,
@@ -520,75 +658,91 @@ void _onScroll() {
                   ),
                 ),
                 const SizedBox(height: 16),
-                Expanded(
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 20),
-                    child: GridView.builder(
-                      controller: scrollController,
-                      physics: const BouncingScrollPhysics(),
-                      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                        crossAxisCount: 2,
-                        crossAxisSpacing: 16,
-                        mainAxisSpacing: 16,
-                        childAspectRatio: 1.1,
-                      ),
-                      itemCount: PopularServicesModel.getPopularServices(context).length,
-                      itemBuilder: (context, index) {
-                        final service = PopularServicesModel.getPopularServices(context)[index];
-                        return Material(
-                          color: Colors.transparent,
-                          child: InkWell(
-                            onTap: () {
-                              // Handle service selection
-                              Navigator.pop(context);
-                              // Add your navigation or selection logic here
-                            },
-                            borderRadius: BorderRadius.circular(20),
-                            child: Container(
-                              padding: const EdgeInsets.all(16),
-                              decoration: BoxDecoration(
-                                color: service.color.withOpacity(0.08),
+                   Expanded(
+                    child: FutureBuilder<List<PopularServicesModel>>(
+                      future: _popularServicesFuture, // Use the cached future
+                      builder: (context, snapshot) {
+                      if (snapshot.connectionState == ConnectionState.waiting) {
+                        return const Center(child: CircularProgressIndicator());
+                      }
+                      
+                      if (snapshot.hasError) {
+                        return Center(child: Text('Error: ${snapshot.error}'));
+                      }
+
+                      if (!snapshot.hasData || snapshot.data!.isEmpty) {
+                        return const Center(child: Text('No services available'));
+                      }
+
+                      final services = snapshot.data!;
+                      return Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 20),
+                        child: GridView.builder(
+                          controller: scrollController,
+                          physics: const BouncingScrollPhysics(),
+                          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                            crossAxisCount: 2,
+                            crossAxisSpacing: 16,
+                            mainAxisSpacing: 16,
+                            childAspectRatio: 1.1,
+                          ),
+                          itemCount: services.length,
+                          itemBuilder: (context, index) {
+                            final service = services[index];
+                            return Material(
+                              color: Colors.transparent,
+                              child: InkWell(
+                                onTap: () {
+                                  Navigator.pop(context);
+                                  // Add your navigation or selection logic here
+                                },
                                 borderRadius: BorderRadius.circular(20),
-                                border: Border.all(
-                                  color: service.color.withOpacity(0.12),
-                                  width: 1,
+                                child: Container(
+                                  padding: const EdgeInsets.all(16),
+                                  decoration: BoxDecoration(
+                                    color: service.color.withOpacity(0.08),
+                                    borderRadius: BorderRadius.circular(20),
+                                    border: Border.all(
+                                      color: service.color.withOpacity(0.12),
+                                      width: 1,
+                                    ),
+                                  ),
+                                  child: Column(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: [
+                                      Container(
+                                        padding: const EdgeInsets.all(12),
+                                        decoration: BoxDecoration(
+                                          color: service.color.withOpacity(0.1),
+                                          shape: BoxShape.circle,
+                                        ),
+                                        child: SvgPicture.asset(
+                                          service.iconPath,
+                                          width: 32,
+                                          height: 32,
+                                          color: service.color,
+                                        ),
+                                      ),
+                                      const SizedBox(height: 12),
+                                      Text(
+                                        service.name,
+                                        textAlign: TextAlign.center,
+                                        style: GoogleFonts.poppins(
+                                          color: Colors.black87,
+                                          fontSize: 15,
+                                          fontWeight: FontWeight.w500,
+                                          height: 1.2,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
                                 ),
                               ),
-                              child: Column(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  Container(
-                                    padding: const EdgeInsets.all(12),
-                                    decoration: BoxDecoration(
-                                      color: service.color.withOpacity(0.1),
-                                      shape: BoxShape.circle,
-                                    ),
-                                    child: SvgPicture.asset(
-  service.iconPath,
-  width: 32,
-  height: 32,
-  color: service.color, // Set the color directly
-),
-
-                                  ),
-                                  const SizedBox(height: 12),
-                                  Text(
-                                    service.name,
-                                    textAlign: TextAlign.center,
-                                    style: GoogleFonts.poppins(
-                                      color: Colors.black87,
-                                      fontSize: 15,
-                                      fontWeight: FontWeight.w500,
-                                      height: 1.2,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ),
-                        );
-                      },
-                    ),
+                            );
+                          },
+                        ),
+                      );
+                    },
                   ),
                 ),
               ],
@@ -600,123 +754,14 @@ void _onScroll() {
   );
 }
 
-Column _servicesSection() {
-  return Column(
-    crossAxisAlignment: CrossAxisAlignment.start,
-    children: [
 
-      Container(
-        height: 180, // Increased height for better visibility
-        child: ListView.separated(
-          itemBuilder: (context, index) {
-            final service = PopularServicesModel.getPopularServices(context)[index];
-            return AnimatedContainer(
-              duration: Duration(milliseconds: 200),
-              width: 170, // Slightly wider cards
-              decoration: BoxDecoration(
-                color: service.color.withOpacity(0.15),
-                borderRadius: BorderRadius.circular(24),
-                boxShadow: [
-                  BoxShadow(
-                    color: service.color.withOpacity(0.1),
-                    blurRadius: 8,
-                    offset: Offset(0, 4),
-                  ),
-                ],
-              ),
-              child: Material(
-                color: Colors.transparent,
-                child: InkWell(
-                  borderRadius: BorderRadius.circular(24),
-                  onTap: () {
-                    final workDomainId = _getWorkDomainIdForService(service.name);
-                    final navbarPage = context.findAncestorWidgetOfExactType<NavbarPage>();
-                    
-                    if (navbarPage != null) {
-                      Navigator.pushReplacement(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => NavbarPage(
-                            initialIndex: 1,
-                            preSelectedWorkDomain: workDomainId,
-                          ),
-                        ),
-                      );
-                    }
-                  },
-                  child: Padding(
-                    padding: const EdgeInsets.all(12.0),
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Container(
-                          padding: EdgeInsets.all(12),
-                          decoration: BoxDecoration(
-                            color: Colors.white.withOpacity(0.9),
-                            shape: BoxShape.circle,
-                          ),
-                          child: SvgPicture.asset(
-                            service.iconPath,
-                            width: 40,
-                            height: 40,
-                            color: service.color,
-                          ),
-                        ),
-                        SizedBox(height: 12),
-                        Text(
-                          service.name,
-                          textAlign: TextAlign.center,
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
-                          style: TextStyle(
-                            fontWeight: FontWeight.w600,
-                            color: AppColors.mainColor,
-                            fontSize: 15,
-                          ),
-                        ),
-                        SizedBox(height: 8),
-                        Container(
-                          padding: EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-                          decoration: BoxDecoration(
-                            color: Colors.white.withOpacity(0.9),
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Icon(
-                                Icons.person_outline,
-                                size: 16,
-                                color: service.color,
-                              ),
-                              SizedBox(width: 4),
-                              Text(
-                                '${service.availableProviders}',
-                                style: TextStyle(
-                                  color: service.color,
-                                  fontSize: 14,
-                                  fontWeight: FontWeight.w500,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              ),
-            );
-          },
-          separatorBuilder: (context, index) => const SizedBox(width: 16),
-          itemCount: PopularServicesModel.getPopularServices(context).length,
-          scrollDirection: Axis.horizontal,
-          padding: const EdgeInsets.symmetric(horizontal: 16),
-        ),
-      ),
-    ],
-  );
-}
+  // Method to refresh the services data when needed
+  void refreshServices() {
+    setState(() {
+      _popularServicesFuture = PopularServicesModel.getPopularServices(context);
+    });
+  }
+
 
   // Updated helper function to map service names to work domain IDs based on your Firestore data
 String _getWorkDomainIdForService(String serviceName) {

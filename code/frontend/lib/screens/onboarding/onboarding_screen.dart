@@ -56,7 +56,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
         "description": localizations.onboardingDescription2,
       },
       {
-        "imagePath": 'assets/images/onboarding3.png',
+        // "imagePath": 'assets/images/onboarding3.png',
         "title": localizations.onboardingTitle3,
         "description": localizations.onboardingDescription3,
       },
@@ -146,7 +146,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
           height: 12,
           width: _currentPage == index ? 25 : 12,
           decoration: BoxDecoration(
-            color: _currentPage == index ? Colors.blue : Colors.grey[300],
+            color: _currentPage == index ? Colors.purple : Colors.grey[300],
             borderRadius: BorderRadius.circular(12),
           ),
         );
@@ -169,7 +169,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
         }
       },
       style: ElevatedButton.styleFrom(
-        backgroundColor: Colors.blue,
+        backgroundColor: Colors.purple,
         padding: EdgeInsets.symmetric(horizontal: 50, vertical: 18),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
       ),
