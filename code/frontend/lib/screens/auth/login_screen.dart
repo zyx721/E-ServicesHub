@@ -318,11 +318,11 @@ Future<void> _handleGoogleSignIn() async {
                               ),
                             ],
                           ),
-                          // child: Image.asset(
-                          //   'assets/images/onboarding3_b.png', // Replace with your logo path
-                          //   height: 220,
-                          //   width: 220,
-                          // ),
+                          child: Image.asset(
+                            'assets/images/onboarding3_b.png', // Replace with your logo path
+                            height: 220,
+                            width: 220,
+                          ),
                         ),
                       ),
                     ),

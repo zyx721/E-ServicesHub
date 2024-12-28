@@ -468,11 +468,11 @@ Future<void> _handleGoogleSignIn() async {
                   children: [
                     FadeTransition(
                       opacity: _fadeAnimation,
-                      // child: Image.asset(
-                      //   'assets/images/onboarding3_b.png',
-                      //   height: 150,
-                      //   width: 150,
-                      // ),
+                      child: Image.asset(
+                        'assets/images/onboarding3_b.png',
+                        height: 150,
+                        width: 150,
+                      ),
                     ),
                     const SizedBox(height: 20),
                     SlideTransition(

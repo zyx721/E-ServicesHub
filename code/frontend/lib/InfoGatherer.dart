@@ -186,7 +186,7 @@ class _NameEntryScreenState extends State<InfoGatherer> {
                   gender,
                   style: TextStyle(
                     color: isSelected ? Colors.white : primaryPurple,
-                    fontSize: 16,
+                    fontSize: 14,
                     fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
                   ),
                 ),

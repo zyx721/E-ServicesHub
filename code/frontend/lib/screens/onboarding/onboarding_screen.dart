@@ -56,7 +56,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
         "description": localizations.onboardingDescription2,
       },
       {
-        // "imagePath": 'assets/images/onboarding3.png',
+        "imagePath": 'assets/images/onboarding3_b.png',
         "title": localizations.onboardingTitle3,
         "description": localizations.onboardingDescription3,
       },
