@@ -43,15 +43,16 @@ class _NavbarPageState extends State<NavbarPage> {
   String? _currentPreSelectedWorkDomain;
 
 
-   final Map<String, Map<String, double>> cityBoundaries = {
-    "Algiers": {"lat_min": 36.6, "lat_max": 36.9, "lon_min": 2.9, "lon_max": 3.2},
-    "Oran": {"lat_min": 35.6, "lat_max": 35.8, "lon_min": -0.8, "lon_max": -0.5},
-    "Constantine": {"lat_min": 36.2, "lat_max": 36.4, "lon_min": 6.5, "lon_max": 6.7},
-    "Annaba": {"lat_min": 36.8, "lat_max": 37.1, "lon_min": 7.6, "lon_max": 7.8},
-    "Blida": {"lat_min": 36.4, "lat_max": 36.7, "lon_min": 2.5, "lon_max": 3.2},
-    "Sétif": {"lat_min": 35.5, "lat_max": 36.6, "lon_min": 5.3, "lon_max": 6.5},
-    "Tébessa": {"lat_min": 34.5, "lat_max": 35.8, "lon_min": 7.5, "lon_max": 8.7},
-  };
+  final Map<String, Map<String, double>> cityBoundaries = {
+  "Algiers": {"lat_min": 36.5, "lat_max": 37.0, "lon_min": 2.6, "lon_max": 3.3},
+  "Oran": {"lat_min": 35.5, "lat_max": 36.0, "lon_min": -1.0, "lon_max": -0.4},
+  "Constantine": {"lat_min": 36.1, "lat_max": 36.5, "lon_min": 6.4, "lon_max": 6.9},
+  "Annaba": {"lat_min": 36.7, "lat_max": 37.2, "lon_min": 7.5, "lon_max": 8.0},
+  "Blida": {"lat_min": 36.3, "lat_max": 36.8, "lon_min": 2.4, "lon_max": 3.3},
+  "Sétif": {"lat_min": 35.4, "lat_max": 36.6, "lon_min": 5.2, "lon_max": 6.6},
+  "Tébessa": {"lat_min": 34.4, "lat_max": 36.0, "lon_min": 7.4, "lon_max": 8.8},
+};
+
 
 
   @override
