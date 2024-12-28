@@ -1,7 +1,11 @@
+import 'dart:math';
+
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:hanini_frontend/navbar.dart';
+import 'package:pull_to_refresh/pull_to_refresh.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:async';
 import 'package:url_launcher/url_launcher.dart';
@@ -12,7 +16,6 @@ import 'package:hanini_frontend/models/colors.dart';
 import 'package:hanini_frontend/models/servicesWeHave.dart';
 import 'package:hanini_frontend/localization/app_localization.dart';
 
-
 // Helper class to structure service data
 class ServiceCategory {
   final String id;
@@ -20,7 +23,6 @@ class ServiceCategory {
 
   const ServiceCategory(this.id, this.localizedName);
 }
-
 
 class HomePage extends StatefulWidget {
   const HomePage({Key? key}) : super(key: key);
@@ -32,31 +34,40 @@ class HomePage extends StatefulWidget {
 class _HomePageState extends State<HomePage> {
   late final PageController _pageController;
   late final ScrollController _scrollController;
+  final RefreshController _refreshController = RefreshController();
+
+  @override
+  bool get wantKeepAlive => true; // This ensures the state is preserved
 
   int _currentPage = 0;
   late Timer _adTimer;
 
   List<Map<String, dynamic>> services = [];
-
   Set<String> favoriteServices = {};
   String? currentUserId;
   bool _isLoading = true;
   bool _isFetching = false;
-  DocumentSnapshot? _lastDocument; // Tracks the last document for pagination
-  final int _pageSize =7; // Number of items to fetch per 
-  
-   bool _hasMoreData = true;
+  DocumentSnapshot? _lastDocument;
+  final int _pageSize = 7;
 
-
+  bool _hasMoreData = true;
+  late Future<List<PopularServicesModel>> _popularServicesFuture;
 
   @override
   void initState() {
     super.initState();
     _pageController = PageController();
     _scrollController = ScrollController()..addListener(_onScroll);
-    _initializeData();
 
-    // Auto-slide logic
+    // Only initialize if services is empty
+    if (services.isEmpty) {
+      _initializeData();
+    } else {
+      _isLoading = false;
+    }
+
+    _popularServicesFuture = PopularServicesModel.getPopularServices(context);
+
     _adTimer = Timer.periodic(Duration(seconds: 3), (Timer timer) {
       if (_pageController.hasClients) {
         setState(() {
@@ -71,7 +82,89 @@ class _HomePageState extends State<HomePage> {
     });
   }
 
-  
+  Future<void> _initializeData() async {
+    if (!_isLoading && services.isNotEmpty)
+      return; // Skip if already initialized
+
+    setState(() {
+      _isLoading = true;
+    });
+
+    try {
+      await _fetchUserData();
+      await _fetchServices();
+      await _fetchUsersFromSameCity();
+    } catch (e) {
+      debugPrint('Error initializing data: $e');
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
+    }
+  }
+
+  // Remove didChangeDependency override as we don't want to reload on navigation
+
+  Future<void> _fetchServices() async {
+    if (_isFetching || !_hasMoreData) return;
+
+    setState(() => _isFetching = true);
+
+    try {
+      // First get the recommended providers
+      if (recommendedProviderIds.isEmpty) {
+        await _loadRecommendations();
+      }
+
+      if (recommendedProviderIds.isEmpty) {
+        setState(() => _hasMoreData = false);
+        return;
+      }
+
+      // Calculate how many providers we've already loaded
+      int startIndex = services.length;
+      int endIndex = startIndex + _pageSize;
+      if (endIndex > recommendedProviderIds.length) {
+        endIndex = recommendedProviderIds.length;
+        _hasMoreData = false;
+      }
+
+      // Get the next batch of recommended provider IDs
+      List<String> nextBatchIds =
+          recommendedProviderIds.sublist(startIndex, endIndex);
+
+      // Fetch the actual provider data for these IDs
+      List<Map<String, dynamic>> newServices = [];
+      for (String providerId in nextBatchIds) {
+        final providerDoc = await FirebaseFirestore.instance
+            .collection('users')
+            .doc(providerId)
+            .get();
+
+        if (providerDoc.exists) {
+          final providerData = providerDoc.data()!;
+          newServices.add({
+            ...providerData,
+            'docId': providerId,
+          });
+        }
+      }
+
+      if (mounted) {
+        setState(() {
+          services.addAll(newServices);
+        });
+      }
+    } catch (e) {
+      debugPrint('Error fetching recommended services: $e');
+    } finally {
+      if (mounted) {
+        setState(() => _isFetching = false);
+      }
+    }
+  }
 
   @override
   void dispose() {
@@ -81,16 +174,31 @@ class _HomePageState extends State<HomePage> {
     super.dispose();
   }
 
-  Future<void> _initializeData() async {
+  @override
+  void didChangeDependency() {
+    super.didChangeDependencies();
+    // Refresh data when returning to this screen
+    if (!_isLoading && services.isEmpty) {
+      _initializeData();
+    }
+  }
+
+  Future<void> _onRefresh() async {
     try {
+      // Reset pagination
+      _lastDocument = null;
+      _hasMoreData = true;
+      services.clear();
+
+      // Reload all data
       await _fetchUserData();
       await _fetchServices();
+      await _loadRecommendations();
+
+      _refreshController.refreshCompleted();
     } catch (e) {
-      debugPrint('Error initializing data: $e');
-    } finally {
-      setState(() {
-        _isLoading = false;
-      });
+      _refreshController.refreshFailed();
+      debugPrint('Error refreshing: $e');
     }
   }
 
@@ -121,53 +229,146 @@ class _HomePageState extends State<HomePage> {
     }
   }
 
+  List<String> recommendedProviderIds = [];
 
- Future<void> _fetchServices() async {
-    if (_isFetching || !_hasMoreData) return;
-    setState(() => _isFetching = true);
-
+  Future<void> _fetchUsersFromSameCity() async {
     try {
-      Query query = FirebaseFirestore.instance
-          .collection('users')
-          .where('isProvider', isEqualTo: true)
-          .orderBy('rating', descending: true)  // Sort by rating descending
-          .limit(_pageSize);
+      final User? user = FirebaseAuth.instance.currentUser;
 
-      if (_lastDocument != null) {
-        query = query.startAfterDocument(_lastDocument!);
+      if (user == null) {
+        debugPrint('No user logged in');
+        return;
       }
 
-      final QuerySnapshot snapshot = await query.get();
+      // Get the current user's ID
+      String currentUserId = user.uid;
 
-      if (snapshot.docs.isNotEmpty) {
-        _lastDocument = snapshot.docs.last;
-        final newServices = snapshot.docs
-            .map((doc) {
-              final service = doc.data() as Map<String, dynamic>;
-              final serviceId = doc.id;
-              return serviceId != currentUserId
-                  ? {...service, 'docId': serviceId}
-                  : null;
-            })
-            .whereType<Map<String, dynamic>>()
-            .toList();
+      // Fetch the current user's city
+      final userDoc = await FirebaseFirestore.instance
+          .collection('users')
+          .doc(currentUserId)
+          .get();
 
-        if (newServices.isEmpty) {
-          _hasMoreData = false;
+      if (userDoc.exists) {
+        // Retrieve the current user's city
+        final userCity = userDoc.data()?['city'];
+        debugPrint('Current user city: $userCity');
+
+        // Fetch all users in the same city but exclude the current user
+        final usersInSameCity = await FirebaseFirestore.instance
+            .collection('users')
+            .where('city', isEqualTo: userCity) // Filter users by the same city
+            .get();
+
+        if (usersInSameCity.docs.isNotEmpty) {
+          // Initialize a list to store the user data in a structured format
+          List<Map<String, dynamic>> usersDataList = [];
+
+          // Loop through the users and fetch the necessary data, excluding the current user
+          for (var doc in usersInSameCity.docs) {
+            if (doc.id == currentUserId) continue; // Skip the current user
+
+            final userData = doc.data();
+
+            // Basic user details
+            final userId = doc.id;
+            final firstName = userData['firstName'];
+            final lastName = userData['lastName'];
+            final email = userData['email'];
+            final photoURL = userData['photoURL'];
+            final city = userData['city'];
+
+            // Interaction-related details
+            final clickCount = userData['click_count'] ?? 0;
+            final clickCountPerService =
+                userData['click_count_per_service'] ?? {};
+            final reviewedServiceIds = userData['reviewed_service_ids'] ?? [];
+            final isProvider = userData['isProvider'] ?? false;
+
+            // Gender and age
+            final gender = userData['gender'] ?? 'Not specified';
+            final age = userData['age'] ?? 0;
+
+            // Location (latitude, longitude)
+            final locationX = userData['location_x'] ?? 0.0;
+            final locationY = userData['location_y'] ?? 0.0;
+
+            // Favorites list
+            final favorites = userData['favorites'] ?? [];
+
+            // Provider-specific data (if isProvider)
+            final selectedWorkChoice =
+                isProvider ? userData['selectedWorkChoice'] ?? [] : [];
+            final reviewCount = isProvider ? userData['review_count'] ?? 0 : 0;
+            final rating = isProvider ? userData['rating'] ?? 0.0 : 0.0;
+
+            // Organize the data into a map format
+            Map<String, dynamic> userMap = {
+              'user_id': userId,
+              'first_name': firstName,
+              'last_name': lastName,
+              'email': email,
+              'photo_url': photoURL,
+              'city': city,
+              'click_count': clickCount,
+              'click_count_per_service': clickCountPerService,
+              'reviewed_service_ids': reviewedServiceIds,
+              'is_provider': isProvider,
+              'gender': gender,
+              'age': age,
+              'location_x': locationX,
+              'location_y': locationY,
+              'favorites': favorites,
+              'selected_work_choice': selectedWorkChoice,
+              'review_count': reviewCount,
+              'rating': rating,
+            };
+
+            // Add the user map to the list
+            usersDataList.add(userMap);
+
+            // Debug prints to display user info
+            debugPrint('User ID: $userId');
+            debugPrint('Name: $firstName $lastName');
+            debugPrint('City: $city');
+            debugPrint('Click Count: $clickCount');
+            debugPrint('Gender: $gender');
+            debugPrint('Age: $age');
+            debugPrint('Location: $locationX, $locationY');
+          }
+
+          // Now, we have a structured list of user data (excluding the current user)
+          // You can pass this data to the recommendation logic
+          // For example, pass the list to the recommendation algorithm:
+          // final recommendedServices = recommendServices(usersDataList);
         } else {
-          setState(() {
-            services.addAll(newServices);
-          });
+          debugPrint('No users found in the same city');
         }
       } else {
-        setState(() => _hasMoreData = false);
+        debugPrint('User document does not exist');
       }
     } catch (e) {
-      debugPrint('Error fetching services: $e');
-    } finally {
-      setState(() => _isFetching = false);
+      debugPrint('Error fetching users from the same city: $e');
     }
   }
+
+  Future<void> _loadRecommendations() async {
+    try {
+      final recommendationService = RecommendationService();
+      final recommendations =
+          await recommendationService.getRecommendedServices();
+
+      recommendedProviderIds =
+          recommendations.map((rec) => rec['service_id'] as String).toList();
+
+      // Sort by recommendation score
+      services.sort((a, b) => (b['recommendation_score'] ?? 0.0)
+          .compareTo(a['recommendation_score'] ?? 0.0));
+    } catch (e) {
+      debugPrint('Error loading recommendations: $e');
+    }
+  }
+
   Future<void> toggleFavorite(Map<String, dynamic> service) async {
     if (currentUserId == null) {
       // Show a dialog or snackbar to prompt login
@@ -236,7 +437,8 @@ class _HomePageState extends State<HomePage> {
                   child: ClipRRect(
                     borderRadius: BorderRadius.circular(20),
                     child: Image.asset(
-                      adImages[index],                    ),
+                      adImages[index],
+                    ),
                   ),
                 ),
               );
@@ -291,7 +493,7 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-   Widget _buildServicesGrid() {
+  Widget _buildServicesGrid() {
     return GridView.builder(
       controller: _scrollController,
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
@@ -318,88 +520,141 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-  Widget _buildServiceCard(Map<String, dynamic> service, bool isFavorite, String serviceId) {
-    return  GestureDetector(
-            onTap: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => ServiceProviderFullProfile(
-                    providerId: serviceId,
-                  ),
-                ),
-              );
-            },
-            child:Card(
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16),
+  Widget _buildRecommendationBadge(double score) {
+    return Container(
+      padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      decoration: BoxDecoration(
+        color: AppColors.mainColor.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(12),
       ),
-      child: Stack(
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
         children: [
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Container(
-                height: 90,
-                decoration: BoxDecoration(
-                  borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
-                  image: DecorationImage(
-                    image: NetworkImage(service['photoURL'] ?? ''),
-                    fit: BoxFit.cover,
-                  ),
-                ),
-              ),
-              Container(
-                decoration: BoxDecoration(
-                  color: AppColors.tempColor,
-                  borderRadius: const BorderRadius.vertical(bottom: Radius.circular(16)),
-                ),
-                child: Padding(
-                  padding: const EdgeInsets.all(8.0),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        service['basicInfo']['profession'] ?? 'N/A',
-                        style: GoogleFonts.poppins(
-                          fontSize: 14,
-                          fontWeight: FontWeight.bold,
-                        ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                      Text(
-                        service['name'] ?? 'Unknown',
-                        style: GoogleFonts.poppins(
-                          fontSize: 12,
-                          color: AppColors.mainColor,
-                        ),
-                        maxLines: 1,
-                      ),
-                      _buildStarRating(service['rating']?.toDouble() ?? 0.0),
-                    ],
-                  ),
-                ),
-              ),
-            ],
+          Icon(
+            Icons.recommend,
+            size: 16,
+            color: AppColors.mainColor,
           ),
-          Positioned(
-            top: 8,
-            right: 8,
-            child: IconButton(
-              icon: Icon(
-                isFavorite ? Icons.favorite : Icons.favorite_border,
-                color: isFavorite ? Colors.red : Colors.grey,
-              ),
-              onPressed: () => toggleFavorite(service),
+          SizedBox(width: 4),
+          Text(
+            '${(score * 100).toInt()}% Match',
+            style: TextStyle(
+              color: AppColors.mainColor,
+              fontSize: 12,
+              fontWeight: FontWeight.w500,
             ),
           ),
         ],
       ),
-    ),
     );
-    
   }
+
+  Widget _buildServiceCard(
+      Map<String, dynamic> service, bool isFavorite, String serviceId) {
+    return GestureDetector(
+      onTap: () async {
+        debugPrint('Navigating to FullProfilePage with providerId: $serviceId');
+
+        try {
+          final providerDoc =
+              FirebaseFirestore.instance.collection('users').doc(serviceId);
+          await providerDoc.update({
+            'click_count': FieldValue.increment(1),
+          });
+
+          if (currentUserId != null) {
+            final userDoc = FirebaseFirestore.instance
+                .collection('users')
+                .doc(currentUserId);
+            await userDoc.update({
+              'click_count_per_service.$serviceId': FieldValue.increment(1),
+            });
+          }
+        } catch (e) {
+          debugPrint('Error incrementing click_count: $e');
+        }
+
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => ServiceProviderFullProfile(
+              providerId: serviceId,
+            ),
+          ),
+        );
+      },
+      child: Card(
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(16),
+        ),
+        child: Stack(
+          children: [
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Container(
+                  height: 90,
+                  decoration: BoxDecoration(
+                    borderRadius:
+                        const BorderRadius.vertical(top: Radius.circular(16)),
+                    image: DecorationImage(
+                      image: NetworkImage(service['photoURL'] ?? ''),
+                      fit: BoxFit.cover,
+                    ),
+                  ),
+                ),
+                Container(
+                  decoration: BoxDecoration(
+                    color: AppColors.tempColor,
+                    borderRadius: const BorderRadius.vertical(
+                        bottom: Radius.circular(16)),
+                  ),
+                  child: Padding(
+                    padding: const EdgeInsets.all(8.0),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          service['basicInfo']['profession'] ?? 'N/A',
+                          style: GoogleFonts.poppins(
+                            fontSize: 14,
+                            fontWeight: FontWeight.bold,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        Text(
+                          service['name'] ?? 'Unknown',
+                          style: GoogleFonts.poppins(
+                            fontSize: 12,
+                            color: AppColors.mainColor,
+                          ),
+                          maxLines: 1,
+                        ),
+                        _buildStarRating(service['rating']?.toDouble() ?? 0.0),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            Positioned(
+              top: 8,
+              right: 8,
+              child: IconButton(
+                icon: Icon(
+                  isFavorite ? Icons.favorite : Icons.favorite_border,
+                  color: isFavorite ? Colors.red : Colors.grey,
+                ),
+                onPressed: () => toggleFavorite(service),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   Widget _buildStarRating(double rating) {
     int fullStars = rating.floor();
     int halfStars = (rating % 1 >= 0.5) ? 1 : 0;
@@ -417,7 +672,7 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-void _onScroll() {
+  void _onScroll() {
     if (_scrollController.position.pixels >=
             _scrollController.position.maxScrollExtent - 200 &&
         !_isFetching &&
@@ -455,370 +710,847 @@ void _onScroll() {
     );
   }
 
-  void _showAllServices(BuildContext context) {
-  final localizations = AppLocalizations.of(context);
-  if (localizations == null) return;
+// Update the _servicesSection to use the cached future
+  Widget _servicesSection() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Container(
+          height: 180,
+          child: FutureBuilder<List<PopularServicesModel>>(
+            future: _popularServicesFuture, // Use the cached future
+            builder: (context, snapshot) {
+              if (snapshot.connectionState == ConnectionState.waiting) {
+                return const Center(child: CircularProgressIndicator());
+              }
 
-  showModalBottomSheet(
-    context: context,
-    isScrollControlled: true,
-    backgroundColor: Colors.transparent,
-    builder: (context) {
-      return Container(
-        decoration: BoxDecoration(
-          color: Theme.of(context).scaffoldBackgroundColor,
-          borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.05),
-              blurRadius: 20,
-              offset: const Offset(0, -5),
-            ),
-          ],
-        ),
-        child: DraggableScrollableSheet(
-          expand: false,
-          initialChildSize: 0.6,
-          minChildSize: 0.4,
-          maxChildSize: 0.9,
-          builder: (context, scrollController) {
-            return Column(
-              children: [
-                // Drag handle
-                Container(
-                  margin: const EdgeInsets.only(top: 12, bottom: 16),
-                  width: 40,
-                  height: 4,
-                  decoration: BoxDecoration(
-                    color: Colors.grey.withOpacity(0.3),
-                    borderRadius: BorderRadius.circular(2),
-                  ),
-                ),
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 24),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text(
-                        localizations.allServices,
-                        style: GoogleFonts.poppins(
-                          color: AppColors.mainColor,
-                          fontSize: 24,
-                          fontWeight: FontWeight.w600,
-                          letterSpacing: -0.5,
+              if (snapshot.hasError) {
+                return Center(child: Text('Error: ${snapshot.error}'));
+              }
+
+              if (!snapshot.hasData || snapshot.data!.isEmpty) {
+                return const Center(child: Text('No services available'));
+              }
+
+              final services = snapshot.data!;
+              return ListView.separated(
+                itemBuilder: (context, index) {
+                  final service = services[index];
+                  return AnimatedContainer(
+                    duration: Duration(milliseconds: 200),
+                    width: 170,
+                    decoration: BoxDecoration(
+                      color: service.color.withOpacity(0.15),
+                      borderRadius: BorderRadius.circular(24),
+                      boxShadow: [
+                        BoxShadow(
+                          color: service.color.withOpacity(0.1),
+                          blurRadius: 8,
+                          offset: Offset(0, 4),
                         ),
-                      ),
-                      IconButton(
-                        onPressed: () => Navigator.pop(context),
-                        icon: const Icon(Icons.close),
-                        style: IconButton.styleFrom(
-                          backgroundColor: Colors.grey.withOpacity(0.1),
-                          padding: const EdgeInsets.all(8),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 16),
-                Expanded(
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 20),
-                    child: GridView.builder(
-                      controller: scrollController,
-                      physics: const BouncingScrollPhysics(),
-                      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                        crossAxisCount: 2,
-                        crossAxisSpacing: 16,
-                        mainAxisSpacing: 16,
-                        childAspectRatio: 1.1,
-                      ),
-                      itemCount: PopularServicesModel.getPopularServices(context).length,
-                      itemBuilder: (context, index) {
-                        final service = PopularServicesModel.getPopularServices(context)[index];
-                        return Material(
-                          color: Colors.transparent,
-                          child: InkWell(
-                            onTap: () {
-                              // Handle service selection
-                              Navigator.pop(context);
-                              // Add your navigation or selection logic here
-                            },
-                            borderRadius: BorderRadius.circular(20),
-                            child: Container(
-                              padding: const EdgeInsets.all(16),
-                              decoration: BoxDecoration(
-                                color: service.color.withOpacity(0.08),
-                                borderRadius: BorderRadius.circular(20),
-                                border: Border.all(
-                                  color: service.color.withOpacity(0.12),
-                                  width: 1,
+                      ],
+                    ),
+                    child: Material(
+                      color: Colors.transparent,
+                      child: InkWell(
+                        borderRadius: BorderRadius.circular(24),
+                        onTap: () {
+                          final workDomainId =
+                              _getWorkDomainIdForService(service.name);
+                          final navbarPage = context
+                              .findAncestorWidgetOfExactType<NavbarPage>();
+
+                          if (navbarPage != null) {
+                            Navigator.pushReplacement(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => NavbarPage(
+                                  initialIndex: 1,
+                                  preSelectedWorkDomain: workDomainId,
                                 ),
                               ),
-                              child: Column(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  Container(
-                                    padding: const EdgeInsets.all(12),
-                                    decoration: BoxDecoration(
-                                      color: service.color.withOpacity(0.1),
-                                      shape: BoxShape.circle,
-                                    ),
-                                    child: SvgPicture.asset(
-  service.iconPath,
-  width: 32,
-  height: 32,
-  color: service.color, // Set the color directly
-),
-
-                                  ),
-                                  const SizedBox(height: 12),
-                                  Text(
-                                    service.name,
-                                    textAlign: TextAlign.center,
-                                    style: GoogleFonts.poppins(
-                                      color: Colors.black87,
-                                      fontSize: 15,
-                                      fontWeight: FontWeight.w500,
-                                      height: 1.2,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ),
-                        );
-                      },
-                    ),
-                  ),
-                ),
-              ],
-            );
-          },
-        ),
-      );
-    },
-  );
-}
-
-Column _servicesSection() {
-  return Column(
-    crossAxisAlignment: CrossAxisAlignment.start,
-    children: [
-
-      Container(
-        height: 180, // Increased height for better visibility
-        child: ListView.separated(
-          itemBuilder: (context, index) {
-            final service = PopularServicesModel.getPopularServices(context)[index];
-            return AnimatedContainer(
-              duration: Duration(milliseconds: 200),
-              width: 170, // Slightly wider cards
-              decoration: BoxDecoration(
-                color: service.color.withOpacity(0.15),
-                borderRadius: BorderRadius.circular(24),
-                boxShadow: [
-                  BoxShadow(
-                    color: service.color.withOpacity(0.1),
-                    blurRadius: 8,
-                    offset: Offset(0, 4),
-                  ),
-                ],
-              ),
-              child: Material(
-                color: Colors.transparent,
-                child: InkWell(
-                  borderRadius: BorderRadius.circular(24),
-                  onTap: () {
-                    final workDomainId = _getWorkDomainIdForService(service.name);
-                    final navbarPage = context.findAncestorWidgetOfExactType<NavbarPage>();
-                    
-                    if (navbarPage != null) {
-                      Navigator.pushReplacement(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => NavbarPage(
-                            initialIndex: 1,
-                            preSelectedWorkDomain: workDomainId,
-                          ),
-                        ),
-                      );
-                    }
-                  },
-                  child: Padding(
-                    padding: const EdgeInsets.all(12.0),
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Container(
-                          padding: EdgeInsets.all(12),
-                          decoration: BoxDecoration(
-                            color: Colors.white.withOpacity(0.9),
-                            shape: BoxShape.circle,
-                          ),
-                          child: SvgPicture.asset(
-                            service.iconPath,
-                            width: 40,
-                            height: 40,
-                            color: service.color,
-                          ),
-                        ),
-                        SizedBox(height: 12),
-                        Text(
-                          service.name,
-                          textAlign: TextAlign.center,
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
-                          style: TextStyle(
-                            fontWeight: FontWeight.w600,
-                            color: AppColors.mainColor,
-                            fontSize: 15,
-                          ),
-                        ),
-                        SizedBox(height: 8),
-                        Container(
-                          padding: EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-                          decoration: BoxDecoration(
-                            color: Colors.white.withOpacity(0.9),
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
+                            );
+                          }
+                        },
+                        child: Padding(
+                          padding: const EdgeInsets.all(12.0),
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
                             children: [
-                              Icon(
-                                Icons.person_outline,
-                                size: 16,
-                                color: service.color,
-                              ),
-                              SizedBox(width: 4),
-                              Text(
-                                '${service.availableProviders}',
-                                style: TextStyle(
+                              Container(
+                                padding: EdgeInsets.all(12),
+                                decoration: BoxDecoration(
+                                  color: Colors.white.withOpacity(0.9),
+                                  shape: BoxShape.circle,
+                                ),
+                                child: SvgPicture.asset(
+                                  service.iconPath,
+                                  width: 40,
+                                  height: 40,
                                   color: service.color,
-                                  fontSize: 14,
-                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                              SizedBox(height: 12),
+                              Text(
+                                service.name,
+                                textAlign: TextAlign.center,
+                                maxLines: 2,
+                                overflow: TextOverflow.ellipsis,
+                                style: TextStyle(
+                                  fontWeight: FontWeight.w600,
+                                  color: AppColors.mainColor,
+                                  fontSize: 15,
+                                ),
+                              ),
+                              SizedBox(height: 8),
+                              Container(
+                                padding: EdgeInsets.symmetric(
+                                    horizontal: 12, vertical: 4),
+                                decoration: BoxDecoration(
+                                  color: Colors.white.withOpacity(0.9),
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Icon(
+                                      Icons.person_outline,
+                                      size: 16,
+                                      color: service.color,
+                                    ),
+                                    SizedBox(width: 4),
+                                    Text(
+                                      '${service.availableProviders}',
+                                      style: TextStyle(
+                                        color: service.color,
+                                        fontSize: 14,
+                                        fontWeight: FontWeight.w500,
+                                      ),
+                                    ),
+                                  ],
                                 ),
                               ),
                             ],
                           ),
                         ),
-                      ],
-                    ),
-                  ),
-                ),
-              ),
-            );
-          },
-          separatorBuilder: (context, index) => const SizedBox(width: 16),
-          itemCount: PopularServicesModel.getPopularServices(context).length,
-          scrollDirection: Axis.horizontal,
-          padding: const EdgeInsets.symmetric(horizontal: 16),
-        ),
-      ),
-    ],
-  );
-}
-
-  // Updated helper function to map service names to work domain IDs based on your Firestore data
-String _getWorkDomainIdForService(String serviceName) {
-  final local = AppLocalizations.of(context);
-  if (local == null) return '';
-
-  // Define service mappings in a more structured way
-  final serviceCategories = [
-    ServiceCategory('houseCleaning', local.houseCleaning),
-    ServiceCategory('electricity', local.electricity),
-    ServiceCategory('plumbing', local.plumbing),
-    ServiceCategory('gardening', local.gardening),
-    ServiceCategory('painting', local.painting),
-    ServiceCategory('carpentry', local.carpentry),
-    ServiceCategory('pestControl', local.pestControl),
-    ServiceCategory('acRepair', local.acRepair),
-    ServiceCategory('vehicleRepair', local.vehicleRepair),
-    ServiceCategory('applianceInstallation', local.applianceInstallation),
-    ServiceCategory('itSupport', local.itSupport),
-    ServiceCategory('homeSecurity', local.homeSecurity),
-    ServiceCategory('interiorDesign', local.interiorDesign),
-    ServiceCategory('windowCleaning', local.windowCleaning),
-    ServiceCategory('furnitureAssembly', local.furnitureAssembly),
-  ];
-
-  // Create map from the categories
-  final serviceToWorkDomain = Map.fromEntries(
-    serviceCategories.map((category) => MapEntry(category.localizedName, category.id)),
-  );
-
-  // Add error logging for debugging
-  final workDomainId = serviceToWorkDomain[serviceName];
-  if (workDomainId == null) {
-    debugPrint('Warning: No work domain ID found for service: $serviceName');
-    debugPrint('Available services: ${serviceToWorkDomain.keys.join(', ')}');
-  }
-
-  return workDomainId ?? '';
-}
-
-
-
-@override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      body: _isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : CustomScrollView(
-              controller: _scrollController,
-              slivers: [
-                SliverToBoxAdapter(
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      const SizedBox(height: 12),
-                      _buildAdsSlider([
-                        'assets/images/ads/first_page.png',
-                        'assets/images/ads/second_page.png',
-                        'assets/images/ads/third_page.png',
-                      ]),
-                      const SizedBox(height: 20),
-                      _buildTopPopularHeader(context),
-                      const SizedBox(height: 20),
-                      SizedBox(
-                        height: 180,
-                        child: _servicesSection(),
                       ),
-                      const SizedBox(height: 20),
-                      _buildTopServicesHeader(),
-                      const SizedBox(height: 10),
-                    ],
-                  ),
-                ),
-                SliverGrid(
-                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                    crossAxisCount: 2,
-                    mainAxisSpacing: 20,
-                    crossAxisSpacing: 20,
-                    childAspectRatio: 0.9,
-                  ),
-                  delegate: SliverChildBuilderDelegate(
-                    (context, index) {
-                      if (index >= services.length) {
-                        return _isFetching
-                            ? const Center(child: CircularProgressIndicator())
-                            : const SizedBox();
-                      }
-
-                      final service = services[index];
-                      final serviceId = service['docId'] ?? service['uid'];
-                      final isFavorite = favoriteServices.contains(serviceId);
-
-                      return _buildServiceCard(service, isFavorite, serviceId);
-                    },
-                    childCount: services.length + (_hasMoreData ? 1 : 0),
-                  ),
-                ),
-              ],
-            ),
-      backgroundColor: const Color.fromARGB(255, 255, 255, 255),
+                    ),
+                  );
+                },
+                separatorBuilder: (context, index) => const SizedBox(width: 16),
+                itemCount: services.length,
+                scrollDirection: Axis.horizontal,
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+              );
+            },
+          ),
+        ),
+      ],
     );
   }
 
-  
+  // Update the _showAllServices to use the cached future
+  void _showAllServices(BuildContext context) {
+    final localizations = AppLocalizations.of(context);
+    if (localizations == null) return;
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) {
+        return Container(
+          decoration: BoxDecoration(
+            color: Theme.of(context).scaffoldBackgroundColor,
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.05),
+                blurRadius: 20,
+                offset: const Offset(0, -5),
+              ),
+            ],
+          ),
+          child: DraggableScrollableSheet(
+            expand: false,
+            initialChildSize: 0.6,
+            minChildSize: 0.4,
+            maxChildSize: 0.9,
+            builder: (context, scrollController) {
+              return Column(
+                children: [
+                  Container(
+                    margin: const EdgeInsets.only(top: 12, bottom: 16),
+                    width: 40,
+                    height: 4,
+                    decoration: BoxDecoration(
+                      color: Colors.grey.withOpacity(0.3),
+                      borderRadius: BorderRadius.circular(2),
+                    ),
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 24),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
+                          localizations.allServices,
+                          style: GoogleFonts.poppins(
+                            color: AppColors.mainColor,
+                            fontSize: 24,
+                            fontWeight: FontWeight.w600,
+                            letterSpacing: -0.5,
+                          ),
+                        ),
+                        IconButton(
+                          onPressed: () => Navigator.pop(context),
+                          icon: const Icon(Icons.close),
+                          style: IconButton.styleFrom(
+                            backgroundColor: Colors.grey.withOpacity(0.1),
+                            padding: const EdgeInsets.all(8),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  Expanded(
+                    child: FutureBuilder<List<PopularServicesModel>>(
+                      future: _popularServicesFuture, // Use the cached future
+                      builder: (context, snapshot) {
+                        if (snapshot.connectionState ==
+                            ConnectionState.waiting) {
+                          return const Center(
+                              child: CircularProgressIndicator());
+                        }
+
+                        if (snapshot.hasError) {
+                          return Center(
+                              child: Text('Error: ${snapshot.error}'));
+                        }
+
+                        if (!snapshot.hasData || snapshot.data!.isEmpty) {
+                          return const Center(
+                              child: Text('No services available'));
+                        }
+
+                        final services = snapshot.data!;
+                        return Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 20),
+                          child: GridView.builder(
+                            controller: scrollController,
+                            physics: const BouncingScrollPhysics(),
+                            gridDelegate:
+                                const SliverGridDelegateWithFixedCrossAxisCount(
+                              crossAxisCount: 2,
+                              crossAxisSpacing: 16,
+                              mainAxisSpacing: 16,
+                              childAspectRatio: 1.1,
+                            ),
+                            itemCount: services.length,
+                            itemBuilder: (context, index) {
+                              final service = services[index];
+                              return Material(
+                                color: Colors.transparent,
+                                child: InkWell(
+                                  onTap: () {
+                                    Navigator.pop(context);
+                                    // Add your navigation or selection logic here
+                                  },
+                                  borderRadius: BorderRadius.circular(20),
+                                  child: Container(
+                                    padding: const EdgeInsets.all(16),
+                                    decoration: BoxDecoration(
+                                      color: service.color.withOpacity(0.08),
+                                      borderRadius: BorderRadius.circular(20),
+                                      border: Border.all(
+                                        color: service.color.withOpacity(0.12),
+                                        width: 1,
+                                      ),
+                                    ),
+                                    child: Column(
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.center,
+                                      children: [
+                                        Container(
+                                          padding: const EdgeInsets.all(12),
+                                          decoration: BoxDecoration(
+                                            color:
+                                                service.color.withOpacity(0.1),
+                                            shape: BoxShape.circle,
+                                          ),
+                                          child: SvgPicture.asset(
+                                            service.iconPath,
+                                            width: 32,
+                                            height: 32,
+                                            color: service.color,
+                                          ),
+                                        ),
+                                        const SizedBox(height: 12),
+                                        Text(
+                                          service.name,
+                                          textAlign: TextAlign.center,
+                                          style: GoogleFonts.poppins(
+                                            color: Colors.black87,
+                                            fontSize: 15,
+                                            fontWeight: FontWeight.w500,
+                                            height: 1.2,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                              );
+                            },
+                          ),
+                        );
+                      },
+                    ),
+                  ),
+                ],
+              );
+            },
+          ),
+        );
+      },
+    );
+  }
+
+  // Method to refresh the services data when needed
+  void refreshServices() {
+    setState(() {
+      _popularServicesFuture = PopularServicesModel.getPopularServices(context);
+    });
+  }
+
+  // Updated helper function to map service names to work domain IDs based on your Firestore data
+  String _getWorkDomainIdForService(String serviceName) {
+    final local = AppLocalizations.of(context);
+    if (local == null) return '';
+
+    // Define service mappings in a more structured way
+    final serviceCategories = [
+      ServiceCategory('houseCleaning', local.houseCleaning),
+      ServiceCategory('electricity', local.electricity),
+      ServiceCategory('plumbing', local.plumbing),
+      ServiceCategory('gardening', local.gardening),
+      ServiceCategory('painting', local.painting),
+      ServiceCategory('carpentry', local.carpentry),
+      ServiceCategory('pestControl', local.pestControl),
+      ServiceCategory('acRepair', local.acRepair),
+      ServiceCategory('vehicleRepair', local.vehicleRepair),
+      ServiceCategory('applianceInstallation', local.applianceInstallation),
+      ServiceCategory('itSupport', local.itSupport),
+      ServiceCategory('homeSecurity', local.homeSecurity),
+      ServiceCategory('interiorDesign', local.interiorDesign),
+      ServiceCategory('windowCleaning', local.windowCleaning),
+      ServiceCategory('furnitureAssembly', local.furnitureAssembly),
+    ];
+
+    // Create map from the categories
+    final serviceToWorkDomain = Map.fromEntries(
+      serviceCategories
+          .map((category) => MapEntry(category.localizedName, category.id)),
+    );
+
+    // Add error logging for debugging
+    final workDomainId = serviceToWorkDomain[serviceName];
+    if (workDomainId == null) {
+      debugPrint('Warning: No work domain ID found for service: $serviceName');
+      debugPrint('Available services: ${serviceToWorkDomain.keys.join(', ')}');
+    }
+
+    return workDomainId ?? '';
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      body: SmartRefresher(
+        controller: _refreshController,
+        onRefresh: _onRefresh,
+        header: const ClassicHeader(
+          refreshStyle: RefreshStyle.Behind,
+          completeText: 'Refresh complete',
+          failedText: 'Refresh failed',
+          idleText: 'Pull to refresh',
+          refreshingText: 'Refreshing...',
+        ),
+        child: _isLoading
+            ? const Center(child: CircularProgressIndicator())
+            : services.isEmpty && !_isFetching
+                ? Center(
+                    child: Text(
+                      'No recommended services found in your area',
+                      style: GoogleFonts.poppins(
+                        fontSize: 16,
+                        color: Colors.grey,
+                      ),
+                    ),
+                  )
+                : CustomScrollView(
+                    controller: _scrollController,
+                    slivers: [
+                      SliverToBoxAdapter(
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const SizedBox(height: 12),
+                            _buildAdsSlider([
+                              'assets/images/ads/first_page.png',
+                              'assets/images/ads/second_page.png',
+                              'assets/images/ads/third_page.png',
+                            ]),
+                            const SizedBox(height: 20),
+                            _buildTopPopularHeader(context),
+                            const SizedBox(height: 20),
+                            SizedBox(
+                              height: 180,
+                              child: _servicesSection(),
+                            ),
+                            const SizedBox(height: 20),
+                            _buildTopServicesHeader(),
+                            const SizedBox(height: 10),
+                          ],
+                        ),
+                      ),
+                      SliverGrid(
+                        gridDelegate:
+                            const SliverGridDelegateWithFixedCrossAxisCount(
+                          crossAxisCount: 2,
+                          mainAxisSpacing: 20,
+                          crossAxisSpacing: 20,
+                          childAspectRatio: 0.9,
+                        ),
+                        delegate: SliverChildBuilderDelegate(
+                          (context, index) {
+                            if (index >= services.length) {
+                              return _isFetching
+                                  ? const Center(
+                                      child: CircularProgressIndicator())
+                                  : const SizedBox();
+                            }
+
+                            final service = services[index];
+                            final serviceId =
+                                service['docId'] ?? service['uid'];
+                            final isFavorite =
+                                favoriteServices.contains(serviceId);
+
+                            return _buildServiceCard(
+                                service, isFavorite, serviceId);
+                          },
+                          childCount: services.length + (_hasMoreData ? 1 : 0),
+                        ),
+                      ),
+                    ],
+                  ),
+      ),
+      backgroundColor: const Color.fromARGB(255, 255, 255, 255),
+    );
+  }
+}
+
+class RecommendationConfig {
+  final int maxSimilarUsers;
+  final int batchSize;
+  final Duration cacheDuration;
+  final Map<String, double> weightFactors;
+
+  const RecommendationConfig({
+    this.maxSimilarUsers = 10,
+    this.batchSize = 20,
+    this.cacheDuration = const Duration(minutes: 30),
+    this.weightFactors = const {
+      'similarity': 0.3,
+      'rating': 0.25,
+      'reviewCount': 0.15,
+      'clickCount': 0.15,
+      'completionRate': 0.15,
+    },
+  });
+}
+
+class RecommendationService {
+  static final RecommendationService _instance =
+      RecommendationService._internal();
+  factory RecommendationService() => _instance;
+  RecommendationService._internal();
+
+  final _config = RecommendationConfig();
+  final _cache = _RecommendationCache();
+  final _firestore = FirebaseFirestore.instance;
+
+  Future<List<Map<String, dynamic>>> getRecommendedServices({
+    int limit = 20,
+    List<String>? categories,
+  }) async {
+    try {
+      final currentUser = FirebaseAuth.instance.currentUser;
+      if (currentUser == null) return [];
+
+      // Check cache first
+      final cachedRecommendations = await _cache.get(currentUser.uid);
+      if (cachedRecommendations != null) {
+        return cachedRecommendations;
+      }
+
+      // Get user data and preferences
+      final userData = await _getUserData(currentUser.uid);
+      if (userData == null) return [];
+
+      // Get similar users and their preferences
+      final similarUsers = await _getSimilarUsers(userData);
+
+      // Generate recommendations
+      final recommendations = await _generateRecommendations(
+        userData: userData,
+        similarUsers: similarUsers,
+        categories: categories,
+        limit: limit,
+      );
+
+      // Cache results
+      await _cache.set(currentUser.uid, recommendations);
+
+      return recommendations;
+    } catch (e) {
+      debugPrint('Error in getRecommendedServices: $e');
+      return [];
+    }
+  }
+
+  Future<Map<String, dynamic>?> _getUserData(String userId) async {
+    try {
+      final userDoc = await _firestore.collection('users').doc(userId).get();
+      if (!userDoc.exists) return null;
+
+      final userData = userDoc.data()!;
+      final userInteractions = await _getUserInteractions(userId);
+
+      return {
+        ...userData,
+        'interactions': userInteractions,
+      };
+    } catch (e) {
+      debugPrint('Error fetching user data: $e');
+      return null;
+    }
+  }
+
+  Future<Map<String, dynamic>> _getUserInteractions(String userId) async {
+    final interactions =
+        await _firestore.collection('user_interactions').doc(userId).get();
+
+    return interactions.data() ?? {};
+  }
+
+  Future<List<Map<String, dynamic>>> _getSimilarUsers(
+    Map<String, dynamic> userData,
+  ) async {
+    try {
+      // Get users from same city with batch processing
+      final cityUsers = await _firestore
+          .collection('users')
+          .where('city', isEqualTo: userData['city'])
+          .where('isProvider', isEqualTo: false)
+          .where(FieldPath.documentId, isNotEqualTo: userData['uid'])
+          .limit(50)
+          .get();
+
+      final similarUsers = await compute(
+        _calculateSimilarUsers,
+        {
+          'currentUser': userData,
+          'potentialUsers': cityUsers.docs.map((doc) => doc.data()).toList(),
+        },
+      );
+
+      return similarUsers.take(_config.maxSimilarUsers).toList();
+    } catch (e) {
+      debugPrint('Error getting similar users: $e');
+      return [];
+    }
+  }
+
+  static List<Map<String, dynamic>> _calculateSimilarUsers(
+      Map<String, dynamic> data) {
+    final currentUser = data['currentUser'];
+    final potentialUsers = data['potentialUsers'] as List;
+    final similarities = <Map<String, dynamic>>[];
+
+    for (var user in potentialUsers) {
+      final similarity = _calculateUserSimilarity(currentUser, user);
+      if (similarity > 0) {
+        similarities.add({
+          ...user,
+          'similarity_score': similarity,
+        });
+      }
+    }
+
+    similarities.sort((a, b) => (b['similarity_score'] as double)
+        .compareTo(a['similarity_score'] as double));
+
+    return similarities;
+  }
+
+  static double _calculateUserSimilarity(
+    Map<String, dynamic> user1,
+    Map<String, dynamic> user2,
+  ) {
+    double score = 0.0;
+
+    // Calculate favorite services similarity
+    final favorites1 = Set<String>.from(user1['favorites'] ?? []);
+    final favorites2 = Set<String>.from(user2['favorites'] ?? []);
+    if (favorites1.isNotEmpty && favorites2.isNotEmpty) {
+      final intersection = favorites1.intersection(favorites2);
+      final union = favorites1.union(favorites2);
+      score += intersection.length / union.length * 0.4;
+    }
+
+    // Calculate service category preference similarity
+    final categories1 = Set<String>.from(user1['preferred_categories'] ?? []);
+    final categories2 = Set<String>.from(user2['preferred_categories'] ?? []);
+    if (categories1.isNotEmpty && categories2.isNotEmpty) {
+      final intersection = categories1.intersection(categories2);
+      final union = categories1.union(categories2);
+      score += intersection.length / union.length * 0.3;
+    }
+
+    // Calculate interaction pattern similarity
+    final interactions1 = user1['interactions'] ?? {};
+    final interactions2 = user2['interactions'] ?? {};
+    if (interactions1.isNotEmpty && interactions2.isNotEmpty) {
+      score +=
+          _calculateInteractionSimilarity(interactions1, interactions2) * 0.3;
+    }
+
+    return score;
+  }
+
+  static double _calculateInteractionSimilarity(
+    Map<String, dynamic> interactions1,
+    Map<String, dynamic> interactions2,
+  ) {
+    final services1 = Set<String>.from(interactions1.keys);
+    final services2 = Set<String>.from(interactions2.keys);
+    final commonServices = services1.intersection(services2);
+
+    if (commonServices.isEmpty) return 0.0;
+
+    double totalDiff = 0.0;
+    for (final service in commonServices) {
+      final count1 = interactions1[service] ?? 0;
+      final count2 = interactions2[service] ?? 0;
+      totalDiff += (count1 - count2).abs() / (count1 + count2);
+    }
+
+    return 1 - (totalDiff / commonServices.length);
+  }
+
+  Future<List<Map<String, dynamic>>> _generateRecommendations({
+    required Map<String, dynamic> userData,
+    required List<Map<String, dynamic>> similarUsers,
+    List<String>? categories,
+    required int limit,
+  }) async {
+    try {
+      // Get potential service providers
+      final providerQuery = _firestore
+          .collection('users')
+          .where('isProvider', isEqualTo: true)
+          .where('city', isEqualTo: userData['city']);
+
+      final providers = await providerQuery.get();
+      final userFavorites = Set<String>.from(userData['favorites'] ?? []);
+
+      // Calculate scores for each provider
+      final recommendations = await compute(
+        _calculateProviderScores,
+        {
+          'providers': providers.docs
+              .map((doc) => {
+                    ...doc.data(),
+                    'id': doc.id,
+                  })
+              .toList(),
+          'similarUsers': similarUsers,
+          'userFavorites': userFavorites.toList(),
+          'weightFactors': _config.weightFactors,
+        },
+      );
+
+      // Filter by categories if specified
+      if (categories != null && categories.isNotEmpty) {
+        recommendations.removeWhere((rec) {
+          final providerCategories = List<String>.from(
+            rec['service_data']['categories'] ?? [],
+          );
+          return !providerCategories.any(categories.contains);
+        });
+      }
+
+      return recommendations.take(limit).toList();
+    } catch (e) {
+      debugPrint('Error generating recommendations: $e');
+      return [];
+    }
+  }
+
+  static List<Map<String, dynamic>> _calculateProviderScores(
+      Map<String, dynamic> data) {
+    final providers = data['providers'] as List;
+    final similarUsers = data['similarUsers'] as List;
+    final userFavorites = Set<String>.from(data['userFavorites'] as List);
+    final weightFactors = data['weightFactors'] as Map<String, double>;
+
+    final recommendations = <Map<String, dynamic>>[];
+
+    debugPrint('\n=== Starting Provider Score Calculations ===');
+    debugPrint('Number of providers to evaluate: ${providers.length}');
+    debugPrint('Number of similar users: ${similarUsers.length}');
+    debugPrint('Weight factors: $weightFactors\n');
+
+    for (var provider in providers) {
+      if (userFavorites.contains(provider['id'])) {
+        debugPrint('Skipping provider ${provider['id']} - already in favorites');
+        continue;
+      }
+
+      debugPrint('\n--- Calculating score for provider ${provider['id']} ---');
+      final score = _calculateProviderScore(
+        provider,
+        similarUsers,
+        weightFactors,
+      );
+
+      if (score > 0) {
+        debugPrint('Final score for provider ${provider['id']}: ${score.toStringAsFixed(3)}');
+        recommendations.add({
+          'service_id': provider['id'],
+          'service_data': provider,
+          'recommendation_score': score,
+        });
+      }
+    }
+
+    recommendations.sort((a, b) => (b['recommendation_score'] as double)
+        .compareTo(a['recommendation_score'] as double));
+
+    debugPrint('\n=== Final Recommendations Rankings ===');
+    for (var i = 0; i < min(5, recommendations.length); i++) {
+      debugPrint('Rank ${i + 1}: Provider ${recommendations[i]['service_id']} - Score: ${recommendations[i]['recommendation_score'].toStringAsFixed(3)}');
+    }
+
+    return recommendations;
+  }
+
+  static double _calculateProviderScore(
+    Map<String, dynamic> provider,
+    List<dynamic> similarUsers,
+    Map<String, double> weightFactors,
+  ) {
+    double score = 0.0;
+    final providerId = provider['id'];
+
+    // Similarity-based score
+    final similarityScore = _calculateSimilarityScore(providerId, similarUsers);
+    final weightedSimilarityScore = similarityScore * weightFactors['similarity']!;
+    debugPrint('Similarity score: ${similarityScore.toStringAsFixed(3)} (weighted: ${weightedSimilarityScore.toStringAsFixed(3)})');
+    score += weightedSimilarityScore;
+
+    // Rating-based score
+    final rating = provider['rating'] ?? 0.0;
+    final ratingScore = (rating / 5.0) * weightFactors['rating']!;
+    debugPrint('Rating score (${rating}/5): ${ratingScore.toStringAsFixed(3)}');
+    score += ratingScore;
+
+    // Review count score
+    final reviewCount = (provider['review_count'] ?? 0) as num;
+    final reviewScore = (min(reviewCount, 100) / 100) * weightFactors['reviewCount']!;
+    debugPrint('Review count score ($reviewCount reviews): ${reviewScore.toStringAsFixed(3)}');
+    score += reviewScore;
+
+    // Click count score
+    final clickCount = (provider['click_count'] ?? 0) as num;
+    final clickScore = (min(clickCount, 1000) / 1000) * weightFactors['clickCount']!;
+    debugPrint('Click count score ($clickCount clicks): ${clickScore.toStringAsFixed(3)}');
+    score += clickScore;
+
+    // Completion rate score
+    final completedJobs = provider['completed_jobs'] ?? 0;
+    final totalJobs = provider['total_jobs'] ?? 0;
+    double completionScore = 0.0;
+    if (totalJobs > 0) {
+      final completionRate = completedJobs / totalJobs;
+      completionScore = completionRate * weightFactors['completionRate']!;
+      debugPrint('Completion rate score ($completedJobs/$totalJobs): ${completionScore.toStringAsFixed(3)}');
+    } else {
+      debugPrint('No completion rate score (no jobs)');
+    }
+    score += completionScore;
+
+    debugPrint('Total score: ${score.toStringAsFixed(3)}');
+    return score;
+  }
+
+  static double _calculateSimilarityScore(
+      String providerId, List<dynamic> similarUsers) {
+    double totalScore = 0.0;
+    int count = 0;
+
+    debugPrint('\nCalculating similarity score for provider $providerId:');
+    for (var user in similarUsers) {
+      final favorites = List<String>.from(user['favorites'] ?? []);
+      if (favorites.contains(providerId)) {
+        final userScore = user['similarity_score'] as double;
+        totalScore += userScore;
+        count++;
+        debugPrint('Similar user found - similarity score: ${userScore.toStringAsFixed(3)}');
+      }
+    }
+
+    final finalScore = count > 0 ? totalScore / count : 0.0;
+    debugPrint('Average similarity score: ${finalScore.toStringAsFixed(3)} (based on $count similar users)');
+    return finalScore;
+  }
+}
+
+class _RecommendationCache {
+  final Map<String, _CacheEntry> _cache = {};
+
+  Future<List<Map<String, dynamic>>?> get(String userId) async {
+    final entry = _cache[userId];
+    if (entry == null) return null;
+
+    if (entry.isExpired) {
+      _cache.remove(userId);
+      return null;
+    }
+
+    return entry.data;
+  }
+
+  Future<void> set(String userId, List<Map<String, dynamic>> data) async {
+    _cache[userId] = _CacheEntry(
+      data: data,
+      timestamp: DateTime.now(),
+    );
+  }
+}
+
+class _CacheEntry {
+  final List<Map<String, dynamic>> data;
+  final DateTime timestamp;
+  final Duration validity = const Duration(minutes: 30);
+
+  _CacheEntry({
+    required this.data,
+    required this.timestamp,
+  });
+
+  bool get isExpired => DateTime.now().difference(timestamp) > validity;
 }

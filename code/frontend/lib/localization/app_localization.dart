@@ -25,6 +25,10 @@ class AppLocalizations {
           ? "Les données de l'utilisateur ont été mises à jour avec succès"
           : "User data updated successfully");
 
+  String get selectThreeChoices => isArabic
+      ? "حدد ثلاثة خيارات"
+      : (isFrench ? "Sélectionnez trois choix" : "Select Three Choices");
+
   // No user logged in
   String get noUserLoggedIn => isArabic
       ? "لا يوجد مستخدم مسجل"
@@ -41,9 +45,9 @@ class AppLocalizations {
       : (isFrench ? "Paramètres de notification" : "Notification Settings");
 
   // Privacy Settings
-  String get privacySettings => isArabic
-      ? "إعدادات الخصوصية"
-      : (isFrench ? "Paramètres de confidentialité" : "Privacy Settings");
+  String get privacyInfo => isArabic
+      ? "معلومات الخصوصية"
+      : (isFrench ? "Info Sur confidentialité" : "Privacy Info");
 
   // aboutApp
   String get aboutApp => isArabic
@@ -56,6 +60,27 @@ class AppLocalizations {
       : (isFrench
           ? "Veuillez ajouter au moins une compétence, une certification et une expérience de travail"
           : "Please add at least one skill, certification, and work experience");
+  // Select Gender
+  String get selectGender => isArabic
+      ? "اختر الجنس"
+      : (isFrench ? "Sélection du sexe" : "Select Gender");
+  // Male
+  String get male => isArabic ? "ذكر" : (isFrench ? "Homme" : "Male");
+  // Female
+  String get female => isArabic ? "أنثى" : (isFrench ? "Femme" : "Female");
+
+  // Select Age
+  String get selectAge => isArabic
+      ? "اختر العمر"
+      : (isFrench ? "Sélectionnez l'âge" : "Select Age");
+  // Select your age
+  String get selectYourAge => isArabic
+      ? "اختر عمرك"
+      : (isFrench ? "Sélectionnez votre âge" : "Select your age");
+  // Select exactly
+  String get selectExactly => isArabic
+      ? "يرجى اختيار بالضبط"
+      : (isFrench ? "Veuillez sélectionner exactement" : "Select exactly");
 
   // User is not authenticated
   String get userNotAuthenticated => isArabic
@@ -392,8 +417,8 @@ class AppLocalizations {
   String get lastName =>
       isArabic ? "الاسم الأخير" : (isFrench ? "Nom de famille" : "Last Name");
   String get selectYourServices => isArabic
-      ? "اختر خدماتك:"
-      : (isFrench ? "Sélectionnez vos services:" : "Select Your Services:");
+      ? "اختر خدمتك:"
+      : (isFrench ? "Sélectionnez vos services:" : "Select Your Service:");
   String get selectOneChoice => isArabic
       ? "يرجى اختيار خيار واحد فقط."
       : (isFrench
@@ -924,19 +949,22 @@ class AppLocalizations {
       : (isFrench ? "Sélectionner la langue" : "Select Language");
 
   String get services =>
-      isArabic ? "إلغاء" : (isFrench ? "service" : "service");
+      isArabic ? "خدمات" : (isFrench ? "service" : "services");
 
   String get myProfile =>
-      isArabic ? "إلغاء" : (isFrench ? "mon profile" : "my Profil");
+      isArabic ? "ملفي الشخصي" : (isFrench ? "mon profil" : "My Profile");
 
-  String get appName =>
-      isArabic ? "إلغاء" : (isFrench ? "mon profile" : "my Profil");
+  String get appName => isArabic
+      ? "اسم التطبيق"
+      : (isFrench ? "Nom de l'application" : "App Name");
 
-  String get sponsoredServices =>
-      isArabic ? "إلغاء" : (isFrench ? "mon profile" : "Sponsored Services");
+  String get sponsoredServices => isArabic
+      ? "الخدمات الممولة"
+      : (isFrench ? "Services sponsorisés" : "Sponsored Services");
 
-  String get homePage =>
-      isArabic ? "إلغاء" : (isFrench ? "mon profile" : "home page");
+  String get homePage => isArabic
+      ? "الصفحة الرئيسية"
+      : (isFrench ? "Page d'accueil" : "Home Page");
 
   String get setupYourProfile => isArabic
       ? "إعداد ملفك الشخصي"

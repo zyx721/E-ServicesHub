@@ -496,179 +496,189 @@ TabBar(
     );
   }
 
-  void _showAddReviewDialog(
-      BuildContext context, String providerId, FirebaseFirestore firestore) {
-    final localizations = AppLocalizations.of(context);
-    if (localizations == null) return;
+void _showAddReviewDialog(
+    BuildContext context, String providerId, FirebaseFirestore firestore) {
+  final localizations = AppLocalizations.of(context);
+  if (localizations == null) return;
 
-    final TextEditingController commentController = TextEditingController();
-    double newRating = 3.0;
-    bool isSubmitting = false; // Add loading state variable
+  final TextEditingController commentController = TextEditingController();
+  double newRating = 3.0;
+  bool isSubmitting = false;
 
-    showDialog(
-      context: context,
-      barrierDismissible: !isSubmitting, // Prevent dismissal while submitting
-      builder: (BuildContext dialogContext) {
-        return StatefulBuilder(
-          // Use StatefulBuilder to manage dialog state
-          builder: (context, setState) {
-            return AlertDialog(
-              title:
-                  Text(localizations.addReview, style: GoogleFonts.poppins()),
-              content: SingleChildScrollView(
-                child: ConstrainedBox(
-                  constraints: BoxConstraints(
-                    maxHeight: MediaQuery.of(context).size.height * 0.6,
-                  ),
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      TextField(
-                        controller: commentController,
-                        enabled: !isSubmitting,
-                        decoration: InputDecoration(
-                          labelText: localizations.addComment,
-                          border: OutlineInputBorder(),
-                        ),
-                        maxLines: 3,
+  showDialog(
+    context: context,
+    barrierDismissible: !isSubmitting,
+    builder: (BuildContext dialogContext) {
+      return StatefulBuilder(
+        builder: (context, setState) {
+          return AlertDialog(
+            title: Text(localizations.addReview, style: GoogleFonts.poppins()),
+            content: SingleChildScrollView(
+              child: ConstrainedBox(
+                constraints: BoxConstraints(
+                  maxHeight: MediaQuery.of(context).size.height * 0.6,
+                ),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    TextField(
+                      controller: commentController,
+                      enabled: !isSubmitting,
+                      decoration: InputDecoration(
+                        labelText: localizations.addComment,
+                        border: OutlineInputBorder(),
                       ),
-                      const SizedBox(height: 16),
-                      RatingBar.builder(
-                        initialRating: newRating,
-                        minRating: 0.5,
-                        direction: Axis.horizontal,
-                        allowHalfRating: true,
-                        itemCount: 5,
-                        ignoreGestures: isSubmitting,
-                        itemPadding:
-                            const EdgeInsets.symmetric(horizontal: 2.5),
-                        itemBuilder: (context, _) => const Icon(
-                          Icons.star,
-                          color: Colors.amber,
-                        ),
-                        onRatingUpdate: (rating) {
-                          newRating = rating;
-                        },
+                      maxLines: 3,
+                    ),
+                    const SizedBox(height: 16),
+                    RatingBar.builder(
+                      initialRating: newRating,
+                      minRating: 0.5,
+                      direction: Axis.horizontal,
+                      allowHalfRating: true,
+                      itemCount: 5,
+                      ignoreGestures: isSubmitting,
+                      itemPadding: const EdgeInsets.symmetric(horizontal: 2.5),
+                      itemBuilder: (context, _) => const Icon(
+                        Icons.star,
+                        color: Colors.amber,
                       ),
-                      if (isSubmitting)
-                        Padding(
-                          padding: const EdgeInsets.only(top: 16.0),
-                          child: Column(
-                            children: [
-                              const CircularProgressIndicator(),
-                              const SizedBox(height: 8),
-                              Text(
-                                localizations.submittingReview,
-                                style: GoogleFonts.poppins(
-                                  color: Colors.grey[600],
-                                  fontSize: 12,
-                                ),
+                      onRatingUpdate: (rating) {
+                        newRating = rating;
+                      },
+                    ),
+                    if (isSubmitting)
+                      Padding(
+                        padding: const EdgeInsets.only(top: 16.0),
+                        child: Column(
+                          children: [
+                            const CircularProgressIndicator(),
+                            const SizedBox(height: 8),
+                            Text(
+                              localizations.submittingReview,
+                              style: GoogleFonts.poppins(
+                                color: Colors.grey[600],
+                                fontSize: 12,
                               ),
-                            ],
-                          ),
+                            ),
+                          ],
                         ),
-                    ],
-                  ),
+                      ),
+                  ],
                 ),
               ),
-              actions: [
-                TextButton(
-                  onPressed: isSubmitting ? null : () => Navigator.pop(context),
-                  child:
-                      Text(localizations.cancel, style: GoogleFonts.poppins()),
-                ),
-                ElevatedButton(
-                  onPressed: isSubmitting
-                      ? null
-                      : () async {
-                          if (commentController.text.trim().isEmpty) return;
+            ),
+            actions: [
+              TextButton(
+                onPressed: isSubmitting ? null : () => Navigator.pop(context),
+                child: Text(localizations.cancel, style: GoogleFonts.poppins()),
+              ),
+              ElevatedButton(
+                onPressed: isSubmitting
+                    ? null
+                    : () async {
+                        if (commentController.text.trim().isEmpty) return;
 
-                          final user = FirebaseAuth.instance.currentUser;
-                          if (user == null) {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(
-                                  content: Text(
-                                      'You must be logged in to add a review')),
-                            );
-                            return;
-                          }
+                        final user = FirebaseAuth.instance.currentUser;
+                        if (user == null) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                                content:
+                                    Text('You must be logged in to add a review')),
+                          );
+                          return;
+                        }
 
-                          setState(() {
-                            isSubmitting = true;
+                        setState(() {
+                          isSubmitting = true;
+                        });
+
+                        try {
+                          final review = {
+                            'comment': commentController.text.trim(),
+                            'rating': newRating,
+                            'id_commentor': user.uid,
+                            'timestamp': DateTime.now().toIso8601String(),
+                          };
+
+                          final providerRef =
+                              firestore.collection('users').doc(providerId);
+                          final reviewerRef =
+                              firestore.collection('users').doc(user.uid);
+
+                          // Use a batch to update both documents atomically
+                          final batch = firestore.batch();
+
+                          // Update provider's reviews and ratings
+                          batch.update(providerRef, {
+                            'reviews': FieldValue.arrayUnion([review]),
+                            'newCommentsCount': FieldValue.increment(1),
+                            'review_count': FieldValue.increment(1),
                           });
 
-                          try {
-                            final review = {
-                              'comment': commentController.text.trim(),
-                              'rating': newRating,
-                              'id_commentor': user.uid,
-                              'timestamp': DateTime.now().toIso8601String(),
-                            };
+                          // Update reviewer's reviewed_providers array
+                          batch.update(reviewerRef, {
+                            'reviewed_service_ids':
+                                FieldValue.arrayUnion([providerId]),
+                          });
 
-                            final providerRef =
-                                firestore.collection('users').doc(providerId);
+                          // Commit the batch
+                          await batch.commit();
 
-                            await providerRef.update({
-                              'reviews': FieldValue.arrayUnion([review]),
-                              'newCommentsCount': FieldValue.increment(1),
-                            });
+                          // Update the average rating
+                          final providerDoc = await providerRef.get();
+                          final providerData =
+                              providerDoc.data() as Map<String, dynamic>;
+                          final reviews =
+                              providerData['reviews'] as List<dynamic> ?? [];
 
-                            final providerDoc = await providerRef.get();
-                            final providerData =
-                                providerDoc.data() as Map<String, dynamic>;
-                            final reviews =
-                                providerData['reviews'] as List<dynamic> ?? [];
+                          double totalRating = 0.0;
+                          for (var rev in reviews) {
+                            totalRating += (rev['rating'] as num).toDouble();
+                          }
+                          final newAverageRating = totalRating / reviews.length;
 
-                            double totalRating = 0.0;
-                            for (var rev in reviews) {
-                              totalRating += (rev['rating'] as num).toDouble();
-                            }
-                            final newAverageRating =
-                                totalRating / reviews.length;
+                          await providerRef.update({
+                            'rating': newAverageRating,
+                          });
 
-                            await providerRef.update({
-                              'rating': newAverageRating,
-                            });
-
-                            final String deviceToken =
-                                providerData['deviceToken'];
-                            if (deviceToken.isNotEmpty) {
-                              await PushNotificationService.sendNotification(
-                                deviceToken,
-                                localizations.newReviewReceived,
-                                localizations.youHaveNewReviewOnYourProfile,
-                                {'providerId': providerId},
-                              );
-                            }
-
-                            Navigator.pop(context);
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(
-                                  content: Text(
-                                      localizations.reviewAddedSuccessfully)),
-                            );
-                          } catch (e) {
-                            setState(() {
-                              isSubmitting = false;
-                            });
-                            debugPrint('Error adding review: $e');
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(
-                                  content:
-                                      Text(localizations.failedToAddReview)),
+                          final String deviceToken = providerData['deviceToken'];
+                          if (deviceToken.isNotEmpty) {
+                            await PushNotificationService.sendNotification(
+                              deviceToken,
+                              localizations.newReviewReceived,
+                              localizations.youHaveNewReviewOnYourProfile,
+                              {'providerId': providerId},
                             );
                           }
-                        },
-                  child: Text(localizations.submit,
-                      style: GoogleFonts.poppins(color: Colors.black)),
-                ),
-              ],
-            );
-          },
-        );
-      },
-    );
-  }
+
+                          Navigator.pop(context);
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                                content:
+                                    Text(localizations.reviewAddedSuccessfully)),
+                          );
+                        } catch (e) {
+                          setState(() {
+                            isSubmitting = false;
+                          });
+                          debugPrint('Error adding review: $e');
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                                content: Text(localizations.failedToAddReview)),
+                          );
+                        }
+                      },
+                child: Text(localizations.submit,
+                    style: GoogleFonts.poppins(color: Colors.black)),
+              ),
+            ],
+          );
+        },
+      );
+    },
+  );
+}
 
   Widget buildProfileTab() {
     final localizations = AppLocalizations.of(context);

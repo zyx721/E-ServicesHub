@@ -6,16 +6,14 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:hanini_frontend/models/colors.dart';
 import 'package:hanini_frontend/screens/services/service.dart';
-import 'package:hanini_frontend/localization/app_localization.dart'; // Import 
-
-
+import 'package:hanini_frontend/localization/app_localization.dart'; // Import
 
 class SearchPage extends StatefulWidget {
   final String? preSelectedWorkDomain;
 
   const SearchPage({
     Key? key,
-    this.preSelectedWorkDomain, 
+    this.preSelectedWorkDomain,
   }) : super(key: key);
 
   @override
@@ -23,7 +21,7 @@ class SearchPage extends StatefulWidget {
 }
 
 class _SearchPageState extends State<SearchPage> {
-   List<Map<String, dynamic>> services = [];
+  List<Map<String, dynamic>> services = [];
   List<Map<String, dynamic>> filteredServices = [];
   List<String> likedServiceIds = [];
   final TextEditingController _searchController = TextEditingController();
@@ -47,11 +45,11 @@ class _SearchPageState extends State<SearchPage> {
           .collection('Metadata')
           .doc('WorkChoices')
           .get();
-      
+
       if (doc.exists) {
         final choices = doc.data()?['choices'] as List<dynamic>;
         _workChoicesMap = {};
-        
+
         for (var choice in choices) {
           final id = choice['id'] as String;
           _workChoicesMap[id] = {
@@ -73,397 +71,417 @@ class _SearchPageState extends State<SearchPage> {
 
   List<String> get _allWorkChoiceIds => _workChoicesMap.keys.toList();
 
- 
-void _showFilterDialog() {
-  final localizations = AppLocalizations.of(context);
-  if (localizations == null) return;
+  void _showFilterDialog() {
+    final localizations = AppLocalizations.of(context);
+    if (localizations == null) return;
 
-  showDialog(
-    context: context,
-    builder: (context) {
-      return Dialog(
-        insetPadding: const EdgeInsets.symmetric(horizontal: 16),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(28),
-        ),
-        child: Container(
-          width: MediaQuery.of(context).size.width * 0.95,
-          constraints: const BoxConstraints(maxWidth: 600),
-          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
-          decoration: BoxDecoration(
-            color: Colors.white,
+    showDialog(
+      context: context,
+      builder: (context) {
+        return Dialog(
+          insetPadding: const EdgeInsets.symmetric(horizontal: 16),
+          shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(28),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.purple.withOpacity(0.08),
-                blurRadius: 40,
-                offset: const Offset(0, 8),
-                spreadRadius: 0,
-              ),
-            ],
           ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Enhanced Header
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text(
-                    localizations.filterServices,
-                    style: GoogleFonts.poppins(
-                      fontSize: 24,
-                      fontWeight: FontWeight.w700,
-                      color: Colors.grey.shade800,
-                    ),
-                  ),
-                  ClipOval(
-                    child: Material(
-                      color: Colors.transparent,
-                      child: IconButton(
-                        onPressed: () => Navigator.pop(context),
-                        icon: Icon(Icons.close, color: Colors.grey.shade600),
-                        hoverColor: Colors.grey.shade100,
-                        splashColor: Colors.grey.shade200,
+          child: Container(
+            width: MediaQuery.of(context).size.width * 0.95,
+            constraints: const BoxConstraints(maxWidth: 600),
+            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(28),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.purple.withOpacity(0.08),
+                  blurRadius: 40,
+                  offset: const Offset(0, 8),
+                  spreadRadius: 0,
+                ),
+              ],
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Enhanced Header
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      localizations.filterServices,
+                      style: GoogleFonts.poppins(
+                        fontSize: 24,
+                        fontWeight: FontWeight.w700,
+                        color: Colors.grey.shade800,
                       ),
                     ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 24),
+                    ClipOval(
+                      child: Material(
+                        color: Colors.transparent,
+                        child: IconButton(
+                          onPressed: () => Navigator.pop(context),
+                          icon: Icon(Icons.close, color: Colors.grey.shade600),
+                          hoverColor: Colors.grey.shade100,
+                          splashColor: Colors.grey.shade200,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 24),
 
-              // Content
-              Flexible(
-                child: SingleChildScrollView(
-                  physics: const BouncingScrollPhysics(),
-                  child: StatefulBuilder(
-                    builder: (context, setState) {
-                      return Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          // Rating Section with enhanced visuals
-                          _buildEnhancedFilterSection(
-                            title: localizations.minimumRating,
-                            icon: Icons.star_rounded,
-                            iconColor: Colors.amber,
-                            content: Column(
-                              children: [
-                                Row(
-                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                  children: [
-                                    _buildRatingBadge('0.0'),
-                                    _buildRatingBadge('${_minRating.toStringAsFixed(1)} ★'),
-                                    _buildRatingBadge('5.0'),
-                                  ],
-                                ),
-                                const SizedBox(height: 8),
-                                SliderTheme(
-                                  data: SliderThemeData(
-                                    activeTrackColor: Colors.amber.shade400,
-                                    inactiveTrackColor: Colors.grey.shade200,
-                                    thumbColor: Colors.amber.shade500,
-                                    overlayColor: Colors.amber.withOpacity(0.12),
-                                    valueIndicatorColor: Colors.amber.shade500,
-                                    trackHeight: 4,
+                // Content
+                Flexible(
+                  child: SingleChildScrollView(
+                    physics: const BouncingScrollPhysics(),
+                    child: StatefulBuilder(
+                      builder: (context, setState) {
+                        return Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            // Rating Section with enhanced visuals
+                            _buildEnhancedFilterSection(
+                              title: localizations.minimumRating,
+                              icon: Icons.star_rounded,
+                              iconColor: Colors.amber,
+                              content: Column(
+                                children: [
+                                  Row(
+                                    mainAxisAlignment:
+                                        MainAxisAlignment.spaceBetween,
+                                    children: [
+                                      _buildRatingBadge('0.0'),
+                                      _buildRatingBadge(
+                                          '${_minRating.toStringAsFixed(1)} ★'),
+                                      _buildRatingBadge('5.0'),
+                                    ],
                                   ),
-                                  child: Slider(
-                                    value: _minRating,
-                                    min: 0,
-                                    max: 5,
-                                    divisions: 10,
-                                    label: _minRating.toStringAsFixed(1),
-                                    onChanged: (value) {
-                                      setState(() {
-                                        _minRating = value;
-                                      });
-                                    },
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                          const SizedBox(height: 24),
-
-                          // Price Range Section with enhanced visuals
-                          _buildEnhancedFilterSection(
-                            title: localizations.priceRange,
-                            icon: Icons.payments_rounded,
-                            iconColor: Colors.green.shade500,
-                            content: Column(
-                              children: [
-                                Row(
-                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                  children: [
-                                    _buildPriceBadge(
-                                      '${_priceRange.start.toInt()} ${localizations.dzd}',
-                                      Colors.green.shade50,
-                                      Colors.green.shade700,
+                                  const SizedBox(height: 8),
+                                  SliderTheme(
+                                    data: SliderThemeData(
+                                      activeTrackColor: Colors.amber.shade400,
+                                      inactiveTrackColor: Colors.grey.shade200,
+                                      thumbColor: Colors.amber.shade500,
+                                      overlayColor:
+                                          Colors.amber.withOpacity(0.12),
+                                      valueIndicatorColor:
+                                          Colors.amber.shade500,
+                                      trackHeight: 4,
                                     ),
-                                    _buildPriceBadge(
-                                      _priceRange.end == 19999 ? '∞' : '${_priceRange.end.toInt()} ${localizations.dzd}',
-                                      Colors.green.shade50,
-                                      Colors.green.shade700,
-                                    ),
-                                  ],
-                                ),
-                                const SizedBox(height: 8),
-                                SliderTheme(
-                                  data: SliderThemeData(
-                                    activeTrackColor: Colors.green.shade400,
-                                    inactiveTrackColor: Colors.grey.shade200,
-                                    thumbColor: Colors.green.shade500,
-                                    overlayColor: Colors.green.withOpacity(0.12),
-                                    valueIndicatorColor: Colors.green.shade500,
-                                    trackHeight: 4,
-                                  ),
-                                  child: RangeSlider(
-                                    values: _priceRange,
-                                    min: 0,
-                                    max: 19999,
-                                    divisions: 1000,
-                                    labels: RangeLabels(
-                                      _priceRange.start.toStringAsFixed(0),
-                                      _priceRange.end == 19999 ? '∞' : _priceRange.end.toStringAsFixed(0),
-                                    ),
-                                    onChanged: (values) {
-                                      setState(() {
-                                        _priceRange = values;
-                                      });
-                                    },
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                          const SizedBox(height: 24),
-
-                          // Work Domain Section with enhanced visuals
-                          _buildEnhancedFilterSection(
-                            title: localizations.workDomain,
-                            icon: Icons.work_rounded,
-                            iconColor: Colors.indigo.shade400,
-                            content: Container(
-                              height: 160,
-                              decoration: BoxDecoration(
-                                color: Colors.grey.shade50,
-                                borderRadius: BorderRadius.circular(16),
-                                border: Border.all(color: Colors.grey.shade200),
-                              ),
-                              child: SingleChildScrollView(
-                                physics: const BouncingScrollPhysics(),
-                                padding: const EdgeInsets.all(12),
-                                child: Wrap(
-                                  spacing: 8.0,
-                                  runSpacing: 8.0,
-                                  children: _allWorkChoiceIds.map((choiceId) {
-                                    final isSelected = _selectedWorkChoices.contains(choiceId);
-                                    return FilterChip(
-                                      label: Text(
-                                        getLocalizedWorkChoice(choiceId),
-                                        style: GoogleFonts.poppins(
-                                          color: isSelected ? Colors.white : Colors.grey.shade700,
-                                          fontSize: 13,
-                                          fontWeight: isSelected ? FontWeight.w500 : FontWeight.normal,
-                                        ),
-                                      ),
-                                      selected: isSelected,
-                                      selectedColor: Colors.indigo.shade400,
-                                      checkmarkColor: Colors.white,
-                                      backgroundColor: Colors.white,
-                                      elevation: 0,
-                                      pressElevation: 0,
-                                      showCheckmark: true,
-                                      shape: RoundedRectangleBorder(
-                                        borderRadius: BorderRadius.circular(20),
-                                        side: BorderSide(
-                                          color: isSelected 
-                                              ? Colors.indigo.shade400 
-                                              : Colors.grey.shade300,
-                                          width: 1.5,
-                                        ),
-                                      ),
-                                      onSelected: (selected) {
+                                    child: Slider(
+                                      value: _minRating,
+                                      min: 0,
+                                      max: 5,
+                                      divisions: 10,
+                                      label: _minRating.toStringAsFixed(1),
+                                      onChanged: (value) {
                                         setState(() {
-                                          if (selected) {
-                                            _selectedWorkChoices.add(choiceId);
-                                          } else {
-                                            _selectedWorkChoices.remove(choiceId);
-                                          }
+                                          _minRating = value;
                                         });
                                       },
-                                    );
-                                  }).toList(),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            const SizedBox(height: 24),
+
+                            // Price Range Section with enhanced visuals
+                            _buildEnhancedFilterSection(
+                              title: localizations.priceRange,
+                              icon: Icons.payments_rounded,
+                              iconColor: Colors.green.shade500,
+                              content: Column(
+                                children: [
+                                  Row(
+                                    mainAxisAlignment:
+                                        MainAxisAlignment.spaceBetween,
+                                    children: [
+                                      _buildPriceBadge(
+                                        '${_priceRange.start.toInt()} ${localizations.dzd}',
+                                        Colors.green.shade50,
+                                        Colors.green.shade700,
+                                      ),
+                                      _buildPriceBadge(
+                                        _priceRange.end == 19999
+                                            ? '∞'
+                                            : '${_priceRange.end.toInt()} ${localizations.dzd}',
+                                        Colors.green.shade50,
+                                        Colors.green.shade700,
+                                      ),
+                                    ],
+                                  ),
+                                  const SizedBox(height: 8),
+                                  SliderTheme(
+                                    data: SliderThemeData(
+                                      activeTrackColor: Colors.green.shade400,
+                                      inactiveTrackColor: Colors.grey.shade200,
+                                      thumbColor: Colors.green.shade500,
+                                      overlayColor:
+                                          Colors.green.withOpacity(0.12),
+                                      valueIndicatorColor:
+                                          Colors.green.shade500,
+                                      trackHeight: 4,
+                                    ),
+                                    child: RangeSlider(
+                                      values: _priceRange,
+                                      min: 0,
+                                      max: 19999,
+                                      divisions: 1000,
+                                      labels: RangeLabels(
+                                        _priceRange.start.toStringAsFixed(0),
+                                        _priceRange.end == 19999
+                                            ? '∞'
+                                            : _priceRange.end
+                                                .toStringAsFixed(0),
+                                      ),
+                                      onChanged: (values) {
+                                        setState(() {
+                                          _priceRange = values;
+                                        });
+                                      },
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            const SizedBox(height: 24),
+
+                            // Work Domain Section with enhanced visuals
+                            _buildEnhancedFilterSection(
+                              title: localizations.workDomain,
+                              icon: Icons.work_rounded,
+                              iconColor: Colors.indigo.shade400,
+                              content: Container(
+                                height: 160,
+                                decoration: BoxDecoration(
+                                  color: Colors.grey.shade50,
+                                  borderRadius: BorderRadius.circular(16),
+                                  border:
+                                      Border.all(color: Colors.grey.shade200),
+                                ),
+                                child: SingleChildScrollView(
+                                  physics: const BouncingScrollPhysics(),
+                                  padding: const EdgeInsets.all(12),
+                                  child: Wrap(
+                                    spacing: 8.0,
+                                    runSpacing: 8.0,
+                                    children: _allWorkChoiceIds.map((choiceId) {
+                                      final isSelected = _selectedWorkChoices
+                                          .contains(choiceId);
+                                      return FilterChip(
+                                        label: Text(
+                                          getLocalizedWorkChoice(choiceId),
+                                          style: GoogleFonts.poppins(
+                                            color: isSelected
+                                                ? Colors.white
+                                                : Colors.grey.shade700,
+                                            fontSize: 13,
+                                            fontWeight: isSelected
+                                                ? FontWeight.w500
+                                                : FontWeight.normal,
+                                          ),
+                                        ),
+                                        selected: isSelected,
+                                        selectedColor: Colors.indigo.shade400,
+                                        checkmarkColor: Colors.white,
+                                        backgroundColor: Colors.white,
+                                        elevation: 0,
+                                        pressElevation: 0,
+                                        showCheckmark: true,
+                                        shape: RoundedRectangleBorder(
+                                          borderRadius:
+                                              BorderRadius.circular(20),
+                                          side: BorderSide(
+                                            color: isSelected
+                                                ? Colors.indigo.shade400
+                                                : Colors.grey.shade300,
+                                            width: 1.5,
+                                          ),
+                                        ),
+                                        onSelected: (selected) {
+                                          setState(() {
+                                            if (selected) {
+                                              _selectedWorkChoices
+                                                  .add(choiceId);
+                                            } else {
+                                              _selectedWorkChoices
+                                                  .remove(choiceId);
+                                            }
+                                          });
+                                        },
+                                      );
+                                    }).toList(),
+                                  ),
                                 ),
                               ),
                             ),
-                          ),
-                        ],
-                      );
-                    },
+                          ],
+                        );
+                      },
+                    ),
                   ),
                 ),
-              ),
-              const SizedBox(height: 24),
+                const SizedBox(height: 24),
 
-              // Enhanced Action Buttons
-              Row(
-                children: [
-                  Expanded(
-                    child: TextButton(
-                      onPressed: () {
-                        setState(() {
-                          _minRating = 0.0;
-                          _priceRange = const RangeValues(0, 19999);
-                          _selectedWorkChoices.clear();
-                          _isRatingFilterApplied = false;
-                          _isPriceFilterApplied = false;
-                          _filterServices();
-                        });
-                        Navigator.of(context).pop();
-                      },
-                      style: TextButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(vertical: 16),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(16),
-                          side: BorderSide(
-                            color: Colors.grey.shade300,
-                            width: 1.5,
+                // Enhanced Action Buttons
+                Row(
+                  children: [
+                    Expanded(
+                      child: TextButton(
+                        onPressed: () {
+                          setState(() {
+                            _minRating = 0.0;
+                            _priceRange = const RangeValues(0, 19999);
+                            _selectedWorkChoices.clear();
+                            _isRatingFilterApplied = false;
+                            _isPriceFilterApplied = false;
+                            _filterServices();
+                          });
+                          Navigator.of(context).pop();
+                        },
+                        style: TextButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(vertical: 16),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(16),
+                            side: BorderSide(
+                              color: Colors.grey.shade300,
+                              width: 1.5,
+                            ),
+                          ),
+                        ),
+                        child: Text(
+                          localizations.clearFilters,
+                          style: GoogleFonts.poppins(
+                            color: Colors.grey.shade700,
+                            fontSize: 15,
+                            fontWeight: FontWeight.w600,
                           ),
                         ),
                       ),
-                      child: Text(
-                        localizations.clearFilters,
-                        style: GoogleFonts.poppins(
-                          color: Colors.grey.shade700,
-                          fontSize: 15,
-                          fontWeight: FontWeight.w600,
+                    ),
+                    const SizedBox(width: 16),
+                    Expanded(
+                      child: ElevatedButton(
+                        onPressed: () {
+                          setState(() {
+                            _isRatingFilterApplied = _minRating > 0.0;
+                            _isPriceFilterApplied = _priceRange.start > 0 ||
+                                _priceRange.end < 19999;
+                            _filterServices();
+                          });
+                          Navigator.of(context).pop();
+                        },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.purple.shade500,
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(vertical: 16),
+                          elevation: 0,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(16),
+                          ),
+                        ),
+                        child: Text(
+                          localizations.applyFilters,
+                          style: GoogleFonts.poppins(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w600,
+                          ),
                         ),
                       ),
                     ),
-                  ),
-                  const SizedBox(width: 16),
-                  Expanded(
-                    child: ElevatedButton(
-                      onPressed: () {
-                        setState(() {
-                          _isRatingFilterApplied = _minRating > 0.0;
-                          _isPriceFilterApplied = _priceRange.start > 0 || _priceRange.end < 19999;
-                          _filterServices();
-                        });
-                        Navigator.of(context).pop();
-                      },
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.purple.shade500,
-                        foregroundColor: Colors.white,
-                        padding: const EdgeInsets.symmetric(vertical: 16),
-                        elevation: 0,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(16),
-                        ),
-                      ),
-                      child: Text(
-                        localizations.applyFilters,
-                        style: GoogleFonts.poppins(
-                          fontSize: 13,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
+                  ],
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildEnhancedFilterSection({
+    required String title,
+    required IconData icon,
+    required Widget content,
+    required Color iconColor,
+  }) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: iconColor.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(12),
               ),
-            ],
-          ),
+              child: Icon(
+                icon,
+                size: 20,
+                color: iconColor,
+              ),
+            ),
+            const SizedBox(width: 12),
+            Text(
+              title,
+              style: GoogleFonts.poppins(
+                fontSize: 16,
+                fontWeight: FontWeight.w600,
+                color: Colors.grey.shade800,
+              ),
+            ),
+          ],
         ),
-      );
-    },
-  );
-}
+        const SizedBox(height: 16),
+        content,
+      ],
+    );
+  }
 
-Widget _buildEnhancedFilterSection({
-  required String title,
-  required IconData icon,
-  required Widget content,
-  required Color iconColor,
-}) {
-  return Column(
-    crossAxisAlignment: CrossAxisAlignment.start,
-    children: [
-      Row(
-        children: [
-          Container(
-            padding: const EdgeInsets.all(8),
-            decoration: BoxDecoration(
-              color: iconColor.withOpacity(0.1),
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: Icon(
-              icon,
-              size: 20,
-              color: iconColor,
-            ),
-          ),
-          const SizedBox(width: 12),
-          Text(
-            title,
-            style: GoogleFonts.poppins(
-              fontSize: 16,
-              fontWeight: FontWeight.w600,
-              color: Colors.grey.shade800,
-            ),
-          ),
-        ],
+  Widget _buildRatingBadge(String text) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+      decoration: BoxDecoration(
+        color: Colors.amber.shade50,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.amber.shade200),
       ),
-      const SizedBox(height: 16),
-      content,
-    ],
-  );
-}
+      child: Text(
+        text,
+        style: GoogleFonts.poppins(
+          fontSize: 12,
+          color: Colors.amber.shade800,
+          fontWeight: FontWeight.w500,
+        ),
+      ),
+    );
+  }
 
-Widget _buildRatingBadge(String text) {
-  return Container(
-    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-    decoration: BoxDecoration(
-      color: Colors.amber.shade50,
-      borderRadius: BorderRadius.circular(12),
-      border: Border.all(color: Colors.amber.shade200),
-    ),
-    child: Text(
-      text,
-      style: GoogleFonts.poppins(
-        fontSize: 12,
-        color: Colors.amber.shade800,
-        fontWeight: FontWeight.w500,
+  Widget _buildPriceBadge(String text, Color bgColor, Color textColor) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+      decoration: BoxDecoration(
+        color: bgColor,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.green.shade200),
       ),
-    ),
-  );
-}
-
-Widget _buildPriceBadge(String text, Color bgColor, Color textColor) {
-  return Container(
-    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-    decoration: BoxDecoration(
-      color: bgColor,
-      borderRadius: BorderRadius.circular(12),
-      border: Border.all(color: Colors.green.shade200),
-    ),
-    child: Text(
-      text,
-      style: GoogleFonts.poppins(
-        fontSize: 12,
-        color: textColor,
-        fontWeight: FontWeight.w500,
+      child: Text(
+        text,
+        style: GoogleFonts.poppins(
+          fontSize: 12,
+          color: textColor,
+          fontWeight: FontWeight.w500,
+        ),
       ),
-    ),
-  );
-}  
+    );
+  }
 
   Set<String> favoriteServices = {};
   String? currentUserId;
 
-
-Future<void> _fetchUserData() async {
+  Future<void> _fetchUserData() async {
     try {
       final User? user = FirebaseAuth.instance.currentUser;
 
@@ -490,15 +508,15 @@ Future<void> _fetchUserData() async {
     }
   }
 
-
-Future<void> _initializeData() async {
+  Future<void> _initializeData() async {
     await _loadServicesFromFirestore();
     // await _loadLikedServices();
-     await _fetchUserData();
+    await _fetchUserData();
     // This is the key part that makes the search automatic
     // Set initial search text and filter after data is loaded
     if (widget.preSelectedWorkDomain != null) {
-      _selectedWorkChoices.add(widget.preSelectedWorkDomain!); // Sets the search text
+      _selectedWorkChoices
+          .add(widget.preSelectedWorkDomain!); // Sets the search text
       _filterServices(); // Triggers the search
     }
   }
@@ -529,7 +547,8 @@ Future<void> _loadServicesFromFirestore() async {
     if (currentUserId == null) return;
 
     // Start with base query
-    Query query = FirebaseFirestore.instance.collection('users')
+    Query query = FirebaseFirestore.instance
+        .collection('users')
         .where('isProvider', isEqualTo: true)
         .where('uid', isNotEqualTo: currentUserId);
 
@@ -541,33 +560,32 @@ Future<void> _loadServicesFromFirestore() async {
     // Apply price filter at database level
     if (_isPriceFilterApplied) {
       if (_priceRange.start > 0) {
-        query = query.where('basicInfo.hourlyRate', 
+        query = query.where('basicInfo.hourlyRate',
             isGreaterThanOrEqualTo: _priceRange.start);
       }
       if (_priceRange.end < 19999) {
-        query = query.where('basicInfo.hourlyRate', 
+        query = query.where('basicInfo.hourlyRate',
             isLessThanOrEqualTo: _priceRange.end);
       }
     }
 
     // Apply work choices filter at database level
     if (_selectedWorkChoices.isNotEmpty) {
-      // Using array-contains-any for better performance
-      // Note: Firebase limits to 10 values in array-contains-any
-      if (_selectedWorkChoices.length <= 10) {
-        query = query.where('selectedWorkChoices', 
-            arrayContainsAny: _selectedWorkChoices);
+      // Use whereIn if multiple choices are selected, or where if single choice
+      if (_selectedWorkChoices.length == 1) {
+        query = query.where('selectedWorkChoice', isEqualTo: _selectedWorkChoices.first);
+      } else {
+        query = query.where('selectedWorkChoice', whereIn: _selectedWorkChoices);
       }
     }
 
     // Apply text search if provided
     final searchTerm = _searchController.text;
     if (searchTerm.isNotEmpty) {
-      // Using the indexed lowercase profession field
-      query = query.where('basicInfo.profession', 
-          isGreaterThanOrEqualTo: searchTerm)
-          .where('basicInfo.profession', 
-          isLessThanOrEqualTo: searchTerm + '\uf8ff');
+      query = query
+          .where('basicInfo.profession', isGreaterThanOrEqualTo: searchTerm)
+          .where('basicInfo.profession',
+              isLessThanOrEqualTo: searchTerm + '\uf8ff');
     }
 
     // Add pagination for better performance
@@ -581,20 +599,22 @@ Future<void> _loadServicesFromFirestore() async {
     List<Map<String, dynamic>> processedServices = snapshot.docs.map((doc) {
       final data = doc.data() as Map<String, dynamic>;
       final basicInfo = data['basicInfo'] as Map<String, dynamic>?;
-      
+
       return {
         'uid': doc.id,
         'name': data['name'] ?? 'Unknown',
         'profession': basicInfo?['profession'] ?? 'Not specified',
         'photoURL': data['photoURL'] ?? '',
-        'rating': (data['rating'] is num) ? 
-            (data['rating'] as num).toDouble() : 0.0,
-        'price': basicInfo?['hourlyRate'] != null ?
-            (basicInfo?['hourlyRate'] is num ?
-                (basicInfo?['hourlyRate'] as num).toDouble() :
-                double.tryParse(basicInfo?['hourlyRate']?.toString() ?? '') ?? 0.0)
+        'rating': (data['rating'] is num)
+            ? (data['rating'] as num).toDouble()
             : 0.0,
-        'selectedWorkChoices': data['selectedWorkChoices'] ?? [],
+        'price': basicInfo?['hourlyRate'] != null
+            ? (basicInfo?['hourlyRate'] is num
+                ? (basicInfo?['hourlyRate'] as num).toDouble()
+                : double.tryParse(basicInfo?['hourlyRate']?.toString() ?? '') ??
+                    0.0)
+            : 0.0,
+        'selectedWorkChoice': data['selectedWorkChoice'] ?? '',
       };
     }).toList();
 
@@ -607,16 +627,11 @@ Future<void> _loadServicesFromFirestore() async {
   }
 }
 
-
-
-
 // Update _filterServices to trigger a new Firestore query
-void _filterServices() {
-  _loadServicesFromFirestore();
-}
+  void _filterServices() {
+    _loadServicesFromFirestore();
+  }
 
-
- 
   int _calculateLevenshteinDistance(String s1, String s2) {
     List<List<int>> distances = List.generate(
       s1.length + 1,
@@ -656,7 +671,6 @@ void _filterServices() {
     );
   }
 
-  
   String get searchHint {
     final locale = Localizations.localeOf(context).languageCode;
     if (locale == 'ar') {
@@ -670,14 +684,12 @@ void _filterServices() {
 
   @override
   Widget build(BuildContext context) {
-      final localizations = AppLocalizations.of(context);
-          if (localizations == null) return Text("Nothing");
+    final localizations = AppLocalizations.of(context);
+    if (localizations == null) return Text("Nothing");
     return Scaffold(
-      body:
-       Padding(
+      body: Padding(
         padding: const EdgeInsets.only(left: 20, right: 20),
-        child:
-         Column(
+        child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             const SizedBox(height: 10),
@@ -686,27 +698,26 @@ void _filterServices() {
             _buildAppliedFilters(),
             const SizedBox(height: 20),
             Expanded(
-              child:GridView.builder(
-  itemCount: filteredServices.length,
-  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-    crossAxisCount: 2,
-    mainAxisSpacing: 20,
-    crossAxisSpacing: 20,
-    childAspectRatio: 0.8,
-  ),
-  itemBuilder: (context, index) {
-    final service = filteredServices[index];
-    final serviceId = service['uid'];
-    return _buildServiceItem(service, false, serviceId);
-  },
-),
+              child: GridView.builder(
+                itemCount: filteredServices.length,
+                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                  crossAxisCount: 2,
+                  mainAxisSpacing: 20,
+                  crossAxisSpacing: 20,
+                  childAspectRatio: 0.8,
+                ),
+                itemBuilder: (context, index) {
+                  final service = filteredServices[index];
+                  final serviceId = service['uid'];
+                  return _buildServiceItem(service, false, serviceId);
+                },
+              ),
             ),
           ],
         ),
       ),
     );
   }
-
 
   Widget _buildSearchBar(AppLocalizations localizations) {
     return Container(
@@ -733,7 +744,8 @@ void _filterServices() {
           ),
           prefixIcon: Padding(
             padding: const EdgeInsets.all(12.0),
-            child: SvgPicture.asset('assets/search_icons/Search.svg'), // Replace with your own asset
+            child: SvgPicture.asset(
+                'assets/search_icons/Search.svg'), // Replace with your own asset
           ),
           suffixIcon: Container(
             width: 100,
@@ -750,7 +762,8 @@ void _filterServices() {
                   Padding(
                     padding: const EdgeInsets.all(10.0),
                     child: GestureDetector(
-                      onTap: _showFilterDialog, // Trigger filter dialog on press
+                      onTap:
+                          _showFilterDialog, // Trigger filter dialog on press
                       child: SvgPicture.asset(
                         'assets/search_icons/Filter.svg', // Replace with your own asset
                       ),
@@ -769,231 +782,264 @@ void _filterServices() {
     );
   }
 
+  Widget _buildAppliedFilters() {
+    List<Widget> filters = [];
+    if (_isRatingFilterApplied && _minRating > 0.0) {
+      filters.add(
+          _buildFilterChip('Min Rating: ${_minRating.toStringAsFixed(1)}', () {
+        setState(() {
+          _minRating = 0.0;
+          _isRatingFilterApplied = false;
+          _filterServices();
+        });
+      }));
+    }
+    if (_isPriceFilterApplied &&
+        (_priceRange.start > 0 || _priceRange.end < 19999)) {
+      filters.add(_buildFilterChip(
+          'Price: ${_priceRange.start.toStringAsFixed(0)} - ${_priceRange.end == 19999 ? '∞' : _priceRange.end.toStringAsFixed(0)} DZD',
+          () {
+        setState(() {
+          _priceRange = const RangeValues(0, 19999);
+          _isPriceFilterApplied = false;
+          _filterServices();
+        });
+      }));
+    }
+    if (_selectedWorkChoices.isNotEmpty) {
+      filters.addAll(_selectedWorkChoices
+          .map((choiceId) =>
+              _buildFilterChip(getLocalizedWorkChoice(choiceId), () {
+                setState(() {
+                  _selectedWorkChoices.remove(choiceId);
+                  _filterServices();
+                });
+              }))
+          .toList());
+    }
 
-Widget _buildAppliedFilters() {
-  List<Widget> filters = [];
-  if (_isRatingFilterApplied && _minRating > 0.0) {
-    filters.add(_buildFilterChip('Min Rating: ${_minRating.toStringAsFixed(1)}', () {
-      setState(() {
-        _minRating = 0.0;
-        _isRatingFilterApplied = false;
-        _filterServices();
-      });
-    }));
-  }
-  if (_isPriceFilterApplied && (_priceRange.start > 0 || _priceRange.end < 19999)) {
-    filters.add(_buildFilterChip(
-        'Price: ${_priceRange.start.toStringAsFixed(0)} - ${_priceRange.end == 19999 ? '∞' : _priceRange.end.toStringAsFixed(0)} DZD',
-        () {
-      setState(() {
-        _priceRange = const RangeValues(0, 19999);
-        _isPriceFilterApplied = false;
-        _filterServices();
-      });
-    }));
-  }
-  if (_selectedWorkChoices.isNotEmpty) {
-    filters.addAll(_selectedWorkChoices.map((choiceId) => _buildFilterChip(
-        getLocalizedWorkChoice(choiceId), () {
-      setState(() {
-        _selectedWorkChoices.remove(choiceId);
-        _filterServices();
-      });
-    })).toList());
-  }
+    // Return empty container if no filters
+    if (filters.isEmpty) {
+      return Container();
+    }
 
-  // Return empty container if no filters
-  if (filters.isEmpty) {
-    return Container();
-  }
-
-  // Return scrollable container with filters
-  return Container(
-    height: 50, // Fixed height for the filter area
-    child: SingleChildScrollView(
-      scrollDirection: Axis.horizontal, // Horizontal scrolling
-      child: Row(
-        children: filters.map((filter) => Padding(
-          padding: const EdgeInsets.only(right: 4.0),
-          child: filter,
-        )).toList(),
+    // Return scrollable container with filters
+    return Container(
+      height: 50, // Fixed height for the filter area
+      child: SingleChildScrollView(
+        scrollDirection: Axis.horizontal, // Horizontal scrolling
+        child: Row(
+          children: filters
+              .map((filter) => Padding(
+                    padding: const EdgeInsets.only(right: 4.0),
+                    child: filter,
+                  ))
+              .toList(),
+        ),
       ),
-    ),
-  );
-}
-
-Widget _buildFilterChip(String label, VoidCallback onDeleted) {
-  // Determine filter type and colors based on label content
-  List<Color> gradientColors;
-  Color shadowColor;
-  
-  if (label.contains('Rating')) {
-    gradientColors = [Colors.amber.shade300, Colors.amber.shade400];
-    shadowColor = Colors.amber.shade100;
-  } else if (label.contains('Price')) {
-    gradientColors = [Colors.green.shade300, Colors.green.shade400];
-    shadowColor = Colors.green.shade100;
-  } else {
-    // Work Domain filters
-    gradientColors = [Colors.indigo.shade300, Colors.indigo.shade400];
-    shadowColor = Colors.indigo.shade100;
+    );
   }
 
-  return Material(
-    color: Colors.transparent,
-    child: Container(
-      constraints: BoxConstraints(maxWidth: 200),
-      child: Tooltip(
-        message: label,
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 200),
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              colors: gradientColors,
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-            ),
-            borderRadius: BorderRadius.circular(20),
-            boxShadow: [
-              BoxShadow(
-                color: shadowColor,
-                blurRadius: 4,
-                offset: const Offset(0, 2),
+  Widget _buildFilterChip(String label, VoidCallback onDeleted) {
+    // Determine filter type and colors based on label content
+    List<Color> gradientColors;
+    Color shadowColor;
+
+    if (label.contains('Rating')) {
+      gradientColors = [Colors.amber.shade300, Colors.amber.shade400];
+      shadowColor = Colors.amber.shade100;
+    } else if (label.contains('Price')) {
+      gradientColors = [Colors.green.shade300, Colors.green.shade400];
+      shadowColor = Colors.green.shade100;
+    } else {
+      // Work Domain filters
+      gradientColors = [Colors.indigo.shade300, Colors.indigo.shade400];
+      shadowColor = Colors.indigo.shade100;
+    }
+
+    return Material(
+      color: Colors.transparent,
+      child: Container(
+        constraints: BoxConstraints(maxWidth: 200),
+        child: Tooltip(
+          message: label,
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 200),
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: gradientColors,
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
               ),
-            ],
-          ),
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 4.0),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Flexible(
-                  child: Text(
-                    label,
-                    style: GoogleFonts.poppins(
-                      color: Colors.white,
-                      fontWeight: FontWeight.w500,
-                      fontSize: 12,
+              borderRadius: BorderRadius.circular(20),
+              boxShadow: [
+                BoxShadow(
+                  color: shadowColor,
+                  blurRadius: 4,
+                  offset: const Offset(0, 2),
+                ),
+              ],
+            ),
+            child: Padding(
+              padding:
+                  const EdgeInsets.symmetric(horizontal: 8.0, vertical: 4.0),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Flexible(
+                    child: Text(
+                      label,
+                      style: GoogleFonts.poppins(
+                        color: Colors.white,
+                        fontWeight: FontWeight.w500,
+                        fontSize: 12,
+                      ),
+                      overflow: TextOverflow.ellipsis,
+                      maxLines: 1,
                     ),
-                    overflow: TextOverflow.ellipsis,
-                    maxLines: 1,
+                  ),
+                  const SizedBox(width: 4.0),
+                  GestureDetector(
+                    onTap: onDeleted,
+                    child: const Icon(
+                      Icons.close,
+                      color: Colors.white,
+                      size: 16,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildServiceItem(
+      Map<String, dynamic> service, bool isFavorite, String serviceId) {
+    // Use favoriteServices instead of isFavorite parameter
+    final isServiceFavorite = favoriteServices.contains(serviceId);
+
+    return GestureDetector(
+      onTap: () async {
+        // Print message in terminal
+        debugPrint('Navigating to FullProfilePage with providerId: $serviceId');
+
+        // Increment the provider's click_count in the database
+        try {
+          final providerDoc =
+              FirebaseFirestore.instance.collection('users').doc(serviceId);
+          await providerDoc.update({
+            'click_count': FieldValue.increment(1),
+          });
+
+          // Increment the click count for the provider in the user's document
+          if (currentUserId != null) {
+            final userDoc = FirebaseFirestore.instance
+                .collection('users')
+                .doc(currentUserId);
+            await userDoc.update({
+              'click_count_per_service.$serviceId': FieldValue.increment(1),
+            });
+          }
+        } catch (e) {
+          debugPrint('Error incrementing click_count: $e');
+        }
+
+        // Navigate to FullProfilePage with the selected service's ID
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => ServiceProviderFullProfile(
+              providerId: serviceId,
+            ),
+          ),
+        );
+      },
+      child: Card(
+        color: AppColors.tempColor,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(16),
+        ),
+        child: Stack(
+          children: [
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Expanded(
+                  child: ClipRRect(
+                    borderRadius:
+                        const BorderRadius.vertical(top: Radius.circular(16)),
+                    child: Image.network(
+                      service['photoURL'],
+                      fit: BoxFit.cover,
+                      width: double.infinity,
+                      errorBuilder: (context, error, stackTrace) {
+                        return const Center(
+                          child: Icon(Icons.broken_image,
+                              size: 50, color: Colors.grey),
+                        );
+                      },
+                    ),
                   ),
                 ),
-                const SizedBox(width: 4.0),
-                GestureDetector(
-                  onTap: onDeleted,
-                  child: const Icon(
-                    Icons.close,
-                    color: Colors.white,
-                    size: 16,
+                Padding(
+                  padding: const EdgeInsets.all(8.0),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        service['profession'],
+                        style: GoogleFonts.poppins(
+                          fontSize: 14,
+                          fontWeight: FontWeight.bold,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      Text(
+                        service['name'],
+                        style: GoogleFonts.poppins(
+                          fontSize: 12,
+                          color: AppColors.mainColor,
+                        ),
+                        maxLines: 1,
+                      ),
+                      _buildStarRating(service['rating']),
+                      SizedBox(
+                        height: 2,
+                      ),
+                      Text(
+                        'DZD ${service['price'].toStringAsFixed(0)}',
+                        style: GoogleFonts.poppins(
+                          fontSize: 12,
+                          color: Colors.grey[600],
+                        ),
+                      ),
+                    ],
                   ),
                 ),
               ],
             ),
-          ),
-        ),
-      ),
-    ),
-  );
-}
-
-  Widget _buildServiceItem(
-    Map<String, dynamic> service, bool isFavorite, String serviceId) {
-  // Use favoriteServices instead of isFavorite parameter
-  final isServiceFavorite = favoriteServices.contains(serviceId);
-  
-  return GestureDetector(
-    onTap: () {
-      Navigator.push(
-        context,
-        MaterialPageRoute(
-          builder: (context) =>
-              ServiceProviderFullProfile(providerId: serviceId),
-        ),
-      );
-    },
-    child: Card(
-      color: AppColors.tempColor,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16),
-      ),
-      child: Stack(
-        children: [
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Expanded(
-                child: ClipRRect(
-                  borderRadius:
-                      const BorderRadius.vertical(top: Radius.circular(16)),
-                  child: Image.network(
-                    service['photoURL'],
-                    fit: BoxFit.cover,
-                    width: double.infinity,
-                    errorBuilder: (context, error, stackTrace) {
-                      return const Center(
-                        child: Icon(Icons.broken_image,
-                            size: 50, color: Colors.grey),
-                      );
-                    },
-                  ),
+            Positioned(
+              top: 8,
+              right: 8,
+              child: IconButton(
+                icon: Icon(
+                  isServiceFavorite ? Icons.favorite : Icons.favorite_border,
+                  color: isServiceFavorite ? Colors.red : Colors.grey,
                 ),
+                onPressed: () => toggleFavorite(service),
               ),
-              Padding(
-                padding: const EdgeInsets.all(8.0),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      service['profession'],
-                      style: GoogleFonts.poppins(
-                        fontSize: 14,
-                        fontWeight: FontWeight.bold,
-                      ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                    Text(
-                      service['name'],
-                      style: GoogleFonts.poppins(
-                        fontSize: 12,
-                        color: AppColors.mainColor,
-                      ),
-                      maxLines: 1,
-                    ),
-                    _buildStarRating(service['rating']),
-                    SizedBox(height: 2,),
-                    Text(
-                      'DZD ${service['price'].toStringAsFixed(0)}',
-                      style: GoogleFonts.poppins(
-                        fontSize: 12,
-                        color: Colors.grey[600],
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-          Positioned(
-            top: 8,
-            right: 8,
-            child: IconButton(
-              icon: Icon(
-                isServiceFavorite ? Icons.favorite : Icons.favorite_border,
-                color: isServiceFavorite ? Colors.red : Colors.grey,
-              ),
-              onPressed: () => toggleFavorite(service),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
-    ),
-  );
-}
+    );
+  }
 
-
-    Future<void> toggleFavorite(Map<String, dynamic> service) async {
+  Future<void> toggleFavorite(Map<String, dynamic> service) async {
     if (currentUserId == null) {
       // Show a dialog or snackbar to prompt login
       ScaffoldMessenger.of(context).showSnackBar(
@@ -1032,7 +1078,6 @@ Widget _buildFilterChip(String label, VoidCallback onDeleted) {
       );
     }
   }
-
 
   @override
   void dispose() {

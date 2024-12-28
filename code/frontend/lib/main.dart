@@ -15,6 +15,7 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:shared_preferences/shared_preferences.dart'; // Import SharedPreferences
 import 'navbar.dart';
 import 'package:hanini_frontend/screens/become_provider_screen/SetProviderProfile.dart';
+import 'package:hanini_frontend/InfoGatherer.dart';
 
 
 void main() async {
@@ -110,6 +111,7 @@ class _MyAppState extends State<MyApp> {
       '/signup': (context) => const SignupScreen(),
       '/navbar': (context) => NavbarPage(initialIndex: 0),
       '/name_entry': (context) => NameEntryScreen(),
+      '/info':(context)=>InfoGatherer(),
       '/verification': (context) => RealTimeDetection(cameras: widget.cameras),
       '/set-up':(context) => SetProviderProfile(),
       '/add-admin': (context) => Addadmin(),
