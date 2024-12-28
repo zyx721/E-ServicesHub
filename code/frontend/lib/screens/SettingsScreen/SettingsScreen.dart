@@ -2,6 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:hanini_frontend/localization/app_localization.dart';
 import 'package:hanini_frontend/models/colors.dart';
+import 'package:hanini_frontend/screens/SettingsScreen/ChangePassword.dart';
+import 'package:hanini_frontend/screens/SettingsScreen/AboutApp.dart';
+import 'package:hanini_frontend/screens/SettingsScreen/PrivacyInfo.dart';
 
 
 class SettingsScreen extends StatelessWidget {
@@ -36,24 +39,30 @@ class SettingsScreen extends StatelessWidget {
             // Change Password Option
             _buildOptionCard(context, localizations.changePassword, Icons.lock,
                 () {
-              // Navigate to change password screen
-            },),
-            SizedBox(height: 10),
-            // Notification Settings Option
-            _buildOptionCard(context, localizations.notificationSettings,
-                Icons.notifications, () {
-              // Navigate to notification settings screen
+              Navigator.push(
+  context,
+  MaterialPageRoute(builder: (context) => const ChangePasswordPage()),
+);
             },),
             SizedBox(height: 10),
             // Privacy Settings Option
             _buildOptionCard(
-                context, localizations.privacySettings, Icons.privacy_tip, () {
+                context, localizations.privacyInfo, Icons.privacy_tip, () {
+                                             Navigator.push(
+  context,
+  MaterialPageRoute(builder: (context) => const PrivacyInfoPage()),
+);
               // Navigate to privacy settings screen
             },),
             SizedBox(height: 10),
 
             // About App Option
             _buildOptionCard(context, localizations.aboutApp, Icons.info, () {
+
+                           Navigator.push(
+  context,
+  MaterialPageRoute(builder: (context) => const AboutAppPage()),
+);
 
               // Show app info or navigate to an about screen
             },), // Pass black color for the icon

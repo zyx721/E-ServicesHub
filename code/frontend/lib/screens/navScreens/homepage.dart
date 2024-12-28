@@ -351,75 +351,73 @@ class _HomePageState extends State<HomePage> {
           ),
         );
       },
-      child: Card(
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
-        ),
-        child: Stack(
-          children: [
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Container(
-                  height: 90,
-                  decoration: BoxDecoration(
-                    borderRadius:
-                        const BorderRadius.vertical(top: Radius.circular(16)),
-                    image: DecorationImage(
-                      image: NetworkImage(service['photoURL'] ?? ''),
-                      fit: BoxFit.cover,
+        child: Container(
+          margin: EdgeInsets.only(left: 8,right: 8,bottom: 4,top:4),
+          child: Stack(
+            children: [
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Container(
+                    height: 90,
+                    decoration: BoxDecoration(
+                      borderRadius:
+                          const BorderRadius.vertical(top: Radius.circular(16)),
+                      image: DecorationImage(
+                        image: NetworkImage(service['photoURL'] ?? ''),
+                        fit: BoxFit.cover,
+                      ),
                     ),
                   ),
-                ),
-                Container(
-                  decoration: BoxDecoration(
-                    color: AppColors.tempColor,
-                    borderRadius: const BorderRadius.vertical(
-                        bottom: Radius.circular(16)),
-                  ),
-                  child: Padding(
-                    padding: const EdgeInsets.all(8.0),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          service['basicInfo']['profession'] ?? 'N/A',
-                          style: GoogleFonts.poppins(
-                            fontSize: 14,
-                            fontWeight: FontWeight.bold,
+                  Container(
+                    decoration: BoxDecoration(
+                      color: AppColors.tempColor,
+                      borderRadius: const BorderRadius.vertical(
+                          bottom: Radius.circular(16)),
+                    ),
+                    child: Padding(
+                      padding: const EdgeInsets.all(8.0),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            service['basicInfo']['profession'] ?? 'N/A',
+                            style: GoogleFonts.poppins(
+                              fontSize: 14,
+                              fontWeight: FontWeight.bold,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
                           ),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                        Text(
-                          service['name'] ?? 'Unknown',
-                          style: GoogleFonts.poppins(
-                            fontSize: 12,
-                            color: AppColors.mainColor,
+                          Text(
+                            service['name'] ?? 'Unknown',
+                            style: GoogleFonts.poppins(
+                              fontSize: 12,
+                              color: AppColors.mainColor,
+                            ),
+                            maxLines: 1,
                           ),
-                          maxLines: 1,
-                        ),
-                        _buildStarRating(service['rating']?.toDouble() ?? 0.0),
-                      ],
+                          _buildStarRating(service['rating']?.toDouble() ?? 0.0),
+                        ],
+                      ),
                     ),
                   ),
-                ),
-              ],
-            ),
-            Positioned(
-              top: 8,
-              right: 8,
-              child: IconButton(
-                icon: Icon(
-                  isFavorite ? Icons.favorite : Icons.favorite_border,
-                  color: isFavorite ? Colors.red : Colors.grey,
-                ),
-                onPressed: () => toggleFavorite(service),
+                ],
               ),
-            ),
-          ],
+              Positioned(
+                top: 8,
+                right: 8,
+                child: IconButton(
+                  icon: Icon(
+                    isFavorite ? Icons.favorite : Icons.favorite_border,
+                    color: isFavorite ? Colors.red : Colors.grey,
+                  ),
+                  onPressed: () => toggleFavorite(service),
+                ),
+              ),
+            ],
+          ),
         ),
-      ),
     );
   }
 

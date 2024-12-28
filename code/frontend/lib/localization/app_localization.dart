@@ -45,9 +45,9 @@ class AppLocalizations {
       : (isFrench ? "Paramètres de notification" : "Notification Settings");
 
   // Privacy Settings
-  String get privacySettings => isArabic
-      ? "إعدادات الخصوصية"
-      : (isFrench ? "Paramètres de confidentialité" : "Privacy Settings");
+  String get privacyInfo => isArabic
+      ? "معلومات الخصوصية"
+      : (isFrench ? "Info Sur confidentialité" : "Privacy Info");
 
   // aboutApp
   String get aboutApp => isArabic

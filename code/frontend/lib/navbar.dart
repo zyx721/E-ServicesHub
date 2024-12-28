@@ -17,6 +17,94 @@ import 'package:hanini_frontend/screens/Profiles/AdminProfile.dart'; // Import A
 import 'models/colors.dart';
 import 'package:geolocator/geolocator.dart';
 
+
+
+import 'package:flutter/material.dart';
+import 'package:iconsax/iconsax.dart'; // Assuming you're using the Iconsax package
+
+class CustomNavBar extends StatelessWidget {
+  final int selectedIndex;
+  final Function(int) onDestinationSelected;
+  final bool isAdmin;
+  final AppLocalizations appLocalizations; // Replace with your localization implementation
+
+  const CustomNavBar({
+    required this.selectedIndex,
+    required this.onDestinationSelected,
+    required this.isAdmin,
+    required this.appLocalizations,
+    Key? key,
+  }) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    return NavigationBar(
+      selectedIndex: selectedIndex,
+      onDestinationSelected: onDestinationSelected,
+      labelBehavior: NavigationDestinationLabelBehavior.onlyShowSelected,
+      backgroundColor: Colors.deepPurple[50], // Light purple background
+      surfaceTintColor: Colors.deepPurple[100], // Subtle tint
+      destinations: isAdmin
+          ? [
+              _buildDestination(
+                  icon: Iconsax.search_normal,
+                  label: appLocalizations.search,
+                  isSelected: selectedIndex == 0),
+              _buildDestination(
+                  icon: Iconsax.user,
+                  label: appLocalizations.profile,
+                  isSelected: selectedIndex == 1),
+            ]
+          : [
+              _buildDestination(
+                  icon: Iconsax.home,
+                  label: appLocalizations.home,
+                  isSelected: selectedIndex == 0),
+              _buildDestination(
+                  icon: Iconsax.search_normal,
+                  label: appLocalizations.search,
+                  isSelected: selectedIndex == 1),
+              _buildDestination(
+                  icon: Iconsax.save_2,
+                  label: appLocalizations.favorites,
+                  isSelected: selectedIndex == 2),
+              _buildDestination(
+                  icon: Iconsax.user,
+                  label: appLocalizations.profile,
+                  isSelected: selectedIndex == 3),
+            ],
+    );
+  }
+
+  NavigationDestination _buildDestination({
+    required IconData icon,
+    required String label,
+    required bool isSelected,
+  }) {
+    return NavigationDestination(
+      icon: Icon(
+        icon,
+        color: isSelected ? Colors.deepPurple : Colors.grey,
+      ),
+      label: label,
+      selectedIcon: Container(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            colors: [Colors.purple, Colors.deepPurple],
+          ),
+          borderRadius: BorderRadius.circular(12),
+        ),
+        padding: const EdgeInsets.all(8),
+        child: Icon(
+          icon,
+          color: Colors.white,
+        ),
+      ),
+    );
+  }
+}
+
+
 class NavbarPage extends StatefulWidget {
   final int initialIndex;
   final String? serviceName;
@@ -287,37 +375,91 @@ class _NavbarPageState extends State<NavbarPage> {
               ),
               drawer: Sidebar(context, appLocalizations),
               body: screens[selectedIndex],
-              bottomNavigationBar: NavigationBar(
-                selectedIndex: selectedIndex,
-                onDestinationSelected: _onDestinationSelected, // Use new method
-                destinations: isAdmin
-                    ? [
-                        NavigationDestination(
-                            icon: Icon(Iconsax.search_normal),
-                            label: appLocalizations.search),
-                        NavigationDestination(
-                            icon: Icon(Iconsax.user),
-                            label: appLocalizations.profile),
-                      ]
-                    : [
-                        NavigationDestination(
-                            icon:
-                                Icon(Iconsax.home, color: AppColors.mainColor),
-                            label: appLocalizations.home),
-                        NavigationDestination(
-                            icon: Icon(Iconsax.search_normal,
-                                color: AppColors.mainColor),
-                            label: appLocalizations.search),
-                        NavigationDestination(
-                            icon: Icon(Iconsax.save_2,
-                                color: AppColors.mainColor),
-                            label: appLocalizations.favorites),
-                        NavigationDestination(
-                            icon:
-                                Icon(Iconsax.user, color: AppColors.mainColor),
-                            label: appLocalizations.profile),
-                      ],
+bottomNavigationBar: NavigationBar(
+  selectedIndex: selectedIndex,
+  onDestinationSelected: _onDestinationSelected,
+  backgroundColor: Colors.deepPurple[50], // Light purple background
+  surfaceTintColor: Colors.deepPurple[100], // Subtle tint effect
+  labelBehavior: NavigationDestinationLabelBehavior.onlyShowSelected,
+  destinations: isAdmin
+      ? [
+          NavigationDestination(
+            icon: Icon(Iconsax.search_normal, color: selectedIndex == 0 ? Colors.deepPurple : Colors.grey),
+            label: appLocalizations.search,
+            selectedIcon: Container(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(colors: [Colors.purple, Colors.deepPurple]),
+                borderRadius: BorderRadius.circular(12),
               ),
+              padding: const EdgeInsets.all(8),
+              child: Icon(Iconsax.search_normal, color: Colors.white),
+            ),
+          ),
+          NavigationDestination(
+            icon: Icon(Iconsax.user, color: selectedIndex == 1 ? Colors.deepPurple : Colors.grey),
+            label: appLocalizations.profile,
+            selectedIcon: Container(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(colors: [Colors.purple, Colors.deepPurple]),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              padding: const EdgeInsets.all(8),
+              child: Icon(Iconsax.user, color: Colors.white),
+            ),
+          ),
+        ]
+      : [
+          NavigationDestination(
+            icon: Icon(Iconsax.home, color: selectedIndex == 0 ? Colors.deepPurple : Colors.grey),
+            label: appLocalizations.home,
+            selectedIcon: Container(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(colors: [Colors.purple, Colors.deepPurple]),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              padding: const EdgeInsets.all(8),
+              child: Icon(Iconsax.home, color: Colors.white),
+            ),
+          ),
+          NavigationDestination(
+            icon: Icon(Iconsax.search_normal, color: selectedIndex == 1 ? Colors.deepPurple : Colors.grey),
+            label: appLocalizations.search,
+            selectedIcon: Container(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(colors: [Colors.purple, Colors.deepPurple]),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              padding: const EdgeInsets.all(8),
+              child: Icon(Iconsax.search_normal, color: Colors.white),
+            ),
+          ),
+          NavigationDestination(
+            icon: Icon(Iconsax.save_2, color: selectedIndex == 2 ? Colors.deepPurple : Colors.grey),
+            label: appLocalizations.favorites,
+            selectedIcon: Container(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(colors: [Colors.purple, Colors.deepPurple]),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              padding: const EdgeInsets.all(8),
+              child: Icon(Iconsax.save_2, color: Colors.white),
+            ),
+          ),
+          NavigationDestination(
+            icon: Icon(Iconsax.user, color: selectedIndex == 3 ? Colors.deepPurple : Colors.grey),
+            label: appLocalizations.profile,
+            selectedIcon: Container(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(colors: [Colors.purple, Colors.deepPurple]),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              padding: const EdgeInsets.all(8),
+              child: Icon(Iconsax.user, color: Colors.white),
+            ),
+          ),
+        ],
+),
+
             ),
           );
   }
