@@ -15,6 +15,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:hanini_frontend/screens/navScreens/notificationspage.dart'; // Replace with actual file path
 import 'package:hanini_frontend/screens/Profiles/AdminProfile.dart'; // Import AdminProfile
 import 'models/colors.dart';
+import 'package:geolocator/geolocator.dart';
 
 class NavbarPage extends StatefulWidget {
   final int initialIndex;
@@ -41,6 +42,18 @@ class _NavbarPageState extends State<NavbarPage> {
   String currentLanguage = 'en';
   String? _currentPreSelectedWorkDomain;
 
+
+   final Map<String, Map<String, double>> cityBoundaries = {
+    "Algiers": {"lat_min": 36.6, "lat_max": 36.9, "lon_min": 2.9, "lon_max": 3.2},
+    "Oran": {"lat_min": 35.6, "lat_max": 35.8, "lon_min": -0.8, "lon_max": -0.5},
+    "Constantine": {"lat_min": 36.2, "lat_max": 36.4, "lon_min": 6.5, "lon_max": 6.7},
+    "Annaba": {"lat_min": 36.8, "lat_max": 37.1, "lon_min": 7.6, "lon_max": 7.8},
+    "Blida": {"lat_min": 36.4, "lat_max": 36.7, "lon_min": 2.5, "lon_max": 3.2},
+    "Sétif": {"lat_min": 35.5, "lat_max": 36.6, "lon_min": 5.3, "lon_max": 6.5},
+    "Tébessa": {"lat_min": 34.5, "lat_max": 35.8, "lon_min": 7.5, "lon_max": 8.7},
+  };
+
+
   @override
   void initState() {
     super.initState();
@@ -48,7 +61,56 @@ class _NavbarPageState extends State<NavbarPage> {
     selectedIndex = widget.initialIndex;
     _currentPreSelectedWorkDomain = widget.preSelectedWorkDomain;
     _initializeScreens();
+    _determineAndStoreLocation(); // Add this line
   }
+
+
+  Future<void> _determineAndStoreLocation() async {
+    try {
+      LocationPermission permission = await Geolocator.checkPermission();
+      if (permission == LocationPermission.denied) {
+        permission = await Geolocator.requestPermission();
+        if (permission == LocationPermission.denied) {
+          print('Location permissions are denied');
+          return;
+        }
+      }
+
+      Position position = await Geolocator.getCurrentPosition(
+        desiredAccuracy: LocationAccuracy.high,
+      );
+
+      String city = _getCityFromCoordinates(position.latitude, position.longitude);
+
+      // Store location data in Firebase
+      final user = _auth.currentUser;
+      if (user != null) {
+        await _firestore.collection('users').doc(user.uid).update({
+          'city': city,
+          'location_x': position.latitude,
+          'location_y': position.longitude,
+          'last_location_update': FieldValue.serverTimestamp(),
+        });
+      }
+    } catch (e) {
+      print('Error getting location: $e');
+    }
+  }
+
+  String _getCityFromCoordinates(double lat, double lon) {
+    for (var city in cityBoundaries.entries) {
+      var bounds = city.value;
+      if (lat >= bounds["lat_min"]! &&
+          lat <= bounds["lat_max"]! &&
+          lon >= bounds["lon_min"]! &&
+          lon <= bounds["lon_max"]!) {
+        return city.key;
+      }
+    }
+    return "Outside predefined cities";
+  }
+
+
 
   Future<void> _initializeScreens() async {
     try {

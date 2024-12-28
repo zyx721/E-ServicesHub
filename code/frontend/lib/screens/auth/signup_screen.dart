@@ -323,7 +323,7 @@ Widget _buildGoogleSignInButton() {
 
 Future<void> _handleGoogleSignIn() async {
   setState(() {
-    isLoading = true; // Show loading indicator
+    _isLoading = true; // Show loading indicator
   });
 
   try {
@@ -384,7 +384,14 @@ Future<void> _handleGoogleSignIn() async {
 
           final prefs = await SharedPreferences.getInstance();
           await prefs.setBool('isLoggedIn', true);
-          Navigator.pushNamed(context, '/navbar');
+          
+          // Check if this is the user's first time
+          if (userDoc.exists && userDoc.data()?['isNotFirst'] == false) {
+            Navigator.pushNamed(context, '/navbar');
+          } else {
+            // For first-time users, navigate to onboarding
+            Navigator.pushNamed(context, '/info');
+          }
         } else {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
@@ -428,7 +435,7 @@ Future<void> _handleGoogleSignIn() async {
     print('Error during Google Sign-In: $error');
   } finally {
     setState(() {
-      isLoading = false; // Hide loading indicator
+      _isLoading = false; // Hide loading indicator
     });
   }
 }

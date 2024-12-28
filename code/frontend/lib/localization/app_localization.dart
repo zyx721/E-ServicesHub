@@ -25,6 +25,10 @@ class AppLocalizations {
           ? "Les données de l'utilisateur ont été mises à jour avec succès"
           : "User data updated successfully");
 
+
+     String get selectThreeChoices  => isArabic ? "حدد ثلاثة خيارات" 
+          :(isFrench ?"Sélectionnez trois choix":"Select Three Choices");
+
   // No user logged in
   String get noUserLoggedIn => isArabic
       ? "لا يوجد مستخدم مسجل"
@@ -444,9 +448,8 @@ class AppLocalizations {
           : "For your security, we need to confirm your identity. This ensures a trusted and secure experience for everyone.");
 
   // New localization for work choices
-  String get houseCleaning => isArabic
-      ? "تنظيف المنازل"
-      : (isFrench ? "Nettoyage maison" : "House Cleaning");
+  String get houseCleaning => 
+      isArabic ? "تنظيف المنازل" : (isFrench ? "Nettoyage maison" : "House Cleaning");
   String get electricity =>
       isArabic ? "كهرباء" : (isFrench ? "Électricité" : "Electricity");
   String get plumbing =>

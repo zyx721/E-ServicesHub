@@ -216,9 +216,17 @@ Future<void> _handleGoogleSignIn() async {
             ),
           );
 
-          final prefs = await SharedPreferences.getInstance();
-          await prefs.setBool('isLoggedIn', true);
-          Navigator.pushNamed(context, '/navbar');
+
+          
+          // Check if this is the user's first time
+          if (userDoc.exists && userDoc.data()?['isNotFirst'] == false) {
+            final prefs = await SharedPreferences.getInstance();
+            await prefs.setBool('isLoggedIn', true);
+            Navigator.pushNamed(context, '/navbar');
+          } else {
+            // For first-time users, navigate to onboarding
+            Navigator.pushNamed(context, '/info');
+          }
         } else {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
@@ -266,6 +274,7 @@ Future<void> _handleGoogleSignIn() async {
     });
   }
 }
+
   @override
   Widget build(BuildContext context) {
     final localizations =
@@ -482,14 +491,20 @@ Future<void> handleLogin(BuildContext context) async {
           return;
         }
 
-        // Email is verified, proceed with login
+        // Get user document from Firestore
+        final userDoc = await FirebaseFirestore.instance
+            .collection('users')
+            .doc(user.uid)
+            .get();
+
+        // Update user data
         await FirebaseFirestore.instance
             .collection('users')
             .doc(user.uid)
             .set({
           'lastSignIn': DateTime.now(),
           'isConnected': true,
-          'isEmailVerified': true, // Update verification status in Firestore
+          'isEmailVerified': true,
         }, SetOptions(merge: true));
 
         saveDeviceTokenToFirestore(user.uid);
@@ -502,10 +517,17 @@ Future<void> handleLogin(BuildContext context) async {
           ),
         );
 
-        final prefs = await SharedPreferences.getInstance();
-        await prefs.setBool('isLoggedIn', true);
 
-        Navigator.pushNamed(context, '/navbar');
+
+        // Check if this is the user's first time
+        if (userDoc.exists && userDoc.data()?['isNotFirst'] == false) {
+          final prefs = await SharedPreferences.getInstance();
+          await prefs.setBool('isLoggedIn', true);
+          Navigator.pushNamed(context, '/navbar');
+        } else {
+          // If it's their first time, navigate to onboarding or setup screen
+          Navigator.pushNamed(context, '/info'); // Replace with your first-time user route
+        }
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
@@ -531,6 +553,7 @@ Future<void> handleLogin(BuildContext context) async {
     });
   }
 }
+
 
 // Updated error handler to include verification-related errors
 void handleFirebaseAuthError(BuildContext context, Object error) {

@@ -541,93 +541,91 @@ class _SearchPageState extends State<SearchPage> {
     }
   }
 
-  Future<void> _loadServicesFromFirestore() async {
-    try {
-      final currentUserId = FirebaseAuth.instance.currentUser?.uid;
-      if (currentUserId == null) return;
+Future<void> _loadServicesFromFirestore() async {
+  try {
+    final currentUserId = FirebaseAuth.instance.currentUser?.uid;
+    if (currentUserId == null) return;
 
-      // Start with base query
-      Query query = FirebaseFirestore.instance
-          .collection('users')
-          .where('isProvider', isEqualTo: true)
-          .where('uid', isNotEqualTo: currentUserId);
+    // Start with base query
+    Query query = FirebaseFirestore.instance
+        .collection('users')
+        .where('isProvider', isEqualTo: true)
+        .where('uid', isNotEqualTo: currentUserId);
 
-      // Apply rating filter at database level
-      if (_isRatingFilterApplied && _minRating > 0.0) {
-        query = query.where('rating', isGreaterThanOrEqualTo: _minRating);
-      }
-
-      // Apply price filter at database level
-      if (_isPriceFilterApplied) {
-        if (_priceRange.start > 0) {
-          query = query.where('basicInfo.hourlyRate',
-              isGreaterThanOrEqualTo: _priceRange.start);
-        }
-        if (_priceRange.end < 19999) {
-          query = query.where('basicInfo.hourlyRate',
-              isLessThanOrEqualTo: _priceRange.end);
-        }
-      }
-
-      // Apply work choices filter at database level
-      if (_selectedWorkChoices.isNotEmpty) {
-        // Using array-contains-any for better performance
-        // Note: Firebase limits to 10 values in array-contains-any
-        if (_selectedWorkChoices.length <= 10) {
-          query = query.where('selectedWorkChoices',
-              arrayContainsAny: _selectedWorkChoices);
-        }
-      }
-
-      // Apply text search if provided
-      final searchTerm = _searchController.text;
-      if (searchTerm.isNotEmpty) {
-        // Using the indexed lowercase profession field
-        query = query
-            .where('basicInfo.profession', isGreaterThanOrEqualTo: searchTerm)
-            .where('basicInfo.profession',
-                isLessThanOrEqualTo: searchTerm + '\uf8ff');
-      }
-
-      // Add pagination for better performance
-      const pageSize = 20;
-      query = query.limit(pageSize);
-
-      // Execute the optimized query
-      final QuerySnapshot snapshot = await query.get();
-
-      // Process results
-      List<Map<String, dynamic>> processedServices = snapshot.docs.map((doc) {
-        final data = doc.data() as Map<String, dynamic>;
-        final basicInfo = data['basicInfo'] as Map<String, dynamic>?;
-
-        return {
-          'uid': doc.id,
-          'name': data['name'] ?? 'Unknown',
-          'profession': basicInfo?['profession'] ?? 'Not specified',
-          'photoURL': data['photoURL'] ?? '',
-          'rating': (data['rating'] is num)
-              ? (data['rating'] as num).toDouble()
-              : 0.0,
-          'price': basicInfo?['hourlyRate'] != null
-              ? (basicInfo?['hourlyRate'] is num
-                  ? (basicInfo?['hourlyRate'] as num).toDouble()
-                  : double.tryParse(
-                          basicInfo?['hourlyRate']?.toString() ?? '') ??
-                      0.0)
-              : 0.0,
-          'selectedWorkChoices': data['selectedWorkChoices'] ?? [],
-        };
-      }).toList();
-
-      setState(() {
-        services = processedServices;
-        filteredServices = processedServices;
-      });
-    } catch (e) {
-      debugPrint("Error fetching services: $e");
+    // Apply rating filter at database level
+    if (_isRatingFilterApplied && _minRating > 0.0) {
+      query = query.where('rating', isGreaterThanOrEqualTo: _minRating);
     }
+
+    // Apply price filter at database level
+    if (_isPriceFilterApplied) {
+      if (_priceRange.start > 0) {
+        query = query.where('basicInfo.hourlyRate',
+            isGreaterThanOrEqualTo: _priceRange.start);
+      }
+      if (_priceRange.end < 19999) {
+        query = query.where('basicInfo.hourlyRate',
+            isLessThanOrEqualTo: _priceRange.end);
+      }
+    }
+
+    // Apply work choices filter at database level
+    if (_selectedWorkChoices.isNotEmpty) {
+      // Use whereIn if multiple choices are selected, or where if single choice
+      if (_selectedWorkChoices.length == 1) {
+        query = query.where('selectedWorkChoice', isEqualTo: _selectedWorkChoices.first);
+      } else {
+        query = query.where('selectedWorkChoice', whereIn: _selectedWorkChoices);
+      }
+    }
+
+    // Apply text search if provided
+    final searchTerm = _searchController.text;
+    if (searchTerm.isNotEmpty) {
+      query = query
+          .where('basicInfo.profession', isGreaterThanOrEqualTo: searchTerm)
+          .where('basicInfo.profession',
+              isLessThanOrEqualTo: searchTerm + '\uf8ff');
+    }
+
+    // Add pagination for better performance
+    const pageSize = 20;
+    query = query.limit(pageSize);
+
+    // Execute the optimized query
+    final QuerySnapshot snapshot = await query.get();
+
+    // Process results
+    List<Map<String, dynamic>> processedServices = snapshot.docs.map((doc) {
+      final data = doc.data() as Map<String, dynamic>;
+      final basicInfo = data['basicInfo'] as Map<String, dynamic>?;
+
+      return {
+        'uid': doc.id,
+        'name': data['name'] ?? 'Unknown',
+        'profession': basicInfo?['profession'] ?? 'Not specified',
+        'photoURL': data['photoURL'] ?? '',
+        'rating': (data['rating'] is num)
+            ? (data['rating'] as num).toDouble()
+            : 0.0,
+        'price': basicInfo?['hourlyRate'] != null
+            ? (basicInfo?['hourlyRate'] is num
+                ? (basicInfo?['hourlyRate'] as num).toDouble()
+                : double.tryParse(basicInfo?['hourlyRate']?.toString() ?? '') ??
+                    0.0)
+            : 0.0,
+        'selectedWorkChoice': data['selectedWorkChoice'] ?? '',
+      };
+    }).toList();
+
+    setState(() {
+      services = processedServices;
+      filteredServices = processedServices;
+    });
+  } catch (e) {
+    debugPrint("Error fetching services: $e");
   }
+}
 
 // Update _filterServices to trigger a new Firestore query
   void _filterServices() {
