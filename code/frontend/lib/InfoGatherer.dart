@@ -48,10 +48,8 @@ class _NameEntryScreenState extends State<InfoGatherer> {
 
   void _saveProviderInfo() async {
     if (_selectedChoices.length != requiredChoices) {
-      _showErrorDialog(
-        AppLocalizations.of(context)!.selectThreeChoices ?? 
-        'Please select exactly three choices'
-      );
+      _showErrorDialog(AppLocalizations.of(context)!.selectThreeChoices ??
+          'Please select exactly three choices');
       return;
     }
 
@@ -67,7 +65,10 @@ class _NameEntryScreenState extends State<InfoGatherer> {
         return;
       }
 
-      await FirebaseFirestore.instance.collection('users').doc(user.uid).update({
+      await FirebaseFirestore.instance
+          .collection('users')
+          .doc(user.uid)
+          .update({
         'service_categories_interest': _selectedChoices.toList(),
         'gender': _selectedGender,
         'age': _selectedAge,
@@ -112,13 +113,15 @@ class _NameEntryScreenState extends State<InfoGatherer> {
   }
 
   Widget _buildGenderSelection() {
+    final localizations = AppLocalizations.of(context)!;
+
     return Container(
       margin: EdgeInsets.symmetric(vertical: 16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'Select Gender',
+            localizations.selectGender,
             style: TextStyle(
               fontSize: 18,
               fontWeight: FontWeight.w600,
@@ -129,9 +132,9 @@ class _NameEntryScreenState extends State<InfoGatherer> {
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              _buildGenderButton('Male', Icons.male),
+              _buildGenderButton(localizations.male, Icons.male),
               SizedBox(width: 20),
-              _buildGenderButton('Female', Icons.female),
+              _buildGenderButton(localizations.female, Icons.female),
             ],
           ),
         ],
@@ -196,22 +199,24 @@ class _NameEntryScreenState extends State<InfoGatherer> {
   }
 
   Widget _buildAgeSelection() {
+    final localizations = AppLocalizations.of(context)!;
+
     return Container(
       margin: EdgeInsets.symmetric(vertical: 16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'Select Age',
-            style: TextStyle(
+            localizations.selectAge,
+            style: const TextStyle(
               fontSize: 18,
               fontWeight: FontWeight.w600,
               color: primaryPurple,
             ),
           ),
-          SizedBox(height: 12),
+          const SizedBox(height: 12),
           Container(
-            padding: EdgeInsets.symmetric(horizontal: 20),
+            padding: const EdgeInsets.symmetric(horizontal: 20),
             decoration: BoxDecoration(
               color: backgroundPurple,
               borderRadius: BorderRadius.circular(25),
@@ -222,7 +227,7 @@ class _NameEntryScreenState extends State<InfoGatherer> {
                 value: _selectedAge,
                 isExpanded: true,
                 hint: Text(
-                  'Select your age',
+                  localizations.selectYourAge,
                   style: TextStyle(color: primaryPurple.withOpacity(0.7)),
                 ),
                 icon: Icon(Icons.arrow_drop_down, color: primaryPurple),
@@ -246,7 +251,7 @@ class _NameEntryScreenState extends State<InfoGatherer> {
 
   @override
   Widget build(BuildContext context) {
-    final appLocalizations = AppLocalizations.of(context)!;
+    final localizations = AppLocalizations.of(context)!;
 
     return Scaffold(
       backgroundColor: Colors.white,
@@ -254,7 +259,7 @@ class _NameEntryScreenState extends State<InfoGatherer> {
         elevation: 0,
         backgroundColor: Colors.white,
         title: Text(
-          appLocalizations.selectYourServices,
+          localizations.selectYourServices,
           style: TextStyle(
             color: primaryPurple,
             fontWeight: FontWeight.w600,
@@ -295,7 +300,7 @@ class _NameEntryScreenState extends State<InfoGatherer> {
                 child: Column(
                   children: [
                     Text(
-                      'Select exactly ${requiredChoices} services',
+                      '${localizations.selectExactly} ${requiredChoices} ${localizations.services}',
                       style: TextStyle(
                         fontSize: 18,
                         fontWeight: FontWeight.w600,
@@ -307,13 +312,16 @@ class _NameEntryScreenState extends State<InfoGatherer> {
                       stream: _workChoicesStream,
                       builder: (context, snapshot) {
                         if (snapshot.hasError) {
-                          return Text('Error loading choices: ${snapshot.error}');
+                          return Text(
+                              'Error loading choices: ${snapshot.error}');
                         }
 
-                        if (snapshot.connectionState == ConnectionState.waiting) {
+                        if (snapshot.connectionState ==
+                            ConnectionState.waiting) {
                           return Center(
                             child: CircularProgressIndicator(
-                              valueColor: AlwaysStoppedAnimation<Color>(primaryPurple),
+                              valueColor:
+                                  AlwaysStoppedAnimation<Color>(primaryPurple),
                             ),
                           );
                         }
@@ -327,7 +335,8 @@ class _NameEntryScreenState extends State<InfoGatherer> {
                           spacing: 12,
                           runSpacing: 12,
                           children: workChoices.map((choice) {
-                            final isSelected = _selectedChoices.contains(choice.id);
+                            final isSelected =
+                                _selectedChoices.contains(choice.id);
                             return Material(
                               color: Colors.transparent,
                               child: InkWell(
@@ -342,7 +351,10 @@ class _NameEntryScreenState extends State<InfoGatherer> {
                                   decoration: BoxDecoration(
                                     gradient: isSelected
                                         ? LinearGradient(
-                                            colors: [primaryPurple, secondaryPurple],
+                                            colors: [
+                                              primaryPurple,
+                                              secondaryPurple
+                                            ],
                                             begin: Alignment.topLeft,
                                             end: Alignment.bottomRight,
                                           )
@@ -352,7 +364,8 @@ class _NameEntryScreenState extends State<InfoGatherer> {
                                     boxShadow: isSelected
                                         ? [
                                             BoxShadow(
-                                              color: primaryPurple.withOpacity(0.3),
+                                              color: primaryPurple
+                                                  .withOpacity(0.3),
                                               blurRadius: 8,
                                               offset: Offset(0, 4),
                                             )
@@ -372,9 +385,12 @@ class _NameEntryScreenState extends State<InfoGatherer> {
                                           ),
                                         ),
                                       Text(
-                                        _getLocalizedWorkChoice(choice, context),
+                                        _getLocalizedWorkChoice(
+                                            choice, context),
                                         style: TextStyle(
-                                          color: isSelected ? Colors.white : primaryPurple,
+                                          color: isSelected
+                                              ? Colors.white
+                                              : primaryPurple,
                                           fontSize: 15,
                                           fontWeight: isSelected
                                               ? FontWeight.w600
@@ -426,7 +442,7 @@ class _NameEntryScreenState extends State<InfoGatherer> {
                     ],
                   ),
                   child: Text(
-                    appLocalizations.continueButton,
+                    localizations.continueButton,
                     style: TextStyle(
                       fontSize: 18,
                       fontWeight: FontWeight.w600,
