@@ -1,3 +1,6 @@
+import 'dart:math';
+
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -32,10 +35,10 @@ class _HomePageState extends State<HomePage> {
   late final PageController _pageController;
   late final ScrollController _scrollController;
   final RefreshController _refreshController = RefreshController();
-  
+
   @override
   bool get wantKeepAlive => true; // This ensures the state is preserved
-  
+
   int _currentPage = 0;
   late Timer _adTimer;
 
@@ -55,16 +58,16 @@ class _HomePageState extends State<HomePage> {
     super.initState();
     _pageController = PageController();
     _scrollController = ScrollController()..addListener(_onScroll);
-    
+
     // Only initialize if services is empty
     if (services.isEmpty) {
       _initializeData();
     } else {
       _isLoading = false;
     }
-    
+
     _popularServicesFuture = PopularServicesModel.getPopularServices(context);
-    
+
     _adTimer = Timer.periodic(Duration(seconds: 3), (Timer timer) {
       if (_pageController.hasClients) {
         setState(() {
@@ -80,8 +83,9 @@ class _HomePageState extends State<HomePage> {
   }
 
   Future<void> _initializeData() async {
-    if (!_isLoading && services.isNotEmpty) return; // Skip if already initialized
-    
+    if (!_isLoading && services.isNotEmpty)
+      return; // Skip if already initialized
+
     setState(() {
       _isLoading = true;
     });
@@ -105,7 +109,7 @@ class _HomePageState extends State<HomePage> {
 
   Future<void> _fetchServices() async {
     if (_isFetching || !_hasMoreData) return;
-    
+
     setState(() => _isFetching = true);
 
     try {
@@ -128,7 +132,8 @@ class _HomePageState extends State<HomePage> {
       }
 
       // Get the next batch of recommended provider IDs
-      List<String> nextBatchIds = recommendedProviderIds.sublist(startIndex, endIndex);
+      List<String> nextBatchIds =
+          recommendedProviderIds.sublist(startIndex, endIndex);
 
       // Fetch the actual provider data for these IDs
       List<Map<String, dynamic>> newServices = [];
@@ -152,7 +157,6 @@ class _HomePageState extends State<HomePage> {
           services.addAll(newServices);
         });
       }
-
     } catch (e) {
       debugPrint('Error fetching recommended services: $e');
     } finally {
@@ -179,20 +183,18 @@ class _HomePageState extends State<HomePage> {
     }
   }
 
-
-
   Future<void> _onRefresh() async {
     try {
       // Reset pagination
       _lastDocument = null;
       _hasMoreData = true;
       services.clear();
-      
+
       // Reload all data
       await _fetchUserData();
       await _fetchServices();
       await _loadRecommendations();
-      
+
       _refreshController.refreshCompleted();
     } catch (e) {
       _refreshController.refreshFailed();
@@ -200,7 +202,6 @@ class _HomePageState extends State<HomePage> {
     }
   }
 
- 
   Future<void> _fetchUserData() async {
     try {
       final User? user = FirebaseAuth.instance.currentUser;
@@ -228,183 +229,143 @@ class _HomePageState extends State<HomePage> {
     }
   }
 
-List<String> recommendedProviderIds = [];
+  List<String> recommendedProviderIds = [];
 
- 
-
-Future<void> _fetchUsersFromSameCity() async {
-  try {
-    final User? user = FirebaseAuth.instance.currentUser;
-
-    if (user == null) {
-      debugPrint('No user logged in');
-      return;
-    }
-
-    // Get the current user's ID
-    String currentUserId = user.uid;
-
-    // Fetch the current user's city
-    final userDoc = await FirebaseFirestore.instance
-        .collection('users')
-        .doc(currentUserId)
-        .get();
-
-    if (userDoc.exists) {
-      // Retrieve the current user's city
-      final userCity = userDoc.data()?['city'];
-      debugPrint('Current user city: $userCity');
-
-      // Fetch all users in the same city but exclude the current user
-      final usersInSameCity = await FirebaseFirestore.instance
-          .collection('users')
-          .where('city', isEqualTo: userCity)  // Filter users by the same city
-          .get();
-
-      if (usersInSameCity.docs.isNotEmpty) {
-        // Initialize a list to store the user data in a structured format
-        List<Map<String, dynamic>> usersDataList = [];
-
-        // Loop through the users and fetch the necessary data, excluding the current user
-        for (var doc in usersInSameCity.docs) {
-          if (doc.id == currentUserId) continue; // Skip the current user
-
-          final userData = doc.data();
-          
-          // Basic user details
-          final userId = doc.id;
-          final firstName = userData['firstName'];
-          final lastName = userData['lastName'];
-          final email = userData['email'];
-          final photoURL = userData['photoURL'];
-          final city = userData['city'];
-
-          // Interaction-related details
-          final clickCount = userData['click_count'] ?? 0;
-          final clickCountPerService = userData['click_count_per_service'] ?? {};
-          final reviewedServiceIds = userData['reviewed_service_ids'] ?? [];
-          final isProvider = userData['isProvider'] ?? false;
-
-          // Gender and age
-          final gender = userData['gender'] ?? 'Not specified';
-          final age = userData['age'] ?? 0;
-
-          // Location (latitude, longitude)
-          final locationX = userData['location_x'] ?? 0.0;
-          final locationY = userData['location_y'] ?? 0.0;
-
-          // Favorites list
-          final favorites = userData['favorites'] ?? [];
-
-          // Provider-specific data (if isProvider)
-          final selectedWorkChoice = isProvider ? userData['selectedWorkChoice'] ?? [] : [];
-          final reviewCount = isProvider ? userData['review_count'] ?? 0 : 0;
-          final rating = isProvider ? userData['rating'] ?? 0.0 : 0.0;
-
-          // Organize the data into a map format
-          Map<String, dynamic> userMap = {
-            'user_id': userId,
-            'first_name': firstName,
-            'last_name': lastName,
-            'email': email,
-            'photo_url': photoURL,
-            'city': city,
-            'click_count': clickCount,
-            'click_count_per_service': clickCountPerService,
-            'reviewed_service_ids': reviewedServiceIds,
-            'is_provider': isProvider,
-            'gender': gender,
-            'age': age,
-            'location_x': locationX,
-            'location_y': locationY,
-            'favorites': favorites,
-            'selected_work_choice': selectedWorkChoice,
-            'review_count': reviewCount,
-            'rating': rating,
-          };
-
-          // Add the user map to the list
-          usersDataList.add(userMap);
-
-          // Debug prints to display user info
-          debugPrint('User ID: $userId');
-          debugPrint('Name: $firstName $lastName');
-          debugPrint('City: $city');
-          debugPrint('Click Count: $clickCount');
-          debugPrint('Gender: $gender');
-          debugPrint('Age: $age');
-          debugPrint('Location: $locationX, $locationY');
-        }
-
-        // Now, we have a structured list of user data (excluding the current user)
-        // You can pass this data to the recommendation logic
-        // For example, pass the list to the recommendation algorithm:
-        // final recommendedServices = recommendServices(usersDataList);
-      } else {
-        debugPrint('No users found in the same city');
-      }
-    } else {
-      debugPrint('User document does not exist');
-    }
-  } catch (e) {
-    debugPrint('Error fetching users from the same city: $e');
-  }
-}
-
- Future<void> _loadRecommendations() async {
-    debugPrint('\n====== Starting Recommendation Service ======');
+  Future<void> _fetchUsersFromSameCity() async {
     try {
-      final User? currentUser = FirebaseAuth.instance.currentUser;
-      if (currentUser == null) {
+      final User? user = FirebaseAuth.instance.currentUser;
+
+      if (user == null) {
         debugPrint('No user logged in');
         return;
       }
 
-      final currentUserDoc = await FirebaseFirestore.instance
-          .collection('users')
-          .doc(currentUser.uid)
-          .get();
-    
-      if (!currentUserDoc.exists) {
-        debugPrint('Current user document does not exist');
-        return;
-      }
+      // Get the current user's ID
+      String currentUserId = user.uid;
 
-      final currentUserData = currentUserDoc.data()!;
-      final String userCity = currentUserData['city'] ?? '';
-      final List<String> userFavorites = List<String>.from(currentUserData['favorites'] ?? []);
-
-      // Fetch providers from same city
-      final providersInCity = await FirebaseFirestore.instance
+      // Fetch the current user's city
+      final userDoc = await FirebaseFirestore.instance
           .collection('users')
-          .where('city', isEqualTo: userCity)
-          .where('isProvider', isEqualTo: true)
-          .where(FieldPath.documentId, isNotEqualTo: currentUser.uid)
+          .doc(currentUserId)
           .get();
 
-      // Clear existing recommendations
-      recommendedProviderIds.clear();
+      if (userDoc.exists) {
+        // Retrieve the current user's city
+        final userCity = userDoc.data()?['city'];
+        debugPrint('Current user city: $userCity');
 
-      // Process each provider
-      for (var doc in providersInCity.docs) {
-        final providerData = doc.data();
-        final providerId = doc.id;
-        
-        if (userFavorites.contains(providerId)) {
-          debugPrint('Skipping provider $providerId - already in favorites');
-          continue;
+        // Fetch all users in the same city but exclude the current user
+        final usersInSameCity = await FirebaseFirestore.instance
+            .collection('users')
+            .where('city', isEqualTo: userCity) // Filter users by the same city
+            .get();
+
+        if (usersInSameCity.docs.isNotEmpty) {
+          // Initialize a list to store the user data in a structured format
+          List<Map<String, dynamic>> usersDataList = [];
+
+          // Loop through the users and fetch the necessary data, excluding the current user
+          for (var doc in usersInSameCity.docs) {
+            if (doc.id == currentUserId) continue; // Skip the current user
+
+            final userData = doc.data();
+
+            // Basic user details
+            final userId = doc.id;
+            final firstName = userData['firstName'];
+            final lastName = userData['lastName'];
+            final email = userData['email'];
+            final photoURL = userData['photoURL'];
+            final city = userData['city'];
+
+            // Interaction-related details
+            final clickCount = userData['click_count'] ?? 0;
+            final clickCountPerService =
+                userData['click_count_per_service'] ?? {};
+            final reviewedServiceIds = userData['reviewed_service_ids'] ?? [];
+            final isProvider = userData['isProvider'] ?? false;
+
+            // Gender and age
+            final gender = userData['gender'] ?? 'Not specified';
+            final age = userData['age'] ?? 0;
+
+            // Location (latitude, longitude)
+            final locationX = userData['location_x'] ?? 0.0;
+            final locationY = userData['location_y'] ?? 0.0;
+
+            // Favorites list
+            final favorites = userData['favorites'] ?? [];
+
+            // Provider-specific data (if isProvider)
+            final selectedWorkChoice =
+                isProvider ? userData['selectedWorkChoice'] ?? [] : [];
+            final reviewCount = isProvider ? userData['review_count'] ?? 0 : 0;
+            final rating = isProvider ? userData['rating'] ?? 0.0 : 0.0;
+
+            // Organize the data into a map format
+            Map<String, dynamic> userMap = {
+              'user_id': userId,
+              'first_name': firstName,
+              'last_name': lastName,
+              'email': email,
+              'photo_url': photoURL,
+              'city': city,
+              'click_count': clickCount,
+              'click_count_per_service': clickCountPerService,
+              'reviewed_service_ids': reviewedServiceIds,
+              'is_provider': isProvider,
+              'gender': gender,
+              'age': age,
+              'location_x': locationX,
+              'location_y': locationY,
+              'favorites': favorites,
+              'selected_work_choice': selectedWorkChoice,
+              'review_count': reviewCount,
+              'rating': rating,
+            };
+
+            // Add the user map to the list
+            usersDataList.add(userMap);
+
+            // Debug prints to display user info
+            debugPrint('User ID: $userId');
+            debugPrint('Name: $firstName $lastName');
+            debugPrint('City: $city');
+            debugPrint('Click Count: $clickCount');
+            debugPrint('Gender: $gender');
+            debugPrint('Age: $age');
+            debugPrint('Location: $locationX, $locationY');
+          }
+
+          // Now, we have a structured list of user data (excluding the current user)
+          // You can pass this data to the recommendation logic
+          // For example, pass the list to the recommendation algorithm:
+          // final recommendedServices = recommendServices(usersDataList);
+        } else {
+          debugPrint('No users found in the same city');
         }
-        
-        // Add to recommendations if not in favorites
-        recommendedProviderIds.add(providerId);
-        debugPrint('Added provider $providerId to recommendations');
+      } else {
+        debugPrint('User document does not exist');
       }
-
-      debugPrint('\n====== Final Recommendations ======');
-      debugPrint('Found ${recommendedProviderIds.length} recommended providers');
-
     } catch (e) {
-      debugPrint('Error in recommendation service: $e');
+      debugPrint('Error fetching users from the same city: $e');
+    }
+  }
+
+  Future<void> _loadRecommendations() async {
+    try {
+      final recommendationService = RecommendationService();
+      final recommendations =
+          await recommendationService.getRecommendedServices();
+
+      recommendedProviderIds =
+          recommendations.map((rec) => rec['service_id'] as String).toList();
+
+      // Sort by recommendation score
+      services.sort((a, b) => (b['recommendation_score'] ?? 0.0)
+          .compareTo(a['recommendation_score'] ?? 0.0));
+    } catch (e) {
+      debugPrint('Error loading recommendations: $e');
     }
   }
 
@@ -559,7 +520,7 @@ Future<void> _fetchUsersFromSameCity() async {
     );
   }
 
-Widget _buildRecommendationBadge(double score) {
+  Widget _buildRecommendationBadge(double score) {
     return Container(
       padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       decoration: BoxDecoration(
@@ -588,7 +549,7 @@ Widget _buildRecommendationBadge(double score) {
     );
   }
 
-Widget _buildServiceCard(
+  Widget _buildServiceCard(
       Map<String, dynamic> service, bool isFavorite, String serviceId) {
     return GestureDetector(
       onTap: () async {
@@ -693,8 +654,7 @@ Widget _buildServiceCard(
       ),
     );
   }
-  
-  
+
   Widget _buildStarRating(double rating) {
     int fullStars = rating.floor();
     int halfStars = (rating % 1 >= 0.5) ? 1 : 0;
@@ -1118,193 +1078,479 @@ Widget _buildServiceCard(
           refreshingText: 'Refreshing...',
         ),
         child: _isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : services.isEmpty && !_isFetching
-              ? Center(
-                  child: Text(
-                    'No recommended services found in your area',
-                    style: GoogleFonts.poppins(
-                      fontSize: 16,
-                      color: Colors.grey,
+            ? const Center(child: CircularProgressIndicator())
+            : services.isEmpty && !_isFetching
+                ? Center(
+                    child: Text(
+                      'No recommended services found in your area',
+                      style: GoogleFonts.poppins(
+                        fontSize: 16,
+                        color: Colors.grey,
+                      ),
                     ),
+                  )
+                : CustomScrollView(
+                    controller: _scrollController,
+                    slivers: [
+                      SliverToBoxAdapter(
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const SizedBox(height: 12),
+                            _buildAdsSlider([
+                              'assets/images/ads/first_page.png',
+                              'assets/images/ads/second_page.png',
+                              'assets/images/ads/third_page.png',
+                            ]),
+                            const SizedBox(height: 20),
+                            _buildTopPopularHeader(context),
+                            const SizedBox(height: 20),
+                            SizedBox(
+                              height: 180,
+                              child: _servicesSection(),
+                            ),
+                            const SizedBox(height: 20),
+                            _buildTopServicesHeader(),
+                            const SizedBox(height: 10),
+                          ],
+                        ),
+                      ),
+                      SliverGrid(
+                        gridDelegate:
+                            const SliverGridDelegateWithFixedCrossAxisCount(
+                          crossAxisCount: 2,
+                          mainAxisSpacing: 20,
+                          crossAxisSpacing: 20,
+                          childAspectRatio: 0.9,
+                        ),
+                        delegate: SliverChildBuilderDelegate(
+                          (context, index) {
+                            if (index >= services.length) {
+                              return _isFetching
+                                  ? const Center(
+                                      child: CircularProgressIndicator())
+                                  : const SizedBox();
+                            }
+
+                            final service = services[index];
+                            final serviceId =
+                                service['docId'] ?? service['uid'];
+                            final isFavorite =
+                                favoriteServices.contains(serviceId);
+
+                            return _buildServiceCard(
+                                service, isFavorite, serviceId);
+                          },
+                          childCount: services.length + (_hasMoreData ? 1 : 0),
+                        ),
+                      ),
+                    ],
                   ),
-                )
-              : CustomScrollView(
-                  controller: _scrollController,
-                  slivers: [
-                    SliverToBoxAdapter(
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          const SizedBox(height: 12),
-                          _buildAdsSlider([
-                            'assets/images/ads/first_page.png',
-                            'assets/images/ads/second_page.png',
-                            'assets/images/ads/third_page.png',
-                          ]),
-                          const SizedBox(height: 20),
-                          _buildTopPopularHeader(context),
-                          const SizedBox(height: 20),
-                          SizedBox(
-                            height: 180,
-                            child: _servicesSection(),
-                          ),
-                          const SizedBox(height: 20),
-                          _buildTopServicesHeader(),
-                          const SizedBox(height: 10),
-                        ],
-                      ),
-                    ),
-                    SliverGrid(
-                      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                        crossAxisCount: 2,
-                        mainAxisSpacing: 20,
-                        crossAxisSpacing: 20,
-                        childAspectRatio: 0.9,
-                      ),
-                      delegate: SliverChildBuilderDelegate(
-                        (context, index) {
-                          if (index >= services.length) {
-                            return _isFetching
-                                ? const Center(child: CircularProgressIndicator())
-                                : const SizedBox();
-                          }
-
-                          final service = services[index];
-                          final serviceId = service['docId'] ?? service['uid'];
-                          final isFavorite = favoriteServices.contains(serviceId);
-
-                          return _buildServiceCard(service, isFavorite, serviceId);
-                        },
-                        childCount: services.length + (_hasMoreData ? 1 : 0),
-                      ),
-                    ),
-                  ],
-                ),
       ),
       backgroundColor: const Color.fromARGB(255, 255, 255, 255),
     );
-  } }
+  }
+}
 
+class RecommendationConfig {
+  final int maxSimilarUsers;
+  final int batchSize;
+  final Duration cacheDuration;
+  final Map<String, double> weightFactors;
+
+  const RecommendationConfig({
+    this.maxSimilarUsers = 10,
+    this.batchSize = 20,
+    this.cacheDuration = const Duration(minutes: 30),
+    this.weightFactors = const {
+      'similarity': 0.3,
+      'rating': 0.25,
+      'reviewCount': 0.15,
+      'clickCount': 0.15,
+      'completionRate': 0.15,
+    },
+  });
+}
 
 class RecommendationService {
-  // Singleton pattern to ensure single instance
-  static final RecommendationService _instance = RecommendationService._internal();
+  static final RecommendationService _instance =
+      RecommendationService._internal();
   factory RecommendationService() => _instance;
   RecommendationService._internal();
 
-  // Calculate similarity score between two users based on their favorites
-  double _calculateSimilarity(List<String> user1Favorites, List<String> user2Favorites) {
-    if (user1Favorites.isEmpty || user2Favorites.isEmpty) return 0.0;
-    
-    Set intersection = Set.from(user1Favorites).intersection(Set.from(user2Favorites));
-    Set union = Set.from(user1Favorites).union(Set.from(user2Favorites));
-    
-    return intersection.length / union.length;
-  }
+  final _config = RecommendationConfig();
+  final _cache = _RecommendationCache();
+  final _firestore = FirebaseFirestore.instance;
 
-  // Calculate service score based on similar users' preferences
-  double _calculateServiceScore(String serviceId, List<Map<String, dynamic>> similarUsers) {
-    double totalScore = 0;
-    int count = 0;
-
-    for (var user in similarUsers) {
-      List<String> favorites = List<String>.from(user['favorites'] ?? []);
-      if (favorites.contains(serviceId)) {
-        totalScore += user['similarity_score'];
-        count++;
-      }
-    }
-
-    return count > 0 ? totalScore / count : 0;
-  }
-
-  Future<List<Map<String, dynamic>>> getRecommendedServices() async {
+  Future<List<Map<String, dynamic>>> getRecommendedServices({
+    int limit = 20,
+    List<String>? categories,
+  }) async {
     try {
-      // Get current user
-      final User? currentUser = FirebaseAuth.instance.currentUser;
+      final currentUser = FirebaseAuth.instance.currentUser;
       if (currentUser == null) return [];
 
-      // Fetch current user's data
-      final currentUserDoc = await FirebaseFirestore.instance
-          .collection('users')
-          .doc(currentUser.uid)
-          .get();
-      
-      if (!currentUserDoc.exists) return [];
-
-      final currentUserData = currentUserDoc.data()!;
-      final String userCity = currentUserData['city'] ?? '';
-      final List<String> userFavorites = List<String>.from(currentUserData['favorites'] ?? []);
-
-      // Fetch users from same city
-      final usersInCity = await FirebaseFirestore.instance
-          .collection('users')
-          .where('city', isEqualTo: userCity)
-          .where(FieldPath.documentId, isNotEqualTo: currentUser.uid)
-          .get();
-
-      // Calculate similarity scores with other users
-      List<Map<String, dynamic>> similarUsers = [];
-      for (var doc in usersInCity.docs) {
-        final userData = doc.data();
-        final userFavs = List<String>.from(userData['favorites'] ?? []);
-        
-        double similarityScore = _calculateSimilarity(userFavorites, userFavs);
-        if (similarityScore > 0) {
-          similarUsers.add({
-            ...userData,
-            'user_id': doc.id,
-            'similarity_score': similarityScore,
-          });
-        }
+      // Check cache first
+      final cachedRecommendations = await _cache.get(currentUser.uid);
+      if (cachedRecommendations != null) {
+        return cachedRecommendations;
       }
 
-      // Sort users by similarity score
-      similarUsers.sort((a, b) => (b['similarity_score'] as double)
-          .compareTo(a['similarity_score'] as double));
+      // Get user data and preferences
+      final userData = await _getUserData(currentUser.uid);
+      if (userData == null) return [];
 
-      // Get top similar users (limit to top 5)
-      similarUsers = similarUsers.take(5).toList();
+      // Get similar users and their preferences
+      final similarUsers = await _getSimilarUsers(userData);
 
-      // Fetch all services from similar users
-      Set<String> recommendedServiceIds = {};
-      for (var user in similarUsers) {
-        List<String> favorites = List<String>.from(user['favorites'] ?? []);
-        recommendedServiceIds.addAll(favorites);
-      }
+      // Generate recommendations
+      final recommendations = await _generateRecommendations(
+        userData: userData,
+        similarUsers: similarUsers,
+        categories: categories,
+        limit: limit,
+      );
 
-      // Remove services already in user's favorites
-      recommendedServiceIds.removeAll(userFavorites);
-
-      // Fetch service details and calculate scores
-      List<Map<String, dynamic>> recommendations = [];
-      for (String serviceId in recommendedServiceIds) {
-        final serviceDoc = await FirebaseFirestore.instance
-            .collection('users')
-            .doc(serviceId)
-            .get();
-
-        if (serviceDoc.exists) {
-          final serviceData = serviceDoc.data()!;
-          final score = _calculateServiceScore(serviceId, similarUsers);
-
-          recommendations.add({
-            'service_id': serviceId,
-            'service_data': serviceData,
-            'recommendation_score': score,
-          });
-        }
-      }
-
-      // Sort by recommendation score
-      recommendations.sort((a, b) => (b['recommendation_score'] as double)
-          .compareTo(a['recommendation_score'] as double));
+      // Cache results
+      await _cache.set(currentUser.uid, recommendations);
 
       return recommendations;
     } catch (e) {
-      debugPrint('Error getting recommendations: $e');
+      debugPrint('Error in getRecommendedServices: $e');
       return [];
     }
   }
+
+  Future<Map<String, dynamic>?> _getUserData(String userId) async {
+    try {
+      final userDoc = await _firestore.collection('users').doc(userId).get();
+      if (!userDoc.exists) return null;
+
+      final userData = userDoc.data()!;
+      final userInteractions = await _getUserInteractions(userId);
+
+      return {
+        ...userData,
+        'interactions': userInteractions,
+      };
+    } catch (e) {
+      debugPrint('Error fetching user data: $e');
+      return null;
+    }
+  }
+
+  Future<Map<String, dynamic>> _getUserInteractions(String userId) async {
+    final interactions =
+        await _firestore.collection('user_interactions').doc(userId).get();
+
+    return interactions.data() ?? {};
+  }
+
+  Future<List<Map<String, dynamic>>> _getSimilarUsers(
+    Map<String, dynamic> userData,
+  ) async {
+    try {
+      // Get users from same city with batch processing
+      final cityUsers = await _firestore
+          .collection('users')
+          .where('city', isEqualTo: userData['city'])
+          .where('isProvider', isEqualTo: false)
+          .where(FieldPath.documentId, isNotEqualTo: userData['uid'])
+          .limit(50)
+          .get();
+
+      final similarUsers = await compute(
+        _calculateSimilarUsers,
+        {
+          'currentUser': userData,
+          'potentialUsers': cityUsers.docs.map((doc) => doc.data()).toList(),
+        },
+      );
+
+      return similarUsers.take(_config.maxSimilarUsers).toList();
+    } catch (e) {
+      debugPrint('Error getting similar users: $e');
+      return [];
+    }
+  }
+
+  static List<Map<String, dynamic>> _calculateSimilarUsers(
+      Map<String, dynamic> data) {
+    final currentUser = data['currentUser'];
+    final potentialUsers = data['potentialUsers'] as List;
+    final similarities = <Map<String, dynamic>>[];
+
+    for (var user in potentialUsers) {
+      final similarity = _calculateUserSimilarity(currentUser, user);
+      if (similarity > 0) {
+        similarities.add({
+          ...user,
+          'similarity_score': similarity,
+        });
+      }
+    }
+
+    similarities.sort((a, b) => (b['similarity_score'] as double)
+        .compareTo(a['similarity_score'] as double));
+
+    return similarities;
+  }
+
+  static double _calculateUserSimilarity(
+    Map<String, dynamic> user1,
+    Map<String, dynamic> user2,
+  ) {
+    double score = 0.0;
+
+    // Calculate favorite services similarity
+    final favorites1 = Set<String>.from(user1['favorites'] ?? []);
+    final favorites2 = Set<String>.from(user2['favorites'] ?? []);
+    if (favorites1.isNotEmpty && favorites2.isNotEmpty) {
+      final intersection = favorites1.intersection(favorites2);
+      final union = favorites1.union(favorites2);
+      score += intersection.length / union.length * 0.4;
+    }
+
+    // Calculate service category preference similarity
+    final categories1 = Set<String>.from(user1['preferred_categories'] ?? []);
+    final categories2 = Set<String>.from(user2['preferred_categories'] ?? []);
+    if (categories1.isNotEmpty && categories2.isNotEmpty) {
+      final intersection = categories1.intersection(categories2);
+      final union = categories1.union(categories2);
+      score += intersection.length / union.length * 0.3;
+    }
+
+    // Calculate interaction pattern similarity
+    final interactions1 = user1['interactions'] ?? {};
+    final interactions2 = user2['interactions'] ?? {};
+    if (interactions1.isNotEmpty && interactions2.isNotEmpty) {
+      score +=
+          _calculateInteractionSimilarity(interactions1, interactions2) * 0.3;
+    }
+
+    return score;
+  }
+
+  static double _calculateInteractionSimilarity(
+    Map<String, dynamic> interactions1,
+    Map<String, dynamic> interactions2,
+  ) {
+    final services1 = Set<String>.from(interactions1.keys);
+    final services2 = Set<String>.from(interactions2.keys);
+    final commonServices = services1.intersection(services2);
+
+    if (commonServices.isEmpty) return 0.0;
+
+    double totalDiff = 0.0;
+    for (final service in commonServices) {
+      final count1 = interactions1[service] ?? 0;
+      final count2 = interactions2[service] ?? 0;
+      totalDiff += (count1 - count2).abs() / (count1 + count2);
+    }
+
+    return 1 - (totalDiff / commonServices.length);
+  }
+
+  Future<List<Map<String, dynamic>>> _generateRecommendations({
+    required Map<String, dynamic> userData,
+    required List<Map<String, dynamic>> similarUsers,
+    List<String>? categories,
+    required int limit,
+  }) async {
+    try {
+      // Get potential service providers
+      final providerQuery = _firestore
+          .collection('users')
+          .where('isProvider', isEqualTo: true)
+          .where('city', isEqualTo: userData['city']);
+
+      final providers = await providerQuery.get();
+      final userFavorites = Set<String>.from(userData['favorites'] ?? []);
+
+      // Calculate scores for each provider
+      final recommendations = await compute(
+        _calculateProviderScores,
+        {
+          'providers': providers.docs
+              .map((doc) => {
+                    ...doc.data(),
+                    'id': doc.id,
+                  })
+              .toList(),
+          'similarUsers': similarUsers,
+          'userFavorites': userFavorites.toList(),
+          'weightFactors': _config.weightFactors,
+        },
+      );
+
+      // Filter by categories if specified
+      if (categories != null && categories.isNotEmpty) {
+        recommendations.removeWhere((rec) {
+          final providerCategories = List<String>.from(
+            rec['service_data']['categories'] ?? [],
+          );
+          return !providerCategories.any(categories.contains);
+        });
+      }
+
+      return recommendations.take(limit).toList();
+    } catch (e) {
+      debugPrint('Error generating recommendations: $e');
+      return [];
+    }
+  }
+
+  static List<Map<String, dynamic>> _calculateProviderScores(
+      Map<String, dynamic> data) {
+    final providers = data['providers'] as List;
+    final similarUsers = data['similarUsers'] as List;
+    final userFavorites = Set<String>.from(data['userFavorites'] as List);
+    final weightFactors = data['weightFactors'] as Map<String, double>;
+
+    final recommendations = <Map<String, dynamic>>[];
+
+    debugPrint('\n=== Starting Provider Score Calculations ===');
+    debugPrint('Number of providers to evaluate: ${providers.length}');
+    debugPrint('Number of similar users: ${similarUsers.length}');
+    debugPrint('Weight factors: $weightFactors\n');
+
+    for (var provider in providers) {
+      if (userFavorites.contains(provider['id'])) {
+        debugPrint('Skipping provider ${provider['id']} - already in favorites');
+        continue;
+      }
+
+      debugPrint('\n--- Calculating score for provider ${provider['id']} ---');
+      final score = _calculateProviderScore(
+        provider,
+        similarUsers,
+        weightFactors,
+      );
+
+      if (score > 0) {
+        debugPrint('Final score for provider ${provider['id']}: ${score.toStringAsFixed(3)}');
+        recommendations.add({
+          'service_id': provider['id'],
+          'service_data': provider,
+          'recommendation_score': score,
+        });
+      }
+    }
+
+    recommendations.sort((a, b) => (b['recommendation_score'] as double)
+        .compareTo(a['recommendation_score'] as double));
+
+    debugPrint('\n=== Final Recommendations Rankings ===');
+    for (var i = 0; i < min(5, recommendations.length); i++) {
+      debugPrint('Rank ${i + 1}: Provider ${recommendations[i]['service_id']} - Score: ${recommendations[i]['recommendation_score'].toStringAsFixed(3)}');
+    }
+
+    return recommendations;
+  }
+
+  static double _calculateProviderScore(
+    Map<String, dynamic> provider,
+    List<dynamic> similarUsers,
+    Map<String, double> weightFactors,
+  ) {
+    double score = 0.0;
+    final providerId = provider['id'];
+
+    // Similarity-based score
+    final similarityScore = _calculateSimilarityScore(providerId, similarUsers);
+    final weightedSimilarityScore = similarityScore * weightFactors['similarity']!;
+    debugPrint('Similarity score: ${similarityScore.toStringAsFixed(3)} (weighted: ${weightedSimilarityScore.toStringAsFixed(3)})');
+    score += weightedSimilarityScore;
+
+    // Rating-based score
+    final rating = provider['rating'] ?? 0.0;
+    final ratingScore = (rating / 5.0) * weightFactors['rating']!;
+    debugPrint('Rating score (${rating}/5): ${ratingScore.toStringAsFixed(3)}');
+    score += ratingScore;
+
+    // Review count score
+    final reviewCount = (provider['review_count'] ?? 0) as num;
+    final reviewScore = (min(reviewCount, 100) / 100) * weightFactors['reviewCount']!;
+    debugPrint('Review count score ($reviewCount reviews): ${reviewScore.toStringAsFixed(3)}');
+    score += reviewScore;
+
+    // Click count score
+    final clickCount = (provider['click_count'] ?? 0) as num;
+    final clickScore = (min(clickCount, 1000) / 1000) * weightFactors['clickCount']!;
+    debugPrint('Click count score ($clickCount clicks): ${clickScore.toStringAsFixed(3)}');
+    score += clickScore;
+
+    // Completion rate score
+    final completedJobs = provider['completed_jobs'] ?? 0;
+    final totalJobs = provider['total_jobs'] ?? 0;
+    double completionScore = 0.0;
+    if (totalJobs > 0) {
+      final completionRate = completedJobs / totalJobs;
+      completionScore = completionRate * weightFactors['completionRate']!;
+      debugPrint('Completion rate score ($completedJobs/$totalJobs): ${completionScore.toStringAsFixed(3)}');
+    } else {
+      debugPrint('No completion rate score (no jobs)');
+    }
+    score += completionScore;
+
+    debugPrint('Total score: ${score.toStringAsFixed(3)}');
+    return score;
+  }
+
+  static double _calculateSimilarityScore(
+      String providerId, List<dynamic> similarUsers) {
+    double totalScore = 0.0;
+    int count = 0;
+
+    debugPrint('\nCalculating similarity score for provider $providerId:');
+    for (var user in similarUsers) {
+      final favorites = List<String>.from(user['favorites'] ?? []);
+      if (favorites.contains(providerId)) {
+        final userScore = user['similarity_score'] as double;
+        totalScore += userScore;
+        count++;
+        debugPrint('Similar user found - similarity score: ${userScore.toStringAsFixed(3)}');
+      }
+    }
+
+    final finalScore = count > 0 ? totalScore / count : 0.0;
+    debugPrint('Average similarity score: ${finalScore.toStringAsFixed(3)} (based on $count similar users)');
+    return finalScore;
+  }
+}
+
+class _RecommendationCache {
+  final Map<String, _CacheEntry> _cache = {};
+
+  Future<List<Map<String, dynamic>>?> get(String userId) async {
+    final entry = _cache[userId];
+    if (entry == null) return null;
+
+    if (entry.isExpired) {
+      _cache.remove(userId);
+      return null;
+    }
+
+    return entry.data;
+  }
+
+  Future<void> set(String userId, List<Map<String, dynamic>> data) async {
+    _cache[userId] = _CacheEntry(
+      data: data,
+      timestamp: DateTime.now(),
+    );
+  }
+}
+
+class _CacheEntry {
+  final List<Map<String, dynamic>> data;
+  final DateTime timestamp;
+  final Duration validity = const Duration(minutes: 30);
+
+  _CacheEntry({
+    required this.data,
+    required this.timestamp,
+  });
+
+  bool get isExpired => DateTime.now().difference(timestamp) > validity;
 }
