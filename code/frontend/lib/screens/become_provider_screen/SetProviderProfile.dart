@@ -6,7 +6,11 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'dart:io';
 import 'package:googleapis/drive/v3.dart' as drive;
-import 'package:flutter/services.dart' show rootBundle;
+import 'package:flutter/services.dart'
+    show
+        rootBundle,
+        FilteringTextInputFormatter,
+        LengthLimitingTextInputFormatter;
 import 'package:path/path.dart' as path;
 import 'package:googleapis_auth/auth_io.dart';
 import 'package:hanini_frontend/localization/algeria_cites.dart';
@@ -302,7 +306,8 @@ class _ServiceProviderProfileState extends State<SetProviderProfile> {
       TextEditingController();
   final TextEditingController _companyController = TextEditingController();
   final TextEditingController _positionController = TextEditingController();
-  final TextEditingController _durationController = TextEditingController();
+  final TextEditingController _durationFromController = TextEditingController();
+  final TextEditingController _durationToController = TextEditingController();
 
   var userPhotoUrl = '';
   String _originalFirstName = "";
@@ -817,13 +822,24 @@ class _ServiceProviderProfileState extends State<SetProviderProfile> {
         const SizedBox(height: 10),
         TextFormField(
           controller: _phoneController,
+          keyboardType: TextInputType.number,
+          inputFormatters: [
+            FilteringTextInputFormatter.digitsOnly,
+            LengthLimitingTextInputFormatter(10),
+          ],
           decoration: InputDecoration(
             labelText: localizations.phone,
             border: const OutlineInputBorder(),
             labelStyle: GoogleFonts.poppins(),
           ),
-          validator: (value) =>
-              value!.isEmpty ? localizations.phoneRequiredError : null,
+          validator: (value) {
+            if (value == null || value.isEmpty) {
+              return localizations.phoneRequiredError;
+            } else if (value.length != 10) {
+              return localizations.phoneInvalidError;
+            }
+            return null;
+          },
         ),
         const SizedBox(height: 10),
         const SizedBox(height: 10),
@@ -947,13 +963,30 @@ class _ServiceProviderProfileState extends State<SetProviderProfile> {
           ),
         ),
         const SizedBox(height: 10),
-        TextField(
-          controller: _durationController,
-          decoration: InputDecoration(
-            labelText: localizations.duration,
-            border: const OutlineInputBorder(),
-            labelStyle: GoogleFonts.poppins(),
-          ),
+        Row(
+          children: [
+            Expanded(
+              child: TextField(
+                controller: _durationFromController,
+                decoration: InputDecoration(
+                  labelText: localizations.durationFrom,
+                  border: const OutlineInputBorder(),
+                  labelStyle: GoogleFonts.poppins(),
+                ),
+              ),
+            ),
+            const SizedBox(width: 10),
+            Expanded(
+              child: TextField(
+                controller: _durationToController,
+                decoration: InputDecoration(
+                  labelText: localizations.durationTo,
+                  border: const OutlineInputBorder(),
+                  labelStyle: GoogleFonts.poppins(),
+                ),
+              ),
+            ),
+          ],
         ),
         const SizedBox(height: 10),
         ElevatedButton(
@@ -976,9 +1009,11 @@ class _ServiceProviderProfileState extends State<SetProviderProfile> {
                 subtitle: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text('Position: ${experience['position'] ?? ''}',
+                    Text(
+                        '${localizations.position} : ${experience['position'] ?? ''}',
                         style: GoogleFonts.poppins()),
-                    Text('Duration: ${experience['duration'] ?? ''}',
+                    Text(
+                        '${localizations.duration} : ${experience['duration']}',
                         style: GoogleFonts.poppins()),
                   ],
                 ),
@@ -997,16 +1032,19 @@ class _ServiceProviderProfileState extends State<SetProviderProfile> {
   void _addWorkExperience() {
     if (_companyController.text.isNotEmpty &&
         _positionController.text.isNotEmpty &&
-        _durationController.text.isNotEmpty) {
+        _durationFromController.text.isNotEmpty &&
+        _durationToController.text.isNotEmpty) {
       setState(() {
         _workExperience.add({
           'company': _companyController.text,
           'position': _positionController.text,
-          'duration': _durationController.text,
+          'duration':
+              "${_durationFromController.text}/${_durationToController.text}",
         });
         _companyController.clear();
         _positionController.clear();
-        _durationController.clear();
+        _durationFromController.clear();
+        _durationToController.clear();
       });
     }
   }
@@ -1028,7 +1066,7 @@ class _ServiceProviderProfileState extends State<SetProviderProfile> {
               child: TextField(
                 controller: _certificationController,
                 decoration: InputDecoration(
-                  labelText: localizations.skills,
+                  labelText: localizations.certifications,
                   border: const OutlineInputBorder(),
                   labelStyle: GoogleFonts.poppins(),
                 ),

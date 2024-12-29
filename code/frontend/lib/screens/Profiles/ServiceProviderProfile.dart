@@ -197,7 +197,7 @@ class _ServiceProviderProfileState extends State<ServiceProviderProfile> {
   String communeLatin = "";
 
   final TextEditingController nameController = TextEditingController();
-  final TextEditingController professionController = TextEditingController();
+  // final TextEditingController professionController = TextEditingController();
   final TextEditingController hourlyRateController = TextEditingController();
   final TextEditingController aboutMeController = TextEditingController();
   final TextEditingController certificationController = TextEditingController();
@@ -232,7 +232,7 @@ class _ServiceProviderProfileState extends State<ServiceProviderProfile> {
             rating = (data['rating'] ?? 0.0).toDouble();
             portfolioImages = List<String>.from(data['portfolioImages'] ?? []);
             nameController.text = userName;
-            professionController.text = profession;
+            // professionController.text = profession;
             aboutMeController.text = aboutMe;
             hourlyRateController.text = hourlyRate.toString();
             isLoading = false;
@@ -255,7 +255,7 @@ class _ServiceProviderProfileState extends State<ServiceProviderProfile> {
   @override
   void dispose() {
     nameController.dispose();
-    professionController.dispose();
+    // professionController.dispose();
     hourlyRateController.dispose();
     aboutMeController.dispose();
     super.dispose();
@@ -614,7 +614,7 @@ class _ServiceProviderProfileState extends State<ServiceProviderProfile> {
           'name': userName,
           'aboutMe': aboutMe,
           'basicInfo.hourlyRate': hourlyRate,
-          'basicInfo.profession': profession,
+          // 'basicInfo.profession': profession,
           'skills': skills,
           'certifications': certifications,
           'workExperience': workExperience,
@@ -636,7 +636,7 @@ class _ServiceProviderProfileState extends State<ServiceProviderProfile> {
       if (isEditMode) {
         // Save changes (you can save your form values here if needed)
         userName = nameController.text;
-        profession = professionController.text;
+        // profession = professionController.text;
         hourlyRate =
             int.tryParse(hourlyRateController.text) ?? 0; // Safe conversion
         aboutMe = aboutMeController.text;
@@ -682,39 +682,39 @@ class _ServiceProviderProfileState extends State<ServiceProviderProfile> {
                     )
                   ],
                 ),
-               Positioned(
-                top: 40,
-                right: 16,
-                child: GestureDetector(
-                  onTap: toggleEditMode,
-                  child: Container(
-                    height: 56, // Match default FAB size
-                    width: 56,
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        colors: [
-                          Colors.deepPurple.shade700,
-                          Colors.purple.shade400,
-                        ],
-                        begin: Alignment.topLeft,
-                        end: Alignment.bottomRight,
-                      ),
-                      shape: BoxShape.circle,
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withOpacity(0.2),
-                          blurRadius: 10,
-                          offset: const Offset(0, 5),
+                Positioned(
+                  top: 40,
+                  right: 16,
+                  child: GestureDetector(
+                    onTap: toggleEditMode,
+                    child: Container(
+                      height: 56, // Match default FAB size
+                      width: 56,
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          colors: [
+                            Colors.deepPurple.shade700,
+                            Colors.purple.shade400,
+                          ],
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
                         ),
-                      ],
-                    ),
-                    child: Icon(
-                      isEditMode ? Icons.check : Icons.edit,
-                      color: Colors.white,
+                        shape: BoxShape.circle,
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.2),
+                            blurRadius: 10,
+                            offset: const Offset(0, 5),
+                          ),
+                        ],
+                      ),
+                      child: Icon(
+                        isEditMode ? Icons.check : Icons.edit,
+                        color: Colors.white,
+                      ),
                     ),
                   ),
                 ),
-              ),
               ],
             ),
       resizeToAvoidBottomInset: false,
@@ -796,33 +796,33 @@ class _ServiceProviderProfileState extends State<ServiceProviderProfile> {
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 const SizedBox(width: 8),
-                if (isEditMode)
-                  Expanded(
-                    child: TextField(
-                      controller: professionController,
-                      textAlign: TextAlign.center,
-                      decoration: InputDecoration(
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        labelText: localizations.profession,
-                        filled: true,
-                        fillColor: Colors.grey.shade50,
-                      ),
+                // if (isEditMode)
+                // Expanded(
+                //   child: TextField(
+                //     controller: professionController,
+                //     textAlign: TextAlign.center,
+                //     decoration: InputDecoration(
+                //       border: OutlineInputBorder(
+                //         borderRadius: BorderRadius.circular(12),
+                //       ),
+                //       labelText: localizations.profession,
+                //       filled: true,
+                //       fillColor: Colors.grey.shade50,
+                //     ),
+                //   ),
+                //   )
+                // else
+                Row(
+                  children: [
+                    Icon(Icons.business_center,
+                        size: 20, color: Colors.blue.shade700),
+                    Text(
+                      profession,
+                      style:
+                          TextStyle(fontSize: 16, color: Colors.grey.shade700),
                     ),
-                  )
-                else
-                  Row(
-                    children: [
-                      Icon(Icons.business_center,
-                          size: 20, color: Colors.blue.shade700),
-                      Text(
-                        profession,
-                        style: TextStyle(
-                            fontSize: 16, color: Colors.grey.shade700),
-                      ),
-                    ],
-                  )
+                  ],
+                )
               ],
             ),
             const SizedBox(height: 8),
@@ -1289,24 +1289,30 @@ class _ServiceProviderProfileState extends State<ServiceProviderProfile> {
   Widget _buildWorkExperienceSection(AppLocalizations localizations) {
     final companyController = TextEditingController();
     final positionController = TextEditingController();
-    final durationController = TextEditingController();
+    final durationFromController = TextEditingController();
+    final durationToController = TextEditingController();
 
     void addWorkExperience() {
       final company = companyController.text.trim();
       final position = positionController.text.trim();
-      final duration = durationController.text.trim();
+      final durationFrom = durationFromController.text.trim();
+      final durationTo = durationToController.text.trim();
 
-      if (company.isNotEmpty && position.isNotEmpty && duration.isNotEmpty) {
+      if (company.isNotEmpty &&
+          position.isNotEmpty &&
+          durationFrom.isNotEmpty &&
+          durationTo.isNotEmpty) {
         setState(() {
           workExperience.add({
             'company': company,
             'position': position,
-            'duration': duration,
+            'duration': "${durationFrom}/${durationTo}",
           });
         });
         companyController.clear();
         positionController.clear();
-        durationController.clear();
+        durationFromController.clear();
+        durationToController.clear();
       }
     }
 
@@ -1400,23 +1406,36 @@ class _ServiceProviderProfileState extends State<ServiceProviderProfile> {
                           textInputAction: TextInputAction.next,
                         ),
                         const SizedBox(height: 16),
-                        TextFormField(
-                          controller: durationController,
-                          decoration: InputDecoration(
-                            labelText: localizations.duration,
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(12),
-                              borderSide: BorderSide.none,
+                        Row(
+                          children: [
+                            Expanded(
+                              child: TextField(
+                                controller: durationFromController,
+                                decoration: InputDecoration(
+                                  labelText: localizations.durationFrom,
+                                  border: const OutlineInputBorder(),
+                                  labelStyle: GoogleFonts.poppins(),
+                                  filled: true,
+                                  fillColor: Colors.grey[100],
+                                  hintText: localizations.egFrom,
+                                ),
+                              ),
                             ),
-                            filled: true,
-                            fillColor: Colors.grey[100],
-                            prefixIcon: const Icon(Icons.calendar_today),
-                            hintText: 'e.g., Jan 2020 - Present',
-                            contentPadding: const EdgeInsets.symmetric(
-                                horizontal: 20, vertical: 16),
-                          ),
-                          textInputAction: TextInputAction.done,
-                          onFieldSubmitted: (_) => addWorkExperience(),
+                            const SizedBox(width: 10),
+                            Expanded(
+                              child: TextField(
+                                controller: durationToController,
+                                decoration: InputDecoration(
+                                  labelText: localizations.durationTo,
+                                  border: const OutlineInputBorder(),
+                                  labelStyle: GoogleFonts.poppins(),
+                                  filled: true,
+                                  fillColor: Colors.grey[100],
+                                  hintText: localizations.egTo,
+                                ),
+                              ),
+                            ),
+                          ],
                         ),
                         const SizedBox(height: 24),
                         ElevatedButton(

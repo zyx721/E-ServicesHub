@@ -654,6 +654,10 @@ class AppLocalizations {
   String get position =>
       isArabic ? "المنصب" : (isFrench ? "Poste" : "Position");
   String get duration => isArabic ? "خلال" : (isFrench ? "Durée" : "Duration");
+  // durationFrom
+  String get durationFrom => isArabic ? "من" : (isFrench ? "De" : "From");
+  // durationTo
+  String get durationTo => isArabic ? "إلى" : (isFrench ? "À" : "To");
   String get addWorkExperience => isArabic
       ? "أضف خبرة عمل"
       : (isFrench ? "Ajouter une expérience" : "Add Work Experience");
@@ -678,7 +682,6 @@ class AppLocalizations {
       : (isFrench
           ? "Aucune image de portfolio disponible."
           : "No portfolio images available");
-
   String get certifications =>
       isArabic ? "الشهادات" : (isFrench ? "Certifications" : "Certifications");
   String get addCertification => isArabic
@@ -1165,6 +1168,62 @@ class AppLocalizations {
       ? "التقييم الأدنى"
       : (isFrench ? "Note minimale" : "Minimum Rating");
 
+  // Manual Verification
+  String get manualVerificationTitle => isArabic
+      ? "التحقق اليدوي"
+      : (isFrench ? "Vérification manuelle" : "Manual Verification");
+  // Please provide clear photos of your ID and face for verification
+  String get manualVerificationDescription => isArabic
+      ? "يرجى تقديم صور واضحة لهويتك ووجهك للتحقق"
+      : (isFrench
+          ? "Veuillez fournir des photos claires de votre pièce d'identité et de votre visage pour vérification"
+          : "Please provide clear photos of your ID and face for verification");
+
+  // ID Document
+  String get idDocument => isArabic
+      ? "وثيقة الهوية"
+      : (isFrench ? "Document d'identité" : "ID Document");
+
+  // Upload a clear photo of your government-issued ID
+  String get idDocumentDescription => isArabic
+      ? "قم بتحميل صورة واضحة لهويتك الصادرة عن الحكومة"
+      : (isFrench
+          ? "Téléchargez une photo claire de votre pièce d'identité délivrée par le gouvernement"
+          : "Upload a clear photo of your government-issued ID");
+  // Selfie Photo
+  String get selfiePhoto =>
+      isArabic ? "صورة شخصية" : (isFrench ? "Photo de soi" : "Selfie Photo");
+
+  // Take a clear photo of your face
+  String get selfiePhotoDescription => isArabic
+      ? "التقط صورة واضحة لوجهك"
+      : (isFrench
+          ? "Prenez une photo claire de votre visage"
+          : "Take a clear photo of your face");
+  // No image selected
+  String get noImageSelected => isArabic
+      ? "لم يتم اختيار صورة"
+      : (isFrench ? "Aucune image sélectionnée" : "No image selected");
+  // Camera
+  String get camera => isArabic ? "الكاميرا" : (isFrench ? "Caméra" : "Camera");
+  // Gallery
+  String get gallery =>
+      isArabic ? "المعرض" : (isFrench ? "Galerie" : "Gallery");
+  // Submit for Verification
+  String get submitForVerification => isArabic
+      ? "إرسال للتحقق"
+      : (isFrench ? "Soumettre pour vérification" : "Submit for Verification");
+  // Verification request sent successfully
+  String get verificationRequestSent => isArabic
+      ? "تم إرسال طلب التحقق بنجاح"
+      : (isFrench
+          ? "Demande de vérification envoyée avec succès"
+          : "Verification request sent successfully");
+  // "eg. 2018"
+  String get egFrom =>
+      isArabic ? "مثال: 2018" : (isFrench ? "par exemple: 2018" : "eg: 2018");
+  String get egTo =>
+      isArabic ? "مثال: 2024" : (isFrench ? "par exemple: 2024" : "eg: 2024");
   // Static method to access the instance
   static AppLocalizations? of(BuildContext context) {
     return Localizations.of<AppLocalizations>(context, AppLocalizations);
