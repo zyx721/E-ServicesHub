@@ -5,12 +5,14 @@ import 'package:hanini_frontend/localization/app_localization.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class InfoGatherer extends StatefulWidget {
+  const InfoGatherer({super.key});
+
   @override
   _NameEntryScreenState createState() => _NameEntryScreenState();
 }
 
 class _NameEntryScreenState extends State<InfoGatherer> {
-  Set<String> _selectedChoices = {};
+  final Set<String> _selectedChoices = {};
   static const int requiredChoices = 3;
   String? _selectedGender;
   int? _selectedAge;
@@ -48,8 +50,7 @@ class _NameEntryScreenState extends State<InfoGatherer> {
 
   void _saveProviderInfo() async {
     if (_selectedChoices.length != requiredChoices) {
-      _showErrorDialog(AppLocalizations.of(context)!.selectThreeChoices ??
-          'Please select exactly three choices');
+      _showErrorDialog(AppLocalizations.of(context)!.selectThreeChoices);
       return;
     }
 
@@ -96,7 +97,7 @@ class _NameEntryScreenState extends State<InfoGatherer> {
         ),
         title: Text(
           AppLocalizations.of(context)!.error,
-          style: TextStyle(color: primaryPurple),
+          style: const TextStyle(color: primaryPurple),
         ),
         content: Text(message),
         actions: [
@@ -104,7 +105,7 @@ class _NameEntryScreenState extends State<InfoGatherer> {
             onPressed: () => Navigator.pop(context),
             child: Text(
               AppLocalizations.of(context)!.ok,
-              style: TextStyle(color: primaryPurple),
+              style: const TextStyle(color: primaryPurple),
             ),
           ),
         ],
@@ -116,24 +117,24 @@ class _NameEntryScreenState extends State<InfoGatherer> {
     final localizations = AppLocalizations.of(context)!;
 
     return Container(
-      margin: EdgeInsets.symmetric(vertical: 16),
+      margin: const EdgeInsets.symmetric(vertical: 16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
             localizations.selectGender,
-            style: TextStyle(
+            style: const TextStyle(
               fontSize: 18,
               fontWeight: FontWeight.w600,
               color: primaryPurple,
             ),
           ),
-          SizedBox(height: 12),
+          const SizedBox(height: 12),
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               _buildGenderButton(localizations.male, Icons.male),
-              SizedBox(width: 20),
+              const SizedBox(width: 20),
               _buildGenderButton(localizations.female, Icons.female),
             ],
           ),
@@ -145,17 +146,17 @@ class _NameEntryScreenState extends State<InfoGatherer> {
   Widget _buildGenderButton(String gender, IconData icon) {
     final isSelected = _selectedGender == gender;
     return AnimatedContainer(
-      duration: Duration(milliseconds: 200),
+      duration: const Duration(milliseconds: 200),
       child: Material(
         color: Colors.transparent,
         child: InkWell(
           onTap: () => setState(() => _selectedGender = gender),
           borderRadius: BorderRadius.circular(25),
           child: Container(
-            padding: EdgeInsets.symmetric(horizontal: 32, vertical: 16),
+            padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
             decoration: BoxDecoration(
               gradient: isSelected
-                  ? LinearGradient(
+                  ? const LinearGradient(
                       colors: [primaryPurple, secondaryPurple],
                       begin: Alignment.topLeft,
                       end: Alignment.bottomRight,
@@ -168,7 +169,7 @@ class _NameEntryScreenState extends State<InfoGatherer> {
                       BoxShadow(
                         color: primaryPurple.withOpacity(0.3),
                         blurRadius: 8,
-                        offset: Offset(0, 4),
+                        offset: const Offset(0, 4),
                       )
                     ]
                   : null,
@@ -181,7 +182,7 @@ class _NameEntryScreenState extends State<InfoGatherer> {
                   color: isSelected ? Colors.white : primaryPurple,
                   size: 24,
                 ),
-                SizedBox(width: 12),
+                const SizedBox(width: 12),
                 Text(
                   gender,
                   style: TextStyle(
@@ -202,7 +203,7 @@ class _NameEntryScreenState extends State<InfoGatherer> {
     final localizations = AppLocalizations.of(context)!;
 
     return Container(
-      margin: EdgeInsets.symmetric(vertical: 16),
+      margin: const EdgeInsets.symmetric(vertical: 16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -230,13 +231,13 @@ class _NameEntryScreenState extends State<InfoGatherer> {
                   localizations.selectYourAge,
                   style: TextStyle(color: primaryPurple.withOpacity(0.7)),
                 ),
-                icon: Icon(Icons.arrow_drop_down, color: primaryPurple),
+                icon: const Icon(Icons.arrow_drop_down, color: primaryPurple),
                 items: _ageRange.map((age) {
                   return DropdownMenuItem<int>(
                     value: age,
                     child: Text(
                       age.toString(),
-                      style: TextStyle(color: primaryPurple),
+                      style: const TextStyle(color: primaryPurple),
                     ),
                   );
                 }).toList(),
@@ -260,12 +261,12 @@ class _NameEntryScreenState extends State<InfoGatherer> {
         backgroundColor: Colors.white,
         title: Text(
           localizations.selectYourServices,
-          style: TextStyle(
+          style: const TextStyle(
             color: primaryPurple,
             fontWeight: FontWeight.w600,
           ),
         ),
-        iconTheme: IconThemeData(color: primaryPurple),
+        iconTheme: const IconThemeData(color: primaryPurple),
       ),
       body: Container(
         decoration: BoxDecoration(
@@ -281,11 +282,11 @@ class _NameEntryScreenState extends State<InfoGatherer> {
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
               _buildGenderSelection(),
-              SizedBox(height: 8),
+              const SizedBox(height: 8),
               _buildAgeSelection(),
-              SizedBox(height: 24),
+              const SizedBox(height: 24),
               Container(
-                padding: EdgeInsets.all(16),
+                padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
                   color: Colors.white,
                   borderRadius: BorderRadius.circular(20),
@@ -293,7 +294,7 @@ class _NameEntryScreenState extends State<InfoGatherer> {
                     BoxShadow(
                       color: primaryPurple.withOpacity(0.1),
                       blurRadius: 10,
-                      offset: Offset(0, 4),
+                      offset: const Offset(0, 4),
                     ),
                   ],
                 ),
@@ -301,13 +302,13 @@ class _NameEntryScreenState extends State<InfoGatherer> {
                   children: [
                     Text(
                       '${localizations.selectExactly} ${requiredChoices} ${localizations.services}',
-                      style: TextStyle(
+                      style: const TextStyle(
                         fontSize: 18,
                         fontWeight: FontWeight.w600,
                         color: primaryPurple,
                       ),
                     ),
-                    SizedBox(height: 16),
+                    const SizedBox(height: 16),
                     StreamBuilder<List<WorkChoice>>(
                       stream: _workChoicesStream,
                       builder: (context, snapshot) {
@@ -318,7 +319,7 @@ class _NameEntryScreenState extends State<InfoGatherer> {
 
                         if (snapshot.connectionState ==
                             ConnectionState.waiting) {
-                          return Center(
+                          return const Center(
                             child: CircularProgressIndicator(
                               valueColor:
                                   AlwaysStoppedAnimation<Color>(primaryPurple),
@@ -328,7 +329,7 @@ class _NameEntryScreenState extends State<InfoGatherer> {
 
                         final workChoices = snapshot.data ?? [];
                         if (workChoices.isEmpty) {
-                          return Text('No choices available.');
+                          return Text(localizations.noChoicesAvailable);
                         }
 
                         return Wrap(
@@ -343,14 +344,14 @@ class _NameEntryScreenState extends State<InfoGatherer> {
                                 onTap: () => _toggleChoice(choice.id),
                                 borderRadius: BorderRadius.circular(25),
                                 child: AnimatedContainer(
-                                  duration: Duration(milliseconds: 200),
-                                  padding: EdgeInsets.symmetric(
+                                  duration: const Duration(milliseconds: 200),
+                                  padding: const EdgeInsets.symmetric(
                                     horizontal: 16,
                                     vertical: 12,
                                   ),
                                   decoration: BoxDecoration(
                                     gradient: isSelected
-                                        ? LinearGradient(
+                                        ? const LinearGradient(
                                             colors: [
                                               primaryPurple,
                                               secondaryPurple
@@ -367,7 +368,7 @@ class _NameEntryScreenState extends State<InfoGatherer> {
                                               color: primaryPurple
                                                   .withOpacity(0.3),
                                               blurRadius: 8,
-                                              offset: Offset(0, 4),
+                                              offset: const Offset(0, 4),
                                             )
                                           ]
                                         : null,
@@ -376,7 +377,7 @@ class _NameEntryScreenState extends State<InfoGatherer> {
                                     mainAxisSize: MainAxisSize.min,
                                     children: [
                                       if (isSelected)
-                                        Padding(
+                                        const Padding(
                                           padding: EdgeInsets.only(right: 8),
                                           child: Icon(
                                             Icons.check_circle,
@@ -409,7 +410,7 @@ class _NameEntryScreenState extends State<InfoGatherer> {
                   ],
                 ),
               ),
-              SizedBox(height: 40),
+              const SizedBox(height: 40),
               GestureDetector(
                 onTap: (_selectedChoices.length == requiredChoices &&
                         _selectedGender != null &&
@@ -417,7 +418,8 @@ class _NameEntryScreenState extends State<InfoGatherer> {
                     ? _saveProviderInfo
                     : null,
                 child: Container(
-                  padding: EdgeInsets.symmetric(horizontal: 60, vertical: 18),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 60, vertical: 18),
                   decoration: BoxDecoration(
                     gradient: LinearGradient(
                       colors: (_selectedChoices.length == requiredChoices &&
@@ -436,14 +438,14 @@ class _NameEntryScreenState extends State<InfoGatherer> {
                                 _selectedAge != null)
                             ? primaryPurple.withOpacity(0.3)
                             : Colors.black12,
-                        offset: Offset(0, 4),
+                        offset: const Offset(0, 4),
                         blurRadius: 12,
                       ),
                     ],
                   ),
                   child: Text(
                     localizations.continueButton,
-                    style: TextStyle(
+                    style: const TextStyle(
                       fontSize: 18,
                       fontWeight: FontWeight.w600,
                       color: Colors.white,
@@ -451,7 +453,7 @@ class _NameEntryScreenState extends State<InfoGatherer> {
                   ),
                 ),
               ),
-              SizedBox(height: 20),
+              const SizedBox(height: 20),
             ],
           ),
         ),

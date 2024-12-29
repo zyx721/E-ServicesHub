@@ -2,19 +2,19 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
-
-import 'package:flutter/material.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:google_fonts/google_fonts.dart';
-import 'package:intl/intl.dart';
+import 'package:hanini_frontend/localization/app_localization.dart';
 
 class ProviderReviewsScreen extends StatelessWidget {
   final String providerId;
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
-  ProviderReviewsScreen({Key? key, required this.providerId}) : super(key: key);
+  ProviderReviewsScreen({super.key, required this.providerId});
 
-  Future<void> _deleteReview(BuildContext context, List<dynamic> reviews, int index) async {
+  Future<void> _deleteReview(
+      BuildContext context, List<dynamic> reviews, int index) async {
+    final localizations = AppLocalizations.of(context);
+    if (localizations == null) return;
+
     try {
       // Create a new list without the deleted review
       final updatedReviews = List<dynamic>.from(reviews);
@@ -28,8 +28,10 @@ class ProviderReviewsScreen extends StatelessWidget {
       // Show success message
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Review deleted successfully'),
+          SnackBar(
+            content: Text(
+              localizations.reviewDeletedSuccessfully,
+            ),
             backgroundColor: Colors.green,
           ),
         );
@@ -37,8 +39,8 @@ class ProviderReviewsScreen extends StatelessWidget {
     } catch (e) {
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Failed to delete review'),
+          SnackBar(
+            content: Text(localizations.failedToDeleteReview),
             backgroundColor: Colors.red,
           ),
         );
@@ -46,23 +48,27 @@ class ProviderReviewsScreen extends StatelessWidget {
     }
   }
 
-  void _showDeleteConfirmation(BuildContext context, List<dynamic> reviews, int index) {
+  void _showDeleteConfirmation(
+      BuildContext context, List<dynamic> reviews, int index) {
+    final localizations = AppLocalizations.of(context);
+    if (localizations == null) return;
+
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
         title: Text(
-          'Delete Review',
+          localizations.deleteReview,
           style: GoogleFonts.poppins(fontWeight: FontWeight.bold),
         ),
         content: Text(
-          'Are you sure you want to delete this review?',
+          localizations.deleteReviewConfirmation,
           style: GoogleFonts.poppins(),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
             child: Text(
-              'Cancel',
+              localizations.cancel,
               style: GoogleFonts.poppins(color: Colors.grey),
             ),
           ),
@@ -72,7 +78,7 @@ class ProviderReviewsScreen extends StatelessWidget {
               _deleteReview(context, reviews, index);
             },
             child: Text(
-              'Delete',
+              localizations.delete,
               style: GoogleFonts.poppins(color: Colors.red),
             ),
           ),
@@ -83,10 +89,13 @@ class ProviderReviewsScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final localizations = AppLocalizations.of(context);
+    if (localizations == null) return const SizedBox.shrink();
+
     return Scaffold(
       appBar: AppBar(
         title: Text(
-          'Provider Reviews',
+          localizations.providerReviews,
           style: GoogleFonts.poppins(
             fontSize: 22,
             fontWeight: FontWeight.w600,
@@ -95,7 +104,8 @@ class ProviderReviewsScreen extends StatelessWidget {
         ),
         backgroundColor: Colors.amber,
       ),
-      body: StreamBuilder<DocumentSnapshot>( // Changed to StreamBuilder to update in real-time
+      body: StreamBuilder<DocumentSnapshot>(
+        // Changed to StreamBuilder to update in real-time
         stream: _firestore.collection('users').doc(providerId).snapshots(),
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
@@ -105,7 +115,7 @@ class ProviderReviewsScreen extends StatelessWidget {
           if (snapshot.hasError) {
             return Center(
               child: Text(
-                'Error fetching reviews. Please try again later.',
+                localizations.errorFetchingReviews,
                 style: GoogleFonts.poppins(fontSize: 16, color: Colors.red),
               ),
             );
@@ -114,8 +124,9 @@ class ProviderReviewsScreen extends StatelessWidget {
           if (!snapshot.hasData || !snapshot.data!.exists) {
             return Center(
               child: Text(
-                'No reviews available.',
-                style: GoogleFonts.poppins(fontSize: 16, fontStyle: FontStyle.italic),
+                localizations.noReviewsAvailable,
+                style: GoogleFonts.poppins(
+                    fontSize: 16, fontStyle: FontStyle.italic),
               ),
             );
           }
@@ -126,8 +137,9 @@ class ProviderReviewsScreen extends StatelessWidget {
           return reviews.isEmpty
               ? Center(
                   child: Text(
-                    'No reviews available.',
-                    style: GoogleFonts.poppins(fontSize: 16, fontStyle: FontStyle.italic),
+                    localizations.noReviewsAvailable,
+                    style: GoogleFonts.poppins(
+                        fontSize: 16, fontStyle: FontStyle.italic),
                   ),
                 )
               : ListView.builder(
@@ -147,9 +159,11 @@ class ProviderReviewsScreen extends StatelessWidget {
                         : 'Unknown time';
 
                     return FutureBuilder<DocumentSnapshot>(
-                      future: _firestore.collection('users').doc(commenterId).get(),
+                      future:
+                          _firestore.collection('users').doc(commenterId).get(),
                       builder: (context, commenterSnapshot) {
-                        if (commenterSnapshot.connectionState == ConnectionState.waiting) {
+                        if (commenterSnapshot.connectionState ==
+                            ConnectionState.waiting) {
                           return const Card(
                             child: Padding(
                               padding: EdgeInsets.all(12.0),
@@ -158,8 +172,11 @@ class ProviderReviewsScreen extends StatelessWidget {
                           );
                         }
 
-                        final commenterData = commenterSnapshot.data?.data() as Map<String, dynamic>? ?? {};
-                        final commenterName = commenterData['name'] ?? 'Anonymous';
+                        final commenterData = commenterSnapshot.data?.data()
+                                as Map<String, dynamic>? ??
+                            {};
+                        final commenterName =
+                            commenterData['name'] ?? 'Anonymous';
                         final commenterPhoto = commenterData['photoURL'] ?? '';
 
                         return Card(
@@ -175,25 +192,32 @@ class ProviderReviewsScreen extends StatelessWidget {
                                       radius: 20,
                                       backgroundImage: commenterPhoto.isNotEmpty
                                           ? NetworkImage(commenterPhoto)
-                                          : const AssetImage('assets/images/default_profile.png') as ImageProvider,
+                                          : const AssetImage(
+                                                  'assets/images/default_profile.png')
+                                              as ImageProvider,
                                     ),
-                                              IconButton(
-                                                icon: const Icon(Icons.delete_outline, color: Colors.red, size: 20),
-                                                onPressed: () => _showDeleteConfirmation(context, reviews, index),
-                                              ),
+                                    IconButton(
+                                      icon: const Icon(Icons.delete_outline,
+                                          color: Colors.red, size: 20),
+                                      onPressed: () => _showDeleteConfirmation(
+                                          context, reviews, index),
+                                    ),
                                   ],
                                 ),
                                 const SizedBox(width: 6),
                                 Expanded(
                                   child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
                                     children: [
                                       Row(
-                                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                        mainAxisAlignment:
+                                            MainAxisAlignment.spaceBetween,
                                         children: [
                                           Text(
                                             commenterName,
-                                            style: GoogleFonts.poppins(fontWeight: FontWeight.w600),
+                                            style: GoogleFonts.poppins(
+                                                fontWeight: FontWeight.w600),
                                           ),
                                           Row(
                                             children: [
@@ -212,18 +236,24 @@ class ProviderReviewsScreen extends StatelessWidget {
                                       Row(
                                         children: List.generate(5, (index) {
                                           if (index < rating.floor()) {
-                                            return const Icon(Icons.star, color: Colors.amber, size: 16);
-                                          } else if (index < rating.ceil() && rating.truncateToDouble() != rating) {
-                                            return const Icon(Icons.star_half, color: Colors.amber, size: 16);
+                                            return const Icon(Icons.star,
+                                                color: Colors.amber, size: 16);
+                                          } else if (index < rating.ceil() &&
+                                              rating.truncateToDouble() !=
+                                                  rating) {
+                                            return const Icon(Icons.star_half,
+                                                color: Colors.amber, size: 16);
                                           } else {
-                                            return const Icon(Icons.star_border, color: Colors.amber, size: 16);
+                                            return const Icon(Icons.star_border,
+                                                color: Colors.amber, size: 16);
                                           }
                                         }),
                                       ),
                                       const SizedBox(height: 8),
                                       Text(
                                         comment,
-                                        style: GoogleFonts.poppins(color: Colors.grey[700]),
+                                        style: GoogleFonts.poppins(
+                                            color: Colors.grey[700]),
                                       ),
                                     ],
                                   ),
@@ -241,7 +271,6 @@ class ProviderReviewsScreen extends StatelessWidget {
     );
   }
 }
-
 
 class CommentManagementScreen extends StatelessWidget {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
@@ -264,13 +293,14 @@ class CommentManagementScreen extends StatelessWidget {
             ),
           ),
         ),
-        
+
         // Users List
         ListView.builder(
           shrinkWrap: true,
           physics: const NeverScrollableScrollPhysics(),
           itemCount: users.length,
-          itemBuilder: (context, index) => _buildUserCard(context, users[index]),
+          itemBuilder: (context, index) =>
+              _buildUserCard(context, users[index]),
         ),
       ],
     );
@@ -309,7 +339,7 @@ class CommentManagementScreen extends StatelessWidget {
               : const AssetImage('assets/images/default_profile.png')
                   as ImageProvider,
         ),
-        
+
         // Provider Badge
         if (userData['isProvider'] == true)
           Positioned(
@@ -366,32 +396,36 @@ class CommentManagementScreen extends StatelessWidget {
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-GestureDetector(
-  onTap: () {
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => ProviderReviewsScreen(providerId: user.id),
-      ),
-    );
-  },
-  child: Icon(
-    Icons.star, // Star icon
-    color: Colors.amber, // Color of the icon
-    size: 30, // Size of the icon
-  ),
-),
-
+        GestureDetector(
+          onTap: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) =>
+                    ProviderReviewsScreen(providerId: user.id),
+              ),
+            );
+          },
+          // ignore: prefer_const_constructors
+          child: Icon(
+            Icons.star, // Star icon
+            color: Colors.amber, // Color of the icon
+            size: 30, // Size of the icon
+          ),
+        ),
       ],
     );
   }
 
   @override
   Widget build(BuildContext context) {
+    final localizations = AppLocalizations.of(context);
+    if (localizations == null) return const SizedBox.shrink();
+
     return Scaffold(
       appBar: AppBar(
         title: Text(
-          'Comment Management',
+          localizations.commentManagement,
           style: GoogleFonts.poppins(
             fontSize: 22,
             fontWeight: FontWeight.w600,
@@ -418,7 +452,7 @@ GestureDetector(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 if (providers.isNotEmpty)
-                  _buildUserSection('Service Providers', providers),
+                  _buildUserSection(localizations.serviceProviders, providers),
               ],
             ),
           );

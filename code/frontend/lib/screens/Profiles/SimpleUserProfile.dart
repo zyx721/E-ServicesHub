@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:hanini_frontend/localization/app_localization.dart';
-import 'package:hanini_frontend/models/colors.dart';
 import 'package:hanini_frontend/screens/become_provider_screen/onboarding2.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:googleapis/drive/v3.dart' as drive;
@@ -203,86 +202,86 @@ class _SimpleUserProfileState extends State<SimpleUserProfile> {
     }
   }
 
- @override
-Widget build(BuildContext context) {
-  final AppLocalizations? localization = AppLocalizations.of(context);
+  @override
+  Widget build(BuildContext context) {
+    final AppLocalizations? localization = AppLocalizations.of(context);
 
-  if (localization == null) {
-    return const Scaffold(
-      body: Center(child: CircularProgressIndicator()),
-    );
-  }
+    if (localization == null) {
+      return const Scaffold(
+        body: Center(child: CircularProgressIndicator()),
+      );
+    }
 
-  if (hasError) {
-    return Scaffold(
-      body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Text(localization.error),
-            ElevatedButton(
-              onPressed: () => fetchUserData(),
-              child: Text(localization.retry ?? 'Retry'),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  return Scaffold(
-    body: isLoading
-        ? const Center(child: CircularProgressIndicator())
-        : Stack(
+    if (hasError) {
+      return Scaffold(
+        body: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              ListView(
-                padding: EdgeInsets.zero,
-                children: [
-                  const SizedBox(height: 50),
-                  buildTop(localization),
-                  const SizedBox(height: 30),
-                  buildProfileInfo(localization),
-                  const SizedBox(height: 60),
-                  buildBecomeProviderButton(localization),
-                ],
-              ),
-              Positioned(
-                top: 40,
-                right: 16,
-                child: GestureDetector(
-                  onTap: toggleEditMode,
-                  child: Container(
-                    height: 56, // Match default FAB size
-                    width: 56,
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        colors: [
-                          Colors.deepPurple.shade700,
-                          Colors.purple.shade400,
-                        ],
-                        begin: Alignment.topLeft,
-                        end: Alignment.bottomRight,
-                      ),
-                      shape: BoxShape.circle,
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withOpacity(0.2),
-                          blurRadius: 10,
-                          offset: const Offset(0, 5),
-                        ),
-                      ],
-                    ),
-                    child: Icon(
-                      isEditMode ? Icons.check : Icons.edit,
-                      color: Colors.white,
-                    ),
-                  ),
-                ),
+              Text(localization.error),
+              ElevatedButton(
+                onPressed: () => fetchUserData(),
+                child: Text(localization.retry),
               ),
             ],
           ),
-  );
-}
+        ),
+      );
+    }
+
+    return Scaffold(
+      body: isLoading
+          ? const Center(child: CircularProgressIndicator())
+          : Stack(
+              children: [
+                ListView(
+                  padding: EdgeInsets.zero,
+                  children: [
+                    const SizedBox(height: 50),
+                    buildTop(localization),
+                    const SizedBox(height: 30),
+                    buildProfileInfo(localization),
+                    const SizedBox(height: 60),
+                    buildBecomeProviderButton(localization),
+                  ],
+                ),
+                Positioned(
+                  top: 40,
+                  right: 16,
+                  child: GestureDetector(
+                    onTap: toggleEditMode,
+                    child: Container(
+                      height: 56, // Match default FAB size
+                      width: 56,
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          colors: [
+                            Colors.deepPurple.shade700,
+                            Colors.purple.shade400,
+                          ],
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                        ),
+                        shape: BoxShape.circle,
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.2),
+                            blurRadius: 10,
+                            offset: const Offset(0, 5),
+                          ),
+                        ],
+                      ),
+                      child: Icon(
+                        isEditMode ? Icons.check : Icons.edit,
+                        color: Colors.white,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+    );
+  }
 
   void toggleEditMode() {
     setState(() {
@@ -380,7 +379,7 @@ Widget build(BuildContext context) {
                 },
                 child: Container(
                   padding: const EdgeInsets.all(6),
-                  decoration: BoxDecoration(
+                  decoration: const BoxDecoration(
                     shape: BoxShape.circle,
                     color: Colors.purple,
                   ),
@@ -400,7 +399,7 @@ Widget build(BuildContext context) {
                 child: TextField(
                   controller: nameController,
                   decoration: InputDecoration(
-                    border: OutlineInputBorder(),
+                    border: const OutlineInputBorder(),
                     labelText: localization.name, // Use localization
                   ),
                 ),
@@ -441,7 +440,7 @@ Widget build(BuildContext context) {
                       controller: aboutController,
                       maxLines: 4,
                       decoration: InputDecoration(
-                        border: OutlineInputBorder(),
+                        border: const OutlineInputBorder(),
                         hintText: localization.aboutMe, // Use localization
                       ),
                     )
@@ -459,90 +458,90 @@ Widget build(BuildContext context) {
   }
 
   Widget buildBecomeProviderButton(AppLocalizations localization) {
-  final localizations = AppLocalizations.of(context);
-  if (localizations == null) return const SizedBox.shrink();
+    final localizations = AppLocalizations.of(context);
+    if (localizations == null) return const SizedBox.shrink();
 
-  // Determine button text, style, and action based on status
-  String buttonText;
-  VoidCallback? onTapAction;
-  Gradient buttonGradient;
-  Color textColor;
+    // Determine button text, style, and action based on status
+    String buttonText;
+    VoidCallback? onTapAction;
+    Gradient buttonGradient;
+    Color textColor;
 
-  if (isStep2Complete) {
-    buttonText = localization.step2Button;
-    buttonGradient = LinearGradient(
-      colors: [Colors.green.shade600, Colors.green.shade800],
-    );
-    textColor = Colors.white;
-    onTapAction = () {
-      Navigator.pushNamed(context, '/set-up');
-    };
-  } else if (isWaiting) {
-    buttonText = localization.waitingButton;
-    buttonGradient = LinearGradient(
-      colors: [Colors.orange.shade600, Colors.orange.shade800],
-    );
-    textColor = Colors.white;
-    onTapAction = () {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(localization.waitingMessage),
-          duration: const Duration(seconds: 3),
-        ),
+    if (isStep2Complete) {
+      buttonText = localization.step2Button;
+      buttonGradient = LinearGradient(
+        colors: [Colors.green.shade600, Colors.green.shade800],
       );
-    };
-  } else if (isStep1Complete) {
-    buttonText = localization.verificationButton;
-    buttonGradient = const LinearGradient(
-      colors: [Color(0xFF3949AB), Color(0xFF1E88E5)],
-    );
-    textColor = Colors.white;
-    onTapAction = () {
-      Navigator.pushNamed(context, '/verification');
-    };
-  } else {
-    buttonText = localization.becomeProviderButton;
-    buttonGradient = const LinearGradient(
-      colors: [Color(0xFF3949AB), Color(0xFF1E88E5)],
-    );
-    textColor = Colors.white;
-    onTapAction = () {
-      Navigator.push(
-        context,
-        MaterialPageRoute(builder: (context) => OnboardingScreen2()),
+      textColor = Colors.white;
+      onTapAction = () {
+        Navigator.pushNamed(context, '/set-up');
+      };
+    } else if (isWaiting) {
+      buttonText = localization.waitingButton;
+      buttonGradient = LinearGradient(
+        colors: [Colors.orange.shade600, Colors.orange.shade800],
       );
-    };
-  }
+      textColor = Colors.white;
+      onTapAction = () {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(localization.waitingMessage),
+            duration: const Duration(seconds: 3),
+          ),
+        );
+      };
+    } else if (isStep1Complete) {
+      buttonText = localization.verificationButton;
+      buttonGradient = const LinearGradient(
+        colors: [Color(0xFF3949AB), Color(0xFF1E88E5)],
+      );
+      textColor = Colors.white;
+      onTapAction = () {
+        Navigator.pushNamed(context, '/verification');
+      };
+    } else {
+      buttonText = localization.becomeProviderButton;
+      buttonGradient = const LinearGradient(
+        colors: [Color(0xFF3949AB), Color(0xFF1E88E5)],
+      );
+      textColor = Colors.white;
+      onTapAction = () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (context) => OnboardingScreen2()),
+        );
+      };
+    }
 
-  return Center(
-    child: InkWell(
-      onTap: onTapAction,
-      child: Container(
-        width: MediaQuery.of(context).size.width * 0.8,
-        padding: const EdgeInsets.symmetric(vertical: 16),
-        decoration: BoxDecoration(
-          gradient: buttonGradient,
-          borderRadius: BorderRadius.circular(30),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.2),
-              blurRadius: 10,
-              offset: const Offset(0, 5),
-            ),
-          ],
-        ),
-        child: Center(
-          child: Text(
-            buttonText,
-            style: TextStyle(
-              color: textColor,
-              fontSize: 18,
-              fontWeight: FontWeight.bold,
+    return Center(
+      child: InkWell(
+        onTap: onTapAction,
+        child: Container(
+          width: MediaQuery.of(context).size.width * 0.8,
+          padding: const EdgeInsets.symmetric(vertical: 16),
+          decoration: BoxDecoration(
+            gradient: buttonGradient,
+            borderRadius: BorderRadius.circular(30),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.2),
+                blurRadius: 10,
+                offset: const Offset(0, 5),
+              ),
+            ],
+          ),
+          child: Center(
+            child: Text(
+              buttonText,
+              style: TextStyle(
+                color: textColor,
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+              ),
             ),
           ),
         ),
       ),
-    ),
-  );
-}
+    );
+  }
 }

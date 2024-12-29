@@ -4,13 +4,13 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:hanini_frontend/localization/app_localization.dart';
 
 class NameEntryScreen extends StatefulWidget {
+  const NameEntryScreen({super.key});
+
   @override
   _NameEntryScreenState createState() => _NameEntryScreenState();
 }
 
 class _NameEntryScreenState extends State<NameEntryScreen> {
-  final TextEditingController _firstNameController = TextEditingController();
-  final TextEditingController _lastNameController = TextEditingController();
   String? _selectedChoice;
 
   Stream<List<WorkChoice>> get _workChoicesStream {
@@ -28,15 +28,17 @@ class _NameEntryScreenState extends State<NameEntryScreen> {
   }
 
   Future<void> _incrementWorkChoiceCount(String choiceId) async {
-    final docRef = FirebaseFirestore.instance.collection('Metadata').doc('WorkChoices');
-    
+    final docRef =
+        FirebaseFirestore.instance.collection('Metadata').doc('WorkChoices');
+
     await FirebaseFirestore.instance.runTransaction((transaction) async {
       final snapshot = await transaction.get(docRef);
       if (!snapshot.exists) return;
-      
-      final choices = List<Map<String, dynamic>>.from(snapshot.data()!['choices']);
+
+      final choices =
+          List<Map<String, dynamic>>.from(snapshot.data()!['choices']);
       final index = choices.indexWhere((choice) => choice['id'] == choiceId);
-      
+
       if (index != -1) {
         choices[index]['count'] = (choices[index]['count'] ?? 0) + 1;
         transaction.update(docRef, {'choices': choices});
@@ -58,8 +60,11 @@ class _NameEntryScreenState extends State<NameEntryScreen> {
       }
 
       await _incrementWorkChoiceCount(_selectedChoice!);
-      
-      await FirebaseFirestore.instance.collection('users').doc(user.uid).update({
+
+      await FirebaseFirestore.instance
+          .collection('users')
+          .doc(user.uid)
+          .update({
         'selectedWorkChoice': _selectedChoice,
         'isSTEP_1': true,
       });
@@ -100,7 +105,7 @@ class _NameEntryScreenState extends State<NameEntryScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
-            SizedBox(height: 10),
+            const SizedBox(height: 10),
             StreamBuilder<List<WorkChoice>>(
               stream: _workChoicesStream,
               builder: (context, snapshot) {
@@ -109,11 +114,12 @@ class _NameEntryScreenState extends State<NameEntryScreen> {
                 }
 
                 if (snapshot.connectionState == ConnectionState.waiting) {
-                  return Center(child: CircularProgressIndicator());
+                  return const Center(child: CircularProgressIndicator());
                 }
 
                 final workChoices = snapshot.data ?? [];
-                if (workChoices.isEmpty) return Text('No choices available.');
+                if (workChoices.isEmpty)
+                  return const Text('No choices available.');
 
                 return Wrap(
                   spacing: 10,
@@ -125,12 +131,16 @@ class _NameEntryScreenState extends State<NameEntryScreen> {
                         setState(() => _selectedChoice = choice.id);
                       },
                       child: Container(
-                        padding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 12, vertical: 8),
                         decoration: BoxDecoration(
-                          color: isSelected ? Colors.purple[300] : Colors.grey[200],
+                          color: isSelected
+                              ? Colors.purple[300]
+                              : Colors.grey[200],
                           borderRadius: BorderRadius.circular(20),
                           border: Border.all(
-                            color: isSelected ? Colors.purple : Colors.grey[400]!,
+                            color:
+                                isSelected ? Colors.purple : Colors.grey[400]!,
                             width: 1,
                           ),
                         ),
@@ -138,7 +148,8 @@ class _NameEntryScreenState extends State<NameEntryScreen> {
                           _getLocalizedWorkChoice(choice, context),
                           style: TextStyle(
                             color: isSelected ? Colors.white : Colors.black,
-                            fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
+                            fontWeight:
+                                isSelected ? FontWeight.w600 : FontWeight.w400,
                           ),
                         ),
                       ),
@@ -147,19 +158,20 @@ class _NameEntryScreenState extends State<NameEntryScreen> {
                 );
               },
             ),
-            SizedBox(height: 40),
+            const SizedBox(height: 40),
             GestureDetector(
               onTap: _saveProviderInfo,
               child: Container(
-                padding: EdgeInsets.symmetric(horizontal: 50, vertical: 16),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 50, vertical: 16),
                 decoration: BoxDecoration(
-                  gradient: LinearGradient(
+                  gradient: const LinearGradient(
                     colors: [Color(0xFF6A1B9A), Color(0xFFAB47BC)],
                     begin: Alignment.centerLeft,
                     end: Alignment.centerRight,
                   ),
                   borderRadius: BorderRadius.circular(30),
-                  boxShadow: [
+                  boxShadow: const [
                     BoxShadow(
                       color: Colors.black26,
                       offset: Offset(0, 4),
@@ -169,7 +181,7 @@ class _NameEntryScreenState extends State<NameEntryScreen> {
                 ),
                 child: Text(
                   appLocalizations.continueButton,
-                  style: TextStyle(
+                  style: const TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.w600,
                     color: Colors.white,

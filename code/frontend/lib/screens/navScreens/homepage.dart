@@ -6,7 +6,6 @@ import 'package:flutter_svg/svg.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:hanini_frontend/navbar.dart';
 import 'package:pull_to_refresh/pull_to_refresh.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:async';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -36,7 +35,6 @@ class _HomePageState extends State<HomePage> {
   late final ScrollController _scrollController;
   final RefreshController _refreshController = RefreshController();
 
-  @override
   bool get wantKeepAlive => true; // This ensures the state is preserved
 
   int _currentPage = 0;
@@ -47,7 +45,6 @@ class _HomePageState extends State<HomePage> {
   String? currentUserId;
   bool _isLoading = true;
   bool _isFetching = false;
-  DocumentSnapshot? _lastDocument;
   final int _pageSize = 7;
 
   bool _hasMoreData = true;
@@ -68,14 +65,14 @@ class _HomePageState extends State<HomePage> {
 
     _popularServicesFuture = PopularServicesModel.getPopularServices(context);
 
-    _adTimer = Timer.periodic(Duration(seconds: 3), (Timer timer) {
+    _adTimer = Timer.periodic(const Duration(seconds: 3), (Timer timer) {
       if (_pageController.hasClients) {
         setState(() {
           _currentPage = (_currentPage + 1) % 3;
         });
         _pageController.animateToPage(
           _currentPage,
-          duration: Duration(milliseconds: 400),
+          duration: const Duration(milliseconds: 400),
           curve: Curves.easeInOut,
         );
       }
@@ -174,7 +171,6 @@ class _HomePageState extends State<HomePage> {
     super.dispose();
   }
 
-  @override
   void didChangeDependency() {
     super.didChangeDependencies();
     // Refresh data when returning to this screen
@@ -186,7 +182,6 @@ class _HomePageState extends State<HomePage> {
   Future<void> _onRefresh() async {
     try {
       // Reset pagination
-      _lastDocument = null;
       _hasMoreData = true;
       services.clear();
 
@@ -373,7 +368,7 @@ class _HomePageState extends State<HomePage> {
     if (currentUserId == null) {
       // Show a dialog or snackbar to prompt login
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Please log in to add favorites')),
+        const SnackBar(content: Text('Please log in to add favorites')),
       );
       return;
     }
@@ -404,7 +399,7 @@ class _HomePageState extends State<HomePage> {
     } catch (e) {
       debugPrint('Error updating favorites: $e');
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Failed to update favorites')),
+        const SnackBar(content: Text('Failed to update favorites')),
       );
     }
   }
@@ -433,7 +428,7 @@ class _HomePageState extends State<HomePage> {
               return GestureDetector(
                 onTap: () => launchUrl(Uri.parse(adLinks[index])),
                 child: Container(
-                  margin: EdgeInsets.symmetric(horizontal: 8),
+                  margin: const EdgeInsets.symmetric(horizontal: 8),
                   child: ClipRRect(
                     borderRadius: BorderRadius.circular(20),
                     child: Image.asset(
@@ -455,7 +450,7 @@ class _HomePageState extends State<HomePage> {
                 return Container(
                   width: 8,
                   height: 8,
-                  margin: EdgeInsets.symmetric(horizontal: 4),
+                  margin: const EdgeInsets.symmetric(horizontal: 4),
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
                     color: _currentPage == index ? Colors.blue : Colors.grey,
@@ -522,7 +517,7 @@ class _HomePageState extends State<HomePage> {
 
   Widget _buildRecommendationBadge(double score) {
     return Container(
-      padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       decoration: BoxDecoration(
         color: AppColors.mainColor.withOpacity(0.1),
         borderRadius: BorderRadius.circular(12),
@@ -530,15 +525,15 @@ class _HomePageState extends State<HomePage> {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(
+          const Icon(
             Icons.recommend,
             size: 16,
             color: AppColors.mainColor,
           ),
-          SizedBox(width: 4),
+          const SizedBox(width: 4),
           Text(
             '${(score * 100).toInt()}% Match',
-            style: TextStyle(
+            style: const TextStyle(
               color: AppColors.mainColor,
               fontSize: 12,
               fontWeight: FontWeight.w500,
@@ -604,9 +599,9 @@ class _HomePageState extends State<HomePage> {
                   ),
                 ),
                 Container(
-                  decoration: BoxDecoration(
+                  decoration: const BoxDecoration(
                     color: AppColors.tempColor,
-                    borderRadius: const BorderRadius.vertical(
+                    borderRadius: BorderRadius.vertical(
                         bottom: Radius.circular(16)),
                   ),
                   child: Padding(
@@ -737,7 +732,7 @@ class _HomePageState extends State<HomePage> {
                 itemBuilder: (context, index) {
                   final service = services[index];
                   return AnimatedContainer(
-                    duration: Duration(milliseconds: 200),
+                    duration: const Duration(milliseconds: 200),
                     width: 170,
                     decoration: BoxDecoration(
                       color: service.color.withOpacity(0.15),
@@ -746,7 +741,7 @@ class _HomePageState extends State<HomePage> {
                         BoxShadow(
                           color: service.color.withOpacity(0.1),
                           blurRadius: 8,
-                          offset: Offset(0, 4),
+                          offset: const Offset(0, 4),
                         ),
                       ],
                     ),
@@ -778,7 +773,7 @@ class _HomePageState extends State<HomePage> {
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
                               Container(
-                                padding: EdgeInsets.all(12),
+                                padding: const EdgeInsets.all(12),
                                 decoration: BoxDecoration(
                                   color: Colors.white.withOpacity(0.9),
                                   shape: BoxShape.circle,
@@ -790,21 +785,21 @@ class _HomePageState extends State<HomePage> {
                                   color: service.color,
                                 ),
                               ),
-                              SizedBox(height: 12),
+                              const SizedBox(height: 12),
                               Text(
                                 service.name,
                                 textAlign: TextAlign.center,
                                 maxLines: 2,
                                 overflow: TextOverflow.ellipsis,
-                                style: TextStyle(
+                                style: const TextStyle(
                                   fontWeight: FontWeight.w600,
                                   color: AppColors.mainColor,
                                   fontSize: 15,
                                 ),
                               ),
-                              SizedBox(height: 8),
+                              const SizedBox(height: 8),
                               Container(
-                                padding: EdgeInsets.symmetric(
+                                padding: const EdgeInsets.symmetric(
                                     horizontal: 12, vertical: 4),
                                 decoration: BoxDecoration(
                                   color: Colors.white.withOpacity(0.9),
@@ -818,7 +813,7 @@ class _HomePageState extends State<HomePage> {
                                       size: 16,
                                       color: service.color,
                                     ),
-                                    SizedBox(width: 4),
+                                    const SizedBox(width: 4),
                                     Text(
                                       '${service.availableProviders}',
                                       style: TextStyle(
@@ -1178,7 +1173,7 @@ class RecommendationService {
   factory RecommendationService() => _instance;
   RecommendationService._internal();
 
-  final _config = RecommendationConfig();
+  final _config = const RecommendationConfig();
   final _cache = _RecommendationCache();
   final _firestore = FirebaseFirestore.instance;
 

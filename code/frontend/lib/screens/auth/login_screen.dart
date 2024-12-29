@@ -25,56 +25,57 @@ class _LoginScreenState extends State<LoginScreen>
   final FirebaseAuth _auth = FirebaseAuth.instance;
   bool isLoading = false; // Declare loading state
 
-/// Function to generate and retrieve the device token for push notifications.
-Future<String?> generateDeviceToken() async {
-  try {
-    final FirebaseMessaging messaging = FirebaseMessaging.instance;
+  /// Function to generate and retrieve the device token for push notifications.
+  Future<String?> generateDeviceToken() async {
+    try {
+      final FirebaseMessaging messaging = FirebaseMessaging.instance;
 
-    // Request permission for notifications (only needed for iOS and macOS)
-    NotificationSettings settings = await messaging.requestPermission(
-      alert: true,
-      badge: true,
-      sound: true,
-    );
+      // Request permission for notifications (only needed for iOS and macOS)
+      NotificationSettings settings = await messaging.requestPermission(
+        alert: true,
+        badge: true,
+        sound: true,
+      );
 
-    if (settings.authorizationStatus == AuthorizationStatus.denied) {
-      debugPrint('Notification permissions denied');
+      if (settings.authorizationStatus == AuthorizationStatus.denied) {
+        debugPrint('Notification permissions denied');
+        return null;
+      }
+
+      // Get the device token
+      final String? token = await messaging.getToken();
+
+      if (token != null) {
+        debugPrint('Device token generated: $token');
+        return token;
+      } else {
+        debugPrint('Failed to generate device token');
+        return null;
+      }
+    } catch (e) {
+      debugPrint('Error generating device token: $e');
       return null;
     }
-
-    // Get the device token
-    final String? token = await messaging.getToken();
-
-    if (token != null) {
-      debugPrint('Device token generated: $token');
-      return token;
-    } else {
-      debugPrint('Failed to generate device token');
-      return null;
-    }
-  } catch (e) {
-    debugPrint('Error generating device token: $e');
-    return null;
   }
-}
-
-
 
   Future<void> saveDeviceTokenToFirestore(String userId) async {
-  try {
-    final String? token = await generateDeviceToken();
-    if (token != null) {
-      await FirebaseFirestore.instance.collection('users').doc(userId).update({
-        'deviceToken': token,
-      });
-      debugPrint('Device token saved to Firestore: $token');
-    } else {
-      debugPrint('Device token generation failed');
+    try {
+      final String? token = await generateDeviceToken();
+      if (token != null) {
+        await FirebaseFirestore.instance
+            .collection('users')
+            .doc(userId)
+            .update({
+          'deviceToken': token,
+        });
+        debugPrint('Device token saved to Firestore: $token');
+      } else {
+        debugPrint('Device token generation failed');
+      }
+    } catch (e) {
+      debugPrint('Error saving device token to Firestore: $e');
     }
-  } catch (e) {
-    debugPrint('Error saving device token to Firestore: $e');
   }
-}
 
   @override
   void initState() {
@@ -110,170 +111,172 @@ Future<String?> generateDeviceToken() async {
     super.dispose();
   }
 
-bool _isLoading = false; // Loading state variable
+  bool _isLoading = false; // Loading state variable
 
-Widget _buildGoogleSignInButton() {
-  final localizations = AppLocalizations.of(context)!;
-  final buttonText = localizations.googleSignIn;
+  Widget _buildGoogleSignInButton() {
+    final localizations = AppLocalizations.of(context)!;
+    final buttonText = localizations.googleSignIn;
 
-  return ElevatedButton(
-    onPressed: _isLoading ? null : _handleGoogleSignIn,
-    style: ElevatedButton.styleFrom(
-      backgroundColor: Colors.white,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(30.0),
-      ),
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 15),
-      elevation: 6,
-    ),
-    child: _isLoading 
-      ? const SizedBox(
-          width: 30,
-          height: 30,
-          child: CircularProgressIndicator(
-            strokeWidth: 2.5,
-            valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-          ),
-        )
-      : Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Image.asset(
-              'assets/images/google_logo.png',
-              height: 24,
-              width: 24,
-            ),
-            Text(
-              buttonText,
-              style: GoogleFonts.poppins(
-                fontSize: 18,
-                color: const Color(0xFF1A237E),
-              ),
-            ),
-          ],
+    return ElevatedButton(
+      onPressed: _isLoading ? null : _handleGoogleSignIn,
+      style: ElevatedButton.styleFrom(
+        backgroundColor: Colors.white,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(30.0),
         ),
-  );
-}
-
-Future<void> _handleGoogleSignIn() async {
-  setState(() {
-    _isLoading = true; // Show loading indicator
-  });
-
-  try {
-    final GoogleSignIn googleSignIn = GoogleSignIn();
-    final GoogleSignInAccount? googleUser = await googleSignIn.signIn();
-
-    if (googleUser != null) {
-      try {
-        final GoogleSignInAuthentication googleAuth = await googleUser.authentication;
-        final AuthCredential credential = GoogleAuthProvider.credential(
-          accessToken: googleAuth.accessToken,
-          idToken: googleAuth.idToken,
-        );
-
-        final UserCredential userCredential =
-            await FirebaseAuth.instance.signInWithCredential(credential);
-        final User? user = userCredential.user;
-
-        if (user != null) {
-          final userDoc = await FirebaseFirestore.instance
-              .collection('users')
-              .doc(user.uid)
-              .get();
-
-          Map<String, dynamic> userData = {
-            'uid': user.uid,
-            'email': user.email ?? 'No Email',
-            'lastSignIn': DateTime.now(),
-            'isConnected': true,
-          };
-
-          if (!userDoc.exists || userDoc.data()?['name'] == null) {
-            userData['name'] = user.displayName ?? 'No Name';
-          }
-
-          if (!userDoc.exists || userDoc.data()?['photoURL'] == null || 
-              (userDoc.data()?['photoURL']?.isEmpty ?? true && user.photoURL != null && user.photoURL!.isNotEmpty)) {
-            userData['photoURL'] = user.photoURL ?? '';
-          }
-
-          if (!userDoc.exists) {
-            userData['createdAt'] = DateTime.now();
-          }
-
-          await FirebaseFirestore.instance
-              .collection('users')
-              .doc(user.uid)
-              .set(userData, SetOptions(merge: true));
-
-          saveDeviceTokenToFirestore(user.uid);
-
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('Welcome ${user.displayName ?? user.email}'),
-              backgroundColor: Colors.green,
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 15),
+        elevation: 6,
+      ),
+      child: _isLoading
+          ? const SizedBox(
+              width: 30,
+              height: 30,
+              child: CircularProgressIndicator(
+                strokeWidth: 2.5,
+                valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+              ),
+            )
+          : Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Image.asset(
+                  'assets/images/google_logo.png',
+                  height: 24,
+                  width: 24,
+                ),
+                Text(
+                  buttonText,
+                  style: GoogleFonts.poppins(
+                    fontSize: 18,
+                    color: const Color(0xFF1A237E),
+                  ),
+                ),
+              ],
             ),
+    );
+  }
+
+  Future<void> _handleGoogleSignIn() async {
+    setState(() {
+      _isLoading = true; // Show loading indicator
+    });
+
+    try {
+      final GoogleSignIn googleSignIn = GoogleSignIn();
+      final GoogleSignInAccount? googleUser = await googleSignIn.signIn();
+
+      if (googleUser != null) {
+        try {
+          final GoogleSignInAuthentication googleAuth =
+              await googleUser.authentication;
+          final AuthCredential credential = GoogleAuthProvider.credential(
+            accessToken: googleAuth.accessToken,
+            idToken: googleAuth.idToken,
           );
 
+          final UserCredential userCredential =
+              await FirebaseAuth.instance.signInWithCredential(credential);
+          final User? user = userCredential.user;
 
-          
-          // Check if this is the user's first time
-          if (userDoc.exists && userDoc.data()?['isNotFirst'] == false) {
-            final prefs = await SharedPreferences.getInstance();
-            await prefs.setBool('isLoggedIn', true);
-            Navigator.pushNamed(context, '/navbar');
+          if (user != null) {
+            final userDoc = await FirebaseFirestore.instance
+                .collection('users')
+                .doc(user.uid)
+                .get();
+
+            Map<String, dynamic> userData = {
+              'uid': user.uid,
+              'email': user.email ?? 'No Email',
+              'lastSignIn': DateTime.now(),
+              'isConnected': true,
+            };
+
+            if (!userDoc.exists || userDoc.data()?['name'] == null) {
+              userData['name'] = user.displayName ?? 'No Name';
+            }
+
+            if (!userDoc.exists ||
+                userDoc.data()?['photoURL'] == null ||
+                (userDoc.data()?['photoURL']?.isEmpty ??
+                    true &&
+                        user.photoURL != null &&
+                        user.photoURL!.isNotEmpty)) {
+              userData['photoURL'] = user.photoURL ?? '';
+            }
+
+            if (!userDoc.exists) {
+              userData['createdAt'] = DateTime.now();
+            }
+
+            await FirebaseFirestore.instance
+                .collection('users')
+                .doc(user.uid)
+                .set(userData, SetOptions(merge: true));
+
+            saveDeviceTokenToFirestore(user.uid);
+
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text('Welcome ${user.displayName ?? user.email}'),
+                backgroundColor: Colors.green,
+              ),
+            );
+
+            // Check if this is the user's first time
+            if (userDoc.exists && userDoc.data()?['isNotFirst'] == false) {
+              final prefs = await SharedPreferences.getInstance();
+              await prefs.setBool('isLoggedIn', true);
+              Navigator.pushNamed(context, '/navbar');
+            } else {
+              // For first-time users, navigate to onboarding
+              Navigator.pushNamed(context, '/info');
+            }
           } else {
-            // For first-time users, navigate to onboarding
-            Navigator.pushNamed(context, '/info');
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('Sign-In failed. Please try again.'),
+                backgroundColor: Colors.red,
+              ),
+            );
           }
-        } else {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Sign-In failed. Please try again.'),
-              backgroundColor: Colors.red,
-            ),
-          );
+        } on FirebaseAuthException catch (e) {
+          if (e.code == 'account-exists-with-different-credential') {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('Account exists with different credentials.'),
+                backgroundColor: Colors.red,
+              ),
+            );
+          } else {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text('Authentication error: ${e.message}'),
+                backgroundColor: Colors.red,
+              ),
+            );
+          }
         }
-      } on FirebaseAuthException catch (e) {
-        if (e.code == 'account-exists-with-different-credential') {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Account exists with different credentials.'),
-              backgroundColor: Colors.red,
-            ),
-          );
-        } else {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('Authentication error: ${e.message}'),
-              backgroundColor: Colors.red,
-            ),
-          );
-        }
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Google Sign-In was canceled.'),
+            backgroundColor: Colors.orange,
+          ),
+        );
       }
-    } else {
+    } catch (error) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Google Sign-In was canceled.'),
-          backgroundColor: Colors.orange,
+        SnackBar(
+          content: Text('Error during sign-in: ${error.toString()}'),
+          backgroundColor: Colors.red,
         ),
       );
+    } finally {
+      setState(() {
+        _isLoading = false; // Hide loading indicator
+      });
     }
-  } catch (error) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('Error during sign-in: ${error.toString()}'),
-        backgroundColor: Colors.red,
-      ),
-    );
-    print('Error during Google Sign-In: $error');
-  } finally {
-    setState(() {
-      _isLoading = false; // Hide loading indicator
-    });
   }
-}
 
   @override
   Widget build(BuildContext context) {
@@ -281,19 +284,18 @@ Future<void> _handleGoogleSignIn() async {
         AppLocalizations.of(context)!; // Access localized strings
 
     return Scaffold(
-
-  body: Container(
-    decoration: const BoxDecoration(
-      gradient: LinearGradient(
-        begin: Alignment.topCenter,
-        end: Alignment.bottomCenter,
-        colors: [
-          Color.fromARGB(255, 106, 27, 154), // Rich Amethyst
-          Color.fromARGB(255, 171, 71, 188), // Orchid
-          Color.fromARGB(255, 145, 41, 140), // Wild Strawberry
-        ],
-      ),
-    ),
+      body: Container(
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [
+              Color.fromARGB(255, 106, 27, 154), // Rich Amethyst
+              Color.fromARGB(255, 171, 71, 188), // Orchid
+              Color.fromARGB(255, 145, 41, 140), // Wild Strawberry
+            ],
+          ),
+        ),
         child: Center(
           child: SingleChildScrollView(
             child: Padding(
@@ -387,214 +389,215 @@ Future<void> _handleGoogleSignIn() async {
     );
   }
 
-  
-
-Widget _buildLoginButton(BuildContext context, String buttonText) {
-  return ElevatedButton(
-    onPressed: isLoading ? null : () => handleLogin(context),
-    style: ElevatedButton.styleFrom(
-      backgroundColor: isLoading ? Colors.grey : const Color(0xFFFFFFFF),
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(30.0),
+  Widget _buildLoginButton(BuildContext context, String buttonText) {
+    return ElevatedButton(
+      onPressed: isLoading ? null : () => handleLogin(context),
+      style: ElevatedButton.styleFrom(
+        backgroundColor: isLoading ? Colors.grey : const Color(0xFFFFFFFF),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(30.0),
+        ),
+        padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 15),
+        elevation: 6,
       ),
-      padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 15),
-      elevation: 6,
-    ),
-    child: isLoading
-        ? const CircularProgressIndicator(
-            valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF1A237E)),
-          )
-        : Text(
-            buttonText,
-            style: GoogleFonts.poppins(
-              fontSize: 18,
-              color: const Color(0xFF1A237E),
-            ),
-          ),
-  );
-}
-
-Future<void> handleLogin(BuildContext context) async {
-  setState(() {
-    isLoading = true;
-  });
-
-  try {
-    final email = _emailController.text.trim();
-    final password = _passwordController.text.trim();
-
-    print('Email: $email');
-    print('Password: $password');
-
-    // Validate email format using a simple regex pattern
-    final emailPattern = r"^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$";
-    final emailRegex = RegExp(emailPattern);
-
-    if (email.isNotEmpty && password.isNotEmpty) {
-      if (!emailRegex.hasMatch(email)) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Invalid email format.'),
-            backgroundColor: Colors.red,
-          ),
-        );
-        return;
-      }
-
-      final UserCredential userCredential =
-          await _auth.signInWithEmailAndPassword(
-        email: email,
-        password: password,
-      );
-
-      final User? user = userCredential.user;
-
-      if (user != null) {
-        // Check if email is verified
-        if (!user.emailVerified) {
-          // Show verification needed message with resend option
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: const Text('Please verify your email before logging in.'),
-              backgroundColor: Colors.orange,
-              duration: const Duration(seconds: 8),
-              action: SnackBarAction(
-                label: 'Resend',
-                textColor: Colors.white,
-                onPressed: () async {
-                  try {
-                    await user.sendEmailVerification();
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text('Verification email resent! Please check your inbox.'),
-                        backgroundColor: Colors.green,
-                      ),
-                    );
-                  } catch (e) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text('Error resending verification email. Please try again later.'),
-                        backgroundColor: Colors.red,
-                      ),
-                    );
-                  }
-                },
+      child: isLoading
+          ? const CircularProgressIndicator(
+              valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF1A237E)),
+            )
+          : Text(
+              buttonText,
+              style: GoogleFonts.poppins(
+                fontSize: 18,
+                color: const Color(0xFF1A237E),
               ),
             ),
+    );
+  }
+
+  Future<void> handleLogin(BuildContext context) async {
+    final localizations = AppLocalizations.of(context);
+    if (localizations == null) return;
+
+    setState(() {
+      isLoading = true;
+    });
+
+    try {
+      final email = _emailController.text.trim();
+      final password = _passwordController.text.trim();
+
+      // Validate email format using a simple regex pattern
+      final emailPattern = r"^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$";
+      final emailRegex = RegExp(emailPattern);
+
+      if (email.isNotEmpty && password.isNotEmpty) {
+        if (!emailRegex.hasMatch(email)) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(localizations.invalidEmailFormat),
+              backgroundColor: Colors.red,
+            ),
           );
-          
-          // Sign out the user since they haven't verified their email
-          await _auth.signOut();
-          setState(() {
-            isLoading = false;
-          });
           return;
         }
 
-        // Get user document from Firestore
-        final userDoc = await FirebaseFirestore.instance
-            .collection('users')
-            .doc(user.uid)
-            .get();
-
-        // Update user data
-        await FirebaseFirestore.instance
-            .collection('users')
-            .doc(user.uid)
-            .set({
-          'lastSignIn': DateTime.now(),
-          'isConnected': true,
-          'isEmailVerified': true,
-        }, SetOptions(merge: true));
-
-        saveDeviceTokenToFirestore(user.uid);
-
-        print('Login Successful. User: ${user.email}');
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Login Successful. Welcome ${user.email}'),
-            backgroundColor: Colors.green,
-          ),
+        final UserCredential userCredential =
+            await _auth.signInWithEmailAndPassword(
+          email: email,
+          password: password,
         );
 
+        final User? user = userCredential.user;
 
+        if (user != null) {
+          // Check if email is verified
+          if (!user.emailVerified) {
+            // Show verification needed message with resend option
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text(localizations.verifyEmailBeforeLogin),
+                backgroundColor: Colors.orange,
+                duration: const Duration(seconds: 8),
+                action: SnackBarAction(
+                  label: localizations.resend,
+                  textColor: Colors.white,
+                  onPressed: () async {
+                    try {
+                      await user.sendEmailVerification();
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text(localizations.verificationEmailResent),
+                          backgroundColor: Colors.green,
+                        ),
+                      );
+                    } catch (e) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content:
+                              Text(localizations.resendVerificationEmailError),
+                          backgroundColor: Colors.red,
+                        ),
+                      );
+                    }
+                  },
+                ),
+              ),
+            );
 
-        // Check if this is the user's first time
-        if (userDoc.exists && userDoc.data()?['isNotFirst'] == false) {
-          final prefs = await SharedPreferences.getInstance();
-          await prefs.setBool('isLoggedIn', true);
-          Navigator.pushNamed(context, '/navbar');
+            // Sign out the user since they haven't verified their email
+            await _auth.signOut();
+            setState(() {
+              isLoading = false;
+            });
+            return;
+          }
+
+          // Get user document from Firestore
+          final userDoc = await FirebaseFirestore.instance
+              .collection('users')
+              .doc(user.uid)
+              .get();
+
+          // Update user data
+          await FirebaseFirestore.instance
+              .collection('users')
+              .doc(user.uid)
+              .set({
+            'lastSignIn': DateTime.now(),
+            'isConnected': true,
+            'isEmailVerified': true,
+          }, SetOptions(merge: true));
+
+          saveDeviceTokenToFirestore(user.uid);
+
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content:
+                  Text('${localizations.loginSuccessfulWelcome} ${user.email}'),
+              backgroundColor: Colors.green,
+            ),
+          );
+
+          // Check if this is the user's first time
+          if (userDoc.exists && userDoc.data()?['isNotFirst'] == false) {
+            final prefs = await SharedPreferences.getInstance();
+            await prefs.setBool('isLoggedIn', true);
+            Navigator.pushNamed(context, '/navbar');
+          } else {
+            // If it's their first time, navigate to onboarding or setup screen
+            Navigator.pushNamed(
+                context, '/info'); // Replace with your first-time user route
+          }
         } else {
-          // If it's their first time, navigate to onboarding or setup screen
-          Navigator.pushNamed(context, '/info'); // Replace with your first-time user route
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(localizations.noUserFound),
+              backgroundColor: Colors.red,
+            ),
+          );
         }
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('No user found.'),
-            backgroundColor: Colors.red,
+          SnackBar(
+            content: Text(localizations.enterBothEmailAndPassword),
+            backgroundColor: Colors.orange,
           ),
         );
       }
+    } catch (error) {
+      handleFirebaseAuthError(context, error);
+    } finally {
+      setState(() {
+        isLoading = false;
+      });
+    }
+  }
+
+// Updated error handler to include verification-related errors
+  void handleFirebaseAuthError(BuildContext context, Object error) {
+    final localizations = AppLocalizations.of(context);
+    if (localizations == null) return;
+
+    if (error is FirebaseAuthException) {
+      String errorMessage;
+      switch (error.code) {
+        case 'user-not-found':
+          errorMessage = localizations.noUserFoundForEmail;
+          break;
+        case 'wrong-password':
+          errorMessage = localizations.incorrectPassword;
+          break;
+        case 'invalid-email':
+          errorMessage = localizations.invalidEmailFormat;
+          break;
+        case 'user-disabled':
+          errorMessage = localizations.accountDisabled;
+          break;
+        case 'too-many-requests':
+          errorMessage = localizations.tooManyFailedAttempts;
+          break;
+        case 'network-request-failed':
+          errorMessage = localizations.signupError;
+          break;
+        default:
+          errorMessage = localizations.emailOrPasswordIncorrect;
+      }
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(errorMessage),
+          backgroundColor: Colors.red,
+        ),
+      );
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Please enter both email and password.'),
-          backgroundColor: Colors.orange,
+        SnackBar(
+          content: Text('${localizations.error}: $error'),
+          backgroundColor: Colors.red,
         ),
       );
     }
-  } catch (error) {
-    print('Login Error: $error');
-    handleFirebaseAuthError(context, error);
-  } finally {
-    setState(() {
-      isLoading = false;
-    });
   }
-}
-
-
-// Updated error handler to include verification-related errors
-void handleFirebaseAuthError(BuildContext context, Object error) {
-  if (error is FirebaseAuthException) {
-    String errorMessage;
-    switch (error.code) {
-      case 'user-not-found':
-        errorMessage = 'No user found for that email.';
-        break;
-      case 'wrong-password':
-        errorMessage = 'Incorrect password.';
-        break;
-      case 'invalid-email':
-        errorMessage = 'Invalid email format.';
-        break;
-      case 'user-disabled':
-        errorMessage = 'This account has been disabled.';
-        break;
-      case 'too-many-requests':
-        errorMessage = 'Too many failed login attempts. Please try again later.';
-        break;
-      default:
-        errorMessage = error.message ?? 'An unknown error occurred.';
-    }
-    
-    print('Error: $errorMessage');
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(errorMessage),
-        backgroundColor: Colors.red,
-      ),
-    );
-  } else {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('An error occurred: $error'),
-        backgroundColor: Colors.red,
-      ),
-    );
-  }
-}
 
   Widget _buildForgotPasswordButton(
       BuildContext context, String forgotPasswordText) {

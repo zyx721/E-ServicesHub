@@ -28,16 +28,74 @@ class AppLocalizations {
   String get selectThreeChoices => isArabic
       ? "حدد ثلاثة خيارات"
       : (isFrench ? "Sélectionnez trois choix" : "Select Three Choices");
-
+  //
+  // Please check your email to verify your account before logging in.
+  String get verifyAccountBeforeLogin => isArabic
+      ? "يرجى التحقق من بريدك الإلكتروني للتحقق من حسابك قبل تسجيل الدخول."
+      : (isFrench
+          ? "Veuillez vérifier votre e-mail pour vérifier votre compte avant de vous connecter."
+          : "Please check your email to verify your account before logging in.");
+  // // Verification email resent!
+  // String get verificationEmailResent => isArabic
+  //     ? "تم إعادة إرسال البريد الإلكتروني للتحقق!"
+  //     : (isFrench
+  //         ? "E-mail de vérification renvoyé!"
+  //         : "Verification email resent!");
+  // Passwords do not match. Please try again.
+  String get passwordsDoNotMatch => isArabic
+      ? "كلمات المرور غير متطابقة. يرجى المحاولة مرة أخرى."
+      : (isFrench
+          ? "Les mots de passe ne correspondent pas. Veuillez réessayer."
+          : "Passwords do not match. Please try again.");
+  // Welcome
+  String get welcome =>
+      isArabic ? "مرحبا" : (isFrench ? "Bienvenue" : "Welcome");
+  // Sign-In failed. Please try again.
+  String get signInFailed => isArabic
+      ? "فشل تسجيل الدخول. يرجى المحاولة مرة أخرى."
+      : (isFrench
+          ? "Échec de la connexion. Veuillez réessayer."
+          : "Sign-In failed. Please try again.");
+  // Error during sign-in:
+  String get errorDuringSignIn => isArabic
+      ? "حدث خطأ أثناء تسجيل الدخول:"
+      : (isFrench ? "Erreur lors de la connexion:" : "Error during sign-in:");
+  // An unexpected error occurred:
+  String get unexpectedErrorOccurred => isArabic
+      ? "حدث خطأ غير متوقع:"
+      : (isFrench
+          ? "Une erreur inattendue s'est produite:"
+          : "An unexpected error occurred:");
+  // All fields are required. Please fill them in.
+  String get allFieldsRequired => isArabic
+      ? "جميع الحقول مطلوبة. يرجى ملئها."
+      : (isFrench
+          ? "Tous les champs sont obligatoires. Veuillez les remplir."
+          : "All fields are required. Please fill them in.");
+  // Error resending verification email. Please try again later.
+  String get errorResendingVerificationEmail => isArabic
+      ? "حدث خطأ أثناء إعادة إرسال البريد الإلكتروني للتحقق. يرجى المحاولة مرة أخرى في وقت لاحق."
+      : (isFrench
+          ? "Erreur lors de la réexpédition de l'e-mail de vérification. Veuillez réessayer plus tard."
+          : "Error resending verification email. Please try again later.");
   // No user logged in
   String get noUserLoggedIn => isArabic
       ? "لا يوجد مستخدم مسجل"
       : (isFrench ? "Aucun utilisateur connecté" : "No user logged in");
-
-// Change Password
+  // No choices available
+  String get noChoicesAvailable => isArabic
+      ? "لا توجد خيارات متاحة"
+      : (isFrench ? "Aucun choix disponible" : "No choices available");
+  // Change Password
   String get changePassword => isArabic
       ? "تغيير كلمة المرور"
       : (isFrench ? "Changer le mot de passe" : "Change Password");
+  // email or password are incorrect
+  String get emailOrPasswordIncorrect => isArabic
+      ? "البريد الإلكتروني أو كلمة المرور غير صحيحة"
+      : (isFrench
+          ? "L'e-mail ou le mot de passe est incorrect"
+          : "Email or password are incorrect");
 
   // Notification Settings
   String get notificationSettings => isArabic
@@ -726,11 +784,53 @@ class AppLocalizations {
 
   // Password recovery translations
   String get enterValidEmail => isArabic
-      ? "يرجى إدخال بريد إلكتروني صالح"
+      ? ".يرجى إدخال بريد إلكتروني صالح"
       : (isFrench
           ? "Veuillez entrer une adresse e-mail valide."
           : "Please enter a valid email.");
-
+  // An error occurred during signup
+  String get signupError => isArabic
+      ? "حدث خطأ أثناء التسجيل. يرجى التحقق من اتصالك بالشبكة."
+      : (isFrench
+          ? "Une erreur s'est produite lors de l'inscription. Veuillez vérifier votre connexion réseau."
+          : "An error occurred during signup. Please check your network connection.");
+  // Please verify your email before logging in.
+  String get verifyEmailBeforeLogin => isArabic
+      ? "يرجى التحقق من بريدك الإلكتروني قبل تسجيل الدخول."
+      : (isFrench
+          ? "Veuillez vérifier votre e-mail avant de vous connecter."
+          : "Please verify your email before logging in.");
+  // Resend
+  String get resend =>
+      isArabic ? "إعادة إرسال" : (isFrench ? "Renvoyer" : "Resend");
+  // Verification email resent! Please check your inbox.
+  String get verificationEmailResent => isArabic
+      ? "تم إعادة إرسال البريد الإلكتروني للتحقق! يرجى التحقق من صندوق الوارد الخاص بك."
+      : (isFrench
+          ? "E-mail de vérification renvoyé! Veuillez vérifier votre boîte de réception."
+          : "Verification email resent! Please check your inbox.");
+  // Error resending verification email. Please try again later.
+  String get resendVerificationEmailError => isArabic
+      ? "خطأ في إعادة إرسال البريد الإلكتروني للتحقق. يرجى المحاولة مرة أخرى لاحقًا."
+      : (isFrench
+          ? "Erreur lors de la réexpédition de l'e-mail de vérification. Veuillez réessayer plus tard."
+          : "Error resending verification email. Please try again later.");
+  // Login Successful. Welcome
+  String get loginSuccessfulWelcome => isArabic
+      ? "تم تسجيل الدخول بنجاح. مرحبًا"
+      : (isFrench
+          ? "Connexion réussie. Bienvenue"
+          : "Login Successful. Welcome");
+  // No user found.
+  String get noUserFound => isArabic
+      ? "لم يتم العثور على المستخدم."
+      : (isFrench ? "Aucun utilisateur trouvé." : "No user found.");
+  // Please enter both email and password.
+  String get enterBothEmailAndPassword => isArabic
+      ? "يرجى إدخال كل من البريد الإلكتروني وكلمة المرور."
+      : (isFrench
+          ? "Veuillez entrer à la fois l'e-mail et le mot de passe."
+          : "Please enter both email and password.");
   String get networkError => isArabic
       ? "خطأ في الشبكة. يرجى المحاولة مرة أخرى لاحقًا."
       : (isFrench
@@ -873,6 +973,12 @@ class AppLocalizations {
 
   String get signupButton =>
       isArabic ? "إنشاء حساب" : (isFrench ? "Créer un compte" : "Sign Up");
+  // Already have an account? Login
+  String get alreadyHaveAnAccount => isArabic
+      ? "لديك حساب بالفعل؟ تسجيل الدخول"
+      : (isFrench
+          ? "Vous avez déjà un compte ? Connexion"
+          : "Already have an account? Login");
 
   String get termsAgreementLink => isArabic
       ? "الشروط والأحكام"
@@ -910,12 +1016,85 @@ class AppLocalizations {
       : (isFrench
           ? "Veuillez entrer une adresse e-mail valide"
           : "Please enter a valid email");
+  // Invalid email format.
+  String get invalidEmailFormat => isArabic
+      ? "البريد الإلكتروني غير صالح."
+      : (isFrench ? "Format d'e-mail invalide." : "Invalid email format.");
+  // This account has been disabled.
+  String get accountDisabled => isArabic
+      ? "تم تعطيل هذا الحساب."
+      : (isFrench
+          ? "Ce compte a été désactivé."
+          : "This account has been disabled.");
+  // Too many failed login attempts. Please try again later.
+  String get tooManyFailedAttempts => isArabic
+      ? "الكثير من محاولات تسجيل الدخول الفاشلة. يرجى المحاولة مرة أخرى لاحقًا."
+      : (isFrench
+          ? "Trop de tentatives de connexion échouées. Veuillez réessayer plus tard."
+          : "Too many failed login attempts. Please try again later.");
+  // An unknown error occurred.
+  String get unknownError => isArabic
+      ? "حدث خطأ غير معروف."
+      : (isFrench
+          ? "Une erreur inconnue s'est produite."
+          : "An unknown error occurred.");
+  // Incorrect password.
+  String get incorrectPassword => isArabic
+      ? "كلمة المرور غير صحيحة."
+      : (isFrench ? "Mot de passe incorrect." : "Incorrect password.");
+
+  // Delete Review
+  String get deleteReview => isArabic
+      ? "حذف المراجعة"
+      : (isFrench ? "Supprimer l'avis" : "Delete Review");
+  // Review deleted successfully
+  String get reviewDeletedSuccessfully => isArabic
+      ? "تم حذف المراجعة بنجاح"
+      : (isFrench
+          ? "Avis supprimé avec succès"
+          : "Review deleted successfully");
+  // Failed to delete review
+  String get failedToDeleteReview => isArabic
+      ? "فشل حذف المراجعة. يرجى المحاولة مرة أخرى."
+      : (isFrench
+          ? "Échec de la suppression de l'avis. Veuillez réessayer."
+          : "Failed to delete review. Please try again.");
+  // Are you sure you want to delete this review?
+  String get deleteReviewConfirmation => isArabic
+      ? "هل أنت متأكد أنك تريد حذف هذه المراجعة؟"
+      : (isFrench
+          ? "Voulez-vous vraiment supprimer cet avis?"
+          : "Are you sure you want to delete this review?");
+  // Delete
+  String get delete => isArabic ? "حذف" : (isFrench ? "Supprimer" : "Delete");
+  // Provider Reviews
+  String get providerReviews => isArabic
+      ? "مراجعات المزود"
+      : (isFrench ? "Avis du fournisseur" : "Provider Reviews");
+  // Error fetching reviews. Please try again later.
+  String get errorFetchingReviews => isArabic
+      ? "خطأ في جلب المراجعات. يرجى المحاولة مرة أخرى لاحقًا."
+      : (isFrench
+          ? "Erreur lors de la récupération des avis. Veuillez réessayer plus tard."
+          : "Error fetching reviews. Please try again later.");
+  // Comment Management
+  String get commentManagement => isArabic
+      ? "إدارة التعليقات"
+      : (isFrench ? "Gestion des commentaires" : "Comment Management");
 
   String get fieldRequiredError => isArabic
       ? "هذا الحقل مطلوب."
       : (isFrench ? "Ce champ est requis." : "This field is required.");
-
-  // Home Screen translations
+  // Service Providers
+  String get serviceProviders => isArabic
+      ? "مقدمي الخدمات"
+      : (isFrench ? "Fournisseurs de services" : "Service Providers");
+  // No user found for that email.
+  String get noUserFoundForEmail => isArabic
+      ? "لم يتم العثور على مستخدم لهذا البريد الإلكتروني."
+      : (isFrench
+          ? "Aucun utilisateur trouvé pour cet e-mail."
+          : "No user found for that email.");
 
   // Home Screen translations
   String get appTitle => isArabic ? "هنيني" : (isFrench ? "Hanini" : "Hanini");

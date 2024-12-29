@@ -5,7 +5,6 @@ import 'package:image_picker/image_picker.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'dart:io';
-import 'package:image_picker/image_picker.dart';
 import 'package:googleapis/drive/v3.dart' as drive;
 import 'package:flutter/services.dart' show rootBundle;
 import 'package:path/path.dart' as path;
@@ -121,71 +120,70 @@ class _LocationSelectionFieldsState extends State<LocationSelectionFields> {
     return Column(
       children: [
         // Wilaya Dropdown
-   DropdownButtonFormField<String>(
-  value: selectedWilayaCode,
-  decoration: InputDecoration(
-    labelText: localizations.wilaya,
-    border: const OutlineInputBorder(),
-    labelStyle: GoogleFonts.poppins(),
-  ),
-  items: uniqueWilayas.map((wilaya) {
-    return DropdownMenuItem<String>(
-      value: wilaya.key, // wilayaCode
-      child: Text(
-        wilaya.value, // The name of the wilaya based on the locale
-        style: GoogleFonts.poppins(),
-      ),
-    );
-  }).toList(),
-  onChanged: (String? newValue) {
-    setState(() {
-      selectedWilayaCode = newValue;
-      selectedCommuneId = null; // Reset commune selection
-      widget.onLocationSelected(null);
-    });
-  },
-  validator: (value) => 
-      value == null ? localizations.wilayaRequiredError : null,
-),
+        DropdownButtonFormField<String>(
+          value: selectedWilayaCode,
+          decoration: InputDecoration(
+            labelText: localizations.wilaya,
+            border: const OutlineInputBorder(),
+            labelStyle: GoogleFonts.poppins(),
+          ),
+          items: uniqueWilayas.map((wilaya) {
+            return DropdownMenuItem<String>(
+              value: wilaya.key, // wilayaCode
+              child: Text(
+                wilaya.value, // The name of the wilaya based on the locale
+                style: GoogleFonts.poppins(),
+              ),
+            );
+          }).toList(),
+          onChanged: (String? newValue) {
+            setState(() {
+              selectedWilayaCode = newValue;
+              selectedCommuneId = null; // Reset commune selection
+              widget.onLocationSelected(null);
+            });
+          },
+          validator: (value) =>
+              value == null ? localizations.wilayaRequiredError : null,
+        ),
 
         const SizedBox(height: 10),
         // Commune Dropdown
-      DropdownButtonFormField<int>(
-  value: selectedCommuneId,
-  decoration: InputDecoration(
-    labelText: localizations.commune,
-    border: const OutlineInputBorder(),
-    labelStyle: GoogleFonts.poppins(),
-  ),
-  items: communes.map((commune) {
-    return DropdownMenuItem<int>(
-      value: commune.id,
-      child: Text(
-        // Display based on current locale
-        Localizations.localeOf(context).languageCode == 'ar'
-            ? commune.communeName
-            : commune.communeNameAscii,
-        style: GoogleFonts.poppins(),
-      ),
-    );
-  }).toList(),
-  onChanged: selectedWilayaCode == null
-      ? null
-      : (int? newValue) {
-          setState(() {
-            selectedCommuneId = newValue;
-            final selectedLocation = communes.firstWhere(
-              (location) => location.id == newValue,
+        DropdownButtonFormField<int>(
+          value: selectedCommuneId,
+          decoration: InputDecoration(
+            labelText: localizations.commune,
+            border: const OutlineInputBorder(),
+            labelStyle: GoogleFonts.poppins(),
+          ),
+          items: communes.map((commune) {
+            return DropdownMenuItem<int>(
+              value: commune.id,
+              child: Text(
+                // Display based on current locale
+                Localizations.localeOf(context).languageCode == 'ar'
+                    ? commune.communeName
+                    : commune.communeNameAscii,
+                style: GoogleFonts.poppins(),
+              ),
             );
+          }).toList(),
+          onChanged: selectedWilayaCode == null
+              ? null
+              : (int? newValue) {
+                  setState(() {
+                    selectedCommuneId = newValue;
+                    final selectedLocation = communes.firstWhere(
+                      (location) => location.id == newValue,
+                    );
 
-            // Pass both Arabic and Latin names to the parent
-            widget.onLocationSelected(selectedLocation);
-          });
-        },
-  validator: (value) =>
-      value == null ? localizations.communeRequiredError : null,
-),
-
+                    // Pass both Arabic and Latin names to the parent
+                    widget.onLocationSelected(selectedLocation);
+                  });
+                },
+          validator: (value) =>
+              value == null ? localizations.communeRequiredError : null,
+        ),
       ],
     );
   }
@@ -269,7 +267,7 @@ class GoogleDriveService {
 }
 
 class SetProviderProfile extends StatefulWidget {
-  const SetProviderProfile({Key? key}) : super(key: key);
+  const SetProviderProfile({super.key});
 
   @override
   _ServiceProviderProfileState createState() => _ServiceProviderProfileState();
@@ -283,7 +281,7 @@ class _ServiceProviderProfileState extends State<SetProviderProfile> {
   String? selectedCommune;
 
   // Track temporary uploads that haven't been saved to profile yet
-  List<String> _temporaryUploads = [];
+  final List<String> _temporaryUploads = [];
   List<String> portfolioImages = [];
 
   // Profile basic info
@@ -291,14 +289,13 @@ class _ServiceProviderProfileState extends State<SetProviderProfile> {
   final TextEditingController _lastNameController = TextEditingController();
   final TextEditingController _professionController = TextEditingController();
   final TextEditingController _phoneController = TextEditingController();
-  final TextEditingController _addressController = TextEditingController();
   final TextEditingController _descriptionController = TextEditingController();
   final TextEditingController _hourlyRateController = TextEditingController();
 
   // Dynamic input lists
-  List<String> _skills = [];
-  List<String> _certifications = [];
-  List<Map<String, String>> _workExperience = [];
+  final List<String> _skills = [];
+  final List<String> _certifications = [];
+  final List<Map<String, String>> _workExperience = [];
   // Controllers for dynamic inputs
   final TextEditingController _skillController = TextEditingController();
   final TextEditingController _certificationController =
@@ -311,11 +308,10 @@ class _ServiceProviderProfileState extends State<SetProviderProfile> {
   String _originalFirstName = "";
   String _originalLastName = "";
 
-
-  String selectedWilayaAscii ="";
-  String selectedWilayaArabic="";
-  String selectedCommuneAscii ="";
-  String selectedCommuneArabic="";
+  String selectedWilayaAscii = "";
+  String selectedWilayaArabic = "";
+  String selectedCommuneAscii = "";
+  String selectedCommuneArabic = "";
 
   @override
   void initState() {
@@ -345,14 +341,16 @@ class _ServiceProviderProfileState extends State<SetProviderProfile> {
       debugPrint('Error fetching user data: $e');
     }
   }
+
   // Add these variables to track temporary images
-  List<File> _temporaryImageFiles = [];
+  final List<File> _temporaryImageFiles = [];
   bool _isUploading = false;
 
   // Modify the pickNewPortfolioImage function to store files temporarily
   Future<void> pickNewPortfolioImage() async {
     final ImagePicker picker = ImagePicker();
-    final XFile? pickedFile = await picker.pickImage(source: ImageSource.gallery);
+    final XFile? pickedFile =
+        await picker.pickImage(source: ImageSource.gallery);
 
     if (pickedFile != null) {
       setState(() {
@@ -436,15 +434,14 @@ class _ServiceProviderProfileState extends State<SetProviderProfile> {
           },
         );
 
-
         // Upload all images first
         List<String> uploadedImages = [];
         if (_temporaryImageFiles.isNotEmpty) {
           uploadedImages = await _uploadAllImages();
         }
 
-        final DocumentReference userDoc = FirebaseFirestore.instance.collection('users').doc(user.uid);
-
+        final DocumentReference userDoc =
+            FirebaseFirestore.instance.collection('users').doc(user.uid);
 
         // Prepare the profile data with uploaded image URLs
         Map<String, dynamic> profileData = {
@@ -471,10 +468,8 @@ class _ServiceProviderProfileState extends State<SetProviderProfile> {
         // Update the Firestore document
         await userDoc.update(profileData);
 
-
         // Clear temporary uploads list since they're now saved
         _temporaryUploads.clear();
-
 
         // Close loading indicator
         Navigator.of(context).pop();
@@ -483,7 +478,7 @@ class _ServiceProviderProfileState extends State<SetProviderProfile> {
         Navigator.pushReplacement(
           context,
           MaterialPageRoute(
-            builder: (context) => NavbarPage(
+            builder: (context) => const NavbarPage(
               initialIndex: 3,
             ),
           ),
@@ -501,9 +496,7 @@ class _ServiceProviderProfileState extends State<SetProviderProfile> {
         );
       }
     }
-
-
-}
+  }
 
   int _calculateDifference(String original, String updated) {
     int difference = 0;
@@ -539,8 +532,8 @@ class _ServiceProviderProfileState extends State<SetProviderProfile> {
   Widget build(BuildContext context) {
     final localizations = AppLocalizations.of(context);
     if (localizations == null) {
-      return Padding(
-        padding: const EdgeInsets.only(right: 20.0),
+      return const Padding(
+        padding: EdgeInsets.only(right: 20.0),
         child: CircularProgressIndicator(),
       );
     }
@@ -592,8 +585,8 @@ class _ServiceProviderProfileState extends State<SetProviderProfile> {
     );
   }
 
-bool isAddingImage = false;
-Set<String> deletingImages = {};
+  bool isAddingImage = false;
+  Set<String> deletingImages = {};
 
 // Modify the portfolio section UI to show temporary images
   Widget buildPortfolioSection() {
@@ -631,7 +624,8 @@ Set<String> deletingImages = {};
                                   shape: BoxShape.circle,
                                 ),
                                 child: IconButton(
-                                  icon: const Icon(Icons.delete, color: Colors.white),
+                                  icon: const Icon(Icons.delete,
+                                      color: Colors.white),
                                   iconSize: 20,
                                   padding: EdgeInsets.zero,
                                   constraints: const BoxConstraints(
@@ -655,24 +649,21 @@ Set<String> deletingImages = {};
               : const Center(child: Text('No portfolio images selected')),
           const SizedBox(height: 16),
           ElevatedButton(
-            onPressed: _isUploading 
-              ? null 
-              : pickNewPortfolioImage,
+            onPressed: _isUploading ? null : pickNewPortfolioImage,
             child: _isUploading
-              ? const SizedBox(
-                  height: 20,
-                  width: 20,
-                  child: CircularProgressIndicator(
-                    strokeWidth: 2,
-                  ),
-                )
-              : const Text('Add Portfolio Image'),
+                ? const SizedBox(
+                    height: 20,
+                    width: 20,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                    ),
+                  )
+                : const Text('Add Portfolio Image'),
           ),
         ],
       ),
     );
   }
-
 
   Widget _buildSectionTitle(String title) {
     return Padding(
@@ -705,7 +696,7 @@ Set<String> deletingImages = {};
             },
             child: Container(
               padding: const EdgeInsets.all(6),
-              decoration: BoxDecoration(
+              decoration: const BoxDecoration(
                 shape: BoxShape.circle,
                 color: Colors.blue,
               ),
@@ -721,22 +712,17 @@ Set<String> deletingImages = {};
     );
   }
 
-
-
-
   final FirebaseAuth _auth = FirebaseAuth.instance;
-  
+
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
+  Future<void> pickNewProfilePicture() async {
+    try {
+      final ImagePicker picker = ImagePicker();
+      final XFile? pickedFile =
+          await picker.pickImage(source: ImageSource.gallery);
 
-
-
-Future<void> pickNewProfilePicture() async {
-  try {
-    final ImagePicker picker = ImagePicker();
-    final XFile? pickedFile = await picker.pickImage(source: ImageSource.gallery);
-    
-    if (pickedFile == null) return;
+      if (pickedFile == null) return;
 
       // Show loading indicator
       if (mounted) {
@@ -800,7 +786,7 @@ Future<void> pickNewProfilePicture() async {
           controller: _firstNameController,
           decoration: InputDecoration(
             labelText: localizations.firstName,
-            border: OutlineInputBorder(),
+            border: const OutlineInputBorder(),
             labelStyle: GoogleFonts.poppins(),
           ),
           validator: (value) =>
@@ -811,7 +797,7 @@ Future<void> pickNewProfilePicture() async {
           controller: _lastNameController,
           decoration: InputDecoration(
             labelText: localizations.lastName,
-            border: OutlineInputBorder(),
+            border: const OutlineInputBorder(),
             labelStyle: GoogleFonts.poppins(),
           ),
           validator: (value) =>
@@ -822,7 +808,7 @@ Future<void> pickNewProfilePicture() async {
           controller: _professionController,
           decoration: InputDecoration(
             labelText: localizations.profession,
-            border: OutlineInputBorder(),
+            border: const OutlineInputBorder(),
             labelStyle: GoogleFonts.poppins(),
           ),
           validator: (value) =>
@@ -833,7 +819,7 @@ Future<void> pickNewProfilePicture() async {
           controller: _phoneController,
           decoration: InputDecoration(
             labelText: localizations.phone,
-            border: OutlineInputBorder(),
+            border: const OutlineInputBorder(),
             labelStyle: GoogleFonts.poppins(),
           ),
           validator: (value) =>
@@ -841,19 +827,18 @@ Future<void> pickNewProfilePicture() async {
         ),
         const SizedBox(height: 10),
         const SizedBox(height: 10),
-LocationSelectionFields(
-  onLocationSelected: (location) {
-    if (location != null) {
-      setState(() {
-        selectedWilayaAscii = location.wilayaNameAscii; // Latin
-        selectedWilayaArabic = location.wilayaName;    // Arabic
-        selectedCommuneAscii = location.communeNameAscii; // Latin
-        selectedCommuneArabic = location.communeName;     // Arabic
-      });
-    }
-  },
-),
-
+        LocationSelectionFields(
+          onLocationSelected: (location) {
+            if (location != null) {
+              setState(() {
+                selectedWilayaAscii = location.wilayaNameAscii; // Latin
+                selectedWilayaArabic = location.wilayaName; // Arabic
+                selectedCommuneAscii = location.communeNameAscii; // Latin
+                selectedCommuneArabic = location.communeName; // Arabic
+              });
+            }
+          },
+        ),
         const SizedBox(height: 10),
         const SizedBox(height: 10),
         TextFormField(
@@ -861,7 +846,7 @@ LocationSelectionFields(
           keyboardType: TextInputType.number,
           decoration: InputDecoration(
             labelText: localizations.hourlyRate,
-            border: OutlineInputBorder(),
+            border: const OutlineInputBorder(),
             labelStyle: GoogleFonts.poppins(),
           ),
           validator: (value) =>
@@ -873,7 +858,7 @@ LocationSelectionFields(
           maxLines: 3,
           decoration: InputDecoration(
             labelText: localizations.aboutMe,
-            border: OutlineInputBorder(),
+            border: const OutlineInputBorder(),
             labelStyle: GoogleFonts.poppins(),
           ),
           validator: (value) =>
@@ -896,13 +881,13 @@ LocationSelectionFields(
                 controller: _skillController,
                 decoration: InputDecoration(
                   labelText: localizations.addSkill,
-                  border: OutlineInputBorder(),
+                  border: const OutlineInputBorder(),
                   labelStyle: GoogleFonts.poppins(),
                 ),
               ),
             ),
             IconButton(
-              icon: Icon(Icons.add_circle, color: Colors.blue),
+              icon: const Icon(Icons.add_circle, color: Colors.blue),
               onPressed: _addSkill,
             ),
           ],
@@ -914,7 +899,7 @@ LocationSelectionFields(
           children: _skills
               .map((skill) => Chip(
                     label: Text(skill, style: GoogleFonts.poppins()),
-                    deleteIcon: Icon(Icons.close),
+                    deleteIcon: const Icon(Icons.close),
                     onDeleted: () => _removeSkill(skill),
                   ))
               .toList(),
@@ -948,7 +933,7 @@ LocationSelectionFields(
           controller: _companyController,
           decoration: InputDecoration(
             labelText: localizations.companyName,
-            border: OutlineInputBorder(),
+            border: const OutlineInputBorder(),
             labelStyle: GoogleFonts.poppins(),
           ),
         ),
@@ -957,7 +942,7 @@ LocationSelectionFields(
           controller: _positionController,
           decoration: InputDecoration(
             labelText: localizations.position,
-            border: OutlineInputBorder(),
+            border: const OutlineInputBorder(),
             labelStyle: GoogleFonts.poppins(),
           ),
         ),
@@ -966,7 +951,7 @@ LocationSelectionFields(
           controller: _durationController,
           decoration: InputDecoration(
             labelText: localizations.duration,
-            border: OutlineInputBorder(),
+            border: const OutlineInputBorder(),
             labelStyle: GoogleFonts.poppins(),
           ),
         ),
@@ -998,7 +983,7 @@ LocationSelectionFields(
                   ],
                 ),
                 trailing: IconButton(
-                  icon: Icon(Icons.delete, color: Colors.red),
+                  icon: const Icon(Icons.delete, color: Colors.red),
                   onPressed: () => _removeWorkExperience(experience),
                 ),
               ),
@@ -1044,13 +1029,13 @@ LocationSelectionFields(
                 controller: _certificationController,
                 decoration: InputDecoration(
                   labelText: localizations.skills,
-                  border: OutlineInputBorder(),
+                  border: const OutlineInputBorder(),
                   labelStyle: GoogleFonts.poppins(),
                 ),
               ),
             ),
             IconButton(
-              icon: Icon(Icons.add_circle, color: Colors.blue),
+              icon: const Icon(Icons.add_circle, color: Colors.blue),
               onPressed: _addCertification,
             ),
           ],
@@ -1062,7 +1047,7 @@ LocationSelectionFields(
           children: _certifications
               .map((certification) => Chip(
                     label: Text(certification, style: GoogleFonts.poppins()),
-                    deleteIcon: Icon(Icons.close),
+                    deleteIcon: const Icon(Icons.close),
                     onDeleted: () => _removeCertification(certification),
                   ))
               .toList(),

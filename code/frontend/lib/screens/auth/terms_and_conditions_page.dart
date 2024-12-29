@@ -2,12 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 class TermsAndConditionsPage extends StatefulWidget {
+  const TermsAndConditionsPage({super.key});
+
   @override
   _TermsAndConditionsPageState createState() => _TermsAndConditionsPageState();
 }
 
 class _TermsAndConditionsPageState extends State<TermsAndConditionsPage> {
-  bool _isChecked = false;
 
   @override
   Widget build(BuildContext context) {

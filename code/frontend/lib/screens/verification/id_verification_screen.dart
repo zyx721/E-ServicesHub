@@ -1,22 +1,19 @@
 import 'package:flutter/material.dart';
 import 'package:camera/camera.dart';
-import 'package:hanini_frontend/screens/become_provider_screen/SetProviderProfile.dart';
-import 'package:hanini_frontend/screens/verification/manual_verification_screen.dart'; // Import ManualVerificationScreen
+import 'package:hanini_frontend/screens/verification/manual_verification_screen.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'dart:io';
-import 'face_verification_screen.dart'; // Replace with your actual face comparison screen import
+import 'face_verification_screen.dart';
 import 'package:hanini_frontend/localization/app_localization.dart';
 import 'package:flutter/services.dart';
-import 'package:lottie/lottie.dart'; // Import Lottie package
+import 'package:lottie/lottie.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:image/image.dart'
-    as img; // Import the image package for image processing
 
 class RealTimeDetection extends StatefulWidget {
   final List<CameraDescription> cameras;
-  RealTimeDetection({required this.cameras});
+  const RealTimeDetection({super.key, required this.cameras});
 
   @override
   _RealTimeDetectionState createState() => _RealTimeDetectionState();
@@ -75,7 +72,7 @@ class _RealTimeDetectionState extends State<RealTimeDetection>
       setState(() {
         _errorMessage = message;
       });
-      Future.delayed(Duration(seconds: 3), () {
+      Future.delayed(const Duration(seconds: 3), () {
         if (mounted) {
           setState(() {
             _errorMessage = null;
@@ -147,12 +144,12 @@ class _RealTimeDetectionState extends State<RealTimeDetection>
             setState(() {
               _showBackIdAnimation = true;
             });
-            await Future.delayed(Duration(seconds: 2));
+            await Future.delayed(const Duration(seconds: 2));
             await _saveProviderInfo(
                 responseBody["first_name"], responseBody["last_name"]);
             Navigator.push(
               context,
-              MaterialPageRoute(builder: (context) => FaceCompareScreen()),
+              MaterialPageRoute(builder: (context) => const FaceCompareScreen()),
             );
           } else {
             _showError(responseBody["message"]);
@@ -165,7 +162,7 @@ class _RealTimeDetectionState extends State<RealTimeDetection>
             _showBackIdMessage = true;
             _showFrontIdAnimation = true;
           });
-          await Future.delayed(Duration(seconds: 2));
+          await Future.delayed(const Duration(seconds: 2));
           setState(() {
             _showFrontIdAnimation = false;
           });
@@ -275,16 +272,16 @@ class _RealTimeDetectionState extends State<RealTimeDetection>
                   child: Column(
                     children: [
                       _buildAppBar(appLocalizations),
-                      Spacer(),
+                      const Spacer(),
                       _buildBottomControls(appLocalizations),
-                      SizedBox(height: 32),
+                      const SizedBox(height: 32),
                     ],
                   ),
                 ),
                 if (_isUploading)
                   Container(
                     color: Colors.black54,
-                    child: Center(
+                    child: const Center(
                       child: Column(
                         mainAxisSize: MainAxisSize.min,
                         children: [
@@ -314,7 +311,7 @@ class _RealTimeDetectionState extends State<RealTimeDetection>
                       size: 200),
               ],
             )
-          : Center(
+          : const Center(
               child: CircularProgressIndicator(
                 valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
               ),
@@ -328,14 +325,14 @@ class _RealTimeDetectionState extends State<RealTimeDetection>
       left: 16,
       right: 16,
       child: Container(
-        padding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
         decoration: BoxDecoration(
           color: Colors.blue.withOpacity(0.9),
           borderRadius: BorderRadius.circular(12),
         ),
         child: Text(
           message,
-          style: TextStyle(color: Colors.white),
+          style: const TextStyle(color: Colors.white),
           textAlign: TextAlign.center,
         ),
       ),
@@ -355,24 +352,24 @@ class _RealTimeDetectionState extends State<RealTimeDetection>
 
   Widget _buildAppBar(AppLocalizations appLocalizations) {
     return Container(
-      padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           IconButton(
-            icon: Icon(Icons.arrow_back_ios, color: Colors.white),
+            icon: const Icon(Icons.arrow_back_ios, color: Colors.white),
             onPressed: () => Navigator.pop(context),
           ),
           Text(
             appLocalizations.realTimeDetection,
-            style: TextStyle(
+            style: const TextStyle(
               color: Colors.white,
               fontSize: 20,
               fontWeight: FontWeight.w600,
             ),
           ),
           IconButton(
-            icon: Icon(Icons.help_outline, color: Colors.white),
+            icon: const Icon(Icons.help_outline, color: Colors.white),
             onPressed: () => _showSupportDialog(appLocalizations),
           ),
         ],
@@ -382,7 +379,7 @@ class _RealTimeDetectionState extends State<RealTimeDetection>
 
   Widget _buildBottomControls(AppLocalizations appLocalizations) {
     return Container(
-      padding: EdgeInsets.symmetric(horizontal: 24),
+      padding: const EdgeInsets.symmetric(horizontal: 24),
       child: _capturedImage == null
           ? GestureDetector(
               onTap: _captureImage,
@@ -397,7 +394,7 @@ class _RealTimeDetectionState extends State<RealTimeDetection>
                   child: Container(
                     width: 64,
                     height: 64,
-                    decoration: BoxDecoration(
+                    decoration: const BoxDecoration(
                       shape: BoxShape.circle,
                       color: Colors.white,
                     ),
@@ -441,7 +438,7 @@ class _RealTimeDetectionState extends State<RealTimeDetection>
     return GestureDetector(
       onTap: onPressed,
       child: Container(
-        padding: EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
         decoration: BoxDecoration(
           color: color,
           borderRadius: BorderRadius.circular(30),
@@ -450,10 +447,10 @@ class _RealTimeDetectionState extends State<RealTimeDetection>
           mainAxisSize: MainAxisSize.min,
           children: [
             Icon(icon, color: Colors.white),
-            SizedBox(width: 8),
+            const SizedBox(width: 8),
             Text(
               label,
-              style: TextStyle(
+              style: const TextStyle(
                 color: Colors.white,
                 fontSize: 16,
                 fontWeight: FontWeight.w600,
@@ -474,24 +471,24 @@ class _RealTimeDetectionState extends State<RealTimeDetection>
             borderRadius: BorderRadius.circular(20),
           ),
           child: Padding(
-            padding: EdgeInsets.all(24),
+            padding: const EdgeInsets.all(24),
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
                 Text(
                   appLocalizations.support,
-                  style: TextStyle(
+                  style: const TextStyle(
                     fontSize: 24,
                     fontWeight: FontWeight.bold,
                   ),
                 ),
-                SizedBox(height: 16),
+                const SizedBox(height: 16),
                 Text(
                   appLocalizations.supportMessage,
-                  style: TextStyle(fontSize: 16),
+                  style: const TextStyle(fontSize: 16),
                   textAlign: TextAlign.center,
                 ),
-                SizedBox(height: 24),
+                const SizedBox(height: 24),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                   children: [
@@ -499,7 +496,7 @@ class _RealTimeDetectionState extends State<RealTimeDetection>
                       onPressed: () => Navigator.pop(context),
                       child: Text(
                         appLocalizations.ok,
-                        style: TextStyle(fontSize: 13.5),
+                        style: const TextStyle(fontSize: 13.5),
                       ),
                     ),
                     ElevatedButton(
@@ -520,7 +517,7 @@ class _RealTimeDetectionState extends State<RealTimeDetection>
                       ),
                       child: Text(
                         appLocalizations.manualVerification,
-                        style: TextStyle(fontSize: 11, color: Colors.white),
+                        style: const TextStyle(fontSize: 11, color: Colors.white),
                       ),
                     ),
                   ],

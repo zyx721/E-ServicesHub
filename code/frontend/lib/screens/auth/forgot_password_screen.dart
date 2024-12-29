@@ -16,10 +16,13 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
   bool _isLoading = false;
 
   Future<void> _recoverPassword(String email) async {
+    final localizations = AppLocalizations.of(context);
+    if (localizations == null) return;
+
     if (email.isEmpty ||
         !RegExp(r"^[a-zA-Z0-9]+@[a-zA-Z0-9]+\.[a-zA-Z]+").hasMatch(email)) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please enter a valid email address.')),
+         SnackBar(content: Text(localizations.enterValidEmail)),
       );
       return;
     }
@@ -37,8 +40,8 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
       if (querySnapshot.docs.isEmpty) {
         // Email doesn't exist
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('No user found for that email.'),
+          SnackBar(
+            content: Text(localizations.noUserFoundForEmail),
             backgroundColor: Colors.red,
           ),
         );
@@ -46,8 +49,8 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
         // Email exists, send password reset
         await FirebaseAuth.instance.sendPasswordResetEmail(email: email);
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Password reset email sent.'),
+          SnackBar(
+            content: Text(localizations.passwordResetEmailSent),
             backgroundColor: Colors.green,
           ),
         );

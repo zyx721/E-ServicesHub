@@ -4,15 +4,14 @@ import 'package:camera/camera.dart';
 import 'package:hanini_frontend/screens/become_provider_screen/SetProviderProfile.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
-import 'package:lottie/lottie.dart'; // Import the Lottie package
+import 'package:lottie/lottie.dart';
 import 'package:hanini_frontend/localization/app_localization.dart';
-import 'package:image/image.dart' as img; // Import the image package for image processing
-import 'package:path_provider/path_provider.dart'; // Import the path_provider package for file storage
-import 'dart:io'; // Import the dart:io package for file operations
-import 'package:flutter/services.dart'; // Import the services package for rootBundle
+import 'dart:io';
 import 'package:hanini_frontend/screens/verification/manual_verification_screen.dart';
 
 class FaceCompareScreen extends StatefulWidget {
+  const FaceCompareScreen({super.key});
+
   @override
   _FaceCompareScreenState createState() => _FaceCompareScreenState();
 }
@@ -82,11 +81,14 @@ class _FaceCompareScreenState extends State<FaceCompareScreen> {
     try {
       final request = http.MultipartRequest(
         'POST',
-        Uri.parse('https://polite-schools-ask.loca.lt/compare-face/'), // Ensure this URL is correct
+        Uri.parse(
+            'https://polite-schools-ask.loca.lt/compare-face/'), // Ensure this URL is correct
       );
 
-      request.files.add(await http.MultipartFile.fromPath('file1', _firstImage!.path));
-      request.files.add(await http.MultipartFile.fromPath('file2', _secondImage!.path));
+      request.files
+          .add(await http.MultipartFile.fromPath('file1', _firstImage!.path));
+      request.files
+          .add(await http.MultipartFile.fromPath('file2', _secondImage!.path));
       final response = await request.send();
       final responseData = await http.Response.fromStream(response);
 
@@ -141,7 +143,7 @@ class _FaceCompareScreenState extends State<FaceCompareScreen> {
     ));
   }
 
-void _showSupportDialog(AppLocalizations appLocalizations) {
+  void _showSupportDialog(AppLocalizations appLocalizations) {
     showDialog(
       context: context,
       builder: (BuildContext context) {
@@ -156,7 +158,7 @@ void _showSupportDialog(AppLocalizations appLocalizations) {
               children: [
                 Text(
                   appLocalizations.support,
-                  style: TextStyle(
+                  style: const TextStyle(
                     fontSize: 24,
                     fontWeight: FontWeight.bold,
                   ),
@@ -195,8 +197,8 @@ void _showSupportDialog(AppLocalizations appLocalizations) {
                         ),
                       ),
                       child: Text(
-                        appLocalizations.manualVerification ,
-                        style: TextStyle(fontSize: 11,color: Colors.white),
+                        appLocalizations.manualVerification,
+                        style: TextStyle(fontSize: 11, color: Colors.white),
                       ),
                     ),
                   ],
@@ -226,7 +228,7 @@ void _showSupportDialog(AppLocalizations appLocalizations) {
         preferredSize: Size.fromHeight(64.0),
         child: Container(
           decoration: BoxDecoration(
-            gradient: LinearGradient(
+            gradient: const LinearGradient(
               colors: [
                 Color(0xFF3949AB), // Indigo 600
                 Color(0xFF1E88E5), // Blue 600
@@ -247,7 +249,7 @@ void _showSupportDialog(AppLocalizations appLocalizations) {
             elevation: 0,
             title: Text(
               appLocalizations.faceVerification,
-              style: TextStyle(
+              style: const TextStyle(
                 fontSize: 22,
                 fontWeight: FontWeight.w600,
                 color: Colors.white,
@@ -255,12 +257,12 @@ void _showSupportDialog(AppLocalizations appLocalizations) {
             ),
             actions: [
               IconButton(
-                icon: Icon(
+                icon: const Icon(
                   Icons.help_outline,
                   color: Colors.white,
                   size: 28,
                 ),
-                onPressed:() => _showSupportDialog(appLocalizations),
+                onPressed: () => _showSupportDialog(appLocalizations),
               ),
             ],
           ),
@@ -292,7 +294,7 @@ void _showSupportDialog(AppLocalizations appLocalizations) {
                       ),
                       child: Text(
                         _comparisonResult,
-                        style: TextStyle(
+                        style: const TextStyle(
                           color: Colors.white,
                           fontSize: 16,
                           fontWeight: FontWeight.bold,
@@ -319,16 +321,18 @@ void _showSupportDialog(AppLocalizations appLocalizations) {
                     children: [
                       if (_firstImage == null)
                         ElevatedButton(
-                          onPressed: _isLoading ? null : () => _captureImage(true),
-                          child: Text(
+                          onPressed:
+                              _isLoading ? null : () => _captureImage(true),
+                          child: const Text(
                             "Capture With Mouth Closed",
                             style: TextStyle(fontSize: 18),
                           ),
                         ),
                       if (_firstImage != null && _secondImage == null)
                         ElevatedButton(
-                          onPressed: _isLoading ? null : () => _captureImage(false),
-                          child: Text(
+                          onPressed:
+                              _isLoading ? null : () => _captureImage(false),
+                          child: const Text(
                             "Capture With Mouth Open",
                             style: TextStyle(fontSize: 18),
                           ),
@@ -354,7 +358,7 @@ void _showSupportDialog(AppLocalizations appLocalizations) {
                       if (_firstImage != null && _secondImage != null)
                         ElevatedButton(
                           onPressed: _isLoading ? null : _submitFaceImages,
-                          child: Text(
+                          child: const Text(
                             "Submit Images",
                             style: TextStyle(fontSize: 18),
                           ),
@@ -370,7 +374,7 @@ void _showSupportDialog(AppLocalizations appLocalizations) {
                                     _comparisonResult = "";
                                   });
                                 },
-                          child: Text(
+                          child: const Text(
                             "Retake Images",
                             style: TextStyle(fontSize: 18),
                           ),
@@ -380,7 +384,7 @@ void _showSupportDialog(AppLocalizations appLocalizations) {
                 ),
               ],
             )
-          : Center(
+          : const Center(
               child: CircularProgressIndicator(
                 valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF3949AB)),
               ),
@@ -479,7 +483,7 @@ class FaceGuidelinePainter extends CustomPainter {
     );
 
     // Add corner markers
-    final double markerSize = 15.0;
+    const double markerSize = 15.0;
     paint.strokeWidth = 3.0;
 
     // Top left corner markers

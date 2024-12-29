@@ -9,24 +9,19 @@ import 'package:hanini_frontend/screens/navScreens/sidebar.dart';
 import 'package:hanini_frontend/screens/navScreens/homepage.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:hanini_frontend/localization/app_localization.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:hanini_frontend/screens/navScreens/notificationspage.dart'; // Replace with actual file path
-import 'package:hanini_frontend/screens/Profiles/AdminProfile.dart'; // Import AdminProfile
+import 'package:hanini_frontend/screens/navScreens/notificationspage.dart'; 
+import 'package:hanini_frontend/screens/Profiles/AdminProfile.dart'; 
 import 'models/colors.dart';
 import 'package:geolocator/geolocator.dart';
-
-
-
-import 'package:flutter/material.dart';
-import 'package:iconsax/iconsax.dart'; // Assuming you're using the Iconsax package
 
 class CustomNavBar extends StatelessWidget {
   final int selectedIndex;
   final Function(int) onDestinationSelected;
   final bool isAdmin;
-  final AppLocalizations appLocalizations; // Replace with your localization implementation
+  final AppLocalizations
+      appLocalizations; // Replace with your localization implementation
 
   const CustomNavBar({
     required this.selectedIndex,
@@ -89,7 +84,7 @@ class CustomNavBar extends StatelessWidget {
       label: label,
       selectedIcon: Container(
         decoration: BoxDecoration(
-          gradient: LinearGradient(
+          gradient: const LinearGradient(
             colors: [Colors.purple, Colors.deepPurple],
           ),
           borderRadius: BorderRadius.circular(12),
@@ -104,15 +99,14 @@ class CustomNavBar extends StatelessWidget {
   }
 }
 
-
 class NavbarPage extends StatefulWidget {
   final int initialIndex;
   final String? serviceName;
   final String? preSelectedWorkDomain;
 
   const NavbarPage({
-    Key? key, 
-    required this.initialIndex, 
+    Key? key,
+    required this.initialIndex,
     this.serviceName,
     this.preSelectedWorkDomain,
   }) : super(key: key);
@@ -130,18 +124,40 @@ class _NavbarPageState extends State<NavbarPage> {
   String currentLanguage = 'en';
   String? _currentPreSelectedWorkDomain;
 
-
   final Map<String, Map<String, double>> cityBoundaries = {
-  "Algiers": {"lat_min": 36.5, "lat_max": 37.0, "lon_min": 2.6, "lon_max": 3.3},
-  "Oran": {"lat_min": 35.5, "lat_max": 36.0, "lon_min": -1.0, "lon_max": -0.4},
-  "Constantine": {"lat_min": 36.1, "lat_max": 36.5, "lon_min": 6.4, "lon_max": 6.9},
-  "Annaba": {"lat_min": 36.7, "lat_max": 37.2, "lon_min": 7.5, "lon_max": 8.0},
-  "Blida": {"lat_min": 36.3, "lat_max": 36.8, "lon_min": 2.4, "lon_max": 3.3},
-  "Sétif": {"lat_min": 35.4, "lat_max": 36.6, "lon_min": 5.2, "lon_max": 6.6},
-  "Tébessa": {"lat_min": 34.4, "lat_max": 36.0, "lon_min": 7.4, "lon_max": 8.8},
-};
-
-
+    "Algiers": {
+      "lat_min": 36.5,
+      "lat_max": 37.0,
+      "lon_min": 2.6,
+      "lon_max": 3.3
+    },
+    "Oran": {
+      "lat_min": 35.5,
+      "lat_max": 36.0,
+      "lon_min": -1.0,
+      "lon_max": -0.4
+    },
+    "Constantine": {
+      "lat_min": 36.1,
+      "lat_max": 36.5,
+      "lon_min": 6.4,
+      "lon_max": 6.9
+    },
+    "Annaba": {
+      "lat_min": 36.7,
+      "lat_max": 37.2,
+      "lon_min": 7.5,
+      "lon_max": 8.0
+    },
+    "Blida": {"lat_min": 36.3, "lat_max": 36.8, "lon_min": 2.4, "lon_max": 3.3},
+    "Sétif": {"lat_min": 35.4, "lat_max": 36.6, "lon_min": 5.2, "lon_max": 6.6},
+    "Tébessa": {
+      "lat_min": 34.4,
+      "lat_max": 36.0,
+      "lon_min": 7.4,
+      "lon_max": 8.8
+    },
+  };
 
   @override
   void initState() {
@@ -152,7 +168,6 @@ class _NavbarPageState extends State<NavbarPage> {
     _initializeScreens();
     _determineAndStoreLocation(); // Add this line
   }
-
 
   Future<void> _determineAndStoreLocation() async {
     try {
@@ -169,7 +184,8 @@ class _NavbarPageState extends State<NavbarPage> {
         desiredAccuracy: LocationAccuracy.high,
       );
 
-      String city = _getCityFromCoordinates(position.latitude, position.longitude);
+      String city =
+          _getCityFromCoordinates(position.latitude, position.longitude);
 
       // Store location data in Firebase
       final user = _auth.currentUser;
@@ -199,8 +215,6 @@ class _NavbarPageState extends State<NavbarPage> {
     return "Outside predefined cities";
   }
 
-
-
   Future<void> _initializeScreens() async {
     try {
       final isProvider = await _checkIfUserIsProvider();
@@ -212,15 +226,15 @@ class _NavbarPageState extends State<NavbarPage> {
                 SearchPage(
                   preSelectedWorkDomain: _currentPreSelectedWorkDomain,
                 ),
-                AdminProfile(),
+                const AdminProfile(),
               ]
             : [
-                HomePage(),
+                const HomePage(),
                 SearchPage(
                   preSelectedWorkDomain: _currentPreSelectedWorkDomain,
                 ),
-                FavoritesPage(),
-                isProvider ? ServiceProviderProfile() : SimpleUserProfile(),
+                const FavoritesPage(),
+                isProvider ? const ServiceProviderProfile() : const SimpleUserProfile(),
               ];
         isLoading = false;
       });
@@ -243,11 +257,14 @@ class _NavbarPageState extends State<NavbarPage> {
         }
       });
     }
-  }    Future<void> _loadUserLanguage() async {
+  }
+
+  Future<void> _loadUserLanguage() async {
     try {
       final user = _auth.currentUser;
       if (user != null) {
-        final userDoc = await _firestore.collection('users').doc(user.uid).get();
+        final userDoc =
+            await _firestore.collection('users').doc(user.uid).get();
         if (userDoc.exists) {
           final data = userDoc.data() as Map<String, dynamic>;
           final savedLanguage = data['language'] as String?;
@@ -265,7 +282,7 @@ class _NavbarPageState extends State<NavbarPage> {
     }
   }
 
-   Future<void> _updateLanguage(String languageCode) async {
+  Future<void> _updateLanguage(String languageCode) async {
     try {
       final user = _auth.currentUser;
       if (user != null) {
@@ -285,8 +302,6 @@ class _NavbarPageState extends State<NavbarPage> {
       print('Error updating language: $e');
     }
   }
-
-
 
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
@@ -309,6 +324,7 @@ class _NavbarPageState extends State<NavbarPage> {
         }
       } catch (e) {
         // Log error or handle it
+        // ignore: avoid_print
         print("Error while fetching user: $e");
         throw Exception("Failed to fetch user data");
       }
@@ -339,20 +355,19 @@ class _NavbarPageState extends State<NavbarPage> {
     }
   }
 
-
   @override
   Widget build(BuildContext context) {
     final AppLocalizations appLocalizations = AppLocalizations.of(context)!;
 
     return isLoading
-        ? Center(child: CircularProgressIndicator())
+        ? const Center(child: CircularProgressIndicator())
         : PopScope(
             canPop: false,
             child: Scaffold(
               appBar: PreferredSize(
-                preferredSize: Size.fromHeight(64.0),
+                preferredSize: const Size.fromHeight(64.0),
                 child: Container(
-                  decoration: BoxDecoration(
+                  decoration: const BoxDecoration(
                     gradient: AppColors.mainGradient,
                   ),
                   child: AppBar(
@@ -375,91 +390,118 @@ class _NavbarPageState extends State<NavbarPage> {
               ),
               drawer: Sidebar(context, appLocalizations),
               body: screens[selectedIndex],
-bottomNavigationBar: NavigationBar(
-  selectedIndex: selectedIndex,
-  onDestinationSelected: _onDestinationSelected,
-  backgroundColor: Colors.deepPurple[50], // Light purple background
-  surfaceTintColor: Colors.deepPurple[100], // Subtle tint effect
-  labelBehavior: NavigationDestinationLabelBehavior.onlyShowSelected,
-  destinations: isAdmin
-      ? [
-          NavigationDestination(
-            icon: Icon(Iconsax.search_normal, color: selectedIndex == 0 ? Colors.deepPurple : Colors.grey),
-            label: appLocalizations.search,
-            selectedIcon: Container(
-              decoration: BoxDecoration(
-                gradient: LinearGradient(colors: [Colors.purple, Colors.deepPurple]),
-                borderRadius: BorderRadius.circular(12),
+              bottomNavigationBar: NavigationBar(
+                selectedIndex: selectedIndex,
+                onDestinationSelected: _onDestinationSelected,
+                backgroundColor:
+                    Colors.deepPurple[50], // Light purple background
+                surfaceTintColor: Colors.deepPurple[100], // Subtle tint effect
+                labelBehavior:
+                    NavigationDestinationLabelBehavior.onlyShowSelected,
+                destinations: isAdmin
+                    ? [
+                        NavigationDestination(
+                          icon: Icon(Iconsax.search_normal,
+                              color: selectedIndex == 0
+                                  ? Colors.deepPurple
+                                  : Colors.grey),
+                          label: appLocalizations.search,
+                          selectedIcon: Container(
+                            decoration: BoxDecoration(
+                              gradient: const LinearGradient(
+                                  colors: [Colors.purple, Colors.deepPurple]),
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            padding: const EdgeInsets.all(8),
+                            child: const Icon(Iconsax.search_normal,
+                                color: Colors.white),
+                          ),
+                        ),
+                        NavigationDestination(
+                          icon: Icon(Iconsax.user,
+                              color: selectedIndex == 1
+                                  ? Colors.deepPurple
+                                  : Colors.grey),
+                          label: appLocalizations.profile,
+                          selectedIcon: Container(
+                            decoration: BoxDecoration(
+                              gradient: const LinearGradient(
+                                  colors: [Colors.purple, Colors.deepPurple]),
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            padding: const EdgeInsets.all(8),
+                            child: const Icon(Iconsax.user, color: Colors.white),
+                          ),
+                        ),
+                      ]
+                    : [
+                        NavigationDestination(
+                          icon: Icon(Iconsax.home,
+                              color: selectedIndex == 0
+                                  ? Colors.deepPurple
+                                  : Colors.grey),
+                          label: appLocalizations.home,
+                          selectedIcon: Container(
+                            decoration: BoxDecoration(
+                              gradient: const LinearGradient(
+                                  colors: [Colors.purple, Colors.deepPurple]),
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            padding: const EdgeInsets.all(8),
+                            child: const Icon(Iconsax.home, color: Colors.white),
+                          ),
+                        ),
+                        NavigationDestination(
+                          icon: Icon(Iconsax.search_normal,
+                              color: selectedIndex == 1
+                                  ? Colors.deepPurple
+                                  : Colors.grey),
+                          label: appLocalizations.search,
+                          selectedIcon: Container(
+                            decoration: BoxDecoration(
+                              gradient: const LinearGradient(
+                                  colors: [Colors.purple, Colors.deepPurple]),
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            padding: const EdgeInsets.all(8),
+                            child: const Icon(Iconsax.search_normal,
+                                color: Colors.white),
+                          ),
+                        ),
+                        NavigationDestination(
+                          icon: Icon(Iconsax.save_2,
+                              color: selectedIndex == 2
+                                  ? Colors.deepPurple
+                                  : Colors.grey),
+                          label: appLocalizations.favorites,
+                          selectedIcon: Container(
+                            decoration: BoxDecoration(
+                              gradient: const LinearGradient(
+                                  colors: [Colors.purple, Colors.deepPurple]),
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            padding: const EdgeInsets.all(8),
+                            child: const Icon(Iconsax.save_2, color: Colors.white),
+                          ),
+                        ),
+                        NavigationDestination(
+                          icon: Icon(Iconsax.user,
+                              color: selectedIndex == 3
+                                  ? Colors.deepPurple
+                                  : Colors.grey),
+                          label: appLocalizations.profile,
+                          selectedIcon: Container(
+                            decoration: BoxDecoration(
+                              gradient: const LinearGradient(
+                                  colors: [Colors.purple, Colors.deepPurple]),
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            padding: const EdgeInsets.all(8),
+                            child: const Icon(Iconsax.user, color: Colors.white),
+                          ),
+                        ),
+                      ],
               ),
-              padding: const EdgeInsets.all(8),
-              child: Icon(Iconsax.search_normal, color: Colors.white),
-            ),
-          ),
-          NavigationDestination(
-            icon: Icon(Iconsax.user, color: selectedIndex == 1 ? Colors.deepPurple : Colors.grey),
-            label: appLocalizations.profile,
-            selectedIcon: Container(
-              decoration: BoxDecoration(
-                gradient: LinearGradient(colors: [Colors.purple, Colors.deepPurple]),
-                borderRadius: BorderRadius.circular(12),
-              ),
-              padding: const EdgeInsets.all(8),
-              child: Icon(Iconsax.user, color: Colors.white),
-            ),
-          ),
-        ]
-      : [
-          NavigationDestination(
-            icon: Icon(Iconsax.home, color: selectedIndex == 0 ? Colors.deepPurple : Colors.grey),
-            label: appLocalizations.home,
-            selectedIcon: Container(
-              decoration: BoxDecoration(
-                gradient: LinearGradient(colors: [Colors.purple, Colors.deepPurple]),
-                borderRadius: BorderRadius.circular(12),
-              ),
-              padding: const EdgeInsets.all(8),
-              child: Icon(Iconsax.home, color: Colors.white),
-            ),
-          ),
-          NavigationDestination(
-            icon: Icon(Iconsax.search_normal, color: selectedIndex == 1 ? Colors.deepPurple : Colors.grey),
-            label: appLocalizations.search,
-            selectedIcon: Container(
-              decoration: BoxDecoration(
-                gradient: LinearGradient(colors: [Colors.purple, Colors.deepPurple]),
-                borderRadius: BorderRadius.circular(12),
-              ),
-              padding: const EdgeInsets.all(8),
-              child: Icon(Iconsax.search_normal, color: Colors.white),
-            ),
-          ),
-          NavigationDestination(
-            icon: Icon(Iconsax.save_2, color: selectedIndex == 2 ? Colors.deepPurple : Colors.grey),
-            label: appLocalizations.favorites,
-            selectedIcon: Container(
-              decoration: BoxDecoration(
-                gradient: LinearGradient(colors: [Colors.purple, Colors.deepPurple]),
-                borderRadius: BorderRadius.circular(12),
-              ),
-              padding: const EdgeInsets.all(8),
-              child: Icon(Iconsax.save_2, color: Colors.white),
-            ),
-          ),
-          NavigationDestination(
-            icon: Icon(Iconsax.user, color: selectedIndex == 3 ? Colors.deepPurple : Colors.grey),
-            label: appLocalizations.profile,
-            selectedIcon: Container(
-              decoration: BoxDecoration(
-                gradient: LinearGradient(colors: [Colors.purple, Colors.deepPurple]),
-                borderRadius: BorderRadius.circular(12),
-              ),
-              padding: const EdgeInsets.all(8),
-              child: Icon(Iconsax.user, color: Colors.white),
-            ),
-          ),
-        ],
-),
-
             ),
           );
   }
@@ -499,14 +541,14 @@ bottomNavigationBar: NavigationBar(
       child: Row(
         children: [
           Image.asset(flagPath, width: 22),
-          SizedBox(width: 10),
+          const SizedBox(width: 10),
           Text(languageName),
         ],
       ),
     );
   }
 
-void _updateAppLanguage(String languageCode) {
+  void _updateAppLanguage(String languageCode) {
     Locale newLocale;
     switch (languageCode) {
       case 'ar':
@@ -562,7 +604,7 @@ void _updateAppLanguage(String languageCode) {
 
               return Container(
                 padding: const EdgeInsets.all(5),
-                decoration: BoxDecoration(
+                decoration: const BoxDecoration(
                   color: Colors.red,
                   shape: BoxShape.circle,
                 ),

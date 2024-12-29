@@ -355,7 +355,6 @@ class ListingsList extends StatelessWidget {
 
     return StatefulBuilder(
       builder: (BuildContext context, StateSetter setState) {
-        bool isExpanded = false;
 
         return Container(
           decoration: BoxDecoration(
@@ -756,12 +755,6 @@ class ListingsList extends StatelessWidget {
 
       final String? senderToken = await _getDeviceToken(senderUid);
       final String? receiverToken = await _getDeviceToken(receiverUid);
-
-      // Now we only need to check receiverUid since senderUid has a fallback
-      if (receiverUid == null) {
-        print('Debug - listing data: $listing');
-        throw Exception('Missing receiver UID in listing data');
-      }
 
       final batch = FirebaseFirestore.instance.batch();
 
