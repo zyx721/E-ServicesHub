@@ -50,13 +50,13 @@ class FullScreenImage extends StatelessWidget {
                 ),
               ),
             ),
-            Positioned(
+            const Positioned(
               top: 16,
               left: 16,
               child: Row(
                 children: [
-                  const Icon(Icons.image, color: Colors.white, size: 28),
-                  const SizedBox(width: 8),
+                  Icon(Icons.image, color: Colors.white, size: 28),
+                  SizedBox(width: 8),
                   Text(
                     "Image Viewer",
                     style: TextStyle(
@@ -1353,7 +1353,8 @@ class _ServiceProviderProfileState extends State<ServiceProviderProfile> {
                         color: Colors.purple.withOpacity(0.1),
                         shape: BoxShape.circle,
                       ),
-                      child: Icon(Icons.work, size: 24, color: Colors.purple),
+                      child: const Icon(Icons.work,
+                          size: 24, color: Colors.purple),
                     ),
                     const SizedBox(width: 16),
                     Text(
@@ -1600,8 +1601,8 @@ class _ServiceProviderProfileState extends State<ServiceProviderProfile> {
           // Title Section with Icon
           Container(
             padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              borderRadius: const BorderRadius.only(
+            decoration: const BoxDecoration(
+              borderRadius: BorderRadius.only(
                 topLeft: Radius.circular(16),
                 topRight: Radius.circular(16),
               ),

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:hanini_frontend/localization/app_localization.dart';
 
 class PrivacyInfoPage extends StatelessWidget {
   const PrivacyInfoPage({Key? key}) : super(key: key);
@@ -82,6 +83,9 @@ class PrivacyInfoPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final localizations = AppLocalizations.of(context);
+    if (localizations == null) return const SizedBox.shrink();
+
     return Container(
       decoration: const BoxDecoration(
         gradient: LinearGradient(
@@ -96,9 +100,9 @@ class PrivacyInfoPage extends StatelessWidget {
       child: Scaffold(
         backgroundColor: Colors.transparent,
         appBar: AppBar(
-          title: const Text(
-            'Privacy Information',
-            style: TextStyle(
+          title: Text(
+            localizations.privacyInfo,
+            style: const TextStyle(
               color: Colors.white,
               fontWeight: FontWeight.bold,
             ),
@@ -153,7 +157,7 @@ class PrivacyInfoPage extends StatelessWidget {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
-                              'Privacy Policy',
+                              localizations.privacyPolicy,
                               style: TextStyle(
                                 fontSize: 24,
                                 fontWeight: FontWeight.bold,
@@ -162,7 +166,7 @@ class PrivacyInfoPage extends StatelessWidget {
                             ),
                             const SizedBox(height: 12),
                             Text(
-                              'Welcome to HANINI! Your privacy is important to us. This page outlines how we collect, use, and protect your information.',
+                              localizations.privacyPolicyDescription,
                               style: TextStyle(
                                 fontSize: 16,
                                 color: Colors.purple[900],
@@ -175,38 +179,40 @@ class PrivacyInfoPage extends StatelessWidget {
                       const SizedBox(height: 24),
                       _buildSection(
                         number: '1',
-                        title: 'Information We Collect',
-                        content: 'We may collect personal information such as your name, email address, location, and payment details to provide better services.',
+                        title: localizations.informationWeCollect,
+                        content: localizations.informationWeCollectDescription,
                         icon: Icons.person_outline,
                       ),
                       _buildSection(
                         number: '2',
-                        title: 'How We Use Your Information',
-                        content: 'Your data is used to connect you with service providers, enhance your experience, and for app analytics to improve our services.',
+                        title: localizations.howWeUseYourInformation,
+                        content:
+                            localizations.howWeUseYourInformationDescription,
                         icon: Icons.data_usage,
                       ),
                       _buildSection(
                         number: '3',
-                        title: 'Data Protection',
-                        content: 'We implement strict measures to protect your information from unauthorized access, alteration, or deletion.',
+                        title: localizations.dataProtection,
+                        content: localizations.dataProtectionDescription,
                         icon: Icons.shield_outlined,
                       ),
                       _buildSection(
                         number: '4',
-                        title: 'Sharing Your Information',
-                        content: 'We do not sell your information. We may share data with third-party services necessary for running the app, following privacy standards.',
+                        title: localizations.sharingYourInformation,
+                        content:
+                            localizations.sharingYourInformationDescription,
                         icon: Icons.share_outlined,
                       ),
                       _buildSection(
                         number: '5',
-                        title: 'Your Rights',
-                        content: 'You have the right to access, modify, or request deletion of your data. Contact us at support@hanini.com for any concerns.',
+                        title: localizations.yourRights,
+                        content: localizations.yourRightsDescription,
                         icon: Icons.gavel_outlined,
                       ),
                       _buildSection(
                         number: '6',
-                        title: 'Updates to this Policy',
-                        content: 'We may update this policy occasionally. Please check this page regularly for updates.',
+                        title: localizations.updatesToThisPolicy,
+                        content: localizations.updatesToThisPolicyDescription,
                         icon: Icons.update,
                       ),
                       const SizedBox(height: 24),
@@ -222,9 +228,9 @@ class PrivacyInfoPage extends StatelessWidget {
                               borderRadius: BorderRadius.circular(12),
                             ),
                           ),
-                          child: const Text(
-                            'Back to Home',
-                            style: TextStyle(
+                          child: Text(
+                            localizations.backToHome,
+                            style: const TextStyle(
                               fontSize: 16,
                               fontWeight: FontWeight.bold,
                             ),

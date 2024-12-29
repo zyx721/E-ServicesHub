@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:hanini_frontend/localization/app_localization.dart';
 
 class ChangePasswordPage extends StatefulWidget {
   const ChangePasswordPage({Key? key}) : super(key: key);
@@ -33,18 +34,20 @@ class _ChangePasswordPageState extends State<ChangePasswordPage> {
   }
 
   Widget _buildAuthMethodMessage() {
+    final localizations = AppLocalizations.of(context);
+    if (localizations == null) return const SizedBox.shrink();
     final user = FirebaseAuth.instance.currentUser;
     if (user == null) return const SizedBox.shrink();
 
     final providers = user.providerData.map((e) => e.providerId).toList();
     String authMethod = 'Unknown';
-    
+
     if (providers.contains('google.com')) {
-      authMethod = 'Google';
+      authMethod = localizations.google;
     } else if (providers.contains('facebook.com')) {
-      authMethod = 'Facebook';
+      authMethod = localizations.facebook;
     } else if (providers.contains('apple.com')) {
-      authMethod = 'Apple';
+      authMethod = localizations.apple;
     }
 
     return Container(
@@ -73,7 +76,7 @@ class _ChangePasswordPageState extends State<ChangePasswordPage> {
           ),
           const SizedBox(height: 16),
           Text(
-            'You\'re signed in with $authMethod',
+            '${localizations.signedInWith} $authMethod',
             style: TextStyle(
               fontSize: 18,
               color: Colors.purple[700],
@@ -82,7 +85,7 @@ class _ChangePasswordPageState extends State<ChangePasswordPage> {
           ),
           const SizedBox(height: 8),
           Text(
-            'Please visit $authMethod settings to manage your password.',
+            '${localizations.pleaseVisit} $authMethod ${localizations.settingsToManagePassword}',
             textAlign: TextAlign.center,
             style: TextStyle(
               color: Colors.purple[900],
@@ -141,23 +144,26 @@ class _ChangePasswordPageState extends State<ChangePasswordPage> {
 
   @override
   Widget build(BuildContext context) {
+    final localizations = AppLocalizations.of(context);
+    if (localizations == null) return const SizedBox.shrink();
+
     return Container(
       decoration: const BoxDecoration(
         gradient: LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
           colors: [
-            Color(0xFF9C27B0),  // Purple 500
-            Color(0xFF7B1FA2),  // Purple 700
+            Color(0xFF9C27B0), // Purple 500
+            Color(0xFF7B1FA2), // Purple 700
           ],
         ),
       ),
       child: Scaffold(
         backgroundColor: Colors.transparent,
         appBar: AppBar(
-          title: const Text(
-            'Change Password',
-            style: TextStyle(color: Colors.white),
+          title: Text(
+            localizations.changePassword,
+            style: const TextStyle(color: Colors.white),
           ),
           backgroundColor: Colors.transparent,
           elevation: 0,
@@ -182,14 +188,17 @@ class _ChangePasswordPageState extends State<ChangePasswordPage> {
                               TextFormField(
                                 controller: _currentPasswordController,
                                 decoration: InputDecoration(
-                                  labelText: 'Current Password',
-                                  labelStyle: TextStyle(color: Colors.purple[700]),
+                                  labelText: localizations.currentPassword,
+                                  labelStyle:
+                                      TextStyle(color: Colors.purple[700]),
                                   focusedBorder: OutlineInputBorder(
-                                    borderSide: BorderSide(color: Colors.purple[700]!),
+                                    borderSide:
+                                        BorderSide(color: Colors.purple[700]!),
                                     borderRadius: BorderRadius.circular(8),
                                   ),
                                   enabledBorder: OutlineInputBorder(
-                                    borderSide: BorderSide(color: Colors.purple[200]!),
+                                    borderSide:
+                                        BorderSide(color: Colors.purple[200]!),
                                     borderRadius: BorderRadius.circular(8),
                                   ),
                                   suffixIcon: IconButton(
@@ -201,7 +210,8 @@ class _ChangePasswordPageState extends State<ChangePasswordPage> {
                                     ),
                                     onPressed: () {
                                       setState(() {
-                                        _showCurrentPassword = !_showCurrentPassword;
+                                        _showCurrentPassword =
+                                            !_showCurrentPassword;
                                       });
                                     },
                                   ),
@@ -209,7 +219,8 @@ class _ChangePasswordPageState extends State<ChangePasswordPage> {
                                 obscureText: !_showCurrentPassword,
                                 validator: (value) {
                                   if (value == null || value.isEmpty) {
-                                    return 'Please enter your current password';
+                                    return localizations
+                                        .currentPasswordRequiredError;
                                   }
                                   return null;
                                 },
@@ -218,14 +229,17 @@ class _ChangePasswordPageState extends State<ChangePasswordPage> {
                               TextFormField(
                                 controller: _newPasswordController,
                                 decoration: InputDecoration(
-                                  labelText: 'New Password',
-                                  labelStyle: TextStyle(color: Colors.purple[700]),
+                                  labelText: localizations.newPassword,
+                                  labelStyle:
+                                      TextStyle(color: Colors.purple[700]),
                                   focusedBorder: OutlineInputBorder(
-                                    borderSide: BorderSide(color: Colors.purple[700]!),
+                                    borderSide:
+                                        BorderSide(color: Colors.purple[700]!),
                                     borderRadius: BorderRadius.circular(8),
                                   ),
                                   enabledBorder: OutlineInputBorder(
-                                    borderSide: BorderSide(color: Colors.purple[200]!),
+                                    borderSide:
+                                        BorderSide(color: Colors.purple[200]!),
                                     borderRadius: BorderRadius.circular(8),
                                   ),
                                   suffixIcon: IconButton(
@@ -245,10 +259,11 @@ class _ChangePasswordPageState extends State<ChangePasswordPage> {
                                 obscureText: !_showNewPassword,
                                 validator: (value) {
                                   if (value == null || value.isEmpty) {
-                                    return 'Please enter a new password';
+                                    return localizations
+                                        .newPasswordRequiredError;
                                   }
                                   if (value.length < 6) {
-                                    return 'Password must be at least 6 characters';
+                                    return localizations.passwordMinLengthError;
                                   }
                                   return null;
                                 },
@@ -257,14 +272,17 @@ class _ChangePasswordPageState extends State<ChangePasswordPage> {
                               TextFormField(
                                 controller: _confirmPasswordController,
                                 decoration: InputDecoration(
-                                  labelText: 'Confirm New Password',
-                                  labelStyle: TextStyle(color: Colors.purple[700]),
+                                  labelText: localizations.confirmNewPassword,
+                                  labelStyle:
+                                      TextStyle(color: Colors.purple[700]),
                                   focusedBorder: OutlineInputBorder(
-                                    borderSide: BorderSide(color: Colors.purple[700]!),
+                                    borderSide:
+                                        BorderSide(color: Colors.purple[700]!),
                                     borderRadius: BorderRadius.circular(8),
                                   ),
                                   enabledBorder: OutlineInputBorder(
-                                    borderSide: BorderSide(color: Colors.purple[200]!),
+                                    borderSide:
+                                        BorderSide(color: Colors.purple[200]!),
                                     borderRadius: BorderRadius.circular(8),
                                   ),
                                   suffixIcon: IconButton(
@@ -276,7 +294,8 @@ class _ChangePasswordPageState extends State<ChangePasswordPage> {
                                     ),
                                     onPressed: () {
                                       setState(() {
-                                        _showConfirmPassword = !_showConfirmPassword;
+                                        _showConfirmPassword =
+                                            !_showConfirmPassword;
                                       });
                                     },
                                   ),
@@ -284,10 +303,11 @@ class _ChangePasswordPageState extends State<ChangePasswordPage> {
                                 obscureText: !_showConfirmPassword,
                                 validator: (value) {
                                   if (value == null || value.isEmpty) {
-                                    return 'Please confirm your new password';
+                                    return localizations
+                                        .confirmNewPasswordRequiredError;
                                   }
                                   if (value != _newPasswordController.text) {
-                                    return 'Passwords do not match';
+                                    return localizations.passwordsDoNotMatch;
                                   }
                                   return null;
                                 },
@@ -297,7 +317,8 @@ class _ChangePasswordPageState extends State<ChangePasswordPage> {
                                 onPressed: _isLoading ? null : _changePassword,
                                 style: ElevatedButton.styleFrom(
                                   backgroundColor: Colors.purple[700],
-                                  padding: const EdgeInsets.symmetric(vertical: 16),
+                                  padding:
+                                      const EdgeInsets.symmetric(vertical: 16),
                                   shape: RoundedRectangleBorder(
                                     borderRadius: BorderRadius.circular(8),
                                   ),
@@ -308,14 +329,15 @@ class _ChangePasswordPageState extends State<ChangePasswordPage> {
                                         width: 20,
                                         child: CircularProgressIndicator(
                                           strokeWidth: 2,
-                                          valueColor: AlwaysStoppedAnimation<Color>(
+                                          valueColor:
+                                              AlwaysStoppedAnimation<Color>(
                                             Colors.white,
                                           ),
                                         ),
                                       )
-                                    : const Text(
-                                        'Change Password',
-                                        style: TextStyle(
+                                    : Text(
+                                        localizations.changePassword,
+                                        style: const TextStyle(
                                           fontSize: 16,
                                           fontWeight: FontWeight.bold,
                                           color: Colors.white,

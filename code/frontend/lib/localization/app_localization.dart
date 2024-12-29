@@ -102,11 +102,6 @@ class AppLocalizations {
       ? "إعدادات الإشعارات"
       : (isFrench ? "Paramètres de notification" : "Notification Settings");
 
-  // Privacy Settings
-  String get privacyInfo => isArabic
-      ? "معلومات الخصوصية"
-      : (isFrench ? "Info Sur confidentialité" : "Privacy Info");
-
   // aboutApp
   String get aboutApp => isArabic
       ? "حول التطبيق"
@@ -1224,10 +1219,233 @@ class AppLocalizations {
       isArabic ? "مثال: 2018" : (isFrench ? "par exemple: 2018" : "eg: 2018");
   String get egTo =>
       isArabic ? "مثال: 2024" : (isFrench ? "par exemple: 2024" : "eg: 2024");
+
+  // About HANINI
+  String get aboutHanini => isArabic
+      ? "حول هنيني"
+      : (isFrench ? "À propos de Hanini" : "About Hanini");
+  // HANINI is your ultimate platform for connecting with service providers in Algeria. From household repairs to professional consultations, HANINI simplifies finding the right person for the job.
+  String get aboutHaniniDescription => isArabic
+      ? "هنيني هو منصتك النهائية للتواصل مع مقدمي الخدمات في الجزائر. من إصلاحات المنزل إلى الاستشارات المهنية، يبسط هنيني العثور على الشخص المناسب للعمل."
+      : (isFrench
+          ? "HANINI est votre plateforme ultime pour vous connecter avec des prestataires de services en Algérie. Des réparations domestiques aux consultations professionnelles, HANINI simplifie la recherche de la bonne personne pour le travail."
+          : "HANINI is your ultimate platform for connecting with service providers in Algeria. From household repairs to professional consultations, HANINI simplifies finding the right person for the job.");
+  // Our Mission
+  String get ourMission =>
+      isArabic ? "مهمتنا" : (isFrench ? "Notre mission" : "Our Mission");
+  // Our mission is to provide a reliable platform for connecting service providers with customers. We aim to simplify the process of finding the right person for the job.
+  String get ourMissionDescription => isArabic
+      ? "مهمتنا هي توفير منصة موثوقة لربط مقدمي الخدمات بالعملاء. نهدف إلى تبسيط عملية العثور على الشخص المناسب للعمل."
+      : (isFrench
+          ? "Notre mission est de fournir une plateforme fiable pour connecter les prestataires de services avec les clients. Nous visons à simplifier le processus de recherche de la bonne personne pour le travail."
+          : "Our mission is to provide a reliable platform for connecting service providers with customers. We aim to simplify the process of finding the right person for the job.");
+  // Key Features
+  String get keyFeatures => isArabic
+      ? "الميزات الرئيسية"
+      : (isFrench ? "Caractéristiques clés" : "Key Features");
+
+  // AI-based identity verification for secure connections
+  String get aiBasedVerification => isArabic
+      ? "التحقق من الهوية بناءً على الذكاء الاصطناعي للاتصالات الآمنة"
+      : (isFrench
+          ? "Vérification d'identité basée sur l'IA pour des connexions sécurisées"
+          : "AI-based identity verification for secure connections");
+  // Personalized recommendations tailored to your needs
+  String get personalizedRecommendations => isArabic
+      ? "توصيات شخصية مصممة خصيصًا لاحتياجاتك"
+      : (isFrench
+          ? "Recommandations personnalisées adaptées à vos besoins"
+          : "Personalized recommendations tailored to your needs");
+  // Transparent reviews and ratings to help you choose wisely
+  String get transparentReviews => isArabic
+      ? "مراجعات وتقييمات شفافة لمساعدتك في اختيار بحكمة"
+      : (isFrench
+          ? "Avis et évaluations transparents pour vous aider à choisir judicieusement"
+          : "Transparent reviews and ratings to help you choose wisely");
+  // Premium subscriptions and targeted ads for providers
+  String get premiumSubscriptions => isArabic
+      ? "اشتراكات مميزة وإعلانات مستهدفة لمقدمي الخدمات"
+      : (isFrench
+          ? "Abonnements premium et publicités ciblées pour les fournisseurs"
+          : "Premium subscriptions and targeted ads for providers");
+
+  // Why Choose HANINI ?
+  String get whyChooseHanini => isArabic
+      ? "لماذا تختار هنيني؟"
+      : (isFrench ? "Pourquoi choisir Hanini ?" : "Why Choose Hanini ?");
+  // We bring convenience, trust, and efficiency to your doorstep. Our user-friendly platform ensures that connecting with the right service provider is just a few taps away.
+  String get whyChooseHaniniDescription => isArabic
+      ? "نوفر الراحة والثقة والكفاءة إلى عتبة بابك. تضمن منصتنا السهلة الاستخدام أن الاتصال بمقدم الخدمة المناسب على بعد بضع نقرات."
+      : (isFrench
+          ? "Nous apportons la commodité, la confiance et l'efficacité à votre porte. Notre plateforme conviviale garantit que se connecter avec le bon prestataire de services n'est qu'à quelques clics."
+          : "We bring convenience, trust, and efficiency to your doorstep. Our user-friendly platform ensures that connecting with the right service provider is just a few taps away.");
+  // Get in Touch
+  String get getInTouch =>
+      isArabic ? "تواصل معنا" : (isFrench ? "Contactez-nous" : "Get in Touch");
+
+  // Have questions or feedback? Reach out to us at support@hanini.com. We are always here to help!
+  String get getInTouchDescription => isArabic
+      ? "هل لديك أسئلة أو تعليقات؟ تواصل معنا على support@hanini.com. نحن دائمًا هنا للمساعدة!"
+      : (isFrench
+          ? "Vous avez des questions ou des commentaires ? Contactez-nous à support@hanini.com. Nous sommes toujours là pour vous aider !"
+          : "Have questions or feedback? Reach out to us at support@hanini.com. We are always here to help!");
+
+  // Back to Home
+  String get backToHome => isArabic
+      ? "العودة إلى الصفحة الرئيسية"
+      : (isFrench ? "Retour à l'accueil" : "Back to Home");
+
+  // You are signed in with
+  String get signedInWith => isArabic
+      ? "أنت مسجل باستخدام"
+      : (isFrench ? "Vous êtes connecté avec" : "You're signed in with");
+
+  // Facebook
+  String get facebook =>
+      isArabic ? '" فيسبوك "' : (isFrench ? "Facebook" : "Facebook");
+  // Apple
+  String get apple => isArabic ? '" أبل "' : (isFrench ? '" Apple "' : "Apple");
+  // Google
+  String get google => isArabic ? '" جوجل "' : (isFrench ? "Google" : "Google");
+
+  // Please visit
+  String get pleaseVisit => isArabic
+      ? "يرجى زيارة إعدادت"
+      : (isFrench ? "Veuillez visiter" : "Please visit");
+
+  // settings to manage your password.
+  String get settingsToManagePassword => isArabic
+      ? "لإدارة كلمة المرور الخاصة بك."
+      : (isFrench
+          ? "paramètres pour gérer votre mot de passe."
+          : "settings to manage your password.");
+
+  // Current Password
+  String get currentPassword => isArabic
+      ? "كلمة المرور الحالية"
+      : (isFrench ? "Mot de passe actuel" : "Current Password");
+
+  // Please enter your current password
+  String get currentPasswordRequiredError => isArabic
+      ? "الرجاء إدخال كلمة المرور الحالية"
+      : (isFrench
+          ? "Veuillez entrer votre mot de passe actuel"
+          : "Please enter your current password");
+
+  // New Password
+  String get newPassword => isArabic
+      ? "كلمة المرور الجديدة"
+      : (isFrench ? "Nouveau mot de passe" : "New Password");
+
+  // Please enter a new password
+  String get newPasswordRequiredError => isArabic
+      ? "الرجاء إدخال كلمة مرور جديدة"
+      : (isFrench
+          ? "Veuillez entrer un nouveau mot de passe"
+          : "Please enter a new password");
+
+  // Confirm New Password
+  String get confirmNewPassword => isArabic
+      ? "تأكيد كلمة المرور الجديدة"
+      : (isFrench
+          ? "Confirmer le nouveau mot de passe"
+          : "Confirm New Password");
+
+  // Please confirm your new password
+  String get confirmNewPasswordRequiredError => isArabic
+      ? "يرجى تأكيد كلمة المرور الجديدة"
+      : (isFrench
+          ? "Veuillez confirmer votre nouveau mot de passe"
+          : "Please confirm your new password");
+
   // Static method to access the instance
   static AppLocalizations? of(BuildContext context) {
     return Localizations.of<AppLocalizations>(context, AppLocalizations);
   }
+
+  // Privacy Settings
+  String get privacyInfo => isArabic
+      ? "معلومات الخصوصية"
+      : (isFrench ? "Info Sur confidentialité" : "Privacy Info");
+
+  // Privacy Policy
+  String get privacyPolicy => isArabic
+      ? "سياسة الخصوصية"
+      : (isFrench ? "Politique de confidentialité" : "Privacy Policy");
+  // Welcome to HANINI! Your privacy is important to us. This page outlines how we collect, use, and protect your information.
+  String get privacyPolicyDescription => isArabic
+      ? "مرحبًا بك في هنيني! تهم خصوصيتك بالنسبة لنا. توضح هذه الصفحة كيفية جمعنا واستخدامنا وحماية معلوماتك."
+      : (isFrench
+          ? "Bienvenue sur HANINI! Votre vie privée est importante pour nous. Cette page décrit comment nous collectons, utilisons et protégeons vos informations."
+          : "Welcome to HANINI! Your privacy is important to us. This page outlines how we collect, use, and protect your information.");
+
+  // Information We Collect
+  String get informationWeCollect => isArabic
+      ? "المعلومات التي نجمعها"
+      : (isFrench
+          ? "Informations que nous collectons"
+          : "Information We Collect");
+
+  // We may collect personal information such as your name, email address, location, and payment details to provide better services.
+  String get informationWeCollectDescription => isArabic
+      ? " قد نجمع معلومات شخصية مثل اسمك وعنوان بريدك الإلكتروني وموقعك وتفاصيل الدفع لتقديم خدمات أفضل."
+      : (isFrench
+          ? "Nous pouvons collecter des informations personnelles telles que votre nom, votre adresse e-mail, votre emplacement et vos détails de paiement pour fournir de meilleurs services."
+          : "We may collect personal information such as your name, email address, location, and payment details to provide better services.");
+
+  //  How We Use Your Information
+  String get howWeUseYourInformation => isArabic
+      ? "كيف نستخدم معلوماتك"
+      : (isFrench
+          ? "Comment nous utilisons vos informations"
+          : "How We Use Your Information");
+  //  Your data is used to connect you with service providers, enhance your experience, and for app analytics to improve our services.
+  String get howWeUseYourInformationDescription => isArabic
+      ? "تُستخدم بياناتك لربطك بمقدمي الخدمات وتعزيز تجربتك ولتحليلات التطبيق لتحسين خدماتنا."
+      : (isFrench
+          ? "Vos données sont utilisées pour vous connecter avec des prestataires de services, améliorer votre expérience et pour les analyses de l'application afin d'améliorer nos services."
+          : "Your data is used to connect you with service providers, enhance your experience, and for app analytics to improve our services.");
+  //  Data Protection
+  String get dataProtection => isArabic
+      ? "حماية البيانات"
+      : (isFrench ? "Protection des données" : "Data Protection");
+  //  We implement strict measures to protect your information from unauthorized access, alteration, or deletion.
+  String get dataProtectionDescription => isArabic
+      ? "نقوم بتنفيذ تدابير صارمة لحماية معلوماتك من الوصول غير المصرح به أو التغيير أو الحذف."
+      : (isFrench
+          ? "Nous mettons en œuvre des mesures strictes pour protéger vos informations contre tout accès, altération ou suppression non autorisés."
+          : "We implement strict measures to protect your information from unauthorized access, alteration, or deletion.");
+  //  Sharing Your Information
+  String get sharingYourInformation => isArabic
+      ? "مشاركة معلوماتك"
+      : (isFrench ? "Partage de vos informations" : "Sharing Your Information");
+  //  We do not sell your information. We may share data with third-party services necessary for running the app, following privacy standards.
+  String get sharingYourInformationDescription => isArabic
+      ? "نحن لا نبيع معلوماتك. قد نشارك البيانات مع خدمات الطرف الثالث الضرورية لتشغيل التطبيق، وفقًا لمعايير الخصوصية."
+      : (isFrench
+          ? "Nous ne vendons pas vos informations. Nous pouvons partager des données avec des services tiers nécessaires au fonctionnement de l'application, suivant les normes de confidentialité."
+          : "We do not sell your information. We may share data with third-party services necessary for running the app, following privacy standards.");
+  //  Your Rights
+  String get yourRights =>
+      isArabic ? "حقوقك" : (isFrench ? "Vos droits" : "Your Rights");
+  //  You have the right to access, modify, or request deletion of your data. Contact us at support@hanini.com for any concerns.
+  String get yourRightsDescription => isArabic
+      ? "لديك الحق في الوصول إلى بياناتك وتعديلها أو طلب حذفها. اتصل بنا على support@hanini.com لأي مخاوف."
+      : (isFrench
+          ? "Vous avez le droit d'accéder à vos données, de les modifier ou de demander leur suppression. Contactez-nous à support@hanini.com pour toute préoccupation."
+          : "You have the right to access, modify, or request deletion of your data. Contact us at support@hanini.com for any concerns.");
+  //  Updates to this Policy
+  String get updatesToThisPolicy => isArabic
+      ? "تحديثات لهذه السياسة"
+      : (isFrench
+          ? "Mises à jour de cette politique"
+          : "Updates to this Policy");
+  //  We may update this policy occasionally. Please check this page regularly for updates.
+  String get updatesToThisPolicyDescription => isArabic
+      ? "قد نقوم بتحديث هذه السياسة بين الحين والآخر. يرجى التحقق من هذه الصفحة بانتظام للحصول على التحديثات."
+      : (isFrench
+          ? "Nous pouvons mettre à jour cette politique de temps en temps. Veuillez consulter cette page régulièrement pour les mises à jour."
+          : "We may update this policy occasionally. Please check this page regularly for updates.");
 
   static void load(Locale newLocale) {}
 }

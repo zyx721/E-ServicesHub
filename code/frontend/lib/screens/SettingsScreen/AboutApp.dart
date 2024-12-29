@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:hanini_frontend/localization/app_localization.dart';
 
 class AboutAppPage extends StatelessWidget {
   const AboutAppPage({Key? key}) : super(key: key);
@@ -100,6 +101,9 @@ class AboutAppPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final localizations = AppLocalizations.of(context);
+    if (localizations == null) return const SizedBox.shrink();
+
     return Container(
       decoration: const BoxDecoration(
         gradient: LinearGradient(
@@ -114,9 +118,9 @@ class AboutAppPage extends StatelessWidget {
       child: Scaffold(
         backgroundColor: Colors.transparent,
         appBar: AppBar(
-          title: const Text(
-            'About HANINI',
-            style: TextStyle(
+          title: Text(
+            localizations.aboutHanini,
+            style: const TextStyle(
               color: Colors.white,
               fontWeight: FontWeight.bold,
             ),
@@ -157,22 +161,23 @@ class AboutAppPage extends StatelessWidget {
                       ),
                       const SizedBox(height: 24),
                       _buildSection(
-                        title: 'About HANINI',
-                        content: 'HANINI is your ultimate platform for connecting with service providers in Algeria. From household repairs to professional consultations, HANINI simplifies finding the right person for the job.',
+                        title: localizations.aboutHanini,
+                        content: localizations.aboutHaniniDescription,
                         icon: Icons.info_outline,
                       ),
                       _buildSection(
-                        title: 'Our Mission',
-                        content: 'Our mission is to make everyday tasks simpler and more accessible by bridging the gap between clients and skilled service providers.',
+                        title: localizations.ourMission,
+                        content: localizations.ourMissionDescription,
                         icon: Icons.flag,
                       ),
                       Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Padding(
-                            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 20, vertical: 12),
                             child: Text(
-                              'Key Features',
+                              localizations.keyFeatures,
                               style: TextStyle(
                                 fontSize: 20,
                                 fontWeight: FontWeight.bold,
@@ -180,20 +185,21 @@ class AboutAppPage extends StatelessWidget {
                               ),
                             ),
                           ),
-                          _buildFeatureCard('AI-based identity verification for secure connections'),
-                          _buildFeatureCard('Personalized recommendations tailored to your needs'),
-                          _buildFeatureCard('Transparent reviews and ratings to help you choose wisely'),
-                          _buildFeatureCard('Premium subscriptions and targeted ads for providers'),
+                          _buildFeatureCard(localizations.aiBasedVerification),
+                          _buildFeatureCard(
+                              localizations.personalizedRecommendations),
+                          _buildFeatureCard(localizations.transparentReviews),
+                          _buildFeatureCard(localizations.premiumSubscriptions),
                         ],
                       ),
                       _buildSection(
-                        title: 'Why Choose HANINI?',
-                        content: 'We bring convenience, trust, and efficiency to your doorstep. Our user-friendly platform ensures that connecting with the right service provider is just a few taps away.',
+                        title: localizations.whyChooseHanini,
+                        content: localizations.whyChooseHaniniDescription,
                         icon: Icons.star,
                       ),
                       _buildSection(
-                        title: 'Get in Touch',
-                        content: 'Have questions or feedback? Reach out to us at support@hanini.com. We are always here to help!',
+                        title: localizations.getInTouch,
+                        content: localizations.getInTouchDescription,
                         icon: Icons.email,
                       ),
                       const SizedBox(height: 24),
@@ -209,9 +215,9 @@ class AboutAppPage extends StatelessWidget {
                               borderRadius: BorderRadius.circular(12),
                             ),
                           ),
-                          child: const Text(
-                            'Back to Home',
-                            style: TextStyle(
+                          child: Text(
+                            localizations.backToHome,
+                            style: const TextStyle(
                               fontSize: 16,
                               fontWeight: FontWeight.bold,
                             ),
