@@ -243,6 +243,8 @@ class _SimpleUserProfileState extends State<SimpleUserProfile> {
                     buildProfileInfo(localization),
                     const SizedBox(height: 60),
                     buildBecomeProviderButton(localization),
+                    const SizedBox(height: 30),
+
                   ],
                 ),
                 Positioned(
