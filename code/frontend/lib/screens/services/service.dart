@@ -275,6 +275,7 @@ class _ServiceProviderFullProfileState
                   SliverToBoxAdapter(
                     child: Column(
                       children: [
+                        SizedBox(height: 40,),
                         buildTop(localizations),
                         buildProfileInfo(localizations),
                       ],
