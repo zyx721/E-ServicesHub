@@ -58,8 +58,6 @@ flutter:
   generate: true  # This line enables localization code generation
   assets:
     - assets/credentials/
-    # - assets/images/work/
-    # - assets/images/portfolio/
     - assets/services_icon/
     - assets/images/
     - assets/images/ads/

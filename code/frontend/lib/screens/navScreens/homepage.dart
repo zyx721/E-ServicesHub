@@ -544,40 +544,42 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-  Widget _buildServiceCard(
-      Map<String, dynamic> service, bool isFavorite, String serviceId) {
-    return GestureDetector(
-      onTap: () async {
-        debugPrint('Navigating to FullProfilePage with providerId: $serviceId');
+Widget _buildServiceCard(
+  Map<String, dynamic> service, bool isFavorite, String serviceId) {
+  return GestureDetector(
+    onTap: () async {
+      debugPrint('Navigating to FullProfilePage with providerId: $serviceId');
 
-        try {
-          final providerDoc =
-              FirebaseFirestore.instance.collection('users').doc(serviceId);
-          await providerDoc.update({
-            'click_count': FieldValue.increment(1),
+      try {
+        final providerDoc =
+            FirebaseFirestore.instance.collection('users').doc(serviceId);
+        await providerDoc.update({
+          'click_count': FieldValue.increment(1),
+        });
+
+        if (currentUserId != null) {
+          final userDoc = FirebaseFirestore.instance
+              .collection('users')
+              .doc(currentUserId);
+          await userDoc.update({
+            'click_count_per_service.$serviceId': FieldValue.increment(1),
           });
-
-          if (currentUserId != null) {
-            final userDoc = FirebaseFirestore.instance
-                .collection('users')
-                .doc(currentUserId);
-            await userDoc.update({
-              'click_count_per_service.$serviceId': FieldValue.increment(1),
-            });
-          }
-        } catch (e) {
-          debugPrint('Error incrementing click_count: $e');
         }
+      } catch (e) {
+        debugPrint('Error incrementing click_count: $e');
+      }
 
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (context) => ServiceProviderFullProfile(
-              providerId: serviceId,
-            ),
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => ServiceProviderFullProfile(
+            providerId: serviceId,
           ),
-        );
-      },
+        ),
+      );
+    },
+    child: Padding(
+      padding: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 5.0), // Adjust spacing here
       child: Card(
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(16),
@@ -587,22 +589,21 @@ class _HomePageState extends State<HomePage> {
             Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Container(
-                  height: 90,
-                  decoration: BoxDecoration(
-                    borderRadius:
-                        const BorderRadius.vertical(top: Radius.circular(16)),
-                    image: DecorationImage(
-                      image: NetworkImage(service['photoURL'] ?? ''),
-                      fit: BoxFit.cover,
+                Expanded( // Use Expanded to take the remaining space
+                  child: Container(
+                    decoration: BoxDecoration(
+                      borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
+                      image: DecorationImage(
+                        image: NetworkImage(service['photoURL'] ?? ''),
+                        fit: BoxFit.cover,
+                      ),
                     ),
                   ),
                 ),
                 Container(
                   decoration: const BoxDecoration(
                     color: AppColors.tempColor,
-                    borderRadius: BorderRadius.vertical(
-                        bottom: Radius.circular(16)),
+                    borderRadius: BorderRadius.vertical(bottom: Radius.circular(16)),
                   ),
                   child: Padding(
                     padding: const EdgeInsets.all(8.0),
@@ -647,8 +648,9 @@ class _HomePageState extends State<HomePage> {
           ],
         ),
       ),
-    );
-  }
+    ),
+  );
+}
 
   Widget _buildStarRating(double rating) {
     int fullStars = rating.floor();
@@ -844,173 +846,172 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-  // Update the _showAllServices to use the cached future
-  void _showAllServices(BuildContext context) {
-    final localizations = AppLocalizations.of(context);
-    if (localizations == null) return;
+void _showAllServices(BuildContext context) {
+  final localizations = AppLocalizations.of(context);
+  if (localizations == null) return;
 
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (context) {
-        return Container(
-          decoration: BoxDecoration(
-            color: Theme.of(context).scaffoldBackgroundColor,
-            borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withOpacity(0.05),
-                blurRadius: 20,
-                offset: const Offset(0, -5),
-              ),
-            ],
-          ),
-          child: DraggableScrollableSheet(
-            expand: false,
-            initialChildSize: 0.6,
-            minChildSize: 0.4,
-            maxChildSize: 0.9,
-            builder: (context, scrollController) {
-              return Column(
-                children: [
-                  Container(
-                    margin: const EdgeInsets.only(top: 12, bottom: 16),
-                    width: 40,
-                    height: 4,
-                    decoration: BoxDecoration(
-                      color: Colors.grey.withOpacity(0.3),
-                      borderRadius: BorderRadius.circular(2),
-                    ),
+  showModalBottomSheet(
+    context: context,
+    isScrollControlled: true,
+    backgroundColor: Colors.transparent,
+    builder: (context) {
+      return Container(
+        decoration: BoxDecoration(
+          color: Theme.of(context).scaffoldBackgroundColor,
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.05),
+              blurRadius: 20,
+              offset: const Offset(0, -5),
+            ),
+          ],
+        ),
+        child: DraggableScrollableSheet(
+          expand: false,
+          initialChildSize: 0.6,
+          minChildSize: 0.4,
+          maxChildSize: 0.9,
+          builder: (context, scrollController) {
+            return Column(
+              children: [
+                Container(
+                  margin: const EdgeInsets.only(top: 12, bottom: 16),
+                  width: 40,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: Colors.grey.withOpacity(0.3),
+                    borderRadius: BorderRadius.circular(2),
                   ),
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 24),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text(
-                          localizations.allServices,
-                          style: GoogleFonts.poppins(
-                            color: AppColors.mainColor,
-                            fontSize: 24,
-                            fontWeight: FontWeight.w600,
-                            letterSpacing: -0.5,
-                          ),
+                ),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 24),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        localizations.allServices,
+                        style: GoogleFonts.poppins(
+                          color: AppColors.mainColor,
+                          fontSize: 24,
+                          fontWeight: FontWeight.w600,
+                          letterSpacing: -0.5,
                         ),
-                        IconButton(
-                          onPressed: () => Navigator.pop(context),
-                          icon: const Icon(Icons.close),
-                          style: IconButton.styleFrom(
-                            backgroundColor: Colors.grey.withOpacity(0.1),
-                            padding: const EdgeInsets.all(8),
-                          ),
+                      ),
+                      IconButton(
+                        onPressed: () => Navigator.pop(context),
+                        icon: const Icon(Icons.close),
+                        style: IconButton.styleFrom(
+                          backgroundColor: Colors.grey.withOpacity(0.1),
+                          padding: const EdgeInsets.all(8),
                         ),
-                      ],
-                    ),
+                      ),
+                    ],
                   ),
-                  const SizedBox(height: 16),
-                  Expanded(
-                    child: FutureBuilder<List<PopularServicesModel>>(
-                      future: _popularServicesFuture, // Use the cached future
-                      builder: (context, snapshot) {
-                        if (snapshot.connectionState ==
-                            ConnectionState.waiting) {
-                          return const Center(
-                              child: CircularProgressIndicator());
-                        }
+                ),
+                const SizedBox(height: 16),
+                Expanded(
+                  child: FutureBuilder<List<PopularServicesModel>>(
+                    future: _popularServicesFuture, // Use the cached future
+                    builder: (context, snapshot) {
+                      if (snapshot.connectionState == ConnectionState.waiting) {
+                        return const Center(child: CircularProgressIndicator());
+                      }
 
-                        if (snapshot.hasError) {
-                          return Center(
-                              child: Text('Error: ${snapshot.error}'));
-                        }
+                      if (snapshot.hasError) {
+                        return Center(
+                          child: Text('Error: ${snapshot.error}'),
+                        );
+                      }
 
-                        if (!snapshot.hasData || snapshot.data!.isEmpty) {
-                          return const Center(
-                              child: Text('No services available'));
-                        }
+                      if (!snapshot.hasData || snapshot.data!.isEmpty) {
+                        return const Center(
+                          child: Text('No services available'),
+                        );
+                      }
 
-                        final services = snapshot.data!;
-                        return Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 20),
-                          child: GridView.builder(
-                            controller: scrollController,
-                            physics: const BouncingScrollPhysics(),
-                            gridDelegate:
-                                const SliverGridDelegateWithFixedCrossAxisCount(
-                              crossAxisCount: 2,
-                              crossAxisSpacing: 16,
-                              mainAxisSpacing: 16,
-                              childAspectRatio: 1.1,
-                            ),
-                            itemCount: services.length,
-                            itemBuilder: (context, index) {
-                              final service = services[index];
-                              return Material(
-                                color: Colors.transparent,
-                                child: InkWell(
-                                  onTap: () {
-                                    Navigator.pop(context);
-                                    // Add your navigation or selection logic here
-                                  },
-                                  borderRadius: BorderRadius.circular(20),
-                                  child: Container(
-                                    padding: const EdgeInsets.all(16),
-                                    decoration: BoxDecoration(
-                                      color: service.color.withOpacity(0.08),
-                                      borderRadius: BorderRadius.circular(20),
-                                      border: Border.all(
-                                        color: service.color.withOpacity(0.12),
-                                        width: 1,
-                                      ),
-                                    ),
-                                    child: Column(
-                                      mainAxisAlignment:
-                                          MainAxisAlignment.center,
-                                      children: [
-                                        Container(
-                                          padding: const EdgeInsets.all(12),
-                                          decoration: BoxDecoration(
-                                            color:
-                                                service.color.withOpacity(0.1),
-                                            shape: BoxShape.circle,
-                                          ),
-                                          child: SvgPicture.asset(
-                                            service.iconPath,
-                                            width: 32,
-                                            height: 32,
-                                            color: service.color,
-                                          ),
-                                        ),
-                                        const SizedBox(height: 12),
-                                        Text(
-                                          service.name,
-                                          textAlign: TextAlign.center,
-                                          style: GoogleFonts.poppins(
-                                            color: Colors.black87,
-                                            fontSize: 15,
-                                            fontWeight: FontWeight.w500,
-                                            height: 1.2,
-                                          ),
-                                        ),
-                                      ],
+                      final services = snapshot.data!;
+                      return Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 20),
+                        child: GridView.builder(
+                          controller: scrollController,
+                          physics: const BouncingScrollPhysics(),
+                          gridDelegate:
+                              const SliverGridDelegateWithFixedCrossAxisCount(
+                            crossAxisCount: 2,
+                            crossAxisSpacing: 16,
+                            mainAxisSpacing: 16,
+                            childAspectRatio: 1.1,
+                          ),
+                          itemCount: services.length,
+                          itemBuilder: (context, index) {
+                            final service = services[index];
+                            return Material(
+                              color: Colors.transparent,
+                              child: InkWell(
+                                onTap: () {
+                                  Navigator.pop(context);
+                                  // Add your navigation or selection logic here
+                                },
+                                borderRadius: BorderRadius.circular(20),
+                                child: Container(
+                                  padding: const EdgeInsets.all(16),
+                                  decoration: BoxDecoration(
+                                    color: service.color.withOpacity(0.08),
+                                    borderRadius: BorderRadius.circular(20),
+                                    border: Border.all(
+                                      color: service.color.withOpacity(0.12),
+                                      width: 1,
                                     ),
                                   ),
+                                  child: Column(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: [
+                                      Container(
+                                        padding: const EdgeInsets.all(12),
+                                        decoration: BoxDecoration(
+                                          color:
+                                              service.color.withOpacity(0.1),
+                                          shape: BoxShape.circle,
+                                        ),
+                                        child: SvgPicture.asset(
+                                          service.iconPath,
+                                          width: 32,
+                                          height: 32,
+                                          color: service.color,
+                                        ),
+                                      ),
+                                      const SizedBox(height: 12),
+                                      Text(
+                                        service.name,
+                                        textAlign: TextAlign.center,
+                                        style: GoogleFonts.poppins(
+                                          color: Colors.black87,
+                                          fontSize: 15,
+                                          fontWeight: FontWeight.w500,
+                                          height: 1.2,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
                                 ),
-                              );
-                            },
-                          ),
-                        );
-                      },
-                    ),
+                              ),
+                            );
+                          },
+                          padding: const EdgeInsets.only(bottom: 18),
+                        ),
+                      );
+                    },
                   ),
-                ],
-              );
-            },
-          ),
-        );
-      },
-    );
-  }
+                ),
+              ],
+            );
+          },
+        ),
+      );
+    },
+  );
+}
 
   // Method to refresh the services data when needed
   void refreshServices() {
@@ -1060,91 +1061,89 @@ class _HomePageState extends State<HomePage> {
   }
 
   @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      body: SmartRefresher(
-        controller: _refreshController,
-        onRefresh: _onRefresh,
-        header: const ClassicHeader(
-          refreshStyle: RefreshStyle.Behind,
-          completeText: 'Refresh complete',
-          failedText: 'Refresh failed',
-          idleText: 'Pull to refresh',
-          refreshingText: 'Refreshing...',
-        ),
-        child: _isLoading
-            ? const Center(child: CircularProgressIndicator())
-            : services.isEmpty && !_isFetching
-                ? Center(
-                    child: Text(
-                      'No recommended services found in your area',
-                      style: GoogleFonts.poppins(
-                        fontSize: 16,
-                        color: Colors.grey,
+@override
+Widget build(BuildContext context) {
+  return Scaffold(
+    body: SmartRefresher(
+      controller: _refreshController,
+      onRefresh: _onRefresh,
+      header: const ClassicHeader(
+        refreshStyle: RefreshStyle.Behind,
+        completeText: 'Refresh complete',
+        failedText: 'Refresh failed',
+        idleText: 'Pull to refresh',
+        refreshingText: 'Refreshing...',
+      ),
+      child: _isLoading
+          ? const Center(child: CircularProgressIndicator())
+          : services.isEmpty && !_isFetching
+              ? Center(
+                  child: Text(
+                    'No recommended services found in your area',
+                    style: GoogleFonts.poppins(
+                      fontSize: 16,
+                      color: Colors.grey,
+                    ),
+                  ),
+                )
+              : CustomScrollView(
+                  controller: _scrollController,
+                  slivers: [
+                    SliverToBoxAdapter(
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const SizedBox(height: 12),
+                          _buildAdsSlider([
+                            'assets/images/ads/first_page.png',
+                            'assets/images/ads/second_page.png',
+                            'assets/images/ads/third_page.png',
+                          ]),
+                          const SizedBox(height: 10), // Adjusted spacing
+                          _buildTopPopularHeader(context),
+                          const SizedBox(height: 10), // Adjusted spacing
+                          SizedBox(
+                            height: 180,
+                            child: _servicesSection(),
+                          ),
+                          const SizedBox(height: 10), // Adjusted spacing
+                          _buildTopServicesHeader(),
+                          const SizedBox(height: 10), // Adjusted spacing
+                        ],
                       ),
                     ),
-                  )
-                : CustomScrollView(
-                    controller: _scrollController,
-                    slivers: [
-                      SliverToBoxAdapter(
-                        child: Column(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            const SizedBox(height: 12),
-                            _buildAdsSlider([
-                              'assets/images/ads/first_page.png',
-                              'assets/images/ads/second_page.png',
-                              'assets/images/ads/third_page.png',
-                            ]),
-                            const SizedBox(height: 20),
-                            _buildTopPopularHeader(context),
-                            const SizedBox(height: 20),
-                            SizedBox(
-                              height: 180,
-                              child: _servicesSection(),
-                            ),
-                            const SizedBox(height: 20),
-                            _buildTopServicesHeader(),
-                            const SizedBox(height: 10),
-                          ],
-                        ),
+                    SliverGrid(
+                      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                        crossAxisCount: 2,
+                        mainAxisSpacing: 8.0, // Reduced vertical spacing between cards
+                        crossAxisSpacing: 8.0, // Reduced horizontal spacing between cards
+                        childAspectRatio: 0.9,
                       ),
-                      SliverGrid(
-                        gridDelegate:
-                            const SliverGridDelegateWithFixedCrossAxisCount(
-                          crossAxisCount: 2,
-                          mainAxisSpacing: 20,
-                          crossAxisSpacing: 20,
-                          childAspectRatio: 0.9,
-                        ),
-                        delegate: SliverChildBuilderDelegate(
-                          (context, index) {
-                            if (index >= services.length) {
-                              return _isFetching
-                                  ? const Center(
-                                      child: CircularProgressIndicator())
-                                  : const SizedBox();
-                            }
+                      delegate: SliverChildBuilderDelegate(
+                        (context, index) {
+                          if (index >= services.length) {
+                            return _isFetching
+                                ? const Center(child: CircularProgressIndicator())
+                                : const SizedBox();
+                          }
 
-                            final service = services[index];
-                            final serviceId =
-                                service['docId'] ?? service['uid'];
-                            final isFavorite =
-                                favoriteServices.contains(serviceId);
+                          final service = services[index];
+                          final serviceId = service['docId'] ?? service['uid'];
+                          final isFavorite = favoriteServices.contains(serviceId);
 
-                            return _buildServiceCard(
-                                service, isFavorite, serviceId);
-                          },
-                          childCount: services.length + (_hasMoreData ? 1 : 0),
-                        ),
+                          return _buildServiceCard(service, isFavorite, serviceId);
+                        },
+                        childCount: services.length + (_hasMoreData ? 1 : 0),
                       ),
-                    ],
-                  ),
-      ),
-      backgroundColor: const Color.fromARGB(255, 255, 255, 255),
-    );
-  }
+                    ),
+                  ],
+                ),
+    ),
+    backgroundColor: const Color.fromARGB(255, 255, 255, 255),
+  );
+}
+
+
 }
 
 class RecommendationConfig {
