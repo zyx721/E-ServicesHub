@@ -39,6 +39,30 @@
           }
         },
         {
+          "client_id": "733920147635-o9emma9qe98ttb07vfb4h4nb7060vtqs.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.Nit.Hanini",
+            "certificate_hash": "38437e68eb449e0b209ea346f42a7f2ab3707b56"
+          }
+        },
+        {
+          "client_id": "733920147635-rsaqgne37cevsnnvivd5b717fgqmh8fj.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.Nit.Hanini",
+            "certificate_hash": "303399b0a7327b2b6b1f582173d6a5fce8d8b271"
+          }
+        },
+        {
+          "client_id": "733920147635-ruouji9us23b5re1sr7bgmp2kskap2al.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.Nit.Hanini",
+            "certificate_hash": "0138782e4ce4f7496a8baeeedbd3b4f5fdfe3696"
+          }
+        },
+        {
           "client_id": "733920147635-oo5ntbeokk91snik5hjkrojr9v0l715i.apps.googleusercontent.com",
           "client_type": 3
         }

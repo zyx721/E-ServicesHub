@@ -31,6 +31,15 @@ android {
         versionName = flutter.versionName
     }
 
+    signingConfigs {
+    release {
+        storeFile file("/home/raouf/keystore/my-release-key.jks")
+        storePassword "hanini1234"  // Ensure this is the correct password
+        keyAlias "hanini2024"  // Make sure this matches the alias
+        keyPassword "hanini1234"  // Ensure this is the correct password for the key
+    }
+}
+
     buildTypes {
         release {
             // TODO: Add your own signing config for the release build.
