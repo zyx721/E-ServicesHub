@@ -49,6 +49,8 @@ class _HomePageState extends State<HomePage> {
 
   bool _hasMoreData = true;
   late Future<List<PopularServicesModel>> _popularServicesFuture;
+  int _refreshCount = 0;
+  final int _maxRefreshCount = 10;
 
   @override
   void initState() {
@@ -77,6 +79,7 @@ class _HomePageState extends State<HomePage> {
         );
       }
     });
+    _fetchUserDataAndRecommendations();
   }
 
   Future<void> _initializeData() async {
@@ -100,6 +103,11 @@ class _HomePageState extends State<HomePage> {
         });
       }
     }
+  }
+
+  Future<void> _fetchUserDataAndRecommendations() async {
+    await _fetchUserData();
+    await _loadRecommendations();
   }
 
   // Remove didChangeDependency override as we don't want to reload on navigation
@@ -181,14 +189,21 @@ class _HomePageState extends State<HomePage> {
 
   Future<void> _onRefresh() async {
     try {
-      // Reset pagination
-      _hasMoreData = true;
-      services.clear();
+      _refreshCount++;
+      if (_refreshCount >= _maxRefreshCount) {
+        // Fetch all data again
+        _refreshCount = 0;
+        debugPrint('Fetching all data again...');
+        await _initializeData();
+      } else {
+        // Fetch only current user's new data and new recommendations
+        debugPrint('Fetching current user data and new recommendations...');
+        await _fetchUserData();
+        await _loadRecommendations();
+      }
 
-      // Reload all data
-      await _fetchUserData();
-      await _fetchServices();
-      await _loadRecommendations();
+      // Shuffle the services to ensure they are different each time
+      services.shuffle();
 
       _refreshController.refreshCompleted();
     } catch (e) {
@@ -218,6 +233,7 @@ class _HomePageState extends State<HomePage> {
             userDoc.data()?['favorites'] ?? [],
           );
         });
+        debugPrint('Fetched current user data.');
       }
     } catch (e) {
       debugPrint('Error fetching user data: $e');
@@ -247,7 +263,6 @@ class _HomePageState extends State<HomePage> {
       if (userDoc.exists) {
         // Retrieve the current user's city
         final userCity = userDoc.data()?['city'];
-        debugPrint('Current user city: $userCity');
 
         // Fetch all users in the same city but exclude the current user
         final usersInSameCity = await FirebaseFirestore.instance
@@ -321,26 +336,10 @@ class _HomePageState extends State<HomePage> {
 
             // Add the user map to the list
             usersDataList.add(userMap);
-
-            // Debug prints to display user info
-            debugPrint('User ID: $userId');
-            debugPrint('Name: $firstName $lastName');
-            debugPrint('City: $city');
-            debugPrint('Click Count: $clickCount');
-            debugPrint('Gender: $gender');
-            debugPrint('Age: $age');
-            debugPrint('Location: $locationX, $locationY');
           }
 
-          // Now, we have a structured list of user data (excluding the current user)
-          // You can pass this data to the recommendation logic
-          // For example, pass the list to the recommendation algorithm:
-          // final recommendedServices = recommendServices(usersDataList);
-        } else {
-          debugPrint('No users found in the same city');
+          debugPrint('Fetched data for users from the same city.');
         }
-      } else {
-        debugPrint('User document does not exist');
       }
     } catch (e) {
       debugPrint('Error fetching users from the same city: $e');
@@ -350,18 +349,78 @@ class _HomePageState extends State<HomePage> {
   Future<void> _loadRecommendations() async {
     try {
       final recommendationService = RecommendationService();
-      final recommendations =
-          await recommendationService.getRecommendedServices();
+      final recommendations = await recommendationService.getRecommendedServices(
+        categories: await _getUserInteractionCategories(),
+      );
 
       recommendedProviderIds =
           recommendations.map((rec) => rec['service_id'] as String).toList();
 
-      // Sort by recommendation score
-      services.sort((a, b) => (b['recommendation_score'] ?? 0.0)
-          .compareTo(a['recommendation_score'] ?? 0.0));
+      // Shuffle the recommendations to ensure they are different each time
+      recommendedProviderIds.shuffle();
+
+      // Fetch the actual provider data for these IDs
+      List<Map<String, dynamic>> newServices = [];
+      for (String providerId in recommendedProviderIds) {
+        final providerDoc = await FirebaseFirestore.instance
+            .collection('users')
+            .doc(providerId)
+            .get();
+
+        if (providerDoc.exists) {
+          final providerData = providerDoc.data()!;
+          newServices.add({
+            ...providerData,
+            'docId': providerId,
+          });
+        }
+      }
+
+      if (mounted) {
+        setState(() {
+          services = newServices;
+        });
+        debugPrint('Loaded new recommendations.');
+      }
     } catch (e) {
       debugPrint('Error loading recommendations: $e');
     }
+  }
+
+  Future<List<String>> _getUserInteractionCategories() async {
+    final userInteractions = await FirebaseFirestore.instance
+        .collection('user_interactions')
+        .doc(currentUserId)
+        .get();
+
+    final interactionData = userInteractions.data() ?? {};
+    final clickedServiceIds = interactionData['clicks']?.keys.toList() ?? [];
+    final reviewedServiceIds = interactionData['reviews']?.keys.toList() ?? [];
+    final favoriteServiceIds = favoriteServices.toList();
+
+    final allServiceIds = [
+      ...clickedServiceIds,
+      ...reviewedServiceIds,
+      ...favoriteServiceIds,
+    ].toSet().toList();
+
+    final categories = <String>{};
+
+    for (final serviceId in allServiceIds) {
+      final serviceDoc = await FirebaseFirestore.instance
+          .collection('services')
+          .doc(serviceId)
+          .get();
+
+      if (serviceDoc.exists) {
+        final serviceData = serviceDoc.data();
+        if (serviceData != null && serviceData['category'] != null) {
+          categories.add(serviceData['category']);
+        }
+      }
+    }
+
+    return categories.toList();
   }
 
   Future<void> toggleFavorite(Map<String, dynamic> service) async {
@@ -1151,19 +1210,49 @@ class RecommendationConfig {
   final int batchSize;
   final Duration cacheDuration;
   final Map<String, double> weightFactors;
+  final Map<String, double> recentActivityWeights;
 
   const RecommendationConfig({
     this.maxSimilarUsers = 10,
     this.batchSize = 20,
     this.cacheDuration = const Duration(minutes: 30),
     this.weightFactors = const {
-      'similarity': 0.3,
-      'rating': 0.25,
-      'reviewCount': 0.15,
-      'clickCount': 0.15,
-      'completionRate': 0.15,
+      'similarity': 0.2,  // Reduced weight for general similarity
+      'rating': 0.2,
+      'reviewCount': 0.1,
+      'clickCount': 0.1,
+      'completionRate': 0.1,
+      'recentActivity': 0.3,  // New weight for recent activity
+    },
+    this.recentActivityWeights = const {
+      'clicks': 0.4,
+      'favorites': 0.4,
+      'reviews': 0.2,
     },
   });
+}
+
+class _UserSessionActivity {
+  final Map<String, int> clicks = {};
+  final Set<String> favorites = {};
+  final Map<String, double> reviews = {};
+  final Set<String> categories = {};
+  final DateTime sessionStart = DateTime.now();
+
+  void addClick(String serviceId, String category) {
+    clicks[serviceId] = (clicks[serviceId] ?? 0) + 1;
+    categories.add(category);
+  }
+
+  void addFavorite(String serviceId, String category) {
+    favorites.add(serviceId);
+    categories.add(category);
+  }
+
+  void addReview(String serviceId, double rating, String category) {
+    reviews[serviceId] = rating;
+    categories.add(category);
+  }
 }
 
 class RecommendationService {
@@ -1176,7 +1265,34 @@ class RecommendationService {
   final _cache = _RecommendationCache();
   final _firestore = FirebaseFirestore.instance;
 
-  Future<List<Map<String, dynamic>>> getRecommendedServices({
+
+
+  final Map<String, _UserSessionActivity> _sessionActivity = {};
+
+  
+
+  // Add this new method
+  Future<void> trackServiceClick(String serviceId, String category) async {
+    final currentUser = FirebaseAuth.instance.currentUser;
+    if (currentUser == null) return;
+
+    _sessionActivity.putIfAbsent(currentUser.uid, () => _UserSessionActivity())
+      .addClick(serviceId, category);
+
+    _cache.remove(currentUser.uid);
+
+    await _firestore.collection('user_interactions').doc(currentUser.uid)
+      .set({
+        'clicks': {
+          serviceId: FieldValue.increment(1),
+        },
+        'last_clicked': DateTime.now().toIso8601String(),
+      }, SetOptions(merge: true));
+  }
+
+
+
+ Future<List<Map<String, dynamic>>> getRecommendedServices({
     int limit = 20,
     List<String>? categories,
   }) async {
@@ -1184,29 +1300,29 @@ class RecommendationService {
       final currentUser = FirebaseAuth.instance.currentUser;
       if (currentUser == null) return [];
 
-      // Check cache first
-      final cachedRecommendations = await _cache.get(currentUser.uid);
-      if (cachedRecommendations != null) {
-        return cachedRecommendations;
-      }
-
-      // Get user data and preferences
       final userData = await _getUserData(currentUser.uid);
       if (userData == null) return [];
 
-      // Get similar users and their preferences
+      // Add this block
+      final sessionData = _sessionActivity[currentUser.uid];
+      if (sessionData != null) {
+        userData['current_session'] = {
+          'clicks': sessionData.clicks,
+          'favorites': sessionData.favorites.toList(),
+          'reviews': sessionData.reviews,
+          'categories': sessionData.categories.toList(),
+          'session_start': sessionData.sessionStart.toIso8601String(),
+        };
+      }
+
       final similarUsers = await _getSimilarUsers(userData);
 
-      // Generate recommendations
       final recommendations = await _generateRecommendations(
         userData: userData,
         similarUsers: similarUsers,
-        categories: categories,
+        categories: categories ?? userData['current_session']?['categories'],  // Modified
         limit: limit,
       );
-
-      // Cache results
-      await _cache.set(currentUser.uid, recommendations);
 
       return recommendations;
     } catch (e) {
@@ -1214,6 +1330,79 @@ class RecommendationService {
       return [];
     }
   }
+
+
+
+
+
+
+
+
+static double _calculateBaseScores(
+  Map<String, dynamic> provider,
+  List<dynamic> similarUsers,
+  Map<String, double> weightFactors,
+) {
+  double score = 0.0;
+  final providerId = provider['id'];
+
+  final similarityScore = _calculateSimilarityScore(providerId, similarUsers);
+  score += similarityScore * weightFactors['similarity']!;
+
+  final rating = provider['rating'] ?? 0.0;
+  score += (rating / 5.0) * weightFactors['rating']!;
+
+  final reviewCount = (provider['review_count'] ?? 0) as num;
+  score += (min(reviewCount, 100) / 100) * weightFactors['reviewCount']!;
+
+  final clickCount = (provider['click_count'] ?? 0) as num;
+  score += (min(clickCount, 1000) / 1000) * weightFactors['clickCount']!;
+
+  final completedJobs = provider['completed_jobs'] ?? 0;
+  final totalJobs = provider['total_jobs'] ?? 0;
+  if (totalJobs > 0) {
+    score += (completedJobs / totalJobs) * weightFactors['completionRate']!;
+  }
+
+  return score;
+}
+
+static double _calculateRecentActivityScore(
+  String providerId,
+  Map<String, dynamic> provider,
+  Map<String, dynamic> currentSession,
+) {
+  double score = 0.0;
+  final config = const RecommendationConfig();
+
+  final clickedCategories = Set<String>.from(currentSession['categories'] ?? []);
+  final providerCategories = Set<String>.from(provider['categories'] ?? []);
+  final categoryOverlap = clickedCategories.intersection(providerCategories).length;
+  if (categoryOverlap > 0) {
+    score += (categoryOverlap / clickedCategories.length) * config.recentActivityWeights['clicks']!;
+  }
+
+  final recentFavorites = Set<String>.from(currentSession['favorites'] ?? []);
+  if (recentFavorites.contains(providerId)) {
+    score += config.recentActivityWeights['favorites']!;
+  }
+
+  final recentReviews = Map<String, double>.from(currentSession['reviews'] ?? {});
+  if (recentReviews.containsKey(providerId)) {
+    score += (recentReviews[providerId]! / 5.0) * config.recentActivityWeights['reviews']!;
+  }
+
+  return score;
+}
+
+
+
+
+
+
+
+
+
 
   Future<Map<String, dynamic>?> _getUserData(String userId) async {
     try {
@@ -1350,7 +1539,7 @@ class RecommendationService {
     required List<Map<String, dynamic>> similarUsers,
     List<String>? categories,
     required int limit,
-  }) async {
+}) async {
     try {
       // Get potential service providers
       final providerQuery = _firestore
@@ -1361,9 +1550,9 @@ class RecommendationService {
       final providers = await providerQuery.get();
       final userFavorites = Set<String>.from(userData['favorites'] ?? []);
 
-      // Calculate scores for each provider
+      // Updated compute call to match new method structure
       final recommendations = await compute(
-        _calculateProviderScores,
+        _calculateProviderScoresForBatch,  // New method name
         {
           'providers': providers.docs
               .map((doc) => {
@@ -1374,6 +1563,7 @@ class RecommendationService {
           'similarUsers': similarUsers,
           'userFavorites': userFavorites.toList(),
           'weightFactors': _config.weightFactors,
+          'currentSession': userData['current_session'],  // Add current session data
         },
       );
 
@@ -1392,57 +1582,41 @@ class RecommendationService {
       debugPrint('Error generating recommendations: $e');
       return [];
     }
+}
+
+// Add this new static method for compute
+static List<Map<String, dynamic>> _calculateProviderScoresForBatch(
+    Map<String, dynamic> data) {
+  final providers = data['providers'] as List;
+  final similarUsers = data['similarUsers'] as List;
+  final weightFactors = data['weightFactors'] as Map<String, double>;
+  final currentSession = data['currentSession'];
+  
+  final recommendations = <Map<String, dynamic>>[];
+
+  for (var provider in providers) {
+    final score = _calculateProviderScore(
+      provider,
+      similarUsers,
+      weightFactors,
+    );
+
+    if (score > 0) {
+      recommendations.add({
+        'service_id': provider['id'],
+        'service_data': provider,
+        'recommendation_score': score,
+      });
+    }
   }
 
-  static List<Map<String, dynamic>> _calculateProviderScores(
-      Map<String, dynamic> data) {
-    final providers = data['providers'] as List;
-    final similarUsers = data['similarUsers'] as List;
-    final userFavorites = Set<String>.from(data['userFavorites'] as List);
-    final weightFactors = data['weightFactors'] as Map<String, double>;
+  recommendations.sort((a, b) => (b['recommendation_score'] as double)
+      .compareTo(a['recommendation_score'] as double));
 
-    final recommendations = <Map<String, dynamic>>[];
+  return recommendations;
+}
 
-    debugPrint('\n=== Starting Provider Score Calculations ===');
-    debugPrint('Number of providers to evaluate: ${providers.length}');
-    debugPrint('Number of similar users: ${similarUsers.length}');
-    debugPrint('Weight factors: $weightFactors\n');
-
-    for (var provider in providers) {
-      if (userFavorites.contains(provider['id'])) {
-        debugPrint('Skipping provider ${provider['id']} - already in favorites');
-        continue;
-      }
-
-      debugPrint('\n--- Calculating score for provider ${provider['id']} ---');
-      final score = _calculateProviderScore(
-        provider,
-        similarUsers,
-        weightFactors,
-      );
-
-      if (score > 0) {
-        debugPrint('Final score for provider ${provider['id']}: ${score.toStringAsFixed(3)}');
-        recommendations.add({
-          'service_id': provider['id'],
-          'service_data': provider,
-          'recommendation_score': score,
-        });
-      }
-    }
-
-    recommendations.sort((a, b) => (b['recommendation_score'] as double)
-        .compareTo(a['recommendation_score'] as double));
-
-    debugPrint('\n=== Final Recommendations Rankings ===');
-    for (var i = 0; i < min(5, recommendations.length); i++) {
-      debugPrint('Rank ${i + 1}: Provider ${recommendations[i]['service_id']} - Score: ${recommendations[i]['recommendation_score'].toStringAsFixed(3)}');
-    }
-
-    return recommendations;
-  }
-
-  static double _calculateProviderScore(
+static double _calculateProviderScore(
     Map<String, dynamic> provider,
     List<dynamic> similarUsers,
     Map<String, double> weightFactors,
@@ -1450,66 +1624,40 @@ class RecommendationService {
     double score = 0.0;
     final providerId = provider['id'];
 
-    // Similarity-based score
-    final similarityScore = _calculateSimilarityScore(providerId, similarUsers);
-    final weightedSimilarityScore = similarityScore * weightFactors['similarity']!;
-    debugPrint('Similarity score: ${similarityScore.toStringAsFixed(3)} (weighted: ${weightedSimilarityScore.toStringAsFixed(3)})');
-    score += weightedSimilarityScore;
+    // Base scores
+    score += _calculateBaseScores(provider, similarUsers, weightFactors);
 
-    // Rating-based score
-    final rating = provider['rating'] ?? 0.0;
-    final ratingScore = (rating / 5.0) * weightFactors['rating']!;
-    debugPrint('Rating score (${rating}/5): ${ratingScore.toStringAsFixed(3)}');
-    score += ratingScore;
-
-    // Review count score
-    final reviewCount = (provider['review_count'] ?? 0) as num;
-    final reviewScore = (min(reviewCount, 100) / 100) * weightFactors['reviewCount']!;
-    debugPrint('Review count score ($reviewCount reviews): ${reviewScore.toStringAsFixed(3)}');
-    score += reviewScore;
-
-    // Click count score
-    final clickCount = (provider['click_count'] ?? 0) as num;
-    final clickScore = (min(clickCount, 1000) / 1000) * weightFactors['clickCount']!;
-    debugPrint('Click count score ($clickCount clicks): ${clickScore.toStringAsFixed(3)}');
-    score += clickScore;
-
-    // Completion rate score
-    final completedJobs = provider['completed_jobs'] ?? 0;
-    final totalJobs = provider['total_jobs'] ?? 0;
-    double completionScore = 0.0;
-    if (totalJobs > 0) {
-      final completionRate = completedJobs / totalJobs;
-      completionScore = completionRate * weightFactors['completionRate']!;
-      debugPrint('Completion rate score ($completedJobs/$totalJobs): ${completionScore.toStringAsFixed(3)}');
-    } else {
-      debugPrint('No completion rate score (no jobs)');
+    // Recent activity score
+    final currentSession = provider['current_session'];
+    if (currentSession != null) {
+      final recentActivityScore = _calculateRecentActivityScore(
+        providerId,
+        provider,
+        currentSession,
+      );
+      score += recentActivityScore * weightFactors['recentActivity']!;
     }
-    score += completionScore;
 
-    debugPrint('Total score: ${score.toStringAsFixed(3)}');
     return score;
   }
+  
 
+  
   static double _calculateSimilarityScore(
       String providerId, List<dynamic> similarUsers) {
     double totalScore = 0.0;
     int count = 0;
 
-    debugPrint('\nCalculating similarity score for provider $providerId:');
     for (var user in similarUsers) {
       final favorites = List<String>.from(user['favorites'] ?? []);
       if (favorites.contains(providerId)) {
         final userScore = user['similarity_score'] as double;
         totalScore += userScore;
         count++;
-        debugPrint('Similar user found - similarity score: ${userScore.toStringAsFixed(3)}');
       }
     }
 
-    final finalScore = count > 0 ? totalScore / count : 0.0;
-    debugPrint('Average similarity score: ${finalScore.toStringAsFixed(3)} (based on $count similar users)');
-    return finalScore;
+    return count > 0 ? totalScore / count : 0.0;
   }
 }
 
@@ -1518,21 +1666,23 @@ class _RecommendationCache {
 
   Future<List<Map<String, dynamic>>?> get(String userId) async {
     final entry = _cache[userId];
-    if (entry == null) return null;
-
-    if (entry.isExpired) {
-      _cache.remove(userId);
+    if (entry == null || entry.isExpired) {
+      _cache.remove(userId); // Invalidate expired cache
       return null;
     }
-
     return entry.data;
   }
 
-  Future<void> set(String userId, List<Map<String, dynamic>> data) async {
+  Future<void> set(String userId, List<Map<String, dynamic>> data, {Duration? duration}) async {
     _cache[userId] = _CacheEntry(
       data: data,
       timestamp: DateTime.now(),
+      duration: duration ?? const Duration(minutes: 5), // Shorter cache duration
     );
+  }
+
+  void remove(String userId) {
+    _cache.remove(userId);
   }
 }
 
@@ -1543,7 +1693,7 @@ class _CacheEntry {
 
   _CacheEntry({
     required this.data,
-    required this.timestamp,
+    required this.timestamp, required Duration duration,
   });
 
   bool get isExpired => DateTime.now().difference(timestamp) > validity;
