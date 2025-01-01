@@ -191,13 +191,9 @@ class _HomePageState extends State<HomePage> {
     try {
       _refreshCount++;
       if (_refreshCount >= _maxRefreshCount) {
-        // Fetch all data again
         _refreshCount = 0;
-        debugPrint('Fetching all data again...');
-        await _initializeData();
+        await _fetchUserDataAndRecommendations();
       } else {
-        // Fetch only current user's new data and new recommendations
-        debugPrint('Fetching current user data and new recommendations...');
         await _fetchUserData();
         await _loadRecommendations();
       }
@@ -349,8 +345,9 @@ class _HomePageState extends State<HomePage> {
   Future<void> _loadRecommendations() async {
     try {
       final recommendationService = RecommendationService();
+      final categories = await _getUserInteractionCategories();
       final recommendations = await recommendationService.getRecommendedServices(
-        categories: await _getUserInteractionCategories(),
+        categories: categories,
       );
 
       recommendedProviderIds =
