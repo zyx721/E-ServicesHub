@@ -224,6 +224,7 @@ void _showSupportDialog(AppLocalizations appLocalizations) {
   @override
   Widget build(BuildContext context) {
     final AppLocalizations appLocalizations = AppLocalizations.of(context)!;
+    final screenSize = MediaQuery.of(context).size;
 
     return Scaffold(
       appBar: PreferredSize(
@@ -283,16 +284,43 @@ void _showSupportDialog(AppLocalizations appLocalizations) {
                     painter: FaceGuidelinePainter(),
                   ),
                 ),
+                Positioned(
+                  top: 20,
+                  right: 20,
+                  child: Container(
+                    width: 120,
+                    decoration: BoxDecoration(
+                      color: Colors.black54,
+                      borderRadius: BorderRadius.circular(15),
+                    ),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        if (_firstImage != null)
+                          _buildImagePreview(_firstImage!, "Closed Mouth"),
+                        if (_secondImage != null)
+                          _buildImagePreview(_secondImage!, "Open Mouth"),
+                      ],
+                    ),
+                  ),
+                ),
                 if (_comparisonResult.isNotEmpty)
                   Positioned(
-                    bottom: 100,
+                    top: 20,
                     left: 20,
-                    right: 20,
+                    right: 160,
                     child: Container(
-                      padding: EdgeInsets.all(12),
+                      padding: EdgeInsets.symmetric(vertical: 12, horizontal: 16),
                       decoration: BoxDecoration(
-                        color: _resultColor,
-                        borderRadius: BorderRadius.circular(10),
+                        color: _resultColor.withOpacity(0.9),
+                        borderRadius: BorderRadius.circular(15),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black26,
+                            blurRadius: 8,
+                            offset: Offset(0, 2),
+                          ),
+                        ],
                       ),
                       child: Text(
                         _comparisonResult,
@@ -307,11 +335,17 @@ void _showSupportDialog(AppLocalizations appLocalizations) {
                   ),
                 if (_showAnimation)
                   Positioned.fill(
-                    child: Center(
-                      child: Lottie.asset(
-                        'assets/animation/animation3.json', // Path to your animation file
-                        width: 150,
-                        height: 150,
+                    child: BackdropFilter(
+                      filter: ImageFilter.blur(sigmaX: 5, sigmaY: 5),
+                      child: Container(
+                        color: Colors.black12,
+                        child: Center(
+                          child: Lottie.asset(
+                            'assets/animation/animation3.json',
+                            width: 150,
+                            height: 150,
+                          ),
+                        ),
                       ),
                     ),
                   ),
@@ -321,63 +355,11 @@ void _showSupportDialog(AppLocalizations appLocalizations) {
                   right: 20,
                   child: Column(
                     children: [
-                      if (_firstImage == null)
-                        ElevatedButton(
-                          onPressed: _isLoading ? null : () => _captureImage(true),
-                          child: Text(
-                            "Capture With Mouth Closed",
-                            style: TextStyle(fontSize: 18),
-                          ),
-                        ),
-                      if (_firstImage != null && _secondImage == null)
-                        ElevatedButton(
-                          onPressed: _isLoading ? null : () => _captureImage(false),
-                          child: Text(
-                            "Capture With Mouth Open",
-                            style: TextStyle(fontSize: 18),
-                          ),
-                        ),
-                      if (_firstImage != null)
-                        Padding(
-                          padding: const EdgeInsets.all(8.0),
-                          child: Image.file(
-                            File(_firstImage!.path),
-                            width: 100,
-                            height: 100,
-                          ),
-                        ),
-                      if (_secondImage != null)
-                        Padding(
-                          padding: const EdgeInsets.all(8.0),
-                          child: Image.file(
-                            File(_secondImage!.path),
-                            width: 100,
-                            height: 100,
-                          ),
-                        ),
-                      if (_firstImage != null && _secondImage != null)
-                        ElevatedButton(
-                          onPressed: _isLoading ? null : _submitFaceImages,
-                          child: Text(
-                            "Submit Images",
-                            style: TextStyle(fontSize: 18),
-                          ),
-                        ),
+                      _buildActionButton(),
                       if (_firstImage != null || _secondImage != null)
-                        ElevatedButton(
-                          onPressed: _isLoading
-                              ? null
-                              : () {
-                                  setState(() {
-                                    _firstImage = null;
-                                    _secondImage = null;
-                                    _comparisonResult = "";
-                                  });
-                                },
-                          child: Text(
-                            "Retake Images",
-                            style: TextStyle(fontSize: 18),
-                          ),
+                        Padding(
+                          padding: const EdgeInsets.only(top: 12),
+                          child: _buildRetakeButton(),
                         ),
                     ],
                   ),
@@ -389,6 +371,111 @@ void _showSupportDialog(AppLocalizations appLocalizations) {
                 valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF3949AB)),
               ),
             ),
+    );
+  }
+
+  Widget _buildImagePreview(XFile image, String label) {
+    return Padding(
+      padding: const EdgeInsets.all(8.0),
+      child: Column(
+        children: [
+          Container(
+            height: 100,
+            width: 100,
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(10),
+              border: Border.all(color: Colors.white, width: 2),
+              image: DecorationImage(
+                image: FileImage(File(image.path)),
+                fit: BoxFit.cover,
+              ),
+            ),
+          ),
+          SizedBox(height: 4),
+          Text(
+            label,
+            style: TextStyle(
+              color: Colors.white,
+              fontSize: 12,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildActionButton() {
+    String buttonText = "Take First Photo";
+    VoidCallback? onPressed;
+
+    if (_firstImage == null) {
+      buttonText = "Capture With Mouth Closed";
+      onPressed = () => _captureImage(true);
+    } else if (_secondImage == null) {
+      buttonText = "Capture With Mouth Open";
+      onPressed = () => _captureImage(false);
+    } else {
+      buttonText = "Verify Face";
+      onPressed = _submitFaceImages;
+    }
+
+    return Container(
+      width: double.infinity,
+      height: 56,
+      child: ElevatedButton(
+        onPressed: _isLoading ? null : onPressed,
+        style: ElevatedButton.styleFrom(
+          backgroundColor: Color(0xFF3949AB),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(28),
+          ),
+          elevation: 4,
+        ),
+        child: _isLoading
+            ? SizedBox(
+                width: 24,
+                height: 24,
+                child: CircularProgressIndicator(
+                  valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                  strokeWidth: 2,
+                ),
+              )
+            : Text(
+                buttonText,
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w600,
+                  color: Colors.white,
+                ),
+              ),
+      ),
+    );
+  }
+
+  Widget _buildRetakeButton() {
+    return TextButton.icon(
+      onPressed: () {
+        setState(() {
+          _firstImage = null;
+          _secondImage = null;
+          _comparisonResult = "";
+        });
+      },
+      icon: Icon(Icons.refresh, color: Colors.white),
+      label: Text(
+        "Retake Photos",
+        style: TextStyle(
+          color: Colors.white,
+          fontSize: 16,
+        ),
+      ),
+      style: TextButton.styleFrom(
+        backgroundColor: Colors.black38,
+        padding: EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(20),
+        ),
+      ),
     );
   }
 }
