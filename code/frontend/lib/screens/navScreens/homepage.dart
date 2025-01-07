@@ -447,6 +447,12 @@ class _HomePageState extends State<HomePage> {
     return categories.toList();
   }
 
+  Future<void> _trackUserAction(String serviceId, String action) async {
+    if (currentUserId != null) {
+      await DataManager().trackUserAction(currentUserId!, serviceId, action);
+    }
+  }
+
   Future<void> toggleFavorite(Map<String, dynamic> service) async {
     if (currentUserId == null) {
       // Show a dialog or snackbar to prompt login
@@ -470,6 +476,7 @@ class _HomePageState extends State<HomePage> {
         setState(() {
           favoriteServices.remove(serviceId);
         });
+        await _trackUserAction(serviceId, 'unfavorite');
       } else {
         // Add to favorites
         await userDoc.update({
@@ -478,6 +485,7 @@ class _HomePageState extends State<HomePage> {
         setState(() {
           favoriteServices.add(serviceId);
         });
+        await _trackUserAction(serviceId, 'favorite');
       }
     } catch (e) {
       debugPrint('Error updating favorites: $e');
@@ -648,6 +656,7 @@ Widget _buildServiceCard(
             'click_count_per_service.$serviceId': FieldValue.increment(1),
           });
         }
+        await _trackUserAction(serviceId, 'click');
       } catch (e) {
         debugPrint('Error incrementing click_count: $e');
       }

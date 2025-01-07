@@ -218,5 +218,26 @@ class DataManager {
     }
   }
 
+  Future<void> trackUserAction(String userId, String serviceId, String action) async {
+    try {
+      await FirebaseFirestore.instance.collection('user_actions').add({
+        'userId': userId,
+        'serviceId': serviceId,
+        'action': action,
+        'timestamp': FieldValue.serverTimestamp(),
+      });
+    } catch (e) {
+      debugPrint('Error tracking user action: $e');
+    }
+  }
+
+  Future<Map<String, dynamic>> getUserActions(String userId) async {
+    final userActionsDoc = await FirebaseFirestore.instance.collection('user_actions').doc(userId).get();
+    return userActionsDoc.data() ?? {};
+  }
+
   // Add other necessary methods...
 }
+
+
+
