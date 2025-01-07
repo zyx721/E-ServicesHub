@@ -96,25 +96,28 @@ class _HomePageState extends State<HomePage> {
         favoriteServices = Set<String>.from(userData['favorites'] ?? []);
         
         final cityUsers = dataManager.getCityUsers();
+        if (cityUsers.isEmpty) {
+          debugPrint('⚠️ No cached city users found, requesting cache reload');
+          await dataManager.reloadCache();
+          return;
+        }
+        
         final providers = cityUsers.where((user) => user['isProvider'] == true).toList();
         
         if (providers.isNotEmpty) {
           debugPrint('📊 Found ${providers.length} service providers in cache');
-          services = providers.map((provider) => {
-            ...provider,
-            'docId': provider['uid'],
-          }).toList();
-        } else {
-          debugPrint('📥 No providers in cache, fetching recommendations...');
-          await _fetchUserDataAndRecommendations();
+          setState(() {
+            services = providers;
+            _hasMoreData = false; // We already have all data
+          });
         }
       } else {
-        debugPrint('📥 No cached data, fetching recommendations...');
-        await _fetchUserDataAndRecommendations();
+        debugPrint('⚠️ No user data in cache, requesting user login');
+        // Handle the case when user data is not available
+        // Maybe redirect to login or show an error
       }
     } catch (e) {
       debugPrint('❌ Error during initialization: $e');
-      await _fetchUserDataAndRecommendations();
     } finally {
       if (mounted) {
         setState(() {
@@ -132,7 +135,7 @@ class _HomePageState extends State<HomePage> {
 
   // Remove didChangeDependency override as we don't want to reload on navigation
 
-  Future<void> _fetchServices() async {
+  Future<void> _fetchMoreServices() async {
     if (_isFetching || !_hasMoreData) return;
 
     setState(() => _isFetching = true);
@@ -211,9 +214,9 @@ class _HomePageState extends State<HomePage> {
     debugPrint('🔄 Refresh triggered. Count: $_refreshCount');
     try {
       if (_refreshCount >= _maxRefreshCount) {
-        debugPrint('📥 Max refresh count reached, fetching fresh data...');
+        debugPrint('📥 Max refresh count reached, reloading cache...');
         _refreshCount = 0;
-        await DataManager().fetchAndStoreInitialData();
+        await DataManager().reloadCache();
         await _initializeData();
       } else {
         debugPrint('🔀 Shuffling existing services for variety');
@@ -753,7 +756,41 @@ Widget _buildServiceCard(
             _scrollController.position.maxScrollExtent - 200 &&
         !_isFetching &&
         _hasMoreData) {
-      _fetchServices();
+      _fetchMoreServices();
+    }
+  }
+
+  Future<void> _fetchServices() async {
+    if (_isFetching) return;
+
+    setState(() {
+      _isFetching = true;
+    });
+
+    try {
+      final dataManager = DataManager();
+      final cachedProviders = dataManager.getCachedProviders();
+      
+      int startIndex = services.length;
+      int endIndex = startIndex + _pageSize;
+      
+      if (endIndex >= cachedProviders.length) {
+        endIndex = cachedProviders.length;
+        _hasMoreData = false;
+      }
+      
+      if (startIndex < endIndex) {
+        final newServices = cachedProviders.sublist(startIndex, endIndex);
+        setState(() {
+          services.addAll(newServices);
+        });
+      }
+    } catch (e) {
+      debugPrint('Error fetching services: $e');
+    } finally {
+      setState(() {
+        _isFetching = false;
+      });
     }
   }
 

@@ -1,148 +1,187 @@
-import 'package:hive_flutter/hive_flutter.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_auth/firebase_auth.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'dart:convert';
 import 'package:flutter/foundation.dart';
 
 class DataManager {
   static final DataManager _instance = DataManager._internal();
+  SharedPreferences? _prefsInstance;
+  bool _initialized = false;
+  
   factory DataManager() => _instance;
+  
   DataManager._internal();
 
-  bool _isInitialized = false;
-  late Box<Map> _usersBox;
-  late Box<Map> _currentUserBox;
-  late Box<Map> _providersBox;
-  
   Future<void> initialize() async {
-    if (_isInitialized) {
-      debugPrint('📦 DataManager already initialized');
-      return;
+    if (!_initialized) {
+      _prefsInstance = await SharedPreferences.getInstance();
+      _initialized = true;
     }
-
-    debugPrint('📦 Initializing DataManager...');
-    await Hive.initFlutter();
-    _usersBox = await Hive.openBox<Map>('users_data');
-    _currentUserBox = await Hive.openBox<Map>('current_user_data');
-    _providersBox = await Hive.openBox<Map>('providers_data');
-    _isInitialized = true;
-    debugPrint('✅ DataManager initialized successfully');
   }
 
-  Future<void> fetchAndStoreInitialData() async {
-    debugPrint('🔄 Starting comprehensive data fetch...');
-    final currentUser = FirebaseAuth.instance.currentUser;
-    if (currentUser == null) {
-      debugPrint('❌ No user logged in, skipping data fetch');
-      return;
+  dynamic _sanitizeObject(dynamic obj) {
+    if (obj is Timestamp) {
+      return obj.toDate().toIso8601String();
+    } else if (obj is DateTime) {
+      return obj.toIso8601String();
+    } else if (obj is Map) {
+      return _sanitizeMap(obj);
+    } else if (obj is List) {
+      return obj.map((e) => _sanitizeObject(e)).toList();
     }
+    return obj;
+  }
 
+  Map<String, dynamic> _sanitizeMap(Map<dynamic, dynamic> map) {
+    Map<String, dynamic> sanitized = {};
+    map.forEach((key, value) {
+      if (key is String) {
+        sanitized[key] = _sanitizeObject(value);
+      }
+    });
+    return sanitized;
+  }
+
+  Future<void> fetchAndCacheAllData(String userId) async {
     try {
-      // 1. Fetch and store current user data
-      debugPrint('📥 Fetching current user data...');
-      final currentUserDoc = await FirebaseFirestore.instance
+      await initialize();
+      
+      debugPrint('🔍 Fetching data for user: $userId');
+      
+      final userDoc = await FirebaseFirestore.instance
           .collection('users')
-          .doc(currentUser.uid)
+          .doc(userId)
           .get();
-
-      if (currentUserDoc.exists) {
-        await _currentUserBox.put('userData', currentUserDoc.data() as Map);
-        debugPrint('✅ Stored current user data');
-
-        // 2. Fetch and store all users from same city
-        final userCity = currentUserDoc.data()?['city'];
-        if (userCity != null) {
-          debugPrint('📥 Fetching users from city: $userCity');
-          
-          // Fetch regular users
-          final cityUsers = await FirebaseFirestore.instance
-              .collection('users')
-              .where('city', isEqualTo: userCity)
-              .where('isProvider', isEqualTo: false)
-              .get();
-
-          // Fetch service providers
-          final providers = await FirebaseFirestore.instance
-              .collection('users')
-              .where('city', isEqualTo: userCity)
-              .where('isProvider', isEqualTo: true)
-              .get();
-
-          // Store users data
-          final usersData = <String, Map>{};
-          for (var doc in cityUsers.docs) {
-            usersData[doc.id] = doc.data();
-          }
-          await _usersBox.putAll(usersData);
-          debugPrint('✅ Stored ${usersData.length} city users');
-
-          // Store providers data
-          final providersData = <String, Map>{};
-          for (var doc in providers.docs) {
-            providersData[doc.id] = doc.data();
-          }
-          await _providersBox.putAll(providersData);
-          debugPrint('✅ Stored ${providersData.length} service providers');
+      
+      if (!userDoc.exists) {
+        debugPrint('❌ User document does not exist');
+        return;
+      }
+      
+      // Sanitize user data before storing
+      final userData = _sanitizeMap(userDoc.data()!);
+      String? userCity = userData['city'];
+      
+      // If city is not set, try to get it from their info
+      if (userCity == null || userCity.isEmpty) {
+        userCity = userData['basicInfo']?['city'] ?? userData['location']?['city'];
+        debugPrint('🏙️ Found city from alternate location: $userCity');
+      }
+      
+      if (userCity == null || userCity.isEmpty) {
+        debugPrint('⚠️ No city information found for user');
+        return;
+      }
+      
+      debugPrint('🌆 Fetching users from city: $userCity');
+      
+      final usersInCity = await FirebaseFirestore.instance
+          .collection('users')
+          .where('city', isEqualTo: userCity)
+          .get();
+      
+      final providers = <Map<String, dynamic>>[];
+      final allUsers = <Map<String, dynamic>>[];
+      
+      for (var doc in usersInCity.docs) {
+        // Sanitize each user's data
+        final sanitizedData = _sanitizeMap(doc.data());
+        final userMap = {
+          'uid': doc.id,
+          ...sanitizedData,
+        };
+        
+        allUsers.add(userMap);
+        if (sanitizedData['isProvider'] == true) {
+          providers.add(userMap);
         }
       }
       
-      debugPrint('✅ Initial data fetch and storage completed successfully');
-    } catch (e) {
-      debugPrint('❌ Error during initial data fetch: $e');
-      throw e; // Rethrow to handle in login screen
+      debugPrint('📦 Caching ${providers.length} providers and ${allUsers.length} total users');
+      
+      // Cache sanitized data
+      await _prefsInstance?.setString('current_user_$userId', jsonEncode(userData));
+      await _prefsInstance?.setString('providers_$userId', jsonEncode(providers));
+      await _prefsInstance?.setString('city_users_$userId', jsonEncode(allUsers));
+      await _prefsInstance?.setString('last_fetch_$userId', DateTime.now().toIso8601String());
+      await _prefsInstance?.setString('active_user_id', userId);
+      
+      debugPrint('✅ All data cached successfully for user: $userId');
+    } catch (e, stackTrace) {
+      debugPrint('❌ Error caching data: $e');
+      debugPrint('Stack trace: $stackTrace');
+      rethrow;
     }
   }
 
-  Map? getCurrentUserData() {
-    if (!_isInitialized) {
-      debugPrint('❌ DataManager not initialized');
+  Map<String, dynamic>? getCurrentUserData() {
+    try {
+      final activeUserId = _prefsInstance?.getString('active_user_id');
+      if (activeUserId == null) return null;
+      
+      final userDataString = _prefsInstance?.getString('current_user_$activeUserId');
+      if (userDataString != null) {
+        return jsonDecode(userDataString) as Map<String, dynamic>;
+      }
+      return null;
+    } catch (e) {
+      debugPrint('Error getting cached user data: $e');
       return null;
     }
-    return _currentUserBox.get('userData');
   }
 
   List<Map<String, dynamic>> getCityUsers() {
-    if (!_isInitialized) {
-      debugPrint('❌ DataManager not initialized');
-      return [];
-    }
-    return _usersBox.values.map((data) => Map<String, dynamic>.from(data)).toList();
-  }
-
-  List<Map<String, dynamic>> getServiceProviders() {
-    if (!_isInitialized) {
-      debugPrint('❌ DataManager not initialized');
-      return [];
-    }
-    return _providersBox.values.map((data) => Map<String, dynamic>.from(data)).toList();
-  }
-
-  Future<void> updateLocalUserData(String userId, Map<String, dynamic> updates) async {
-    if (!_isInitialized) return;
-    
-    if (userId == FirebaseAuth.instance.currentUser?.uid) {
-      var userData = getCurrentUserData();
-      if (userData != null) {
-        userData.addAll(updates);
-        await _currentUserBox.put('userData', userData);
+    try {
+      final activeUserId = _prefsInstance?.getString('active_user_id');
+      if (activeUserId == null) return [];
+      
+      final usersString = _prefsInstance?.getString('city_users_$activeUserId');
+      if (usersString != null) {
+        final List<dynamic> decoded = jsonDecode(usersString);
+        return decoded.cast<Map<String, dynamic>>();
       }
-    }
-    
-    // Update in providers or users box as needed
-    if (_providersBox.containsKey(userId)) {
-      var data = _providersBox.get(userId);
-      data?.addAll(updates);
-      await _providersBox.put(userId, data!);
-    } else if (_usersBox.containsKey(userId)) {
-      var data = _usersBox.get(userId);
-      data?.addAll(updates);
-      await _usersBox.put(userId, data!);
+      debugPrint('⚠️ No cached city users found');
+      return [];
+    } catch (e) {
+      debugPrint('❌ Error getting cached city users: $e');
+      return [];
     }
   }
 
-  Future<void> clearData() async {
-    await _usersBox.clear();
-    await _currentUserBox.clear();
-    await _providersBox.clear();
-    debugPrint('🧹 Cleared all cached data');
+  List<Map<String, dynamic>> getCachedProviders() {
+    try {
+      final activeUserId = _prefsInstance?.getString('active_user_id');
+      if (activeUserId == null) return [];
+      
+      final providersString = _prefsInstance?.getString('providers_$activeUserId');
+      if (providersString != null) {
+        final List<dynamic> decoded = jsonDecode(providersString);
+        return decoded.cast<Map<String, dynamic>>();
+      }
+      return [];
+    } catch (e) {
+      debugPrint('Error getting cached providers: $e');
+      return [];
+    }
   }
+
+  Future<void> clearCache() async {
+    final activeUserId = _prefsInstance?.getString('active_user_id');
+    if (activeUserId != null) {
+      await _prefsInstance?.remove('current_user_$activeUserId');
+      await _prefsInstance?.remove('providers_$activeUserId');
+      await _prefsInstance?.remove('city_users_$activeUserId');
+      await _prefsInstance?.remove('last_fetch_$activeUserId');
+      await _prefsInstance?.remove('active_user_id');
+    }
+  }
+
+  Future<void> reloadCache() async {
+    final currentUser = await getCurrentUserData();
+    if (currentUser != null) {
+      await fetchAndCacheAllData(currentUser['uid']);
+    }
+  }
+
+  // Add other necessary methods...
 }
