@@ -60,11 +60,21 @@ class DataManager {
       
       // Sanitize user data before storing
       final userData = _sanitizeMap(userDoc.data()!);
+      
+      // Ensure basic info exists
+      if (userData['basicInfo'] == null) {
+        userData['basicInfo'] = {};
+      }
+      
       String? userCity = userData['city'];
       
       // If city is not set, try to get it from their info
       if (userCity == null || userCity.isEmpty) {
         userCity = userData['basicInfo']?['city'] ?? userData['location']?['city'];
+        if (userCity != null && userCity.isNotEmpty) {
+          // Update the main city field if we found it in a nested location
+          userData['city'] = userCity;
+        }
         debugPrint('🏙️ Found city from alternate location: $userCity');
       }
       

@@ -693,7 +693,7 @@ Widget _buildServiceCard(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          service['basicInfo']['profession'] ?? 'N/A',
+                          service['basicInfo']?['profession']?.toString() ?? 'N/A',
                           style: GoogleFonts.poppins(
                             fontSize: 14,
                             fontWeight: FontWeight.bold,
@@ -702,14 +702,14 @@ Widget _buildServiceCard(
                           overflow: TextOverflow.ellipsis,
                         ),
                         Text(
-                          service['name'] ?? 'Unknown',
+                          service['name']?.toString() ?? 'Unknown',
                           style: GoogleFonts.poppins(
                             fontSize: 12,
                             color: AppColors.mainColor,
                           ),
                           maxLines: 1,
                         ),
-                        _buildStarRating(service['rating']?.toDouble() ?? 0.0),
+                        _buildStarRating((service['rating'] as num?)?.toDouble() ?? 0.0),
                       ],
                     ),
                   ),
