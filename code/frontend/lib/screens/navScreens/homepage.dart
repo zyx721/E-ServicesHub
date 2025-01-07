@@ -39,6 +39,7 @@ class _HomePageState extends State<HomePage> {
   bool get wantKeepAlive => true; // This ensures the state is preserved
 
   int _currentPage = 0;
+  static const int pageSize = 20;
   late Timer _adTimer;
 
   List<Map<String, dynamic>> services = [];
@@ -753,10 +754,10 @@ Widget _buildServiceCard(
 
   void _onScroll() {
     if (_scrollController.position.pixels >=
-            _scrollController.position.maxScrollExtent - 200 &&
+        _scrollController.position.maxScrollExtent - 200 &&
         !_isFetching &&
         _hasMoreData) {
-      _fetchMoreServices();
+      _fetchServices();
     }
   }
 
@@ -769,22 +770,17 @@ Widget _buildServiceCard(
 
     try {
       final dataManager = DataManager();
-      final cachedProviders = dataManager.getCachedProviders();
+      final newServices = dataManager.getPaginatedProviders(_currentPage, pageSize);
       
-      int startIndex = services.length;
-      int endIndex = startIndex + _pageSize;
-      
-      if (endIndex >= cachedProviders.length) {
-        endIndex = cachedProviders.length;
-        _hasMoreData = false;
-      }
-      
-      if (startIndex < endIndex) {
-        final newServices = cachedProviders.sublist(startIndex, endIndex);
-        setState(() {
+      setState(() {
+        if (_currentPage == 0) {
+          services = newServices;
+        } else {
           services.addAll(newServices);
-        });
-      }
+        }
+        _hasMoreData = dataManager.hasMoreProviders(_currentPage, pageSize);
+        if (_hasMoreData) _currentPage++;
+      });
     } catch (e) {
       debugPrint('Error fetching services: $e');
     } finally {

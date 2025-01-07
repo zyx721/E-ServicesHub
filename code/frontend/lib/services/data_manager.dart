@@ -175,6 +175,31 @@ class DataManager {
     }
   }
 
+  List<Map<String, dynamic>> getPaginatedProviders(int page, int pageSize) {
+    try {
+      final providers = getCachedProviders();
+      final startIndex = page * pageSize;
+      final endIndex = startIndex + pageSize;
+      
+      if (startIndex >= providers.length) {
+        return [];
+      }
+      
+      return providers.sublist(
+        startIndex, 
+        endIndex > providers.length ? providers.length : endIndex
+      );
+    } catch (e) {
+      debugPrint('Error getting paginated providers: $e');
+      return [];
+    }
+  }
+
+  bool hasMoreProviders(int currentPage, int pageSize) {
+    final providers = getCachedProviders();
+    return (currentPage + 1) * pageSize < providers.length;
+  }
+
   Future<void> clearCache() async {
     final activeUserId = _prefsInstance?.getString('active_user_id');
     if (activeUserId != null) {
