@@ -6,6 +6,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:shared_preferences/shared_preferences.dart'; // Import SharedPreferences
 import 'package:firebase_messaging/firebase_messaging.dart';
+import '../../services/data_manager.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({Key? key}) : super(key: key);
@@ -491,6 +492,12 @@ class _LoginScreenState extends State<LoginScreen>
             });
             return;
           }
+
+          final dataManager = DataManager(); // Ensure DataManager is defined or imported
+          await dataManager.initialize();
+          debugPrint('🔄 Starting initial data fetch...');
+          await dataManager.fetchAndStoreInitialData();
+          debugPrint('✅ Initial data fetch complete');
 
           // Get user document from Firestore
           final userDoc = await FirebaseFirestore.instance

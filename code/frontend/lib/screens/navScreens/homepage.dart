@@ -14,6 +14,7 @@ import 'package:hanini_frontend/screens/services/service.dart';
 import 'package:hanini_frontend/models/colors.dart';
 import 'package:hanini_frontend/models/servicesWeHave.dart';
 import 'package:hanini_frontend/localization/app_localization.dart';
+import '../../services/data_manager.dart';
 
 // Helper class to structure service data
 class ServiceCategory {
@@ -51,20 +52,16 @@ class _HomePageState extends State<HomePage> {
   late Future<List<PopularServicesModel>> _popularServicesFuture;
   int _refreshCount = 0;
   final int _maxRefreshCount = 10;
+  bool _isInitializing = true; // Add this flag
 
   @override
   void initState() {
     super.initState();
+    debugPrint('🏠 HomePage initState called');
     _pageController = PageController();
     _scrollController = ScrollController()..addListener(_onScroll);
 
-    // Only initialize if services is empty
-    if (services.isEmpty) {
-      _initializeData();
-    } else {
-      _isLoading = false;
-    }
-
+    _initializeData();
     _popularServicesFuture = PopularServicesModel.getPopularServices(context);
 
     _adTimer = Timer.periodic(const Duration(seconds: 3), (Timer timer) {
@@ -79,26 +76,49 @@ class _HomePageState extends State<HomePage> {
         );
       }
     });
-    _fetchUserDataAndRecommendations();
   }
 
   Future<void> _initializeData() async {
-    if (!_isLoading && services.isNotEmpty)
-      return; // Skip if already initialized
-
     setState(() {
+      _isInitializing = true;
       _isLoading = true;
     });
 
     try {
-      await _fetchUserData();
-      await _fetchServices();
-      await _fetchUsersFromSameCity();
+      debugPrint('🔄 Initializing HomePage from cache...');
+      final dataManager = DataManager();
+      debugPrint('📥 Attempting to retrieve cached data...');
+      
+      final userData = dataManager.getCurrentUserData();
+      if (userData != null) {
+        debugPrint('👤 Found cached user data');
+        currentUserId = userData['uid'];
+        favoriteServices = Set<String>.from(userData['favorites'] ?? []);
+        
+        final cityUsers = dataManager.getCityUsers();
+        final providers = cityUsers.where((user) => user['isProvider'] == true).toList();
+        
+        if (providers.isNotEmpty) {
+          debugPrint('📊 Found ${providers.length} service providers in cache');
+          services = providers.map((provider) => {
+            ...provider,
+            'docId': provider['uid'],
+          }).toList();
+        } else {
+          debugPrint('📥 No providers in cache, fetching recommendations...');
+          await _fetchUserDataAndRecommendations();
+        }
+      } else {
+        debugPrint('📥 No cached data, fetching recommendations...');
+        await _fetchUserDataAndRecommendations();
+      }
     } catch (e) {
-      debugPrint('Error initializing data: $e');
+      debugPrint('❌ Error during initialization: $e');
+      await _fetchUserDataAndRecommendations();
     } finally {
       if (mounted) {
         setState(() {
+          _isInitializing = false;
           _isLoading = false;
         });
       }
@@ -188,23 +208,26 @@ class _HomePageState extends State<HomePage> {
   }
 
   Future<void> _onRefresh() async {
+    debugPrint('🔄 Refresh triggered. Count: $_refreshCount');
     try {
-      _refreshCount++;
       if (_refreshCount >= _maxRefreshCount) {
+        debugPrint('📥 Max refresh count reached, fetching fresh data...');
         _refreshCount = 0;
-        await _fetchUserDataAndRecommendations();
+        await DataManager().fetchAndStoreInitialData();
+        await _initializeData();
       } else {
-        await _fetchUserData();
-        await _loadRecommendations();
+        debugPrint('🔀 Shuffling existing services for variety');
+        setState(() {
+          services.shuffle();
+          _refreshCount++;
+        });
       }
 
-      // Shuffle the services to ensure they are different each time
-      services.shuffle();
-
       _refreshController.refreshCompleted();
+      debugPrint('✅ Refresh completed successfully');
     } catch (e) {
+      debugPrint('❌ Error during refresh: $e');
       _refreshController.refreshFailed();
-      debugPrint('Error refreshing: $e');
     }
   }
 
@@ -1130,13 +1153,28 @@ Widget build(BuildContext context) {
         idleText: 'Pull to refresh',
         refreshingText: 'Refreshing...',
       ),
-      child: _isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : services.isEmpty && !_isFetching
-              ? Center(
+      child: _isInitializing || _isLoading
+          ? const Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  CircularProgressIndicator(),
+                  SizedBox(height: 16),
+                  Text(
+                    'Loading recommendations...',
+                    style: TextStyle(
+                      color: Colors.grey,
+                      fontSize: 16,
+                    ),
+                  ),
+                ],
+              ),
+            )
+          : services.isEmpty
+              ? const Center(
                   child: Text(
                     'No recommended services found in your area',
-                    style: GoogleFonts.poppins(
+                    style: TextStyle(
                       fontSize: 16,
                       color: Colors.grey,
                     ),
