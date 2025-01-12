@@ -638,13 +638,29 @@ class _SearchPageState extends State<SearchPage> {
   }
 
   void _filterServices() {
+    final query = _searchController.text.toLowerCase();
     final dataManager = DataManager();
-    final initialServices = dataManager.getPaginatedProviders(0, pageSize);
-    
+    final allProviders = dataManager.getCachedProviders();
+
+    List<Map<String, dynamic>> filtered = allProviders.where((service) {
+      final name = service['name']?.toString().toLowerCase() ?? '';
+      final profession = (service['basicInfo'] as Map<String, dynamic>?)?['profession']?.toString().toLowerCase() ?? '';
+      final matchesQuery = name.contains(query) || profession.contains(query);
+
+      final rating = (service['rating'] as num?)?.toDouble() ?? 0.0;
+      final price = (service['basicInfo']?['hourlyRate'] as num?)?.toDouble() ?? 0.0;
+      final matchesRating = !_isRatingFilterApplied || rating >= _minRating;
+      final matchesPrice = !_isPriceFilterApplied || (price >= _priceRange.start && price <= _priceRange.end);
+
+      final workDomain = service['selectedWorkChoice']?.toString() ?? '';
+      final matchesWorkDomain = _selectedWorkChoices.isEmpty || _selectedWorkChoices.contains(workDomain);
+
+      return matchesQuery && matchesRating && matchesPrice && matchesWorkDomain;
+    }).toList();
+
     setState(() {
-      _currentPage = 0;
-      filteredServices = _applyFilters(initialServices);
-      _hasMoreData = dataManager.hasMoreProviders(0, pageSize);
+      filteredServices = filtered;
+      _hasMoreData = filtered.length >= pageSize;
     });
   }
 
