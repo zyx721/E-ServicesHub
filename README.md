@@ -2,6 +2,7 @@
 
 ## Overview
 Welcome to **HANINI**, a dynamic E-Services Platform designed to simplify the process of finding and offering various physical services, such as plumbing, housekeeping, and more. Our project aims to create a seamless connection between service providers and customers, empowering users to post their service requests and discover the assistance they need with ease.
+
 ![Image Alt](https://github.com/zyx721/E-ServicesHub/blob/WorkingBranch/image.png?raw=true).
 ### Project Goals
 - **Facilitate Connections**: Bridging the gap between service providers and customers to ensure efficient service delivery.
