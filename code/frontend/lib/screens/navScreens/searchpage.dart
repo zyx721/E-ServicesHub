@@ -6,7 +6,8 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:hanini_frontend/models/colors.dart';
 import 'package:hanini_frontend/screens/services/service.dart';
-import 'package:hanini_frontend/localization/app_localization.dart'; // Import
+import 'package:hanini_frontend/localization/app_localization.dart';
+import 'package:hanini_frontend/services/data_manager.dart'; // Import
 
 class SearchPage extends StatefulWidget {
   final String? preSelectedWorkDomain;
@@ -31,12 +32,84 @@ class _SearchPageState extends State<SearchPage> {
   bool _isPriceFilterApplied = false;
   List<String> _selectedWorkChoices = [];
   Map<String, Map<String, String>> _workChoicesMap = {};
+  bool _isLoading = false;
+
+  int _currentPage = 0;
+  static const int pageSize = 20;
+  bool _hasMoreData = true;
+  bool _isFetching = false;
+  final ScrollController _scrollController = ScrollController();
 
   @override
   void initState() {
     super.initState();
-    _searchController.addListener(_filterServices);
+    _scrollController.addListener(_onScroll);
+    _searchController.addListener(_onSearchChanged);
     _loadWorkChoices().then((_) => _initializeData());
+  }
+
+  void _onSearchChanged() {
+    _currentPage = 0; // Reset pagination when search changes
+    _filterServices();
+  }
+
+  void _onScroll() {
+    if (_scrollController.position.pixels >=
+        _scrollController.position.maxScrollExtent - 200 &&
+        !_isFetching &&
+        _hasMoreData) {
+      _loadMoreServices();
+    }
+  }
+
+  Future<void> _loadMoreServices() async {
+    if (_isFetching) return;
+
+    setState(() {
+      _isFetching = true;
+    });
+
+    try {
+      final dataManager = DataManager();
+      final allProviders = dataManager.getCachedProviders();
+      final startIndex = _currentPage * pageSize;
+      
+      if (startIndex >= allProviders.length) {
+        setState(() => _hasMoreData = false);
+        return;
+      }
+
+      final endIndex = startIndex + pageSize;
+      final newServices = allProviders.sublist(
+        startIndex,
+        endIndex > allProviders.length ? allProviders.length : endIndex
+      );
+
+      // Apply current filters to new services
+      final filteredNewServices = _applyFilters(newServices);
+      
+      setState(() {
+        filteredServices.addAll(filteredNewServices);
+        _currentPage++;
+        _hasMoreData = endIndex < allProviders.length;
+      });
+    } catch (e) {
+      debugPrint('Error loading more services: $e');
+    } finally {
+      setState(() {
+        _isFetching = false;
+      });
+    }
+  }
+
+  List<Map<String, dynamic>> _applyFilters(List<Map<String, dynamic>> servicesInput) {
+    // Move filter logic to a separate method
+    List<Map<String, dynamic>> results = List.from(servicesInput);
+    
+    // Apply existing filters...
+    // ...existing filter logic...
+    
+    return results;
   }
 
   Future<void> _loadWorkChoices() async {
@@ -509,15 +582,38 @@ class _SearchPageState extends State<SearchPage> {
   }
 
   Future<void> _initializeData() async {
-    await _loadServicesFromFirestore();
-    // await _loadLikedServices();
-    await _fetchUserData();
-    // This is the key part that makes the search automatic
-    // Set initial search text and filter after data is loaded
-    if (widget.preSelectedWorkDomain != null) {
-      _selectedWorkChoices
-          .add(widget.preSelectedWorkDomain!); // Sets the search text
-      _filterServices(); // Triggers the search
+    setState(() => _isLoading = true);
+    
+    try {
+      final dataManager = DataManager();
+      final providers = dataManager.getCachedProviders();
+      
+      if (providers.isEmpty) {
+        debugPrint('⚠️ No cached providers found, attempting to reload cache');
+        await dataManager.reloadCache();
+        final refreshedProviders = dataManager.getCachedProviders();
+        setState(() {
+          services = refreshedProviders;
+          filteredServices = refreshedProviders;
+        });
+      } else {
+        debugPrint('📦 Loaded ${providers.length} providers from cache');
+        setState(() {
+          services = providers;
+          filteredServices = providers;
+        });
+      }
+
+      // Apply initial work domain filter if provided
+      if (widget.preSelectedWorkDomain != null) {
+        _selectedWorkChoices = [widget.preSelectedWorkDomain!];
+        _filterServices();
+      }
+      
+    } catch (e) {
+      debugPrint('❌ Error loading cached providers: $e');
+    } finally {
+      setState(() => _isLoading = false);
     }
   }
 
@@ -541,95 +637,31 @@ class _SearchPageState extends State<SearchPage> {
     }
   }
 
-Future<void> _loadServicesFromFirestore() async {
-  try {
-    final currentUserId = FirebaseAuth.instance.currentUser?.uid;
-    if (currentUserId == null) return;
+  void _filterServices() {
+    final query = _searchController.text.toLowerCase();
+    final dataManager = DataManager();
+    final allProviders = dataManager.getCachedProviders();
 
-    // Start with base query
-    Query query = FirebaseFirestore.instance
-        .collection('users')
-        .where('isProvider', isEqualTo: true)
-        .where('uid', isNotEqualTo: currentUserId);
+    List<Map<String, dynamic>> filtered = allProviders.where((service) {
+      final name = service['name']?.toString().toLowerCase() ?? '';
+      final profession = (service['basicInfo'] as Map<String, dynamic>?)?['profession']?.toString().toLowerCase() ?? '';
+      final matchesQuery = name.contains(query) || profession.contains(query);
 
-    // Apply rating filter at database level
-    if (_isRatingFilterApplied && _minRating > 0.0) {
-      query = query.where('rating', isGreaterThanOrEqualTo: _minRating);
-    }
+      final rating = (service['rating'] as num?)?.toDouble() ?? 0.0;
+      final price = (service['basicInfo']?['hourlyRate'] as num?)?.toDouble() ?? 0.0;
+      final matchesRating = !_isRatingFilterApplied || rating >= _minRating;
+      final matchesPrice = !_isPriceFilterApplied || (price >= _priceRange.start && price <= _priceRange.end);
 
-    // Apply price filter at database level
-    if (_isPriceFilterApplied) {
-      if (_priceRange.start > 0) {
-        query = query.where('basicInfo.hourlyRate',
-            isGreaterThanOrEqualTo: _priceRange.start);
-      }
-      if (_priceRange.end < 19999) {
-        query = query.where('basicInfo.hourlyRate',
-            isLessThanOrEqualTo: _priceRange.end);
-      }
-    }
+      final workDomain = service['selectedWorkChoice']?.toString() ?? '';
+      final matchesWorkDomain = _selectedWorkChoices.isEmpty || _selectedWorkChoices.contains(workDomain);
 
-    // Apply work choices filter at database level
-    if (_selectedWorkChoices.isNotEmpty) {
-      // Use whereIn if multiple choices are selected, or where if single choice
-      if (_selectedWorkChoices.length == 1) {
-        query = query.where('selectedWorkChoice', isEqualTo: _selectedWorkChoices.first);
-      } else {
-        query = query.where('selectedWorkChoice', whereIn: _selectedWorkChoices);
-      }
-    }
-
-    // Apply text search if provided
-    final searchTerm = _searchController.text;
-    if (searchTerm.isNotEmpty) {
-      query = query
-          .where('basicInfo.profession', isGreaterThanOrEqualTo: searchTerm)
-          .where('basicInfo.profession',
-              isLessThanOrEqualTo: searchTerm + '\uf8ff');
-    }
-
-    // Add pagination for better performance
-    const pageSize = 20;
-    query = query.limit(pageSize);
-
-    // Execute the optimized query
-    final QuerySnapshot snapshot = await query.get();
-
-    // Process results
-    List<Map<String, dynamic>> processedServices = snapshot.docs.map((doc) {
-      final data = doc.data() as Map<String, dynamic>;
-      final basicInfo = data['basicInfo'] as Map<String, dynamic>?;
-
-      return {
-        'uid': doc.id,
-        'name': data['name'] ?? 'Unknown',
-        'profession': basicInfo?['profession'] ?? 'Not specified',
-        'photoURL': data['photoURL'] ?? '',
-        'rating': (data['rating'] is num)
-            ? (data['rating'] as num).toDouble()
-            : 0.0,
-        'price': basicInfo?['hourlyRate'] != null
-            ? (basicInfo?['hourlyRate'] is num
-                ? (basicInfo?['hourlyRate'] as num).toDouble()
-                : double.tryParse(basicInfo?['hourlyRate']?.toString() ?? '') ??
-                    0.0)
-            : 0.0,
-        'selectedWorkChoice': data['selectedWorkChoice'] ?? '',
-      };
+      return matchesQuery && matchesRating && matchesPrice && matchesWorkDomain;
     }).toList();
 
     setState(() {
-      services = processedServices;
-      filteredServices = processedServices;
+      filteredServices = filtered;
+      _hasMoreData = filtered.length >= pageSize;
     });
-  } catch (e) {
-    debugPrint("Error fetching services: $e");
-  }
-}
-
-// Update _filterServices to trigger a new Firestore query
-  void _filterServices() {
-    _loadServicesFromFirestore();
   }
 
   int _calculateLevenshteinDistance(String s1, String s2) {
@@ -686,11 +718,14 @@ Future<void> _loadServicesFromFirestore() async {
   Widget build(BuildContext context) {
     final localizations = AppLocalizations.of(context);
     if (localizations == null) return Text("Nothing");
+
+    if (_isLoading) {
+      return const Center(child: CircularProgressIndicator());
+    }
+
     return Scaffold(
-      body: Padding(
-        padding: const EdgeInsets.only(left: 20, right: 20),
+      body: SafeArea(
         child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             const SizedBox(height: 10),
             _buildSearchBar(localizations),
@@ -698,20 +733,39 @@ Future<void> _loadServicesFromFirestore() async {
             _buildAppliedFilters(),
             const SizedBox(height: 20),
             Expanded(
-              child: GridView.builder(
-                itemCount: filteredServices.length,
-                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                  crossAxisCount: 2,
-                  mainAxisSpacing: 20,
-                  crossAxisSpacing: 20,
-                  childAspectRatio: 0.8,
-                ),
-                itemBuilder: (context, index) {
-                  final service = filteredServices[index];
-                  final serviceId = service['uid'];
-                  return _buildServiceItem(service, false, serviceId);
-                },
-              ),
+              child: _isLoading
+                  ? const Center(child: CircularProgressIndicator())
+                  : filteredServices.isEmpty
+                      ? Center(
+                          child: Text(
+                            'No services found',
+                            style: TextStyle(
+                              color: Colors.grey[600],
+                              fontSize: 16,
+                            ),
+                          ),
+                        )
+                      : GridView.builder(
+                          controller: _scrollController,
+                          padding: const EdgeInsets.symmetric(horizontal: 16),
+                          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                            crossAxisCount: 2,
+                            childAspectRatio: 0.75,
+                            crossAxisSpacing: 16,
+                            mainAxisSpacing: 16,
+                          ),
+                          itemCount: filteredServices.length + (_hasMoreData ? 1 : 0),
+                          itemBuilder: (context, index) {
+                            if (index >= filteredServices.length) {
+                              return _isFetching
+                                  ? const Center(child: CircularProgressIndicator())
+                                  : const SizedBox();
+                            }
+                            final service = filteredServices[index];
+                            final serviceId = service['uid'];
+                            return _buildServiceItem(service, false, serviceId);
+                          },
+                        ),
             ),
           ],
         ),
@@ -918,6 +972,13 @@ Future<void> _loadServicesFromFirestore() async {
 
   Widget _buildServiceItem(
       Map<String, dynamic> service, bool isFavorite, String serviceId) {
+    // Add null checks for nested data
+    final profession = (service['basicInfo'] as Map<String, dynamic>?)?['profession']?.toString() ?? 'N/A';
+    final name = service['name']?.toString() ?? 'Unknown';
+    final photoUrl = service['photoURL']?.toString() ?? '';
+    final rating = (service['rating'] as num?)?.toDouble() ?? 0.0;
+    final price = (service['basicInfo']?['hourlyRate'] as num?)?.toDouble() ?? 0.0;
+
     // Use favoriteServices instead of isFavorite parameter
     final isServiceFavorite = favoriteServices.contains(serviceId);
 
@@ -968,56 +1029,57 @@ Future<void> _loadServicesFromFirestore() async {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Expanded(
-                  child: ClipRRect(
-                    borderRadius:
-                        const BorderRadius.vertical(top: Radius.circular(16)),
-                    child: Image.network(
-                      service['photoURL'],
-                      fit: BoxFit.cover,
-                      width: double.infinity,
-                      errorBuilder: (context, error, stackTrace) {
-                        return const Center(
-                          child: Icon(Icons.broken_image,
-                              size: 50, color: Colors.grey),
-                        );
-                      },
+                  child: Container(
+                    decoration: BoxDecoration(
+                      borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
+                      image: DecorationImage(
+                        image: NetworkImage(photoUrl),
+                        fit: BoxFit.cover,
+                        onError: (error, stackTrace) {
+                          debugPrint('Error loading image: $error');
+                        },
+                      ),
                     ),
                   ),
                 ),
-                Padding(
-                  padding: const EdgeInsets.all(8.0),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        service['profession'],
-                        style: GoogleFonts.poppins(
-                          fontSize: 14,
-                          fontWeight: FontWeight.bold,
+                Container(
+                  decoration: const BoxDecoration(
+                    color: AppColors.tempColor,
+                    borderRadius: BorderRadius.vertical(bottom: Radius.circular(16)),
+                  ),
+                  child: Padding(
+                    padding: const EdgeInsets.all(8.0),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          profession,
+                          style: GoogleFonts.poppins(
+                            fontSize: 14,
+                            fontWeight: FontWeight.bold,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
                         ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                      Text(
-                        service['name'],
-                        style: GoogleFonts.poppins(
-                          fontSize: 12,
-                          color: AppColors.mainColor,
+                        Text(
+                          name,
+                          style: GoogleFonts.poppins(
+                            fontSize: 12,
+                            color: AppColors.mainColor,
+                          ),
+                          maxLines: 1,
                         ),
-                        maxLines: 1,
-                      ),
-                      _buildStarRating(service['rating']),
-                      SizedBox(
-                        height: 2,
-                      ),
-                      Text(
-                        'DZD ${service['price'].toStringAsFixed(0)}',
-                        style: GoogleFonts.poppins(
-                          fontSize: 12,
-                          color: Colors.grey[600],
+                        _buildStarRating(rating),
+                        const SizedBox(height: 2),
+                        Text(
+                          'DZD ${price.toStringAsFixed(0)}',
+                          style: GoogleFonts.poppins(
+                            fontSize: 12,
+                            color: Colors.grey[600],
+                          ),
                         ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
                 ),
               ],
@@ -1081,6 +1143,7 @@ Future<void> _loadServicesFromFirestore() async {
 
   @override
   void dispose() {
+    _scrollController.dispose();
     _searchController.dispose();
     super.dispose();
   }

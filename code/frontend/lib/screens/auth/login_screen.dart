@@ -6,6 +6,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:shared_preferences/shared_preferences.dart'; // Import SharedPreferences
 import 'package:firebase_messaging/firebase_messaging.dart';
+import '../../services/data_manager.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({Key? key}) : super(key: key);
@@ -213,7 +214,25 @@ class _LoginScreenState extends State<LoginScreen>
                 .doc(user.uid)
                 .set(userData, SetOptions(merge: true));
 
-            saveDeviceTokenToFirestore(user.uid);
+            // Initialize DataManager and cache data
+            final DataManager dataManager = DataManager();
+            await dataManager.initialize();
+            
+            showDialog(
+              context: context,
+              barrierDismissible: false,
+              builder: (context) => const Center(
+                child: CircularProgressIndicator(),
+              ),
+            );
+
+            // Cache the user data
+            await dataManager.fetchAndCacheAllData(user.uid);
+            
+            // Hide loading indicator
+            Navigator.of(context).pop();
+
+            await saveDeviceTokenToFirestore(user.uid);
 
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
@@ -492,41 +511,59 @@ class _LoginScreenState extends State<LoginScreen>
             return;
           }
 
-          // Get user document from Firestore
-          final userDoc = await FirebaseFirestore.instance
-              .collection('users')
-              .doc(user.uid)
-              .get();
-
-          // Update user data
-          await FirebaseFirestore.instance
-              .collection('users')
-              .doc(user.uid)
-              .set({
-            'lastSignIn': DateTime.now(),
-            'isConnected': true,
-            'isEmailVerified': true,
-          }, SetOptions(merge: true));
-
-          saveDeviceTokenToFirestore(user.uid);
-
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content:
-                  Text('${localizations.loginSuccessfulWelcome} ${user.email}'),
-              backgroundColor: Colors.green,
-            ),
-          );
-
-          // Check if this is the user's first time
-          if (userDoc.exists && userDoc.data()?['isNotFirst'] == false) {
-            final prefs = await SharedPreferences.getInstance();
-            await prefs.setBool('isLoggedIn', true);
-            Navigator.pushNamed(context, '/navbar');
-          } else {
-            // If it's their first time, navigate to onboarding or setup screen
-            Navigator.pushNamed(
-                context, '/info'); // Replace with your first-time user route
+          try {
+            // Initialize DataManager and fetch all necessary data
+            final DataManager dataManager = DataManager();
+            await dataManager.initialize();
+            
+            // Show loading indicator
+            showDialog(
+              context: context,
+              barrierDismissible: false,
+              builder: (context) => const Center(
+                child: CircularProgressIndicator(),
+              ),
+            );
+      
+            // Fetch and cache all necessary data
+            await dataManager.fetchAndCacheAllData(user.uid);
+            
+            // Hide loading indicator
+            Navigator.of(context).pop();
+      
+            // Update user status in Firestore
+            await FirebaseFirestore.instance
+                .collection('users')
+                .doc(user.uid)
+                .set({
+              'lastSignIn': DateTime.now(),
+              'isConnected': true,
+              'isEmailVerified': true,
+            }, SetOptions(merge: true));
+      
+            await saveDeviceTokenToFirestore(user.uid);
+      
+            // Navigate based on user status
+            final userDoc = await FirebaseFirestore.instance
+                .collection('users')
+                .doc(user.uid)
+                .get();
+      
+            if (userDoc.exists && userDoc.data()?['isNotFirst'] == false) {
+              final prefs = await SharedPreferences.getInstance();
+              await prefs.setBool('isLoggedIn', true);
+              Navigator.pushNamed(context, '/navbar');
+            } else {
+              Navigator.pushNamed(context, '/info');
+            }
+          } catch (e) {
+            debugPrint('Error during data initialization: $e');
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('Error initializing app data. Please try again.'),
+                backgroundColor: Colors.red,
+              ),
+            );
           }
         } else {
           ScaffoldMessenger.of(context).showSnackBar(

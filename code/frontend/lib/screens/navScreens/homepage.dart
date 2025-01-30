@@ -14,6 +14,7 @@ import 'package:hanini_frontend/screens/services/service.dart';
 import 'package:hanini_frontend/models/colors.dart';
 import 'package:hanini_frontend/models/servicesWeHave.dart';
 import 'package:hanini_frontend/localization/app_localization.dart';
+import '../../services/data_manager.dart';
 
 // Helper class to structure service data
 class ServiceCategory {
@@ -38,6 +39,7 @@ class _HomePageState extends State<HomePage> {
   bool get wantKeepAlive => true; // This ensures the state is preserved
 
   int _currentPage = 0;
+  static const int pageSize = 20;
   late Timer _adTimer;
 
   List<Map<String, dynamic>> services = [];
@@ -51,20 +53,16 @@ class _HomePageState extends State<HomePage> {
   late Future<List<PopularServicesModel>> _popularServicesFuture;
   int _refreshCount = 0;
   final int _maxRefreshCount = 10;
+  bool _isInitializing = true; // Add this flag
 
   @override
   void initState() {
     super.initState();
+    debugPrint('🏠 HomePage initState called');
     _pageController = PageController();
     _scrollController = ScrollController()..addListener(_onScroll);
 
-    // Only initialize if services is empty
-    if (services.isEmpty) {
-      _initializeData();
-    } else {
-      _isLoading = false;
-    }
-
+    _initializeData();
     _popularServicesFuture = PopularServicesModel.getPopularServices(context);
 
     _adTimer = Timer.periodic(const Duration(seconds: 3), (Timer timer) {
@@ -79,26 +77,52 @@ class _HomePageState extends State<HomePage> {
         );
       }
     });
-    _fetchUserDataAndRecommendations();
   }
 
   Future<void> _initializeData() async {
-    if (!_isLoading && services.isNotEmpty)
-      return; // Skip if already initialized
-
     setState(() {
+      _isInitializing = true;
       _isLoading = true;
     });
 
     try {
-      await _fetchUserData();
-      await _fetchServices();
-      await _fetchUsersFromSameCity();
+      debugPrint('🔄 Initializing HomePage from cache...');
+      final dataManager = DataManager();
+      debugPrint('📥 Attempting to retrieve cached data...');
+      
+      final userData = dataManager.getCurrentUserData();
+      if (userData != null) {
+        debugPrint('👤 Found cached user data');
+        currentUserId = userData['uid'];
+        favoriteServices = Set<String>.from(userData['favorites'] ?? []);
+        
+        final cityUsers = dataManager.getCityUsers();
+        if (cityUsers.isEmpty) {
+          debugPrint('⚠️ No cached city users found, requesting cache reload');
+          await dataManager.reloadCache();
+          return;
+        }
+        
+        final providers = cityUsers.where((user) => user['isProvider'] == true).toList();
+        
+        if (providers.isNotEmpty) {
+          debugPrint('📊 Found ${providers.length} service providers in cache');
+          setState(() {
+            services = providers;
+            _hasMoreData = false; // We already have all data
+          });
+        }
+      } else {
+        debugPrint('⚠️ No user data in cache, requesting user login');
+        // Handle the case when user data is not available
+        // Maybe redirect to login or show an error
+      }
     } catch (e) {
-      debugPrint('Error initializing data: $e');
+      debugPrint('❌ Error during initialization: $e');
     } finally {
       if (mounted) {
         setState(() {
+          _isInitializing = false;
           _isLoading = false;
         });
       }
@@ -112,7 +136,7 @@ class _HomePageState extends State<HomePage> {
 
   // Remove didChangeDependency override as we don't want to reload on navigation
 
-  Future<void> _fetchServices() async {
+  Future<void> _fetchMoreServices() async {
     if (_isFetching || !_hasMoreData) return;
 
     setState(() => _isFetching = true);
@@ -188,23 +212,26 @@ class _HomePageState extends State<HomePage> {
   }
 
   Future<void> _onRefresh() async {
+    debugPrint('🔄 Refresh triggered. Count: $_refreshCount');
     try {
-      _refreshCount++;
       if (_refreshCount >= _maxRefreshCount) {
+        debugPrint('📥 Max refresh count reached, reloading cache...');
         _refreshCount = 0;
-        await _fetchUserDataAndRecommendations();
+        await DataManager().reloadCache();
+        await _initializeData();
       } else {
-        await _fetchUserData();
-        await _loadRecommendations();
+        debugPrint('🔀 Shuffling existing services for variety');
+        setState(() {
+          services.shuffle();
+          _refreshCount++;
+        });
       }
 
-      // Shuffle the services to ensure they are different each time
-      services.shuffle();
-
       _refreshController.refreshCompleted();
+      debugPrint('✅ Refresh completed successfully');
     } catch (e) {
+      debugPrint('❌ Error during refresh: $e');
       _refreshController.refreshFailed();
-      debugPrint('Error refreshing: $e');
     }
   }
 
@@ -420,6 +447,12 @@ class _HomePageState extends State<HomePage> {
     return categories.toList();
   }
 
+  Future<void> _trackUserAction(String serviceId, String action) async {
+    if (currentUserId != null) {
+      await DataManager().trackUserAction(currentUserId!, serviceId, action);
+    }
+  }
+
   Future<void> toggleFavorite(Map<String, dynamic> service) async {
     if (currentUserId == null) {
       // Show a dialog or snackbar to prompt login
@@ -443,6 +476,7 @@ class _HomePageState extends State<HomePage> {
         setState(() {
           favoriteServices.remove(serviceId);
         });
+        await _trackUserAction(serviceId, 'unfavorite');
       } else {
         // Add to favorites
         await userDoc.update({
@@ -451,6 +485,7 @@ class _HomePageState extends State<HomePage> {
         setState(() {
           favoriteServices.add(serviceId);
         });
+        await _trackUserAction(serviceId, 'favorite');
       }
     } catch (e) {
       debugPrint('Error updating favorites: $e');
@@ -621,6 +656,7 @@ Widget _buildServiceCard(
             'click_count_per_service.$serviceId': FieldValue.increment(1),
           });
         }
+        await _trackUserAction(serviceId, 'click');
       } catch (e) {
         debugPrint('Error incrementing click_count: $e');
       }
@@ -667,7 +703,7 @@ Widget _buildServiceCard(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          service['basicInfo']['profession'] ?? 'N/A',
+                          service['basicInfo']?['profession']?.toString() ?? 'N/A',
                           style: GoogleFonts.poppins(
                             fontSize: 14,
                             fontWeight: FontWeight.bold,
@@ -676,14 +712,14 @@ Widget _buildServiceCard(
                           overflow: TextOverflow.ellipsis,
                         ),
                         Text(
-                          service['name'] ?? 'Unknown',
+                          service['name']?.toString() ?? 'Unknown',
                           style: GoogleFonts.poppins(
                             fontSize: 12,
                             color: AppColors.mainColor,
                           ),
                           maxLines: 1,
                         ),
-                        _buildStarRating(service['rating']?.toDouble() ?? 0.0),
+                        _buildStarRating((service['rating'] as num?)?.toDouble() ?? 0.0),
                       ],
                     ),
                   ),
@@ -727,10 +763,39 @@ Widget _buildServiceCard(
 
   void _onScroll() {
     if (_scrollController.position.pixels >=
-            _scrollController.position.maxScrollExtent - 200 &&
+        _scrollController.position.maxScrollExtent - 200 &&
         !_isFetching &&
         _hasMoreData) {
       _fetchServices();
+    }
+  }
+
+  Future<void> _fetchServices() async {
+    if (_isFetching) return;
+
+    setState(() {
+      _isFetching = true;
+    });
+
+    try {
+      final dataManager = DataManager();
+      final newServices = dataManager.getPaginatedProviders(_currentPage, pageSize);
+      
+      setState(() {
+        if (_currentPage == 0) {
+          services = newServices;
+        } else {
+          services.addAll(newServices);
+        }
+        _hasMoreData = dataManager.hasMoreProviders(_currentPage, pageSize);
+        if (_hasMoreData) _currentPage++;
+      });
+    } catch (e) {
+      debugPrint('Error fetching services: $e');
+    } finally {
+      setState(() {
+        _isFetching = false;
+      });
     }
   }
 
@@ -1130,13 +1195,28 @@ Widget build(BuildContext context) {
         idleText: 'Pull to refresh',
         refreshingText: 'Refreshing...',
       ),
-      child: _isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : services.isEmpty && !_isFetching
-              ? Center(
+      child: _isInitializing || _isLoading
+          ? const Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  CircularProgressIndicator(),
+                  SizedBox(height: 16),
+                  Text(
+                    'Loading recommendations...',
+                    style: TextStyle(
+                      color: Colors.grey,
+                      fontSize: 16,
+                    ),
+                  ),
+                ],
+              ),
+            )
+          : services.isEmpty
+              ? const Center(
                   child: Text(
                     'No recommended services found in your area',
-                    style: GoogleFonts.poppins(
+                    style: TextStyle(
                       fontSize: 16,
                       color: Colors.grey,
                     ),

@@ -16,21 +16,35 @@ import 'package:shared_preferences/shared_preferences.dart'; // Import SharedPre
 import 'navbar.dart';
 import 'package:hanini_frontend/screens/become_provider_screen/SetProviderProfile.dart';
 import 'package:hanini_frontend/InfoGatherer.dart';
-
+import 'package:hive_flutter/hive_flutter.dart';
+import 'services/data_manager.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  
+  // Initialize Firebase first
+  await Firebase.initializeApp();
+  
+  // Initialize DataManager
+  try {
+    debugPrint('📱 Initializing app dependencies...');
+    final dataManager = DataManager();
+    await dataManager.initialize();
+    debugPrint('✅ DataManager initialized successfully');
+  } catch (e) {
+    debugPrint('❌ Error initializing DataManager: $e');
+  }
+
   final cameras = await availableCameras();
-  await Firebase.initializeApp(); // Initialize Firebase
-   SystemChrome.setPreferredOrientations([
+  
+  SystemChrome.setPreferredOrientations([
     DeviceOrientation.portraitUp,
     DeviceOrientation.portraitDown,
   ]);
-  final initialRoute =
-      await _determineInitialRoute(); // Determine initial route
   
-  runApp(
-      MyApp(cameras: cameras, initialRoute: initialRoute));
+  final initialRoute = await _determineInitialRoute();
+  
+  runApp(MyApp(cameras: cameras, initialRoute: initialRoute));
 }
 
 Future<String> _determineInitialRoute() async {
