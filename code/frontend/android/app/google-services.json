@@ -23,6 +23,14 @@
           }
         },
         {
+          "client_id": "733920147635-4504nv3qes3lel2f3e7t24umiiaka4v7.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.Nit.Hanini",
+            "certificate_hash": "c99d353001ba579008bbdf1e200c1e54e1d67fde"
+          }
+        },
+        {
           "client_id": "733920147635-8o0f5m4gmcprmppdcga7pbe2h696i23m.apps.googleusercontent.com",
           "client_type": 1,
           "android_info": {
@@ -36,6 +44,30 @@
           "android_info": {
             "package_name": "com.Nit.Hanini",
             "certificate_hash": "c374a75263cd2ae91e07eca9a537a83e26a2bb0b"
+          }
+        },
+        {
+          "client_id": "733920147635-o9emma9qe98ttb07vfb4h4nb7060vtqs.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.Nit.Hanini",
+            "certificate_hash": "38437e68eb449e0b209ea346f42a7f2ab3707b56"
+          }
+        },
+        {
+          "client_id": "733920147635-rsaqgne37cevsnnvivd5b717fgqmh8fj.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.Nit.Hanini",
+            "certificate_hash": "303399b0a7327b2b6b1f582173d6a5fce8d8b271"
+          }
+        },
+        {
+          "client_id": "733920147635-ruouji9us23b5re1sr7bgmp2kskap2al.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.Nit.Hanini",
+            "certificate_hash": "0138782e4ce4f7496a8baeeedbd3b4f5fdfe3696"
           }
         },
         {
